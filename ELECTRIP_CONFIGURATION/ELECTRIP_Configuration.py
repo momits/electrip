@@ -3,7 +3,7 @@
 
 # Import von Modulen
 try:
-	import xml.etree.ElementTree
+	import cPickle as pickle
 	import gobject
 	import gtk
 	print "Importe erfolgreich"
@@ -11,12 +11,20 @@ except:
 	print "Es konnten nicht alle Module importiert werden"
 
 class Fenster(gtk.Window):
-	def __init__(self, titel, loks):
+	def __init__(self, titel):
+		self.loks = [
+		Lok(0, "Beispiellok", 5, "M 2", 27, 2.5, True, "/Pfad/zum/Bild", [{"Name": "Licht","SendeNr": 0, "Wert": True, "Button":1},{"Name": "Rangiergang", "SendeNr": 3, "Wert": False, "Button": 2}])
+		]
+		for lok in self.loks:
+			i = 0
+			for funktion in lok.funktionen:
+				funktion["Nr"] = i
+				i += 1
+			
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
-		self.anzahl_loks = len(loks)
 		self.set_title(titel)
 		self.connect("delete-event", self.delete_event)
-		self.grundbox = Grundbox(loks)
+		self.grundbox = Grundbox(self.loks)
 		self.add(self.grundbox)
 		self.show()
 		
@@ -27,14 +35,53 @@ class Fenster(gtk.Window):
 class Grundbox(gtk.VBox):
 	def __init__(self,loks):
 		gtk.VBox.__init__(self, False, 0)
-		self.buttonbox_oben = Buttonbox_oben()
 		self.hbox_mitte = HBoxMitte(loks)
+		self.buttonbox_oben = Buttonbox_oben(self, self.hbox_mitte.lokliste, self.hbox_mitte.function_mapping_box, loks)
 		self.hbox_unten = HBoxUnten(self.hbox_mitte.lokliste, self.hbox_mitte.lokliste.liste,self.hbox_mitte.lokliste.sort_model, self.hbox_mitte.function_mapping_box)
-		
+
 		self.pack_start(self.buttonbox_oben)
 		self.pack_start(self.hbox_mitte)
 		self.pack_start(self.hbox_unten)
 		self.show()
+	
+	def get_lokliste(self):
+		# Erstellt eine Liste der Form <ID> <Name> <Bildpfad> <Adresse> <Protokoll> <Fahrstufen> <Fahrtrichtung (True = vorwärts)> <Beschleunigungszeit in s> <Funktionsliste {name, sende_nr, wert, Joybutton} und erzeugt daraus Lokobjekte
+		liste = self.hbox_mitte.lokliste.liste
+		funktionslisten = self.hbox_mitte.function_mapping_box.funktionslisten
+		loks = []
+		row_nr = 0
+		standard_funktionsdict = ["Nr","Name","SendeNr","Wert","Button"]
+		for row in liste:
+			lok = []
+			funktionen = []
+			nummer = 0
+			for eigenschaft in row:
+				# dafür sorgen dass die Fahrtrichtung in boolean konvertiert wird:
+				if eigenschaft == 'Vorwärts':
+					eigenschaft = True
+				elif eigenschaft == 'Rückwärts':
+					eigenschaft = False
+				lok.append(eigenschaft)
+				nummer += 1
+
+			for row in funktionslisten[row_nr]:
+				funktion = {}
+				nummer = 0
+				for eigenschaft in row:
+					eigenschaft_name = standard_funktionsdict[nummer]
+					# dafür sorgen dass der Wert (An oder Aus) in boolean konvertiert wird:
+					if eigenschaft == 'An':
+						eigenschaft = True
+					elif eigenschaft == 'Aus':
+						eigenschaft = False
+					funktion[eigenschaft_name] = eigenschaft
+					nummer += 1
+				funktionen.append(funktion)
+			row_nr += 1
+			lok.append(funktionen)
+			lok_instanz = Lok(*lok)
+			loks.append(lok_instanz)
+		return loks	
 
 class Legendebutton(gtk.Button):
 	def __init__(self):
@@ -94,22 +141,43 @@ class Legendetabelle(gtk.Table):
 		self.show()
 				
 class Ladebutton(gtk.Button):
-	def __init__(self):
+	def __init__(self, lok_treeview, funktions_treeview, loks, ladeziel):
+		self.loks = loks
+		self.lok_treeview = lok_treeview
+		self.funktions_treeview = funktions_treeview
+		self.ladeziel = ladeziel
 		gtk.Button.__init__(self, "Laden")
 		self.connect("clicked", self.laden)
 		self.show()
 		
 	def laden(self, *args):
-		print "Einstellungen können noch nicht geladen werden."
+		try:
+			verzeichnis = self.ladeziel.get_text()
+			loks = pickle.load(open(verzeichnis))
+			self.lok_treeview.laden(loks)
+			self.funktions_treeview.laden(loks)
+			print "Einstellungen wurden aus " + verzeichnis + " geladen."
+		except:
+			print "Einstellungen konnten nicht geladen werden, angegebene Datei ist nicht gültig."
 
 class Speicherbutton(gtk.Button):
-	def __init__(self):
-		gtk.Button.__init__(self, "Speichern:")
+	def __init__(self, textfeld, grundbox):
+		gtk.Button.__init__(self, "Speichern")
+		self.grundbox = grundbox
+		self.speicherziel = textfeld
 		self.connect("clicked", self.speichern)
 		self.show()
 		
 	def speichern(self, *args):
-		print "Einstellungen können noch nicht gespeichert werden."
+		verzeichnis = self.speicherziel.get_text()
+		try:
+			loks = self.grundbox.get_lokliste()
+			if verzeichnis != "" and verzeichnis[len(verzeichnis)-4:len(verzeichnis)] != ".elc": # Wenn Dateiendung fehlt und ein Dateiname angegeben wurde, Endung anhängen
+				verzeichnis += ".elc"
+			pickle.dump(loks, open(verzeichnis, 'wb'))
+			print "Einstellungen wurden gespeichert in " + verzeichnis
+		except:
+			print "Speichern fehlgeschlagen, angegebener Pfad ist nicht gültig."
 
 class Speicherzielfeld(gtk.Entry):
 	def __init__(self):
@@ -117,13 +185,13 @@ class Speicherzielfeld(gtk.Entry):
 		self.show()
 		
 class Buttonbox_oben(gtk.HButtonBox):
-	def __init__(self):
+	def __init__(self, grundbox, lokliste, function_mapping_box, loks):
 		gtk.HButtonBox.__init__(self)
 		self.set_layout(gtk.BUTTONBOX_START)
 		self.legendebutton = Legendebutton()
-		self.ladebutton = Ladebutton()
-		self.speicherbutton = Speicherbutton()
 		self.textfeld_speicherziel = Speicherzielfeld()
+		self.speicherbutton = Speicherbutton(self.textfeld_speicherziel, grundbox)
+		self.ladebutton = Ladebutton(lokliste, function_mapping_box, loks, self.textfeld_speicherziel)
 		
 		self.add(self.legendebutton)
 		self.add(self.ladebutton)
@@ -138,7 +206,7 @@ class NeueLokButton(gtk.Button):
 		self.show()
 		
 	def neue_lok(self, button, lokliste, funktionsbox):
-		funktionsbox.funktionslisten.append(gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT))
+		funktionsbox.funktionslisten.append(gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT))
 		lokliste.append([lokliste.iter_n_children(None), None, 0 , None, 0, 3, None, None])
 		
 class LokLoeschenButton(gtk.Button):
@@ -174,7 +242,9 @@ class NeueFunktionButton(gtk.Button):
 		
 	def neue_funktion(self, button, funktionsbox):
 		funktionsliste = funktionsbox.get_model()
-		funktionsliste.append()
+		nr = len(funktionsliste)
+		print nr
+		funktionsliste.append([nr, None, 0, None, 0])
 
 class Buttonbox_lokaktionen(gtk.HButtonBox):
 	def __init__(self, loktreeview, lokliste, sort_model, funktionsbox):
@@ -201,7 +271,7 @@ class Buttonbox_funktionsaktionen(gtk.HButtonBox):
 class HBoxMitte(gtk.HBox):
 	def __init__(self, loks):
 		gtk.HBox.__init__(self)
-		self.function_mapping_box = FunctionMappingBox()
+		self.function_mapping_box = FunctionMappingBox(loks)
 		self.trennstrich = gtk.VSeparator()
 		self.trennstrich.show()
 		self.lokliste = Lokliste(loks, self.function_mapping_box)		
@@ -221,22 +291,16 @@ class HBoxUnten(gtk.HBox):
 		self.show()
 
 class FunctionMappingBox(gtk.TreeView):
-	def __init__(self):
+	def __init__(self, loks):
 		self.funktionslisten = []
-		i = 0
-		for lok in loks:
-			self.funktionslisten.append(gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT))
-			for funktion in lok.funktionen:
-				if funktion["Wert"]:
-					wert = "An"
-				else:
-					wert = "Aus"
-				self.funktionslisten[i].append([funktion["Name"], funktion["SendeNr"], wert, funktion["Button"]])
-			i = i + 1
+		self.loks = loks
+		self.laden(self.loks)
+			
 		# CellRenderer für Textfelder erzeugen
 		self.textrenderer = gtk.CellRendererText()	
 		self.textrenderer.set_property("editable", True)
 		self.textrenderer.connect("editing_started", self.neue_editable)
+		self.textrenderer_not_editable = gtk.CellRendererText()
 		
 		# CellRenderer für Combobox erzeugen
 		self.comborenderer = gtk.CellRendererCombo()
@@ -252,14 +316,28 @@ class FunctionMappingBox(gtk.TreeView):
 
 		gtk.TreeView.__init__(self, self.funktionslisten[0])
 		
-		self.append_column(gtk.TreeViewColumn("Funktionsname", self.textrenderer, text = 0))
-		self.append_column(gtk.TreeViewColumn("SendeNr", self.textrenderer, text = 1))
-		wertspalte = gtk.TreeViewColumn("Wert", self.comborenderer, text = 2)
+		self.append_column(gtk.TreeViewColumn("Nr", self.textrenderer_not_editable, text = 0))
+		self.append_column(gtk.TreeViewColumn("Funktionsname", self.textrenderer, text = 1))
+		self.append_column(gtk.TreeViewColumn("SendeNr", self.textrenderer, text = 2))
+		wertspalte = gtk.TreeViewColumn("Wert", self.comborenderer, text = 3)
 		wertspalte.set_min_width(70) # Spalte verbreitern, der Schönheit wegen (Damit man auch bei der Dropdownauswahl noch was lesen kann)
 		self.append_column(wertspalte)
-		self.append_column(gtk.TreeViewColumn("JoyButtton", self.textrenderer, text = 3))			
+		self.append_column(gtk.TreeViewColumn("JoyButtton", self.textrenderer, text = 4))			
 		self.show()
-		
+	
+	def laden(self, loks):
+		del self.funktionslisten[:]
+		i = 0
+		self.loks = loks
+		for lok in self.loks:
+			self.funktionslisten.append(gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT))
+			for funktion in lok.funktionen:
+				if funktion["Wert"]:
+					wert = "An"
+				else:
+					wert = "Aus"
+				self.funktionslisten[i].append([funktion["Nr"], funktion["Name"], funktion["SendeNr"], wert, funktion["Button"]])
+			i = i + 1	
 		
 	def neue_editable(self, textrenderer, editable, path):
 		editable.connect("editing-done", self.neuer_wert, path)
@@ -287,6 +365,7 @@ class FunctionMappingBox(gtk.TreeView):
 class Lokliste(gtk.TreeView):
 	def __init__(self, loks, funktionenbox):
 		self.liste = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_FLOAT, gobject.TYPE_STRING, gobject.TYPE_STRING)
+		self.loks = loks
 		self.funktionen_box = funktionenbox
 		
 		# CellRenderer für Textfelder erzeugen
@@ -342,8 +421,12 @@ class Lokliste(gtk.TreeView):
 		for column in self.get_columns():
 			column.set_sort_column_id(i)
 			i = i + 1
+		self.laden(self.loks)
 		
-		for lok in loks:
+	def laden(self, loks):
+		self.liste.clear()
+		self.loks = loks
+		for lok in self.loks:
 			if lok.richtung:
 				fahrtrichtung = "Vorwärts"
 			else:
@@ -380,31 +463,50 @@ class Lokliste(gtk.TreeView):
 		cursor_path = self.get_cursor()[0] # Pfad zur angezeigten Zeile
 		zeile = cursor_path[0]
 		datenzeile = self.sort_model.convert_path_to_child_path(cursor_path)[0] #Zeile im Liststore durch Konvertierung des angezeigten Pfades in einen Liststorepfad ermitteln
-		print "Zeile", zeile, "ausgewählt, entspricht Datenzeile", datenzeile
 		self.funktionen_box.set_model(self.funktionen_box.funktionslisten[datenzeile]) # Funktionenliste 
 	
 
 class Lok():
-	def __init__(self, id, name, bildpfad, adresse, protokoll, fahrstufen, fahrtrichtung, beschleunigungszeit = 3, funktionen = None):
+	def __init__(self, id, name, adresse, protokoll, fahrstufen, beschleunigungszeit, fahrtrichtung, bildpfad, funktionen):
 		self.id = id
 		self.name = name
-		self.bild = bildpfad
 		self.adresse = adresse
 		self.protokoll = protokoll
 		self.fahrstufen = fahrstufen
-		self.funktionen = funktionen
+		self.beschleunigungszeit = beschleunigungszeit
 		self.richtung = fahrtrichtung
+		self.bild = bildpfad
+		self.funktionen = funktionen
 		self.geschwindigkeit = 0.0
 		self.letzte_gesendete_geschwindigkeit = 0
-		self.beschleunigungszeit = beschleunigungszeit
+		self.anzahl_funktionen = 0
+		for funktion in self.funktionen:
+			if funktion["SendeNr"] > self.anzahl_funktionen:
+				self.anzahl_funktionen = funktion["SendeNr"]
 
-if __name__ == "__main__":
-	# Lokliste erstellen
-	# Format: <ID> <Name> <Bildpfad> <Adresse> <Protokoll> <Fahrstufen> <Fahrtrichtung (True = vorwärts)> <Beschleunigungszeit in s> <Funktionsliste {name, sende_nr, wert, Joybutton}>
-	loks = [
-	Lok(0, "Schienenbus", "Lokbilder/schienenbus_vt98.jpg", 5, "M 2", 27, True, 2.5, [{"Name": "Licht","SendeNr": 0, "Wert": True, "Button":1},{"Name": "Rangiergang", "SendeNr": 3, "Wert": False, "Button": 2}]),
-	Lok(1, "BR 81", "Lokbilder/br81.jpg", 24, "M 1", 14, False, 3, [{"Name": "Licht","SendeNr": 1, "Wert": True, "Button":1},{"Name": "Dampfpfeife", "SendeNr": 2, "Wert": False, "Button": 5}])
-	]
+	def an_server_senden(self, socket):
+		self.letzte_gesendete_geschwindigkeit = int(self.geschwindigkeit)
+		geschaltet = []
+		for i in range(self.anzahl_funktionen):
+			geschaltet.append(False)
+		for funktion in self.funktionen:
+			if funktion["Wert"]:
+				geschaltet[funktion["SendeNr"]-1] = True
+		funktionen = " ".join(str(int(n)) for n in geschaltet)
+		sendetext = "SET 1 GL " + str(self.adresse) + " " + str(int(self.richtung)) + " " + str(int(self.geschwindigkeit)) + " " + str(self.fahrstufen) + " " + funktionen + "\n"
+		print
+		print sendetext
+		socket.send(sendetext)
+		print socket.recv(4096)
+	
+	def joystick_beschleunigung(self, wert, regler):
+		self.geschwindigkeit = self.geschwindigkeit - wert * (0.2/3 * self.fahrstufen)
+		if self.geschwindigkeit < 0:
+			self.geschwindigkeit = 0
+		if self.geschwindigkeit > self.fahrstufen:
+			self.geschwindigkeit = self.fahrstufen
+		regler[self.id].geschwindigkeitsregler.set_value(self.geschwindigkeit)
 
-	test = Fenster("Test des Einstellungseditors", loks)
+if __name__ == "__main__":	
+	fenster = Fenster("ELECTRIP - Konfiguration")
 	gtk.main()
