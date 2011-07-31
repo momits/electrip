@@ -182,6 +182,7 @@ class Speicherbutton(gtk.Button):
 class Speicherzielfeld(gtk.Entry):
 	def __init__(self):
 		gtk.Entry.__init__(self)
+		self.set_text("conf.elc")
 		self.show()
 		
 class Buttonbox_oben(gtk.HButtonBox):
