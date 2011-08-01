@@ -244,7 +244,6 @@ class NeueFunktionButton(gtk.Button):
 	def neue_funktion(self, button, funktionsbox):
 		funktionsliste = funktionsbox.get_model()
 		nr = len(funktionsliste)
-		print nr
 		funktionsliste.append([nr, None, 0, None, 0])
 
 class Buttonbox_lokaktionen(gtk.HButtonBox):
@@ -373,6 +372,7 @@ class Lokliste(gtk.TreeView):
 		self.textrenderer = gtk.CellRendererText()
 		self.textrenderer.set_property("editable", True)
 		self.textrenderer.connect("editing_started", self.neue_editable)
+		self.textrenderer_not_editable = gtk.CellRendererText()
 		
 		# CellRenderer-Liste für ComboBoxen erzeugen
 		self.comborenderer = []
@@ -387,7 +387,8 @@ class Lokliste(gtk.TreeView):
 		self.combostore_protokoll = gtk.ListStore(gobject.TYPE_STRING)
 		self.combostore_protokoll.append(["M 1"])
 		self.combostore_protokoll.append(["M 2"])
-		self.combostore_protokoll.append(["NMRA"])
+		self.combostore_protokoll.append(["N 1"])
+		self.combostore_protokoll.append(["N 2"])
 		self.comborenderer[0].set_property("model", self.combostore_protokoll)
 		# Combostore_Fahrstufen
 		self.combostore_fahrstufen = gtk.ListStore(gobject.TYPE_INT)
@@ -409,7 +410,7 @@ class Lokliste(gtk.TreeView):
 		self.connect("cursor-changed", self.lokauswahl)
 		
 		# Spalten hinzufügen
-		self.append_column(gtk.TreeViewColumn("ID", self.textrenderer, text = 0))
+		self.append_column(gtk.TreeViewColumn("ID", self.textrenderer_not_editable, text = 0))
 		self.append_column(gtk.TreeViewColumn("Lok", self.textrenderer, text = 1))
 		self.append_column(gtk.TreeViewColumn("Adresse", self.textrenderer, text = 2))
 		self.append_column(gtk.TreeViewColumn("Protokoll", self.comborenderer[0], text = 3))
@@ -482,8 +483,8 @@ class Lok():
 		self.letzte_gesendete_geschwindigkeit = 0
 		self.anzahl_funktionen = 0
 		for funktion in self.funktionen:
-			if funktion["SendeNr"] > self.anzahl_funktionen:
-				self.anzahl_funktionen = funktion["SendeNr"]
+			if funktion["SendeNr"] + 1 > self.anzahl_funktionen:
+				self.anzahl_funktionen = funktion["SendeNr"] + 1
 
 	def an_server_senden(self, socket):
 		self.letzte_gesendete_geschwindigkeit = int(self.geschwindigkeit)
@@ -492,7 +493,7 @@ class Lok():
 			geschaltet.append(False)
 		for funktion in self.funktionen:
 			if funktion["Wert"]:
-				geschaltet[funktion["SendeNr"]-1] = True
+				geschaltet[funktion["SendeNr"]] = True
 		funktionen = " ".join(str(int(n)) for n in geschaltet)
 		sendetext = "SET 1 GL " + str(self.adresse) + " " + str(int(self.richtung)) + " " + str(int(self.geschwindigkeit)) + " " + str(self.fahrstufen) + " " + funktionen + "\n"
 		print
