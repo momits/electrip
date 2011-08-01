@@ -8,7 +8,7 @@ try:
 	import time
 	import gtk
 	import socket
-	import Joystick.JoystickKonsole
+	import Joystick.JoystickKonsoleHP
 	print "Importe erfolgreich"
 except:
 	print "Es konnten nicht alle Module importiert werden"
@@ -28,8 +28,8 @@ class Lok():
 		self.letzte_gesendete_geschwindigkeit = 0
 		self.anzahl_funktionen = 0
 		for funktion in self.funktionen:
-			if funktion["SendeNr"] > self.anzahl_funktionen:
-				self.anzahl_funktionen = funktion["SendeNr"]
+			if funktion["SendeNr"] + 1 > self.anzahl_funktionen:
+				self.anzahl_funktionen = funktion["SendeNr"] + 1
 
 	def an_server_senden(self, socket):
 		self.letzte_gesendete_geschwindigkeit = int(self.geschwindigkeit)
@@ -38,7 +38,7 @@ class Lok():
 			geschaltet.append(False)
 		for funktion in self.funktionen:
 			if funktion["Wert"]:
-				geschaltet[funktion["SendeNr"]-1] = True
+				geschaltet[funktion["SendeNr"]] = True
 		funktionen = " ".join(str(int(n)) for n in geschaltet)
 		sendetext = "SET 1 GL " + str(self.adresse) + " " + str(int(self.richtung)) + " " + str(int(self.geschwindigkeit)) + " " + str(self.fahrstufen) + " " + funktionen + "\n"
 		print
@@ -47,7 +47,8 @@ class Lok():
 		print socket.recv(4096)
 	
 	def joystick_beschleunigung(self, wert, regler):
-		self.geschwindigkeit = self.geschwindigkeit - wert * (0.2/3 * self.fahrstufen)
+		print "ID:", self.id
+		self.geschwindigkeit = self.geschwindigkeit - wert * (0.2 / regler[self.id].lok.beschleunigungszeit * self.fahrstufen)
 		if self.geschwindigkeit < 0:
 			self.geschwindigkeit = 0
 		if self.geschwindigkeit > self.fahrstufen:
@@ -81,7 +82,7 @@ class Fenster(gtk.Window):
 			if len(lok.funktionen) > max_funktionsbuttons:
 				max_funktionsbuttons = len(lok.funktionen)
 		
-		self.regler = [] 
+		self.regler = []
 		for i in range(self.anzahl_loks): # Alle Regler hinzufügen
 			self.regler.append(Regler(self.socket, loks[i], max_funktionsbuttons))
 			self.hbox_mitte.pack_start(self.regler[i])
@@ -116,8 +117,9 @@ class Fenster(gtk.Window):
 		print self.socket.recv(4096)
 		# ---------- Loks initialisieren -------------
 		for lok in loks:
-			if lok.protokoll == "M 1" or "M 2" or "N 1" or "N 2" or "F" or "S" or "Z":
+			if lok.protokoll == "M 1" or "M 2" or "N 1" or "N 2":
 				text = "INIT 1 GL " + str(lok.adresse) + " " + str(lok.protokoll) + " " + str(lok.fahrstufen) + " " + str(len(lok.funktionen)) + "\n"
+				print text
 				self.socket.send(text)
 				print self.socket.recv(4096)
 			else:
@@ -151,6 +153,7 @@ class HBoxUnten(gtk.HBox):
 class Regler(gtk.VBox):
 	def __init__(self, socket, lok, max_funktionsbuttons):
 		gtk.VBox.__init__(self, False, 0)
+		self.lok = lok
 		self.lokbild = Lokbild(lok.bild)
 		self.geschwindigkeitsregler = Geschwindigkeitsregler(lok, socket)
 		self.lokschild = Lokschild(lok)
@@ -202,11 +205,11 @@ class Lokschild(gtk.Label):
 		gtk.Label.__init__(self, self.text)
 		self.show()
 	
-	def set_bold(self):
-		markup = "<b>" + self.text + "</b>"
+	def set_color(self, color):
+		markup = "<span foreground='" + color + "'>" + "<b>" + self.text + "</b>" + "</span>"
 		self.set_markup(markup)
 	
-	def remove_bold(self):
+	def remove_color(self):
 		self.set_markup(self.text)
 	
 class Richtungswender(gtk.Button):
@@ -349,6 +352,7 @@ if __name__ == "__main__":
 			for funktion in lok.funktionen:
 				funktion["Nr"] = i
 				i += 1
+
 	# Hier Daten für Socketverbindung eingeben: Fenster("adresse", port, ....)
 	PyControl = Fenster("localhost", 4303, "ELECTRIP 1.2.0", loks)
-	PyControl.joystick_konsole = Joystick.JoystickKonsole.JoystickKonsole(loks, PyControl.regler, PyControl.hbox_unten.Notstopbutton)
+	PyControl.joystick_konsole = Joystick.JoystickKonsoleHP.JoystickKonsole(loks, PyControl.regler, PyControl.hbox_unten.Notstopbutton)
