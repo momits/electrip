@@ -15,6 +15,7 @@ except:
 class JoystickKonsole():
 	def __init__(self, loks, regler, notstopbutton):
 		pygame.init()
+				
 		self.AmLaufen = True # Status setzen
 		pygame.joystick.init() # Joystick Modul initialisieren
 		
@@ -29,10 +30,13 @@ class JoystickKonsole():
 		for joystick_lok in self.joysticks: # Daten der angeschlossenen Joysticks auslesen
 			joystick = joystick_lok[0]
 			print "-------- " , joystick.get_id() , ". --------"
-			joystick.init() # Joystick initialisieren
-			print joystick.get_name()
-			print "Anzahl Achsen:", joystick.get_numaxes()
-			print "Anzahl Knöpfe:", joystick.get_numbuttons()
+			if not joystick.get_name() == "ST LIS3LV02DL Accelerometer": # Eingebauten Beschleunigungssensor ignorieren
+				joystick.init() # Joystick initialisieren
+				print joystick.get_name()
+				print "Anzahl Achsen:", joystick.get_numaxes()
+				print "Anzahl Knöpfe:", joystick.get_numbuttons()
+			else:
+				self.joysticks.remove(joystick_lok)
 		
 		self.joy_thread = JoystickThread(self.joysticks, loks, regler, notstopbutton)
 		self.joy_thread.start()
@@ -43,16 +47,18 @@ class JoystickKonsole():
 		print "Stoppe Threads ..."
 		self.joy_thread.quit()
 		self.geschw_thread.quit()
-		pygame.event.post(pygame.event.Event(JOYBUTTONDOWN, {"joy": 0, "button": 9}))
+		pygame.event.post(pygame.event.Event(MOUSEBUTTONDOWN, {"pos": 0, "button": 0}))
 
 class JoystickThread(threading.Thread):
 	def __init__(self, joystickliste, loks, regler, notstopbutton):
 		threading.Thread.__init__(self)
+		self.farbliste = ["#319C45", "#4189C0", "#E360EA", "#E8353C", "#000000", "#EEBB4B"]
 		self.joysticks = joystickliste
 		self.loks = loks
 		self.regler = regler
 		self.notstopbutton = notstopbutton
-		self.regler[0].lokschild.set_bold()
+		for joystick_lok in self.joysticks:
+			self.regler[joystick_lok[1]].lokschild.set_color(self.farbliste[joystick_lok[1]])
 		self.running = True
 	
 	def run(self):
@@ -72,14 +78,15 @@ class JoystickThread(threading.Thread):
 			if event.type == JOYHATMOTION:
 				richtung = event.value
 				lokid = self.joysticks[event.joy][1]
+				joyid = self.joysticks[event.joy][0].get_id()
 				if richtung[0] == 1 and lokid < len(self.loks)-1:
-					self.regler[lokid].lokschild.remove_bold()
+					self.regler[lokid].lokschild.remove_color()
 					lokid = lokid + 1
-					self.regler[lokid].lokschild.set_bold()
+					self.regler[lokid].lokschild.set_color(self.farbliste[joyid])
 				if richtung[0] == -1 and lokid > 0:
-					self.regler[lokid].lokschild.remove_bold()
+					self.regler[lokid].lokschild.remove_color()
 					lokid = lokid - 1
-					self.regler[lokid].lokschild.set_bold()
+					self.regler[lokid].lokschild.set_color(self.farbliste[joyid])
 				print "Joystick hat zu Lok ", lokid, "gewechselt."
 				self.joysticks[event.joy][1] = lokid
 		
