@@ -47,8 +47,7 @@ class Lok():
 		print socket.recv(4096)
 	
 	def joystick_beschleunigung(self, wert, regler):
-		print "ID:", self.id
-		self.geschwindigkeit = self.geschwindigkeit - wert * (0.2 / regler[self.id].lok.beschleunigungszeit * self.fahrstufen)
+		self.geschwindigkeit = self.geschwindigkeit - wert * (0.1 / regler[self.id].lok.beschleunigungszeit * self.fahrstufen)
 		if self.geschwindigkeit < 0:
 			self.geschwindigkeit = 0
 		if self.geschwindigkeit > self.fahrstufen:
@@ -141,7 +140,7 @@ class HBoxMitte(gtk.HBox):
 		self.set_size_request(breite, -1)
 	
 	def set_optimale_breite(self, anzahl_loks):
-		self.set_size_request(anzahl_loks * 100, -1)
+		self.set_size_request(anzahl_loks * 115, -1)
 
 class HBoxUnten(gtk.HBox):
 	def __init__(self, socket):
@@ -170,7 +169,7 @@ class Regler(gtk.VBox):
 class Lokbild(gtk.Image):
 	def __init__(self, pfad):
 		gtk.Image.__init__(self)
-		self.set_size_request(-1, 75)
+		self.set_size_request(-1, 90)
 		if pfad == None:
 			self.set_from_stock(gtk.STOCK_MISSING_IMAGE, gtk.ICON_SIZE_BUTTON)
 		else:
@@ -230,12 +229,13 @@ class Richtungswender(gtk.Button):
 	
 	def richtungswechsel(self, button, lok, socket, scale):
 		lok.richtung = not lok.richtung
+		print "Lok", lok.name, "hat die Richtung gewechselt und fährt nun", lok.richtung
+		
 		if lok.geschwindigkeit == 0:
 			lok.an_server_senden(socket)
 		else:
 			scale.set_value(0)
 		print
-		print "Lok", lok.name, "hat die Richtung gewechselt und fährt nun", lok.richtung
 		self.zeige_richtungspfeil(lok.richtung)
 	
 	def zeige_richtungspfeil(self, richtung):
@@ -354,5 +354,5 @@ if __name__ == "__main__":
 				i += 1
 
 	# Hier Daten für Socketverbindung eingeben: Fenster("adresse", port, ....)
-	PyControl = Fenster("localhost", 4303, "ELECTRIP 1.2.0", loks)
+	PyControl = Fenster("localhost", 4303, "ELECTRIP 1.2.2", loks)
 	PyControl.joystick_konsole = Joystick.JoystickKonsoleHP.JoystickKonsole(loks, PyControl.regler, PyControl.hbox_unten.Notstopbutton)
