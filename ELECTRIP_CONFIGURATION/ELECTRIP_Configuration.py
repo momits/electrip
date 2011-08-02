@@ -111,9 +111,7 @@ class Legendetabelle(gtk.Table):
 		self.begriffe = ["ID", "Lok", "Protokoll", "Fahrstufen", "Beschleunigungszeit", "Fahrtrichtung", "Bild", "Funktionsname", "SendeNr", "Wert", "JoyButton"]
 		i = 0
 		for begriff in self.begriffe:
-			label = gtk.Label()
-			label.show()
-			label.set_markup("<b>" + begriff + "</b>")
+			label = Beschriftung(begriff)
 			self.attach(label, 0, 1, i, (i+1))
 			i = i + 1
 		self.definitionen = [
@@ -268,16 +266,33 @@ class Buttonbox_funktionsaktionen(gtk.HButtonBox):
 		self.add(self.funktion_loeschen_button)
 		self.show()
 
+class Beschriftung(gtk.Label):
+	def __init__(self, text):
+		gtk.Label.__init__(self)
+		self.set_markup("<b>" + text + "</b>")
+		self.show()
+		
+
 class HBoxMitte(gtk.HBox):
 	def __init__(self, loks):
 		gtk.HBox.__init__(self)
 		self.function_mapping_box = FunctionMappingBox(loks)
 		self.trennstrich = gtk.VSeparator()
 		self.trennstrich.show()
-		self.lokliste = Lokliste(loks, self.function_mapping_box)		
-		self.pack_start(self.lokliste)
+		self.lokliste = Lokliste(loks, self.function_mapping_box)	
+		
+		self.vbox_links = gtk.VBox()
+		self.vbox_links.pack_start(Beschriftung("Lok und ihre Eigenschaften"), False, False, 0)
+		self.vbox_links.pack_start(self.lokliste, False, False, 0)
+		self.vbox_links.show()
+		self.vbox_rechts = gtk.VBox()
+		self.vbox_rechts.pack_start(Beschriftung("Funktionen der ausgewählten Lok"), False, False, 0)
+		self.vbox_rechts.pack_start(self.function_mapping_box, False, False, 0)
+		self.vbox_rechts.show()
+		
+		self.pack_start(self.vbox_links)
 		self.pack_start(self.trennstrich)
-		self.pack_start(self.function_mapping_box)
+		self.pack_start(self.vbox_rechts)
 		self.show()
 		
 class HBoxUnten(gtk.HBox):
