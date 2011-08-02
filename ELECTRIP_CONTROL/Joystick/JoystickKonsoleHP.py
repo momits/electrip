@@ -108,7 +108,6 @@ class GeschwindigkeitsThread(threading.Thread):
 				lokid = joystick_lok[1]				
 				if joystick.get_numaxes >= 4:
 					ausschlag_vertikal = joystick.get_axis(1)
-					print ausschlag_vertikal
 					ausschlag_horizontal = joystick.get_axis(3)
 				elif joystick.get_numaxes >= 2:
 					ausschlag_vertikal = joystick.get_axis(0)
@@ -116,7 +115,7 @@ class GeschwindigkeitsThread(threading.Thread):
 				self.loks[lokid].joystick_beschleunigung(ausschlag_vertikal, self.reglerliste)
 			while gtk.events_pending():
 				gtk.main_iteration(False)
-			time.sleep(0.2)
+			time.sleep(0.1)
 			
 	def quit(self):
 		self.running = False
