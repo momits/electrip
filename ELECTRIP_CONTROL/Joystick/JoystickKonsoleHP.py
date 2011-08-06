@@ -21,7 +21,10 @@ class JoystickKonsole():
 		
 		self.joysticks = []
 		for id in range(pygame.joystick.get_count()):
-			self.joysticks.append([pygame.joystick.Joystick(id), id]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok]
+			if not len(self.joysticks) == len(regler):
+				self.joysticks.append([pygame.joystick.Joystick(id), id]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok]
+			else:
+				print "Joystick '" + pygame.joystick.Joystick(id).get_name() + "' wurde ignoriert, da ", pygame.joystick.get_count(), " Joysticks zuviel für ", len(regler), " Loks sind."
 		
 		print "Erkannte Joysticks:", len(self.joysticks)
 		print
@@ -52,13 +55,14 @@ class JoystickKonsole():
 class JoystickThread(threading.Thread):
 	def __init__(self, joystickliste, loks, regler, notstopbutton):
 		threading.Thread.__init__(self)
-		self.farbliste = ["#319C45", "#4189C0", "#E360EA", "#E8353C", "#000000", "#EEBB4B"]
+		self.farbliste = ["#319C45", "#4189C0", "#E360EA", "#E8353C", "#000000", "#EEBB4B", "#993719", "#7F7F7F", "#1D5200"]
 		self.joysticks = joystickliste
 		self.loks = loks
 		self.regler = regler
 		self.notstopbutton = notstopbutton
 		for joystick_lok in self.joysticks:
 			self.regler[joystick_lok[1]].lokschild.set_color(self.farbliste[joystick_lok[1]])
+			self.regler[joystick_lok[1]].joystick = joystick_lok[0]
 		self.running = True
 	
 	def run(self):
@@ -66,27 +70,41 @@ class JoystickThread(threading.Thread):
 			event = pygame.event.wait()
 			if event.type == JOYBUTTONDOWN:
 				lokid = self.joysticks[event.joy][1]
+				konfiguriert = False
 				for funktion in self.loks[lokid].funktionen:
 					if event.button == funktion["Button"]:
 						self.regler[lokid].funktionsbox.button[funktion["Nr"]].clicked()
+						konfiguriert = True
 				if event.button == 10:
 					self.regler[lokid].richtungswender.clicked()
 				elif event.button == 9:
 					self.notstopbutton.clicked()
-				else:
+				elif not konfiguriert:
 					print "Nicht konfigurierter Button wurde gedrückt."
 			if event.type == JOYHATMOTION:
 				richtung = event.value
 				lokid = self.joysticks[event.joy][1]
 				joyid = self.joysticks[event.joy][0].get_id()
-				if richtung[0] == 1 and lokid < len(self.loks)-1:
-					self.regler[lokid].lokschild.remove_color()
-					lokid = lokid + 1
-					self.regler[lokid].lokschild.set_color(self.farbliste[joyid])
+				if richtung[0] == 1:
+					neue_lokid = lokid
+					while neue_lokid < len(self.loks)-1 and self.regler[neue_lokid].joystick != None:
+						neue_lokid += 1
+					if self.regler[neue_lokid].joystick == None:
+						self.regler[lokid].lokschild.remove_color()
+						self.regler[lokid].joystick = None
+						self.regler[neue_lokid].lokschild.set_color(self.farbliste[joyid])
+						self.regler[neue_lokid].joystick = self.joysticks[event.joy][0]
+						lokid = neue_lokid
 				if richtung[0] == -1 and lokid > 0:
-					self.regler[lokid].lokschild.remove_color()
-					lokid = lokid - 1
-					self.regler[lokid].lokschild.set_color(self.farbliste[joyid])
+					neue_lokid = lokid
+					while neue_lokid > 0 and self.regler[neue_lokid].joystick != None:
+						neue_lokid -= 1
+					if self.regler[neue_lokid].joystick == None:
+						self.regler[lokid].lokschild.remove_color()
+						self.regler[lokid].joystick = None
+						self.regler[neue_lokid].lokschild.set_color(self.farbliste[joyid])
+						self.regler[neue_lokid].joystick = self.joysticks[event.joy][0]
+						lokid = neue_lokid
 				print "Joystick hat zu Lok ", lokid, "gewechselt."
 				self.joysticks[event.joy][1] = lokid
 		

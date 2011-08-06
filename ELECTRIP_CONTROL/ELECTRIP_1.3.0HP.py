@@ -8,7 +8,7 @@ try:
 	import time
 	import gtk
 	import socket
-	import Joystick.JoystickKonsoleHP
+	import Joystick.JoystickKonsoleHP as joystick_konsole
 	print "Importe erfolgreich"
 except:
 	print "Es konnten nicht alle Module importiert werden"
@@ -55,15 +55,8 @@ class Lok():
 		regler[self.id].geschwindigkeitsregler.set_value(self.geschwindigkeit)
 		
 class Fenster(gtk.Window):
-	def __init__(self, host, port, titel, loks):
-		# Socket-Verbindung herstellen
-		try:
-			self.socket = socket.create_connection((host, port))
-		except:
-			print "Socket Verbindung gescheitert. Host und Port überprüfen!"
-			self.schneller_exit()
-			
-		self.socket_init(loks)
+	def __init__(self, host, port, titel, loks):			
+		self.socket_init(host, port, loks)
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 		self.anzahl_loks = len(loks)
 		self.set_title(titel)
@@ -98,7 +91,13 @@ class Fenster(gtk.Window):
 		print "Das Programm konnte nicht gestartet werden."
 		sys.exit()
 	
-	def socket_init(self, loks):
+	def socket_init(self, host, port, loks):
+		# Socket-Verbindung herstellen
+		try:
+			self.socket = socket.create_connection((host, port))
+		except:
+			print "Socket Verbindung gescheitert. Host und Port überprüfen!"
+			self.schneller_exit()
 		#-------- Handshake ----------
 		print "Socketverbindung aktiv mit:", self.socket.recv(4096)
 		self.socket.send("SET CONNECTIONMODE SRCP COMMAND\n")
@@ -117,7 +116,7 @@ class Fenster(gtk.Window):
 		# ---------- Loks initialisieren -------------
 		for lok in loks:
 			if lok.protokoll == "M 1" or "M 2" or "N 1" or "N 2":
-				text = "INIT 1 GL " + str(lok.adresse) + " " + str(lok.protokoll) + " " + str(lok.fahrstufen) + " " + str(len(lok.funktionen)) + "\n"
+				text = "INIT 1 GL " + str(lok.adresse) + " " + str(lok.protokoll) + " " + str(lok.fahrstufen) + " " + str(lok.anzahl_funktionen) + "\n"
 				print text
 				self.socket.send(text)
 				print self.socket.recv(4096)
@@ -153,6 +152,7 @@ class Regler(gtk.VBox):
 	def __init__(self, socket, lok, max_funktionsbuttons):
 		gtk.VBox.__init__(self, False, 0)
 		self.lok = lok
+		self.joystick = None
 		self.lokbild = Lokbild(lok.bild)
 		self.geschwindigkeitsregler = Geschwindigkeitsregler(lok, socket)
 		self.lokschild = Lokschild(lok)
@@ -355,4 +355,4 @@ if __name__ == "__main__":
 
 	# Hier Daten für Socketverbindung eingeben: Fenster("adresse", port, ....)
 	PyControl = Fenster("localhost", 4303, "ELECTRIP 1.2.2", loks)
-	PyControl.joystick_konsole = Joystick.JoystickKonsoleHP.JoystickKonsole(loks, PyControl.regler, PyControl.hbox_unten.Notstopbutton)
+	PyControl.joystick_konsole = joystick_konsole.JoystickKonsole(loks, PyControl.regler, PyControl.hbox_unten.Notstopbutton)
