@@ -39,11 +39,11 @@ class Fenster(gtk.Window):
 			loks = speicher_dict["Loks"]
 			server_dict = speicher_dict["Server"]
 			joy_dict = speicher_dict["Joystick"]
-			
 			pickle.dump(verzeichnis, open("electrip_configuration.conf", 'wb'))
 			print "Einstellungen wurden aus " + verzeichnis + " geladen."
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'Laden abgebrochen.'
+			self.schneller_exit()
 		file_chooser_dialog.destroy()
 				
 		for lok in loks:
