@@ -127,6 +127,7 @@ class GeschwindigkeitsThread(threading.Thread):
 		
 	def run(self):
 		while self.running:
+			startzeit = time.time()
 			for joystick_lok in self.joysticks:
 				joystick = joystick_lok[0]
 				lokid = joystick_lok[1]				
@@ -134,7 +135,9 @@ class GeschwindigkeitsThread(threading.Thread):
 				self.loks[lokid].joystick_beschleunigung(ausschlag_vertikal, self.reglerliste)
 			while gtk.events_pending():
 				gtk.main_iteration(False)
-			time.sleep(0.1)
+			sleeptime = startzeit + 0.1 - time.time()
+			print sleeptime
+			time.sleep(sleeptime)
 			
 	def quit(self):
 		self.running = False
