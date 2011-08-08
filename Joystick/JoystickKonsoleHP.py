@@ -136,8 +136,8 @@ class GeschwindigkeitsThread(threading.Thread):
 			while gtk.events_pending():
 				gtk.main_iteration(False)
 			sleeptime = startzeit + 0.1 - time.time()
-			print sleeptime
-			time.sleep(sleeptime)
+			if sleeptime > 0:
+				time.sleep(sleeptime)
 			
 	def quit(self):
 		self.running = False
