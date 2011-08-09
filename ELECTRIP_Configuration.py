@@ -300,7 +300,7 @@ class Buttonbox_lokaktionen(gtk.HButtonBox):
 class Buttonbox_funktionsaktionen(gtk.HButtonBox):
 	def __init__(self, funktionsbox):
 		gtk.HButtonBox.__init__(self)
-		self.set_layout(gtk.BUTTONBOX_END)
+		self.set_layout(gtk.BUTTONBOX_START)
 		self.neue_funktion_button = NeueFunktionButton(funktionsbox)
 		self.funktion_loeschen_button = FunktionLoeschenButton(funktionsbox)
 		
