@@ -19,11 +19,11 @@ class DateiSpeichernDialog(gtk.FileChooserDialog):
 class ElectripFileFilter(gtk.FileFilter):
 	def __init__(self):
 		gtk.FileFilter.__init__(self)
-		self.set_name("Electrip Files")
+		self.set_name("ELECTRIP-Dateien")
 		self.add_pattern("*.elc")
 
 class AllFileFilter(gtk.FileFilter):
 	def __init__(self):
 		gtk.FileFilter.__init__(self)
-		self.set_name("All Files")
+		self.set_name("Alle Dateien")
 		self.add_pattern("*")
