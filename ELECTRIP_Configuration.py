@@ -3,43 +3,40 @@
 
 # Import von Modulen
 try:
+	import time
 	import cPickle as pickle
 	import gobject
 	import gtk
 	from Lok import Lok
 	import SaveAndLoad
-	print "Importe erfolgreich"
+	import ELECTRIP_Control
+	import threading
+	print "ELECTRIP-Konfiguration: Importe erfolgreich"
 except:
-	print "Es konnten nicht alle Module importiert werden"
+	print "ELECTRIP-Konfiguration: Es konnten nicht alle Module importiert werden"
 
 class Fenster(gtk.Window):
 	def __init__(self, titel):
-		self.loks = [
-		Lok(0, "Beispiellok", 5, "M 2", 27, 2.5, True, "/Pfad/zum/Bild", [{"Name": "Licht","SendeNr": 0, "Wert": True, "Button":1},{"Name": "Rangiergang", "SendeNr": 3, "Wert": False, "Button": 2}])
-		]
-		for lok in self.loks:
-			i = 0
-			for funktion in lok.funktionen:
-				funktion["Nr"] = i
-				i += 1
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 		self.set_title(titel)
 		self.connect("delete-event", self.delete_event)
-		self.grundbox = Grundbox(self.loks, self)
+		self.grundbox = Grundbox(self)
 		self.add(self.grundbox)
 		self.show()
 		
-	def delete_event(self, *args):
-		gtk.main_quit()
-		print "Das Programm wurde beendet."
+	def delete_event(self, window, event):
+		if self.steuerungsfenster != None:
+			self.steuerungsfenster.delete_event()
+		gtk_main.running = False
+		print "ELECTRIP wurde beendet."
 		
 class Grundbox(gtk.VBox):
-	def __init__(self,loks, fenster):
+	def __init__(self, fenster):
 		gtk.VBox.__init__(self, False, 0)
-		self.hbox_mitte = HBoxMitte(loks)
+		self.hbox_mitte = HBoxMitte()
 		self.hbox_sonstiges = HBoxSonstiges()
-		self.buttonbox_oben = Buttonbox_oben(self, self.hbox_mitte.lokliste, self.hbox_mitte.function_mapping_box, loks, self.hbox_sonstiges, fenster)
-
+		self.buttonbox_oben = Buttonbox_oben(self, self.hbox_mitte.lokliste, self.hbox_mitte.function_mapping_box, self.hbox_sonstiges, fenster)
+		#self.buttonbox_oben.ladebutton.laden()
 
 		self.pack_start(self.buttonbox_oben)
 		self.pack_start(self.hbox_mitte)
@@ -94,21 +91,27 @@ class Grundbox(gtk.VBox):
 			wert = server_frame.eingabefelder[i].get_text()
 			server[parameter] = wert
 			i += 1
-		server["Port"] = int(server["Port"])
+		try:
+			server["Port"] = int(server["Port"])
+		except:
+			print "Ugültiger Server-Port."
 		
 		# 3. Joystickdict der Form {"Notstop": notstopbutton, "Richtungswender": wendebutton, "Achse": joyachse} erzeugen
 		joystick = {}
 		joy_frame = self.hbox_sonstiges.joy_frame
 		i = 0
 		for parameter in joy_frame.speicher_parameter:
-			wert = int(joy_frame.eingabefelder[i].get_text())
-			joystick[parameter] = wert
-			i += 1
+			try:
+				wert = int(joy_frame.eingabefelder[i].get_text())
+				joystick[parameter] = wert
+				i += 1
+			except:
+				"Joystick-Parameter ", parameter, "ist nicht gültig."
+		
 		# Finales Speicherdict erzeugen
 		speicher_dict = {"Loks": loks, "Server": server, "Joystick": joystick}
 		return speicher_dict
 		
-
 class Legendebutton(gtk.Button):
 	def __init__(self):
 		gtk.Button.__init__(self, "Legende...")
@@ -165,20 +168,19 @@ class Legendetabelle(gtk.Table):
 		self.show()
 				
 class Ladebutton(gtk.Button):
-	def __init__(self, lok_treeview, funktions_treeview, loks, hbox_sonstiges, fenster):
-		self.loks = loks
+	def __init__(self, lok_treeview, funktions_treeview, hbox_sonstiges, fenster):
 		self.lok_treeview = lok_treeview
 		self.funktions_treeview = funktions_treeview
 		self.hbox_sonstiges = hbox_sonstiges
 		
 		gtk.Button.__init__(self, "Laden")
-		self.connect("clicked", self.laden, fenster)
+		self.connect("clicked", self.lade_dialog, fenster)
 		self.show()
 		
-	def laden(self, *args):
+	def lade_dialog(self, button, fenster):
 		file_chooser_dialog = SaveAndLoad.DateiLadenDialog(fenster)
 		try:
-			letzter_pfad = pickle.load(open("electrip_configuration.conf"))
+			letzter_pfad = pickle.load(open("electrip.conf"))
 			file_chooser_dialog.set_filename(letzter_pfad)
 		except:
 			print "Bisher keine Standardeinstellungen gespeichert."
@@ -189,16 +191,17 @@ class Ladebutton(gtk.Button):
 			loks = speicher_dict["Loks"]
 			server = speicher_dict["Server"]
 			joystick = speicher_dict["Joystick"]
-			
-			self.lok_treeview.laden(loks)
-			self.funktions_treeview.laden(loks)
-			self.hbox_sonstiges.joy_frame.laden(joystick)
-			self.hbox_sonstiges.server_frame.laden(server)
-			pickle.dump(verzeichnis, open("electrip_configuration.conf", 'wb'))
+			self.lok_treeview.laden(loks) # loks
+			self.funktions_treeview.laden(loks) # loks
+			self.hbox_sonstiges.joy_frame.laden(joystick) # joystick
+			self.hbox_sonstiges.server_frame.laden(server) # server
+			pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
 			print "Einstellungen wurden aus " + verzeichnis + " geladen."
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'Laden abgebrochen.'
+		print
 		file_chooser_dialog.destroy()
+		
 
 class Speicherbutton(gtk.Button):
 	def __init__(self, grundbox, fenster):
@@ -207,10 +210,10 @@ class Speicherbutton(gtk.Button):
 		self.connect("clicked", self.speichern, fenster)
 		self.show()
 		
-	def speichern(self, *args):
+	def speichern(self, button, fenster):
 		file_chooser_dialog = SaveAndLoad.DateiSpeichernDialog(fenster)
 		try:
-			letzter_pfad = pickle.load(open("electrip_configuration.conf"))
+			letzter_pfad = pickle.load(open("electrip.conf"))
 			file_chooser_dialog.set_filename(letzter_pfad)
 		except:
 			print "Bisher keine Standardeinstellungen gespeichert."
@@ -221,23 +224,38 @@ class Speicherbutton(gtk.Button):
 			if verzeichnis != "" and verzeichnis[len(verzeichnis)-4:len(verzeichnis)] != ".elc": # Wenn Dateiendung fehlt und ein Dateiname angegeben wurde, Endung anhängen
 				verzeichnis += ".elc"
 			pickle.dump(speicherdict, open(verzeichnis, 'wb'))
-			pickle.dump(verzeichnis, open("electrip_configuration.conf", 'wb'))
+			pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
 			print "Einstellungen wurden gespeichert in " + verzeichnis
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'Speichern abgebrochen.'
 		file_chooser_dialog.destroy()
 
+class ElectripLadebutton(gtk.Button):
+	def __init__(self, fenster):
+		gtk.Button.__init__(self, "In ELECTRIP-Steuerung laden")
+		self.connect("clicked", self.in_electrip_laden, fenster)
+		fenster.steuerungsfenster = None
+		self.show()
+	
+	def in_electrip_laden(self, button, fenster):
+		fenster.hide()
+		if fenster.steuerungsfenster != None:
+			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
+		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.4.0", fenster)
+
 class Buttonbox_oben(gtk.HButtonBox):
-	def __init__(self, grundbox, lokliste, function_mapping_box, loks, hbox_sonstiges, fenster):
+	def __init__(self, grundbox, lokliste, function_mapping_box, hbox_sonstiges, fenster):
 		gtk.HButtonBox.__init__(self)
 		self.set_layout(gtk.BUTTONBOX_START)
 		self.legendebutton = Legendebutton()
 		self.speicherbutton = Speicherbutton(grundbox, fenster)
-		self.ladebutton = Ladebutton(lokliste, function_mapping_box, loks, hbox_sonstiges, fenster)
+		self.ladebutton = Ladebutton(lokliste, function_mapping_box, hbox_sonstiges, fenster)
+		self.electrip_ladebutton = ElectripLadebutton(fenster)
 		
 		self.add(self.legendebutton)
 		self.add(self.ladebutton)
 		self.add(self.speicherbutton)
+		self.add(self.electrip_ladebutton)		
 		self.show()
 
 class NeueLokButton(gtk.Button):
@@ -282,9 +300,12 @@ class NeueFunktionButton(gtk.Button):
 		self.show()
 		
 	def neue_funktion(self, button, funktionsbox):
-		funktionsliste = funktionsbox.get_model()
-		nr = len(funktionsliste)
-		funktionsliste.append([nr, None, 0, None, 0])
+		try:
+			funktionsliste = funktionsbox.get_model()
+			nr = len(funktionsliste)
+			funktionsliste.append([nr, None, 0, None, 0])
+		except:
+			print "Keine Lok ausgewählt."
 
 class Buttonbox_lokaktionen(gtk.HButtonBox):
 	def __init__(self, loktreeview, lokliste, sort_model, funktionsbox):
@@ -323,10 +344,10 @@ class VBoxMitte(gtk.VBox):
 		self.show()
 
 class HBoxMitte(gtk.HBox):
-	def __init__(self, loks):
+	def __init__(self):
 		gtk.HBox.__init__(self)
-		self.function_mapping_box = FunctionMappingBox(loks)
-		self.lokliste = Lokliste(loks, self.function_mapping_box)
+		self.function_mapping_box = FunctionMappingBox()
+		self.lokliste = Lokliste(self.function_mapping_box)
 		self.buttonbox_lok = Buttonbox_lokaktionen(self.lokliste, self.lokliste.liste, self.lokliste.sort_model, self.function_mapping_box)
 		self.buttonbox_funktionen = Buttonbox_funktionsaktionen(self.function_mapping_box)
 		
@@ -369,8 +390,7 @@ class FunktionenFrame(gtk.Frame):
 		self.vbox = VBoxMitte(funktionsliste, buttonbox)
 		self.add(self.vbox)
 		self.show_all()
-
-		
+	
 class ServerFrame(gtk.Frame):
 	def __init__(self):
 		gtk.Frame.__init__(self)
@@ -380,7 +400,6 @@ class ServerFrame(gtk.Frame):
 		self.set_shadow_type(gtk.SHADOW_OUT)
 		self.parameter = ["Host", "Port"]
 		self.eingabefelder = []
-		
 		self.laden({"Host": "", "Port": ""})
 		self.show_all()
 
@@ -419,7 +438,6 @@ class JoystickFrame(gtk.Frame):
 		self.speicher_parameter = ["Notstop", "Richtungswender", "Achse"]
 		self.parameter = ["Notstop (JoyButton)", "Richtungswender (JoyButton)", "Beschleunigung (JoyAchse)"] # Diese liste dient der besseren Verständlichkeit, die bei den seihcer parametern nicht so wichtig ist (und außerdem zu lang zum schreiben)
 		self.eingabefelder = []
-		
 		self.laden({"Notstop": "", "Richtungswender": "", "Achse": ""})
 		self.show_all()
 		
@@ -448,12 +466,9 @@ class JoystickFrame(gtk.Frame):
 		self.table.show()
 		self.add(self.table)
 
-
 class FunctionMappingBox(gtk.TreeView):
-	def __init__(self, loks):
+	def __init__(self):
 		self.funktionslisten = []
-		self.loks = loks
-		self.laden(self.loks)
 			
 		# CellRenderer für Textfelder erzeugen
 		self.textrenderer = gtk.CellRendererText()	
@@ -473,7 +488,7 @@ class FunctionMappingBox(gtk.TreeView):
 		self.combostore_wert.append(["Aus"])
 		self.comborenderer.set_property("model", self.combostore_wert)
 
-		gtk.TreeView.__init__(self, self.funktionslisten[0])
+		gtk.TreeView.__init__(self)
 		
 		self.append_column(gtk.TreeViewColumn("Nr", self.textrenderer_not_editable, text = 0))
 		self.append_column(gtk.TreeViewColumn("Funktionsname", self.textrenderer, text = 1))
@@ -522,9 +537,8 @@ class FunctionMappingBox(gtk.TreeView):
 			liste[zeile][aktive_spalte] = neuer_text
 		
 class Lokliste(gtk.TreeView):
-	def __init__(self, loks, funktionenbox):
+	def __init__(self, funktionenbox):
 		self.liste = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_FLOAT, gobject.TYPE_STRING, gobject.TYPE_STRING)
-		self.loks = loks
 		self.funktionen_box = funktionenbox
 		
 		# CellRenderer für Textfelder erzeugen
@@ -582,7 +596,6 @@ class Lokliste(gtk.TreeView):
 		for column in self.get_columns():
 			column.set_sort_column_id(i)
 			i = i + 1
-		self.laden(self.loks)
 		
 	def laden(self, loks):
 		self.liste.clear()
@@ -624,8 +637,26 @@ class Lokliste(gtk.TreeView):
 		cursor_path = self.get_cursor()[0] # Pfad zur angezeigten Zeile
 		zeile = cursor_path[0]
 		datenzeile = self.sort_model.convert_path_to_child_path(cursor_path)[0] #Zeile im Liststore durch Konvertierung des angezeigten Pfades in einen Liststorepfad ermitteln
-		self.funktionen_box.set_model(self.funktionen_box.funktionslisten[datenzeile]) # Funktionenliste 
+		self.funktionen_box.set_model(self.funktionen_box.funktionslisten[datenzeile]) # Funktionenliste
 
-if __name__ == "__main__":	
-	fenster = Fenster("ELECTRIP - Konfiguration")
-	gtk.main()
+class GtkThread(threading.Thread):
+	def __init__(self):
+		threading.Thread.__init__(self)
+		self.running = True
+		
+	def run(self):
+		while self.running:
+			startzeit = time.time()
+			while gtk.events_pending():
+				gtk.main_iteration(False)
+			sleeptime = startzeit + 0.02 - time.time()
+			if sleeptime > 0:
+				time.sleep(sleeptime)
+			
+	def quit(self):
+		self.running = False
+
+if __name__ == "__main__":
+	ELECTRIP = Fenster("ELECTRIP - Konfiguration")
+	gtk_main = GtkThread()
+	gtk_main.start()

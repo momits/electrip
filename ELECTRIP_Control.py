@@ -1,111 +1,99 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
+# this is ELECTRIP VERSION 1.5.0
 
 # Import von Modulen
 try:
 	import cPickle as pickle
-	import sys
 	import time
 	import gtk
 	import socket
 	import Joystick.JoystickKonsoleHP as joystick_konsole
 	from Lok import Lok
-	import SaveAndLoad
-	print "Importe erfolgreich"
+	print "ELECTRIP-Steuerung: Importe erfolgreich"
 except:
-	print "Es konnten nicht alle Module importiert werden"
+	print "ELECTRIP-Steuerung: Es konnten nicht alle Module importiert werden"
 		
 class Fenster(gtk.Window):
-	def __init__(self, titel):
+	def __init__(self, titel, config_fenster):
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
+		self.connect("delete-event", self.delete_event)
 		self.grundbox = Grundbox() # Grundbox erzeugen
 		self.add(self.grundbox)
-		self.handler_delete_event = self.connect("delete-event", self.delete_event_file_chooser)
 		self.set_title(titel)
 		self.show()
-		self.datei_laden()
-	
-	def datei_laden(self):
-		file_chooser_dialog = SaveAndLoad.DateiLadenDialog(self)
-		try:
-			letzter_pfad = pickle.load(open("electrip.conf"))
-			file_chooser_dialog.set_filename(letzter_pfad)
-		except:
-			print "Bisher keine Standardeinstellungen gespeichert."
-		response = file_chooser_dialog.run()
-		if response == gtk.RESPONSE_OK:
-			verzeichnis = file_chooser_dialog.get_filename()
-			speicher_dict = pickle.load(open(verzeichnis))
-			loks = speicher_dict["Loks"]
-			server_dict = speicher_dict["Server"]
-			joy_dict = speicher_dict["Joystick"]
-			pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
-			print "Einstellungen wurden aus " + verzeichnis + " geladen."
-		elif response == gtk.RESPONSE_CANCEL:
-			print 'Laden abgebrochen.'
-			self.schneller_exit()
-		file_chooser_dialog.destroy()
+		self.config_fenster = config_fenster
+		
+		speicher_dict = self.config_fenster.grundbox.get_speicherdict()
+		loks = speicher_dict["Loks"]
+		server_dict = speicher_dict["Server"]
+		joy_dict = speicher_dict["Joystick"]
 				
 		for lok in loks:
 				i = 0
 				for funktion in lok.funktionen:
 					funktion["Nr"] = i
 					i += 1
-					
-		self.socket_init(server_dict["Host"], int(server_dict["Port"]), loks)
-		self.anzahl_loks = len(loks)
-		self.disconnect(self.handler_delete_event)
-		self.connect("delete-event", self.delete_event)
-		
-		self.hbox_mitte = HBoxMitte(self.anzahl_loks) # HBox für Regler erzeugen
-		self.hbox_unten = HBoxUnten(self.socket) # HBox für Notstop erzeugen
-		self.grundbox.pack_start(self.hbox_mitte)
-		self.grundbox.pack_start(self.hbox_unten, False, False)
+		try:
+			self.socket_init(server_dict["Host"], int(server_dict["Port"]), loks)
+			self.anzahl_loks = len(loks)
+			self.hbox_mitte = HBoxMitte(self.anzahl_loks) # HBox für Regler erzeugen
+			self.hbox_unten = HBoxUnten(self.socket) # HBox für Notstop erzeugen
+			self.konfiguration_button = KonfigurationButton(self.config_fenster)
+			self.grundbox.pack_start(self.konfiguration_button)
+			self.grundbox.pack_start(self.hbox_mitte)
+			self.grundbox.pack_start(self.hbox_unten, False, False)
 
-		max_funktionsbuttons = 0
-		for lok in loks:
-			if len(lok.funktionen) > max_funktionsbuttons:
-				max_funktionsbuttons = len(lok.funktionen)
+			max_funktionsbuttons = 0
+			for lok in loks:
+				if len(lok.funktionen) > max_funktionsbuttons:
+					max_funktionsbuttons = len(lok.funktionen)
+			
+			self.regler = []
+			for i in range(self.anzahl_loks): # Alle Regler hinzufügen
+				self.regler.append(Regler(self.socket, loks[i], max_funktionsbuttons))
+				self.hbox_mitte.pack_start(self.regler[i])
+			
+			self.joystick_konsole = joystick_konsole.JoystickKonsole(loks, self.regler, self.hbox_unten.Notstopbutton, joy_dict)
+			self.show()
+		except:
+			self.destroy()
+			self.config_fenster.show()
+			print "Das Steuerfenster konnte nicht geöffnet werden, überprüfen Sie die Einstellungen (Host, Port ...). Ist der SRCP-Server am Laufen?"
+			print
 		
-		self.regler = []
-		for i in range(self.anzahl_loks): # Alle Regler hinzufügen
-			self.regler.append(Regler(self.socket, loks[i], max_funktionsbuttons))
-			self.hbox_mitte.pack_start(self.regler[i])
-		
-		self.joystick_konsole = joystick_konsole.JoystickKonsole(loks, self.regler, self.hbox_unten.Notstopbutton, joy_dict)
-		self.show()
-		
-	def delete_event_file_chooser(self, *args):
-		gtk.main_quit()
-		
-	def delete_event(self, *args):
-		self.socket.send("TERM 1 POWER\n")
-		self.socket.send("TERM 0 SESSION\n")
-		self.joystick_konsole.quit()
-		print "Das Programm wurde beendet."
-		
-	def schneller_exit(self):
-		print "Das Programm konnte nicht gestartet werden."
-		sys.exit()
+	def delete_event(self, window=None, event=None, show_config_fenster=True):
+		try:
+			self.joystick_konsole.quit()
+			self.socket.send("TERM 1 POWER\n")
+			self.socket.send("TERM 0 SESSION\n")
+		except:
+			pass
+		self.destroy()
+		if show_config_fenster:
+			self.config_fenster.show()
+		print "Steuerung geschlossen."
 	
 	def socket_init(self, host, port, loks):
+		print
 		# Socket-Verbindung herstellen
-		try:
-			self.socket = socket.create_connection((host, port))
-		except:
-			print "Socket Verbindung gescheitert. Host und Port überprüfen!"
-			self.schneller_exit()
+		self.socket = socket.create_connection((host, port))
 		#-------- Handshake ----------
-		print "Socketverbindung aktiv mit:", self.socket.recv(4096)
+		print "Socketverbindung aktiv mit:"
+		print self.socket.recv(4096)
 		self.socket.send("SET CONNECTIONMODE SRCP COMMAND\n")
-		print "Connectionmode 'Command' wird angefordert:", self.socket.recv(4096)
+		print "Connectionmode 'Command' wird angefordert:"
+		print self.socket.recv(4096)
 		self.socket.send('GO\n')
 		
 		go_daten = self.socket.recv(4096)
 		go_daten_liste = go_daten.split()
 		self.session_id = go_daten_liste[len(go_daten_liste) - 1]
-		print "Session ID:", self.session_id
-		print "Von ELECTRIP aus kanns losgehen, was sagt der Server?", go_daten
+		print "Session ID:"
+		print self.session_id
+		print
+		print "Von ELECTRIP aus kanns losgehen, was sagt der Server?"
+		print go_daten
 		
 		# -------- Stromversorgung auf Bus 1 initiieren ---------
 		self.socket.send("INIT 1 POWER\n")
@@ -120,12 +108,10 @@ class Fenster(gtk.Window):
 			else:
 				print "Lok", lok.name, "verwendet ein nicht unterstütztes Digitalprotokoll."
 
-
 class Grundbox(gtk.VBox):
 	def __init__(self):
 		gtk.VBox.__init__(self, False, 0)
 		self.show()
-
 
 class HBoxMitte(gtk.HBox):
 	def __init__(self, anzahl_loks):
@@ -163,7 +149,23 @@ class Regler(gtk.VBox):
 		self.pack_start(self.funktionsbox, True, True, 10)
 		self.show()
 
-				
+class KonfigurationButton(gtk.ToggleButton):
+	def __init__(self, config_fenster):
+		gtk.ToggleButton.__init__(self, "Konfiguration")
+		self.connect("clicked", self.clicked, config_fenster)
+		self.config_fenster_visible = False
+		self.show()
+	
+	def clicked(self, button, config_fenster):
+		if not self.config_fenster_visible:
+			self.toggled()
+			config_fenster.show()
+			self.config_fenster_visible = True
+		else:
+			self.toggled()
+			config_fenster.hide()
+			self.config_fenster_visible = False
+			
 class Lokbild(gtk.Image):
 	def __init__(self, pfad):
 		gtk.Image.__init__(self)
@@ -176,7 +178,6 @@ class Lokbild(gtk.Image):
 
 	def aendern(self, pfad):
 		self.set_from_file(pfad)
-
 
 class Geschwindigkeitsregler(gtk.VScale):
 	def __init__(self, lok, socket):
@@ -300,7 +301,6 @@ class Funktionsbox(gtk.VButtonBox):
 		self.set_layout(gtk.BUTTONBOX_START)
 		self.show()
 
-
 class Notstopbutton(gtk.Button):
 	def __init__(self, socket):
 		gtk.Button.__init__(self, "Notstop")
@@ -343,5 +343,6 @@ class Notstopbutton(gtk.Button):
 		self.modify_bg(gtk.STATE_SELECTED, hintergrund)
 		self.child_label.modify_fg(gtk.STATE_SELECTED, vordergrund)
 
-if __name__ == "__main__":
-	ELECTRIP = Fenster("ELECTRIP 1.4.0")
+
+#if __name__ == "__main__":
+#	ELECTRIP = Fenster("ELECTRIP 1.4.0", None)
