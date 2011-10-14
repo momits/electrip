@@ -10,7 +10,7 @@ try:
 	import time
 	import threading
 except:
-	print "Es konnten nicht alle Module geladen werden."
+	print "Joystick-Konsole: Es konnten nicht alle Module geladen werden."
 
 class JoystickKonsole():
 	def __init__(self, loks, regler, notstopbutton, joy_dict):
@@ -133,8 +133,6 @@ class GeschwindigkeitsThread(threading.Thread):
 				lokid = joystick_lok[1]				
 				ausschlag_vertikal = joystick.get_axis(self.achse)
 				self.loks[lokid].joystick_beschleunigung(ausschlag_vertikal, self.reglerliste)
-			while gtk.events_pending():
-				gtk.main_iteration(False)
 			sleeptime = startzeit + 0.1 - time.time()
 			if sleeptime > 0:
 				time.sleep(sleeptime)
