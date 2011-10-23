@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
+# this is ELECTRIP VERSION 1.5.0
 
 # Import von Modulen
 try:
@@ -29,6 +30,11 @@ class Fenster(gtk.Window):
 			self.steuerungsfenster.delete_event()
 		gtk_main.running = False
 		print "ELECTRIP wurde beendet."
+	
+	def error(self, warnung):
+		fehlermeldung = gtk.MessageDialog(self, 0, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, warnung)
+		fehlermeldung.run()
+		fehlermeldung.destroy()
 		
 class Grundbox(gtk.VBox):
 	def __init__(self, fenster):
@@ -187,20 +193,25 @@ class Ladebutton(gtk.Button):
 		response = file_chooser_dialog.run()
 		if response == gtk.RESPONSE_OK:
 			verzeichnis = file_chooser_dialog.get_filename()
-			speicher_dict = pickle.load(open(verzeichnis))
-			loks = speicher_dict["Loks"]
-			server = speicher_dict["Server"]
-			joystick = speicher_dict["Joystick"]
-			self.lok_treeview.laden(loks) # loks
-			self.funktions_treeview.laden(loks) # loks
-			self.hbox_sonstiges.joy_frame.laden(joystick) # joystick
-			self.hbox_sonstiges.server_frame.laden(server) # server
-			pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
-			print "Einstellungen wurden aus " + verzeichnis + " geladen."
+			try:
+				speicher_dict = pickle.load(open(verzeichnis))
+				loks = speicher_dict["Loks"]
+				server = speicher_dict["Server"]
+				joystick = speicher_dict["Joystick"]
+				self.lok_treeview.laden(loks) # loks
+				self.funktions_treeview.laden(loks) # loks
+				self.hbox_sonstiges.joy_frame.laden(joystick) # joystick
+				self.hbox_sonstiges.server_frame.laden(server) # server
+				pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
+				print "Einstellungen wurden aus " + verzeichnis + " geladen."
+				file_chooser_dialog.destroy()
+			except:
+				file_chooser_dialog.destroy()
+				fenster.error("Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'Laden abgebrochen.'
+			file_chooser_dialog.destroy()
 		print
-		file_chooser_dialog.destroy()
 		
 
 class Speicherbutton(gtk.Button):
@@ -241,7 +252,7 @@ class ElectripLadebutton(gtk.Button):
 		fenster.hide()
 		if fenster.steuerungsfenster != None:
 			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
-		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.4.0", fenster)
+		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.5.0", fenster)
 
 class Buttonbox_oben(gtk.HButtonBox):
 	def __init__(self, grundbox, lokliste, function_mapping_box, hbox_sonstiges, fenster):
@@ -655,6 +666,7 @@ class GtkThread(threading.Thread):
 			
 	def quit(self):
 		self.running = False
+
 
 if __name__ == "__main__":
 	ELECTRIP = Fenster("ELECTRIP - Konfiguration")

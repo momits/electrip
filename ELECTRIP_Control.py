@@ -59,8 +59,7 @@ class Fenster(gtk.Window):
 		except:
 			self.destroy()
 			self.config_fenster.show()
-			print "Das Steuerfenster konnte nicht geöffnet werden, überprüfen Sie die Einstellungen (Host, Port ...). Ist der SRCP-Server am Laufen?"
-			print
+			self.config_fenster.error("Das Steuerfenster konnte nicht geöffnet werden,\nüberprüfen Sie die Einstellungen (Host, Port ...).\nIst der SRCP-Server am Laufen?")
 		
 	def delete_event(self, window=None, event=None, show_config_fenster=True):
 		try:
@@ -342,7 +341,3 @@ class Notstopbutton(gtk.Button):
 		
 		self.modify_bg(gtk.STATE_SELECTED, hintergrund)
 		self.child_label.modify_fg(gtk.STATE_SELECTED, vordergrund)
-
-
-#if __name__ == "__main__":
-#	ELECTRIP = Fenster("ELECTRIP 1.4.0", None)
