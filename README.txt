@@ -18,11 +18,8 @@ Software:
 ------Installation------
 1. Wählen Sie auf http://electrip.svn.sourceforge.net/ „Download GNU tarball“ und
 entpacken Sie die Datei an einen beliebigen Ort in ihrem Dateisystem.
-2. Im Ordner ~./trunk finden sie die Dateien „ELECTRIP_1.4.0HP.py“und
-„ELECTRIP_Configuration.py“. Linuxnutzer markieren diese als ausführbar.
-3. Mit einem Doppelkick auf „ELECTRIP_Configuration.py“ starten Sie die
-Konfiguration von ELECTRIP. Mit „ELECTRIP_1.4.0HP.py“ starten sie das
-Steuerprogramm.
+2. Im Ordner ~./trunk finden sie die Datei „ELECTRIP_Configuration.py“. Linuxnutzer markieren diese als ausführbar.
+3. Mit einem Doppelkick auf „ELECTRIP_Configuration.py“ starten Sie ELECTRIP.
 
 ------Probleme------
 Sollten Sie ein Problem bei der Installation oder der Benutzung von ELECTRIP haben,
