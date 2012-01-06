@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 
+from LockedPrint import locked_print
+
 class Lok():
 	def __init__(self, id, name, adresse, protokoll, fahrstufen, beschleunigungszeit, fahrtrichtung, bildpfad, funktionen):
 		self.id = id
@@ -29,10 +31,9 @@ class Lok():
 				geschaltet[funktion["SendeNr"]] = True
 		funktionen = " ".join(str(int(n)) for n in geschaltet)
 		sendetext = "SET 1 GL " + str(self.adresse) + " " + str(int(self.richtung)) + " " + str(int(self.geschwindigkeit)) + " " + str(self.fahrstufen) + " " + funktionen + "\n"
-		print
-		print sendetext
+		
+		locked_print("\n" + sendetext)
 		socket.send(sendetext)
-		print socket.recv(4096)
 	
 	def joystick_beschleunigung(self, wert, regler):
 		self.geschwindigkeit = self.geschwindigkeit - wert * (0.1 / regler[self.id].lok.beschleunigungszeit * self.fahrstufen)
