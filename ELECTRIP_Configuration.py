@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.0
+# this is ELECTRIP VERSION 1.6.1
 
 # Import von Modulen
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.0
+# this is ELECTRIP VERSION 1.6.1
 
 # Import von Modulen
 
@@ -57,11 +57,11 @@ class Fenster(gtk.Window):
 			
 		except ValueError:
 			self.destroy()
-			self.config_fenster.show()
+			self.config_fenster.show_all()
 			self.config_fenster.error("Der Server-Port ist nicht korrekt.")
 		except socket.error:
 			self.destroy()
-			self.config_fenster.show()
+			self.config_fenster.show_all()
 			self.config_fenster.error("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\nÜberprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server am Laufen?")
 		except NameError:
 			locked_print("Konnte pygame-Threads nicht starten, Joysticks werden folglich nicht erkannt.")
