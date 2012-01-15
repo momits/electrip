@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.1
+# this is ELECTRIP VERSION 1.6.2
 
 # Import von Modulen
 
@@ -293,10 +293,11 @@ class Funktionsbutton(gtk.ToggleButton):
 		self.child_label.set_ellipsize(pango.ELLIPSIZE_END)
 		self.lok = lok
 		self.sende_nr = sende_nr
-		self.wert = not wert
+		self.wert = wert
 		self.nr = nr
 
-		self.funktion_umschalten(None, self.lok, self.nr, socket)
+		if wert:
+			self.set_active(True)
 
 	def funktion_umschalten(self, button, lok, nr, socket):
 		self.wert = not self.wert

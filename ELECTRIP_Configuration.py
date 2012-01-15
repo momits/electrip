@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.1
+# this is ELECTRIP VERSION 1.6.2
 
 # Import von Modulen
 
@@ -325,7 +325,7 @@ class ElectripLadebutton(StockBildButton):
 		fenster.hide()
 		if fenster.steuerungsfenster != None:
 			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
-		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.6.0", fenster)
+		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.6.2", fenster)
 
 class Buttonbox_oben(gtk.HBox):
 	def __init__(self, lokliste, function_mapping_box, hbox_sonstiges, fenster):
