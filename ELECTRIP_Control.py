@@ -10,7 +10,7 @@ import Joystick.JoystickKonsole2 as joystick_konsole
 from Lok import Lok
 from LockedPrint import *
 import pango
-import glib
+from glib import GError
 
 		
 class Fenster(gtk.Window):
@@ -222,7 +222,7 @@ class Lokbild(gtk.Image):
 				pixbuf= gtk.gdk.pixbuf_new_from_file(pfad)
 				small_pixbuf = pixbuf.scale_simple(110 , 85, gtk.gdk.INTERP_BILINEAR)
 				self.set_from_pixbuf(small_pixbuf)
-			except glib.GError:
+			except GError:
 				self.set_from_stock(gtk.STOCK_MISSING_IMAGE, gtk.ICON_SIZE_BUTTON)
 				locked_print("Dateipfad" + pfad + "für Lokbild ist ungültig.")
 

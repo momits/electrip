@@ -299,6 +299,7 @@ class SpeichernUnterButton(StockBildButton):
 			print "Einstellungen wurden gespeichert in " + verzeichnis
 			fenster.set_title("ELECTRIP - Konfiguration - " + verzeichnis)
 			fenster.grundbox.verzeichnis = verzeichnis
+			fenster.grundbox.status_changed(None, False)
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'Speichern abgebrochen.'
 		file_chooser_dialog.destroy()
