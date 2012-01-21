@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.2
+# this is ELECTRIP VERSION 1.6.3
 
 # Import von Modulen
 
@@ -34,9 +34,7 @@ class Fenster(gtk.Window):
 					i += 1
 		try:
 			self.socket_init(server_dict["Host"], int(server_dict["Port"]), loks)
-			
 			self.scrolled_window = ScrolledWindow(self.socket, loks, self) # ScrolledWindow und darin HBox für Regler erzeugen
-			
 			self.notstop_button = Notstopbutton(self.socket) # HBox für Notstop erzeugen
 			self.konfiguration_button = KonfigurationButton(self, self.config_fenster)
 			self.fullscreen_button = FullscreenButton(self)
@@ -77,7 +75,7 @@ class Fenster(gtk.Window):
 		self.destroy()
 		self.config_fenster.control_window_is_alive = False
 		if show_config_fenster:
-			self.config_fenster.show()
+			self.config_fenster.show_all()
 		locked_print("Steuerung geschlossen.")
 	
 	def socket_init(self, host, port, loks):
@@ -186,7 +184,7 @@ class KonfigurationButton(gtk.ToggleButton):
 			self.toggled()
 			if fenster.is_fullscreen:
 				fenster.unfullscreen()
-			config_fenster.show()
+			config_fenster.show_all()
 
 class FullscreenButton(gtk.ToggleButton):
 	def __init__(self, fenster):
@@ -285,19 +283,16 @@ class Richtungswender(gtk.Button):
 			self.set_image(self.pfeil_runter)
 
 class Funktionsbutton(gtk.ToggleButton):
-	def __init__(self, lok, funktionsname, wert, sende_nr, nr, socket):
+	def __init__(self, lok, funktionsname, wert, nr, socket):
 		self.text = funktionsname
 		gtk.ToggleButton.__init__(self, self.text)
-		self.connect("clicked", self.funktion_umschalten, lok, nr, socket)
 		self.child_label = self.get_child()
 		self.child_label.set_ellipsize(pango.ELLIPSIZE_END)
-		self.lok = lok
-		self.sende_nr = sende_nr
 		self.wert = wert
-		self.nr = nr
-
-		if wert:
+		if self.wert:
 			self.set_active(True)
+		self.connect("clicked", self.funktion_umschalten, lok, nr, socket)
+		
 
 	def funktion_umschalten(self, button, lok, nr, socket):
 		self.wert = not self.wert
@@ -317,7 +312,7 @@ class Funktionsbox(gtk.VButtonBox):
 		self.set_layout(gtk.BUTTONBOX_START)
 		self.buttons = []
 		for funktion in lok.funktionen:
-			neuer_funktionsbutton = Funktionsbutton(lok, funktion["Name"], funktion["Wert"], funktion["SendeNr"], funktion["Nr"], socket)
+			neuer_funktionsbutton = Funktionsbutton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket)
 			self.buttons.append(neuer_funktionsbutton)
 			self.pack_start(neuer_funktionsbutton)
 
