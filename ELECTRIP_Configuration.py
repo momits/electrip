@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.2
+# this is ELECTRIP VERSION 1.6.3
 
 # Import von Modulen
 
@@ -63,7 +63,7 @@ class Grundbox(gtk.VBox):
 		
 		self.hbox_mitte = HBoxMitte(self.status_changed)
 		self.hbox_sonstiges = HBoxSonstiges(self.status_changed)
-		self.buttonbox_oben = Buttonbox_oben(self.hbox_mitte.lok_frame.scrolled_window.lokliste, self.hbox_mitte.funktionen_frame.function_mapping_box, self.hbox_sonstiges, fenster)
+		self.buttonbox_oben = ButtonboxOben(self.hbox_mitte.lok_frame.scrolled_window.lokliste, self.hbox_mitte.funktionen_frame.function_mapping_box, self.hbox_sonstiges, fenster)
 
 		self.pack_start(self.buttonbox_oben, False)
 		self.pack_start(self.hbox_mitte)
@@ -325,9 +325,9 @@ class ElectripLadebutton(StockBildButton):
 		fenster.hide()
 		if fenster.steuerungsfenster != None:
 			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
-		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.6.2", fenster)
+		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster("ELECTRIP 1.6.3 - " + fenster.grundbox.verzeichnis, fenster)
 
-class Buttonbox_oben(gtk.HBox):
+class ButtonboxOben(gtk.HBox):
 	def __init__(self, lokliste, function_mapping_box, hbox_sonstiges, fenster):
 		gtk.HBox.__init__(self, False)
 		self.legendebutton = Legendebutton()
@@ -349,11 +349,21 @@ class NeueLokButton(gtk.Button):
 		self.save_status_method = save_status_method
 		
 	def neue_lok(self, button, loktreeview, funktionsbox):
-		funktionsbox.funktionslisten.append(gtk.ListStore(*funktionsbox.column_types))
-		nr = len(loktreeview.liste)
-		werte = loktreeview.column_standard_values
-		werte[0] = nr
-		loktreeview.liste.append(werte)
+		sort_model_path = loktreeview.get_cursor()[0]
+		if sort_model_path == None:		
+			funktionsbox.funktionslisten.append(gtk.ListStore(*funktionsbox.column_types))
+			nr = len(loktreeview.liste)
+			werte = loktreeview.column_standard_values
+			werte[0] = nr
+			loktreeview.liste.append(werte)
+		else: # Wenn eine Zeile ausgewählt, dann füge Lok unterhalb dieser Zeile ein
+			liststore_path = loktreeview.sort_model.convert_path_to_child_path(sort_model_path)
+			zeile = loktreeview.liste.get_iter(liststore_path)
+			zeile_nr = liststore_path[0]
+			neue_zeile = loktreeview.liste.insert_after(zeile, loktreeview.column_standard_values) # Nach der ausgewählten Zeile eine neue Zeile mit Standardwerten einfügen
+			funktionsbox.funktionslisten.insert(zeile_nr + 1, gtk.ListStore(*funktionsbox.column_types)) # In der Liste der Funktionen-Liststores einen neuen Liststore einfügen
+			loktreeview.nummerieren() # Lok-ID's in die richtige Reihenfolge bringen
+			loktreeview.set_cursor(loktreeview.liste.get_path(neue_zeile))
 		self.save_status_method(button, True)
 
 class LokLoeschenButton(gtk.Button):
@@ -364,11 +374,18 @@ class LokLoeschenButton(gtk.Button):
 		
 	def lok_loeschen(self, button, loktreeview, funktionsbox):
 		try:
-			path = loktreeview.get_cursor()[0]
-			zeile = loktreeview.liste.get_iter(loktreeview.sort_model.convert_path_to_child_path(path)) # Zu löschende Zeile im Liststore finden: != ausgewählte Zeile im SortModel
-			funktionsbox.funktionslisten.remove(funktionsbox.get_model()) # Aktuelle Funktionsliste löschen
+			sort_model_path = loktreeview.get_cursor()[0]
+			liststore_path = loktreeview.sort_model.convert_path_to_child_path(sort_model_path)
+			zeile = loktreeview.liste.get_iter(liststore_path) # Zu löschende Zeile im Liststore finden: != ausgewählte Zeile im SortModel
+			
+			liststore = funktionsbox.get_model()
+			funktionsbox.funktionslisten.remove(liststore) # Aktuelle Funktionsliste löschen
+			
 			loktreeview.liste.remove(zeile) # Zeile im Liststore löschen
 			loktreeview.nummerieren()
+			
+			loktreeview.set_cursor(sort_model_path) # wähle selbe zeile wieder aus, damit viele loks auf einmal gelöscht werden können
+				
 			self.save_status_method(button, True)
 		except TypeError:
 			locked_print("Keine Zeile ausgewählt.")
@@ -773,9 +790,11 @@ class Lokliste(gtk.TreeView):
 
 	def lokauswahl(self, treeview):
 		cursor_path = self.get_cursor()[0] # Pfad zur angezeigten Zeile
-		zeile = cursor_path[0]
-		datenzeile = self.sort_model.convert_path_to_child_path(cursor_path)[0] # Zeile im Liststore durch Konvertierung des angezeigten Pfades in einen Liststorepfad ermitteln
-		self.funktionen_box.set_model(self.funktionen_box.funktionslisten[datenzeile]) # Funktionenliste
+		if cursor_path == None:
+			self.funktionen_box.set_model(None)
+		else:
+			datenzeile = self.sort_model.convert_path_to_child_path(cursor_path)[0] # Zeile im Liststore durch Konvertierung des angezeigten Pfades in einen Liststorepfad ermitteln
+			self.funktionen_box.set_model(self.funktionen_box.funktionslisten[datenzeile]) # Funktionenliste
 
 if __name__ == "__main__":
 	ELECTRIP = Fenster("ELECTRIP - Konfiguration")
