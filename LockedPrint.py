@@ -24,7 +24,6 @@ class SocketRecvThread(threading.Thread):
 			socket_news = self.socket.recv(4096)
 			if socket_news != "":
 				locked_print(socket_news)
-			time.sleep(0.2)
 			
 	def quit(self):
 		self.running = False
