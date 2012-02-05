@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.6.3
+# this is ELECTRIP VERSION 1.7.0
 
 # Import von Modulen
 
@@ -8,17 +8,18 @@ import gtk
 import socket
 import Joystick.JoystickKonsole2 as joystick_konsole
 from Lok import Lok
+from Constants import *
 from LockedPrint import *
 import pango
 from glib import GError
 
 		
 class Fenster(gtk.Window):
-	def __init__(self, titel, config_fenster):
+	def __init__(self, config_fenster):
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 		config_fenster.control_window_is_alive = True
 		self.connect("delete-event", self.delete_event)
-		self.set_title(titel)
+		self.set_title("ELECTRIP " + ELECTRIP_VERSION + " Steuerung - " + str(config_fenster.grundbox.verzeichnis))
 		self.config_fenster = config_fenster
 		self.is_fullscreen = False
 		
@@ -26,16 +27,11 @@ class Fenster(gtk.Window):
 		loks = speicher_dict["Loks"]
 		server_dict = speicher_dict["Server"]
 		joy_dict = speicher_dict["Joystick"]
-				
-		for lok in loks:
-				i = 0
-				for funktion in lok.funktionen:
-					funktion["Nr"] = i
-					i += 1
+		
 		try:
 			self.socket_init(server_dict["Host"], int(server_dict["Port"]), loks)
 			self.scrolled_window = ScrolledWindow(self.socket, loks, self) # ScrolledWindow und darin HBox für Regler erzeugen
-			self.notstop_button = Notstopbutton(self.socket) # HBox für Notstop erzeugen
+			self.nothalt_button = Nothaltbutton(self.socket) # HBox für Notstop erzeugen
 			self.konfiguration_button = KonfigurationButton(self, self.config_fenster)
 			self.fullscreen_button = FullscreenButton(self)
 			
@@ -46,10 +42,10 @@ class Fenster(gtk.Window):
 			self.grundbox = gtk.VBox() # Grundbox erzeugen
 			self.grundbox.pack_start(self.hbox_oben, False, False)
 			self.grundbox.pack_start(self.scrolled_window, True, True)
-			self.grundbox.pack_start(self.notstop_button, False, False)
+			self.grundbox.pack_start(self.nothalt_button, False, False)
 			self.add(self.grundbox)
 			
-			self.joystick_konsole = joystick_konsole.JoystickKonsole(loks, self.scrolled_window.hbox_mitte.regler, self.notstop_button, joy_dict)
+			self.joystick_konsole = joystick_konsole.JoystickKonsole(loks, self.scrolled_window.hbox_mitte.regler, self.nothalt_button, joy_dict)
 			self.maximize()
 			self.show_all()			
 			
@@ -114,60 +110,6 @@ class Fenster(gtk.Window):
 		self.socket_thread = SocketRecvThread(self.socket) # Nach dem Handshake und Lok-Init wird der Receive in einen separaten Thread verlegt -> keine GUI-Blockierungen möglich
 		self.socket_thread.start()
 
-class ScrolledWindow(gtk.ScrolledWindow):
-	def __init__(self, socket, loks, fenster):
-		gtk.ScrolledWindow.__init__(self)
-		self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-		self.hbox_mitte = HBoxMitte(socket, loks, fenster, self)
-		self.add_with_viewport(self.hbox_mitte)
-		locked_print("ScrolledWindow original:", self)
-		
-class HBoxMitte(gtk.HBox):
-	def __init__(self, socket, loks, fenster, scrolled_window):
-		gtk.HBox.__init__(self)
-		self.regler = []
-		for i in range(len(loks)): # Alle Regler hinzufügen
-			self.regler.append(Regler(socket, loks[i], scrolled_window))
-			self.pack_start(self.regler[i])
-		self.connect("realize", self.realized, fenster, loks)
-				
-	def realized(self, hbox, fenster, loks):
-		width, height = self.size_request()
-		fenster.resize(width + 100, height + 100)
-		
-		search_pending = True
-		max_funktionsbuttons = 0
-		for regler in self.regler:
-			if len(regler.lok.funktionen) > max_funktionsbuttons:
-				max_funktionsbuttons = len(regler.lok.funktionen)
-				if search_pending:
-					button_width, button_height = regler.funktionsbox.buttons[0].size_request()
-					search_pending = False
-		for regler in self.regler:
-			regler.funktionsbox.set_size_request(-1, max_funktionsbuttons * button_height)
-
-class Regler(gtk.VBox):
-	def __init__(self, socket, lok, scrolled_window):
-		gtk.VBox.__init__(self)
-		self.lok = lok
-		self.joystick = None
-		self.lokbild = Lokbild(lok.bild)
-		self.geschwindigkeitsregler = Geschwindigkeitsregler(lok, socket)
-		self.lokschild = Lokschild(lok)
-		self.richtungswender = Richtungswender(lok, socket, self.geschwindigkeitsregler)
-		self.funktionsbox = Funktionsbox(lok, lok.funktionen, socket)
-		self.scrolled_window = scrolled_window
-		
-		self.pack_start(self.lokbild, False, False)
-		self.pack_start(self.geschwindigkeitsregler, True, True)
-		self.pack_start(self.lokschild, False, False)
-		self.pack_start(self.richtungswender, False, False)
-		self.pack_start(self.funktionsbox, False, False, 10)
-		
-	def set_focus(self): # Regler im ScrolledWindow sichtbar machen
-		adjust = self.scrolled_window.get_hadjustment()
-		adjust.clamp_page(self.allocation.x, self.allocation.x + self.allocation.width)
-
 class KonfigurationButton(gtk.ToggleButton):
 	def __init__(self, fenster, config_fenster):
 		gtk.ToggleButton.__init__(self, "Konfiguration")
@@ -208,7 +150,71 @@ class FullscreenButton(gtk.ToggleButton):
 			self.toggled()
 			fenster.fullscreen()
 			fenster.is_fullscreen = True
+		
+class ScrolledWindow(gtk.ScrolledWindow):
+	def __init__(self, socket, loks, fenster):
+		gtk.ScrolledWindow.__init__(self)
+		self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		self.hbox_mitte = HBoxMitte(socket, loks, fenster, self)
+		self.add_with_viewport(self.hbox_mitte)
+		
+class HBoxMitte(gtk.HBox):
+	def __init__(self, socket, loks, fenster, scrolled_window):
+		gtk.HBox.__init__(self)
+		self.regler = []
+		self.socket = socket
+		for i in range(len(loks)): # Alle Regler hinzufügen
+			self.regler.append(Regler(socket, loks[i], scrolled_window))
+			self.pack_start(self.regler[i])
+		self.connect("realize", self.realized, fenster)
+				
+	def realized(self, hbox, fenster):
+		width, height = self.size_request()
+		fenster.resize(width + 100, height + 100)
+		
+		max_funktionsbuttons = 0
+		search_pending = True # Suche nach einem Funktionsbutton um Höhe zu ermitteln
+		for regler in self.regler:
+			regler.hbox = HBoxFunktionen(regler.lok, self.socket)
+			regler.hbox.show_all()
+			regler.pack_start(regler.hbox, False, False, 10)
+			if regler.hbox.max_anzahl_buttons > max_funktionsbuttons: # finde spalte mit den meisten buttons (mit der bedingung geht einher, dass regler.hbox mindestens einen Funktionsbutton besitzt)
+				max_funktionsbuttons = regler.hbox.max_anzahl_buttons
+				if search_pending:
+					button_width, button_height = regler.hbox.buttons[0].size_request()
+					search_pending = False
+					
+		for regler in self.regler:
+			if len(regler.hbox.boxen) > 0:	
+				for box in regler.hbox.boxen:
+					box.set_size_request(-1, button_height * max_funktionsbuttons)
+			else:
+				regler.hbox.set_size_request(-1, button_height * max_funktionsbuttons)
 			
+
+class Regler(gtk.VBox):
+	def __init__(self, socket, lok, scrolled_window):
+		gtk.VBox.__init__(self)
+		self.lok = lok
+		self.joystick = None
+		self.lokbild = Lokbild(lok.bild)
+		self.geschwindigkeitsregler = Geschwindigkeitsregler(lok, socket)
+		self.lokschild = Lokschild(lok)
+		self.richtungswender = Richtungswender(lok, socket, self.geschwindigkeitsregler)
+		self.gamepad_bild = gtk.Image()
+		self.gamepad_bild.set_size_request(110, 50)
+		self.scrolled_window = scrolled_window
+		
+		self.pack_start(self.lokbild, False, False)
+		self.pack_start(self.geschwindigkeitsregler, True, True)
+		self.pack_start(self.lokschild, False, False)
+		self.pack_start(self.gamepad_bild, False, False)
+		self.pack_start(self.richtungswender, False, False)
+		
+	def set_focus(self): # Regler im ScrolledWindow sichtbar machen
+		adjust = self.scrolled_window.get_hadjustment()
+		adjust.clamp_page(self.allocation.x, self.allocation.x + self.allocation.width)
+	
 class Lokbild(gtk.Image):
 	def __init__(self, pfad):
 		gtk.Image.__init__(self)
@@ -224,9 +230,6 @@ class Lokbild(gtk.Image):
 				self.set_from_stock(gtk.STOCK_MISSING_IMAGE, gtk.ICON_SIZE_BUTTON)
 				locked_print("Dateipfad" + pfad + "für Lokbild ist ungültig.")
 
-	def aendern(self, pfad):
-		self.set_from_file(pfad)
-
 class Geschwindigkeitsregler(gtk.VScale):
 	def __init__(self, lok, socket):
 		self.fahrstufen = gtk.Adjustment(0, 0, lok.fahrstufen, 1, 0, 0)
@@ -238,8 +241,8 @@ class Geschwindigkeitsregler(gtk.VScale):
 
 	def geschw_aenderung(self, scale, lok, socket):
 		geschw_aktuell = self.get_value()
-		locked_print("Lok", lok.name, "fährt jetzt", lok.geschwindigkeit, ", das entspricht", int(lok.geschwindigkeit), "Fahrstufen.")
 		lok.geschwindigkeit = geschw_aktuell
+		locked_print("Lok", lok.name, "fährt jetzt", lok.geschwindigkeit, ", das entspricht", int(lok.geschwindigkeit), "Fahrstufen.")
 		if int(lok.geschwindigkeit) != lok.letzte_gesendete_geschwindigkeit:
 			lok.an_server_senden(socket)
 
@@ -249,13 +252,12 @@ class Lokschild(gtk.Label):
 		gtk.Label.__init__(self, self.text)
 		self.set_ellipsize(pango.ELLIPSIZE_END)
 	
-	def set_color(self, color):
-		markup = "<span foreground='" + color + "'>" + "<b>" + self.text + "</b>" + "</span>"
-		self.set_markup(markup)
-	
-	def remove_color(self):
-		self.set_markup(self.text)
-	
+	def set_bold(self, bold):
+		if bold:
+			self.set_markup("<b>" + self.text + "</b>")
+		else:
+			self.set_markup(self.text)
+
 class Richtungswender(gtk.Button):
 	def __init__(self, lok, socket, scale):
 		gtk.Button.__init__(self)
@@ -305,26 +307,59 @@ class Funktionsbutton(gtk.ToggleButton):
 			locked_print("Lok", lok.name, "hat die Funktion", self.text, "ausgeschaltet.")
 			lok.an_server_senden(socket)
 		self.toggled()
-
-class Funktionsbox(gtk.VButtonBox):
-	def __init__(self, lok,funktionen, socket):
-		gtk.VButtonBox.__init__(self)
-		self.set_layout(gtk.BUTTONBOX_START)
+			
+class HBoxFunktionen(gtk.HBox):
+	def __init__(self, lok, socket):
+		gtk.HBox.__init__(self)
+		self.boxen = []
 		self.buttons = []
-		for funktion in lok.funktionen:
-			neuer_funktionsbutton = Funktionsbutton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket)
-			self.buttons.append(neuer_funktionsbutton)
-			self.pack_start(neuer_funktionsbutton)
+		self.max_anzahl_buttons = 0
+		
+		if len(lok.funktionen) > 0:
+			for funktion in lok.funktionen: # erzeuge funktionsbuttons
+				neuer_funktionsbutton = Funktionsbutton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket)
+				self.buttons.append(neuer_funktionsbutton)
+			
+			anzahl_boxen, rest_boxen = divmod(len(lok.funktionen), CONTROL_NUMBER_FUNCTION_BUTTONS) # ermittle, wie viele boxen erzeugt werden müssen
+			if rest_boxen > 0:
+				anzahl_boxen += 1
+			buttons_pro_box, rest_buttons = divmod(len(lok.funktionen), anzahl_boxen) # ermittle, wie viele buttons in eine box kommen, wenn sie gleichmäßig verteilt werden sollen
+			
+			zu_packende_buttons = len(lok.funktionen)
 
-class Notstopbutton(gtk.Button):
+			for box_nr in range(int(anzahl_boxen)):
+				box = gtk.VButtonBox()
+				box.set_layout(gtk.BUTTONBOX_START)
+				
+				if zu_packende_buttons > buttons_pro_box:
+					pack_anzahl = buttons_pro_box
+				else:
+					pack_anzahl = zu_packende_buttons
+				
+				if rest_buttons > 0:
+					pack_anzahl += 1
+					rest_buttons -= 1
+				
+				for i in range(pack_anzahl):
+					box.pack_start(self.buttons[len(lok.funktionen)-zu_packende_buttons + i])					
+				
+				zu_packende_buttons -= pack_anzahl
+				
+				if pack_anzahl > self.max_anzahl_buttons:
+					self.max_anzahl_buttons = pack_anzahl
+					
+				self.boxen.append(box)
+				self.pack_start(box)
+
+class Nothaltbutton(gtk.Button):
 	def __init__(self, socket):
-		gtk.Button.__init__(self, "Notstop")
+		gtk.Button.__init__(self, "Nothalt")
 		self.set_size_request(-1 , 65)
 		self.socket = socket
 		self.strom_an = False
-		self.rot = gtk.gdk.Color(60000, 30000, 30000)
-		self.hellgrau = gtk.gdk.Color(45600, 45600, 45600)
-		self.dunkelgrau = gtk.gdk.Color(20500, 20500, 20500)
+		self.rot = gtk.gdk.Color(*CONTROL_EMERGENCY_COLOR_RED)
+		self.hellgrau = gtk.gdk.Color(*CONTROL_EMERGENCY_COLOR_GREY)
+		self.dunkelgrau = gtk.gdk.Color(*CONTROL_EMERGENCY_COLOR_DARK_GREY)
 		self.child_label = self.get_child()
 		self.connect("clicked", self.set_strom)
 		self.set_strom()

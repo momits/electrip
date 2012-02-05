@@ -19,7 +19,7 @@ class Lok():
 		self.anzahl_funktionen = 0
 		for funktion in self.funktionen:
 			if funktion["SendeNr"] + 1 > self.anzahl_funktionen:
-				self.anzahl_funktionen = funktion["SendeNr"] + 1
+				self.anzahl_funktionen = funktion["SendeNr"] + 1 # Ermittle höchste SendeNr, für SRCP-Befehle
 
 	def an_server_senden(self, socket):
 		self.letzte_gesendete_geschwindigkeit = int(self.geschwindigkeit)
