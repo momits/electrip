@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 1.7.0
+# -*- coding: utf-8 -*-
+# this is ELECTRIP VERSION 2.0.0
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
@@ -10,20 +10,20 @@ path.append(package_path) # füge den pfad zu sys.path hinzu, damit relative Imp
 
 # Import von Modulen
 
+from gi.repository import GLib, Gtk, Pango, GdkPixbuf
 import cPickle as pickle
-import glib
-import gtk
 from Lok import Lok
 from Constants import *
 import SaveAndLoad
 import ELECTRIP_Control
 from LockedPrint import locked_print
-import pango
 
-class Fenster(gtk.Window):
+class Fenster(Gtk.Window):
 	def __init__(self):
-		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
+		super(Fenster, self).__init__() #Gtk.WindowType.TOPLEVEL
 		self.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration")
+		icon_list = [GdkPixbuf.Pixbuf.new_from_file(path) for path in ICON_PATH_LIST]
+		self.set_icon_list(icon_list)
 		self.connect("delete-event", self.delete_event)
 		self.control_window_is_alive = False # Zu Beginn gibt es kein aktives Control-Window
 		if len(argv) > 2 and (argv[1] == "-f" or argv[1] == "--file"):
@@ -43,42 +43,42 @@ class Fenster(gtk.Window):
 		
 	def delete_event(self, window, event):
 		if self.grundbox.has_unsaved_changes:
-			dialog = gtk.MessageDialog(self, 0, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Die Datei besitzt, ungespeicherte Änderungen.\n Wollen Sie diese speichern?")
+			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Die Datei besitzt, ungespeicherte Änderungen.\n Wollen Sie diese speichern?")
 			response = dialog.run()
 			dialog.destroy()
-			if response == gtk.RESPONSE_YES and self.grundbox.verzeichnis == None:
+			if response == Gtk.ResponseType.YES and self.grundbox.verzeichnis == None:
 				self.grundbox.buttonbox_oben.speichern_unter_button.speichern(None, self)
-			elif response == gtk.RESPONSE_YES:
+			elif response == Gtk.ResponseType.YES:
 				speicherdict = self.grundbox.get_speicherdict()
 				pickle.dump(speicherdict, open(self.grundbox.verzeichnis, 'wb'))
 		if self.control_window_is_alive:
 			self.steuerungsfenster.delete_event()
-		gtk.main_quit()
+		Gtk.main_quit()
 		locked_print("ELECTRIP wurde beendet.")
 	
 	def error(self, warnung):
-		fehlermeldung = gtk.MessageDialog(self, 0, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, warnung)
+		fehlermeldung = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE, warnung)
 		fehlermeldung.run()
 		fehlermeldung.destroy()
 
-class Grundbox(gtk.VBox):
+class Grundbox(Gtk.VBox):
 	def __init__(self, fenster, verzeichnis):
-		gtk.VBox.__init__(self, False, 0)
+		super(Grundbox, self).__init__()
 		self.has_unsaved_changes = False # Zu Beginn keine ungespeicherten Änderungen
 		self.verzeichnis = verzeichnis # Zu Beginn ist keine Datei geladen
 		
 		self.tabbed_box = TabbedBox(fenster, self.status_changed)
 		self.buttonbox_oben = ButtonboxOben(self.tabbed_box.lok_frame.scrolled_window.lok_treeview, self.tabbed_box.funktionen_frame.scrolled_window.funktion_treeview, self.tabbed_box.server_table, self.tabbed_box.joystick_table, fenster)
 		
-		self.pack_start(self.buttonbox_oben, False)
-		self.pack_start(self.tabbed_box)
+		self.pack_start(self.buttonbox_oben, False, False, 0)
+		self.pack_start(self.tabbed_box, True, True, 0)
 		
 	def status_changed(self, widget, unsaved_changes):
 		if unsaved_changes and not self.has_unsaved_changes: # wenn status gewechselt hat
 			self.has_unsaved_changes = True
 			if self.verzeichnis != None:
 				self.buttonbox_oben.speicherbutton.set_sensitive(True)
-			locked_print("Widget '" + str(widget) + "' meldet ungespeicherte Änderungen.")
+			locked_print("Widget '" + unicode(widget) + u"' meldet ungespeicherte Änderungen.")
 		elif not unsaved_changes and self.has_unsaved_changes:
 			self.has_unsaved_changes = False
 			self.buttonbox_oben.speicherbutton.set_sensitive(False)
@@ -97,9 +97,9 @@ class Grundbox(gtk.VBox):
 			nummer = 0
 			for eigenschaft in row:
 				# dafür sorgen dass die Fahrtrichtung in boolean konvertiert wird:
-				if eigenschaft == 'Vorwärts':
+				if eigenschaft == u'Vorwärts':
 					eigenschaft = True
-				elif eigenschaft == 'Rückwärts':
+				elif eigenschaft == u'Rückwärts':
 					eigenschaft = False
 				lok.append(eigenschaft)
 				nummer += 1
@@ -138,7 +138,7 @@ class Grundbox(gtk.VBox):
 		try:
 			server["Port"] = int(server["Port"])
 		except ValueError:
-			locked_print("Server-Parameter Port ist nicht gültig.")
+			locked_print(u"Server-Parameter Port ist nicht gültig.")
 			server["Port"] = "" # Setze Server-Port auf leer, weil Angabe unkorrekt
 			
 		# 3. Joystickdict der Form {"Notstop": notstopbutton, "Richtungswender": wendebutton, "Achse": joyachse} erzeugen
@@ -151,7 +151,7 @@ class Grundbox(gtk.VBox):
 				wert = int(wert)
 				joystick[parameter] = wert
 			except ValueError:
-				locked_print("Joystick-Parameter", parameter, "ist nicht gültig.")
+				locked_print("Joystick-Parameter", parameter, u"ist nicht gültig.")
 				joystick[parameter] = "" # Setze Parameter auf leer, weil Angabe unkorrekt
 			i += 1
 		
@@ -159,20 +159,20 @@ class Grundbox(gtk.VBox):
 		speicher_dict = {"Loks": loks, "Server": server, "Joystick": joystick}
 		return speicher_dict
 
-class StockBildButton(gtk.Button):
+class StockBildButton(Gtk.Button):
 	def __init__(self, label, stock):
-		gtk.Button.__init__(self)
-		icon = gtk.Image()
-		icon.set_from_stock(stock, gtk.ICON_SIZE_BUTTON)
-		label = gtk.Label(label)
-		hbox = gtk.HBox(False, 5)
-		hbox.pack_start(label)
-		hbox.pack_start(icon)
+		super(StockBildButton, self).__init__()
+		icon = Gtk.Image()
+		icon.set_from_stock(stock, Gtk.IconSize.BUTTON)
+		label = Gtk.Label(label=label)
+		hbox = Gtk.HBox(False, 5)
+		hbox.pack_start(label, True, True, 0)
+		hbox.pack_start(icon, True, True, 0)
 		self.add(hbox)
 
 class Ladebutton(StockBildButton):
 	def __init__(self, lok_treeview, funktions_treeview, server_table, joystick_table, fenster):
-		StockBildButton.__init__(self, "Laden", gtk.STOCK_OPEN)
+		StockBildButton.__init__(self, "Laden", Gtk.STOCK_OPEN)
 		self.lok_treeview = lok_treeview
 		self.funktions_treeview = funktions_treeview
 		self.server_table = server_table
@@ -188,14 +188,13 @@ class Ladebutton(StockBildButton):
 		except IOError:
 			locked_print("Bisher keine Standardeinstellungen gespeichert.")
 		response = file_chooser_dialog.run()
-		if response == gtk.RESPONSE_OK:
+		if response == Gtk.ResponseType.OK:
 			verzeichnis = file_chooser_dialog.get_filename()
 			self.laden(verzeichnis, fenster)
 			fenster.show_all()
-		elif response == gtk.RESPONSE_CANCEL:
+		elif response == Gtk.ResponseType.CANCEL:
 			locked_print('Laden abgebrochen.')
 		file_chooser_dialog.destroy()
-		print
 		
 	def laden(self, verzeichnis, fenster):
 		try:
@@ -213,16 +212,16 @@ class Ladebutton(StockBildButton):
 			locked_print("Einstellungen wurden aus " + verzeichnis + " geladen.")
 			fenster.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration - " + verzeichnis)
 			return True
-		except pickle.UnpicklingError:
-			fenster.error("Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
-			return False
 		except IOError:
-			fenster.error("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
+			fenster.error(u"Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
+			return False
+		except:
+			fenster.error(u"Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
 			return False
 
 class SpeichernUnterButton(StockBildButton):
 	def __init__(self, fenster):
-		StockBildButton.__init__(self, "Speichern unter", gtk.STOCK_SAVE_AS)
+		StockBildButton.__init__(self, "Speichern unter", Gtk.STOCK_SAVE_AS)
 		self.connect("clicked", self.speichern, fenster)
 		
 	def speichern(self, button, fenster):
@@ -236,7 +235,7 @@ class SpeichernUnterButton(StockBildButton):
 		else:
 			file_chooser_dialog.set_filename(fenster.grundbox.verzeichnis)
 		response = file_chooser_dialog.run()
-		if response == gtk.RESPONSE_OK:
+		if response == Gtk.ResponseType.OK:
 			verzeichnis = file_chooser_dialog.get_filename()
 			speicherdict = fenster.grundbox.get_speicherdict()
 			if verzeichnis != "" and verzeichnis[len(verzeichnis)-4:len(verzeichnis)] != ".elc": # Wenn Dateiendung fehlt und ein Dateiname angegeben wurde, Endung anhängen
@@ -247,13 +246,13 @@ class SpeichernUnterButton(StockBildButton):
 			fenster.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration - " + verzeichnis)
 			fenster.grundbox.verzeichnis = verzeichnis
 			fenster.grundbox.status_changed(None, False)
-		elif response == gtk.RESPONSE_CANCEL:
+		elif response == Gtk.ResponseType.CANCEL:
 			locked_print('Speichern abgebrochen.')
 		file_chooser_dialog.destroy()
 
 class SpeicherButton(StockBildButton):
 	def __init__(self, fenster):
-		StockBildButton.__init__(self, "Speichern", gtk.STOCK_SAVE)
+		StockBildButton.__init__(self, "Speichern", Gtk.STOCK_SAVE)
 		self.connect("clicked", self.speichern, fenster)
 		self.set_sensitive(False)
 		
@@ -264,7 +263,7 @@ class SpeicherButton(StockBildButton):
 
 class ElectripLadebutton(StockBildButton):
 	def __init__(self, fenster):
-		StockBildButton.__init__(self, "In ELECTRIP-Steuerung laden", gtk.STOCK_EXECUTE)
+		StockBildButton.__init__(self, "In ELECTRIP-Steuerung laden", Gtk.STOCK_EXECUTE)
 		self.connect("clicked", self.in_electrip_laden, fenster)
 		fenster.steuerungsfenster = None
 	
@@ -274,44 +273,44 @@ class ElectripLadebutton(StockBildButton):
 			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
 		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster(fenster)
 
-class ButtonboxOben(gtk.HBox):
+class ButtonboxOben(Gtk.HBox):
 	def __init__(self, lok_treeview, funktion_treeview, server_table, joystick_table, fenster):
-		gtk.HBox.__init__(self, False)
+		super(ButtonboxOben, self).__init__()
 		self.ladebutton = Ladebutton(lok_treeview, funktion_treeview, server_table, joystick_table, fenster)
 		self.speichern_unter_button = SpeichernUnterButton(fenster)
 		self.speicherbutton = SpeicherButton(fenster)
 		self.electrip_ladebutton = ElectripLadebutton(fenster)
 
-		self.pack_start(self.ladebutton, False)
-		self.pack_start(self.speichern_unter_button, False)
-		self.pack_start(self.speicherbutton, False)
-		self.pack_start(self.electrip_ladebutton, False)
+		self.pack_start(self.ladebutton, False, False, 0)
+		self.pack_start(self.speichern_unter_button, False, False, 0)
+		self.pack_start(self.speicherbutton, False, False, 0)
+		self.pack_start(self.electrip_ladebutton, False, False, 0)
 
-class NeueLokButton(gtk.Button):
+class NeueLokButton(Gtk.Button):
 	def __init__(self, lok_treeview, funktion_treeview, save_status_method):
-		gtk.Button.__init__(self, "Neue Lok")
+		super(NeueLokButton, self).__init__(self, "Neue Lok")
 		self.connect("clicked", self.neue_lok, lok_treeview, funktion_treeview, save_status_method)
 		
 	def neue_lok(self, button, lok_treeview, funktion_treeview, save_status_method):
 		path = lok_treeview.get_cursor()[0]
 		if path == None:		
-			funktion_treeview.funktionslisten.append(gtk.ListStore(*CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES))
+			funktion_treeview.funktionslisten.append(Gtk.ListStore(*CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES))
 			nr = len(lok_treeview.liste)
 			werte = CONFIG_LOCO_STANDARD_VALUES
 			werte[0] = nr
 			lok_treeview.liste.append(werte)
 		else: # Wenn eine Zeile ausgewählt, dann füge Lok unterhalb dieser Zeile ein
 			zeile = lok_treeview.liste.get_iter(path)
-			zeile_nr = path[0]
+			zeile_nr = path.get_indices()[0]
 			neue_zeile = lok_treeview.liste.insert_after(zeile, CONFIG_LOCO_STANDARD_VALUES) # Nach der ausgewählten Zeile eine neue Zeile mit Standardwerten einfügen
-			funktion_treeview.funktionslisten.insert(zeile_nr + 1, gtk.ListStore(*CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES)) # In der Liste der Funktionen-Liststores einen neuen Liststore einfügen
+			funktion_treeview.funktionslisten.insert(zeile_nr + 1, Gtk.ListStore(*CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES)) # In der Liste der Funktionen-Liststores einen neuen Liststore einfügen
 			lok_treeview.nummerieren() # Lok-ID's in die richtige Reihenfolge bringen
-			lok_treeview.set_cursor(lok_treeview.liste.get_path(neue_zeile))
+			lok_treeview.set_cursor(lok_treeview.liste.get_path(neue_zeile), None, False)
 		save_status_method("NeueLokButton", True)
 
-class LokLoeschenButton(gtk.Button):
+class LokLoeschenButton(Gtk.Button):
 	def __init__(self, lok_treeview, funktion_treeview, save_status_method):
-		gtk.Button.__init__(self, "Lok löschen")
+		super(LokLoeschenButton, self).__init__("Lok löschen")
 		self.connect("clicked", self.lok_loeschen, lok_treeview, funktion_treeview, save_status_method)
 		
 	def lok_loeschen(self, button, lok_treeview, funktion_treeview, save_status_method):
@@ -325,15 +324,15 @@ class LokLoeschenButton(gtk.Button):
 			lok_treeview.liste.remove(zeile) # Zeile im Liststore löschen
 			lok_treeview.nummerieren()
 			
-			lok_treeview.set_cursor(path) # wähle selbe zeile wieder aus, damit viele loks auf einmal gelöscht werden können
+			lok_treeview.set_cursor(path, None, False) # wähle selbe zeile wieder aus, damit viele loks auf einmal gelöscht werden können
 				
 			save_status_method("LokLoeschenButton", True)
 		except TypeError:
 			locked_print("Keine Zeile ausgewählt.")
 
-class NeueFunktionButton(gtk.Button):
+class NeueFunktionButton(Gtk.Button):
 	def __init__(self, funktion_treeview, save_status_method):
-		gtk.Button.__init__(self, "Neue Funktion")
+		super(NeueFunktionButton, self).__init__("Neue Funktion")
 		self.connect("clicked", self.neue_funktion, funktion_treeview, save_status_method)
 		
 	def neue_funktion(self, button, funktion_treeview, save_status_method):
@@ -347,9 +346,9 @@ class NeueFunktionButton(gtk.Button):
 		except TypeError:
 			locked_print("Keine Lok ausgewählt.")
 			
-class FunktionLoeschenButton(gtk.Button):
+class FunktionLoeschenButton(Gtk.Button):
 	def __init__(self, funktion_treeview, save_status_method):
-		gtk.Button.__init__(self, "Funktion löschen")
+		super(FunktionLoeschenButton, self).__init__("Funktion löschen")
 		self.connect("clicked", self.funktion_loeschen, funktion_treeview, save_status_method)
 		
 	def funktion_loeschen(self, button, funktion_treeview, save_status_method):
@@ -361,19 +360,19 @@ class FunktionLoeschenButton(gtk.Button):
 			funktion_treeview.nummerieren()
 			save_status_method("FunktionLoeschenButton", True)
 			
-class ArrowButton(gtk.Button):
+class ArrowButton(Gtk.Button):
 	def __init__(self, direction): # direction: True = nach oben
-		gtk.Button.__init__(self)
+		super(ArrowButton, self).__init__()
 		self.direction = direction
 		if direction:
-			self.set_image(gtk.Arrow(gtk.ARROW_UP, gtk.SHADOW_NONE))
+			self.set_image(Gtk.Arrow.new(Gtk.ArrowType.UP, Gtk.ShadowType.NONE))
 		else:
-			self.set_image(gtk.Arrow(gtk.ARROW_DOWN, gtk.SHADOW_NONE))
+			self.set_image(Gtk.Arrow.new(Gtk.ArrowType.DOWN, Gtk.ShadowType.NONE))
 
-class ButtonboxLokAktionen(gtk.HButtonBox):
+class ButtonboxLokAktionen(Gtk.HButtonBox):
 	def __init__(self, lok_treeview, funktion_treeview, save_status_method):
-		gtk.HButtonBox.__init__(self)
-		self.set_layout(gtk.BUTTONBOX_START)
+		super(ButtonboxLokAktionen, self).__init__()
+		self.set_layout(Gtk.ButtonBoxStyle.START)
 		self.neue_lok_button = NeueLokButton(lok_treeview, funktion_treeview, save_status_method)
 		self.lok_loeschen_button = LokLoeschenButton(lok_treeview, funktion_treeview, save_status_method)
 		self.move_up_button = ArrowButton(True)
@@ -390,14 +389,14 @@ class ButtonboxLokAktionen(gtk.HButtonBox):
 		try:
 			path, column = lok_treeview.get_cursor()
 			zeile = lok_treeview.liste.get_iter(path)
-			zeile_nr = path[0]
+			zeile_nr = path.get_indices()[0]
 			if button.direction and zeile_nr > 0: # wenn verschiebe-richtung nach oben und zeile nicht ganz oben steht
 				zeile_davor = lok_treeview.liste.iter_nth_child(None, zeile_nr -1)
 				funktion_treeview.funktionslisten.insert(zeile_nr-1, funktion_treeview.funktionslisten.pop(zeile_nr)) # Funktionen-Liststore an andere Stelle setzen
 				lok_treeview.liste.move_before(zeile, zeile_davor)
 				lok_treeview.liste.set_value(zeile_davor, 0, zeile_nr)
 				lok_treeview.liste.set_value(zeile, 0, zeile_nr-1)
-				lok_treeview.set_cursor(zeile_nr-1)
+				lok_treeview.set_cursor(Gtk.TreePath.new_from_string(str(zeile_nr-1)), None, False)
 				save_status_method("MoveUpButton - Lok", True)
 			elif not button.direction and zeile_nr < len(lok_treeview.liste)-1:
 				zeile_danach = lok_treeview.liste.iter_nth_child(None, zeile_nr + 1)
@@ -405,17 +404,17 @@ class ButtonboxLokAktionen(gtk.HButtonBox):
 				lok_treeview.liste.move_after(zeile, zeile_danach)
 				lok_treeview.liste.set_value(zeile_danach, 0, zeile_nr)
 				lok_treeview.liste.set_value(zeile, 0, zeile_nr+1)
-				lok_treeview.set_cursor(zeile_nr+1)
+				lok_treeview.set_cursor(Gtk.TreePath.new_from_string(str(zeile_nr+1)), None, False)
 				save_status_method("MoveDownButton - Lok", True)
 			else:
-				locked_print("Funktion befindet sich schon am Rand, kann nicht weiter verschoben werden.")
+				locked_print("Lok befindet sich schon am Rand, kann nicht weiter verschoben werden.")
 		except TypeError:
 			locked_print("Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
 
-class ButtonboxFunktionAktionen(gtk.HButtonBox):
+class ButtonboxFunktionAktionen(Gtk.HButtonBox):
 	def __init__(self, funktion_treeview, save_status_method):
-		gtk.HButtonBox.__init__(self)
-		self.set_layout(gtk.BUTTONBOX_START)
+		super(ButtonboxFunktionAktionen, self).__init__()
+		self.set_layout(Gtk.ButtonBoxStyle.START)
 		self.neue_funktion_button = NeueFunktionButton(funktion_treeview, save_status_method)
 		self.funktion_loeschen_button = FunktionLoeschenButton(funktion_treeview, save_status_method)
 		self.move_up_button = ArrowButton(True)
@@ -433,20 +432,20 @@ class ButtonboxFunktionAktionen(gtk.HButtonBox):
 			liste = funktion_treeview.get_model()
 			path, column = funktion_treeview.get_cursor()
 			zeile = liste.get_iter(path)
-			zeile_nr = path[0]
+			zeile_nr = path.get_indices()[0]
 			if button.direction and zeile_nr > 0: # wenn verschiebe-richtung nach oben und zeile nicht ganz oben steht
 				zeile_davor = liste.iter_nth_child(None, zeile_nr -1)
 				liste.move_before(zeile, zeile_davor)
 				liste.set_value(zeile_davor, 0, zeile_nr)
 				liste.set_value(zeile, 0, zeile_nr-1)
-				funktion_treeview.set_cursor(zeile_nr-1)
+				funktion_treeview.set_cursor(Gtk.TreePath.new_from_string(str(zeile_nr-1)), None, False)
 				save_status_method("MoveUpButton - Funktion", True)
 			elif not button.direction and zeile_nr < len(liste)-1:
 				zeile_danach = liste.iter_nth_child(None, zeile_nr + 1)
 				liste.move_after(zeile, zeile_danach)
 				liste.set_value(zeile_danach, 0, zeile_nr)
 				liste.set_value(zeile, 0, zeile_nr+1)
-				funktion_treeview.set_cursor(zeile_nr+1)
+				funktion_treeview.set_cursor(Gtk.TreePath.new_from_string(str(zeile_nr+1)), None, False)
 				save_status_method("MoveDownButton - Funktion", True)
 			else:
 				locked_print("Funktion befindet sich schon am Rand, kann nicht weiter verschoben werden.")
@@ -455,96 +454,97 @@ class ButtonboxFunktionAktionen(gtk.HButtonBox):
 		except TypeError:
 			locked_print("Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
 
-class Beschriftung(gtk.Label):
+class Beschriftung(Gtk.Label):
 	def __init__(self, text):
-		gtk.Label.__init__(self)
+		super(Beschriftung, self).__init__()
 		self.set_markup("<b>" + text + "</b>")
 
-class TopAlignment(gtk.Alignment):
+class TopAlignment(Gtk.Alignment):
 	def __init__(self, child):
-		gtk.Alignment.__init__(self, 0.0, 0.0, 0.0, 0.0)
+		super(TopAlignment, self).__init__()
+		self.set(0.0, 0.0, 0.0, 0.0)
 		self.add(child)
 
-class TabbedBox(gtk.Notebook):
+class TabbedBox(Gtk.Notebook):
 	def __init__(self, fenster, save_status_method):
-		gtk.Notebook.__init__(self)
-		self.hbox_lok = gtk.HBox()
+		super(TabbedBox, self).__init__()
+		self.hbox_lok = Gtk.HBox()
 		self.funktionen_frame = FunktionenFrame(save_status_method)
 		self.lok_frame = LokFrame(self.funktionen_frame.scrolled_window.funktion_treeview, fenster, save_status_method)
-		self.hbox_lok.pack_start(self.lok_frame)
-		self.hbox_lok.pack_start(self.funktionen_frame, False, False)
-		self.append_page(self.hbox_lok, gtk.Label("Lokomotiven"))
+		self.hbox_lok.pack_start(self.lok_frame, True, True, 0)
+		self.hbox_lok.pack_start(self.funktionen_frame, False, False, 0)
+		self.append_page(self.hbox_lok, Gtk.Label(label="Lokomotiven"))
 		
 		self.server_table = ServerTable(save_status_method)
-		self.append_page(TopAlignment(self.server_table), gtk.Label("SRCP-Server"))
+		self.append_page(TopAlignment(self.server_table), Gtk.Label(label="SRCP-Server"))
 		
 		self.joystick_table = JoystickTable(save_status_method)
-		self.append_page(TopAlignment(self.joystick_table), gtk.Label("Joystick / Gamepad"))
+		self.append_page(TopAlignment(self.joystick_table), Gtk.Label(label="Joystick / Gamepad"))
 		
 
-class FunktionenFrame(gtk.Frame):
+class FunktionenFrame(Gtk.Frame):
 	def __init__(self, save_status_method):
-		gtk.Frame.__init__(self)
+		super(FunktionenFrame, self).__init__()
 		self.set_border_width(10) # Schönheitsabstand
 		beschriftung = Beschriftung("Funktionen der Lokomotive")
 		self.set_label_widget(beschriftung)
-		self.set_shadow_type(gtk.SHADOW_OUT)
+		self.set_shadow_type(Gtk.ShadowType.OUT)
 				
 		self.scrolled_window = ScrolledWindowFunktionen(save_status_method)
 		self.buttonbox_funktionen = ButtonboxFunktionAktionen(self.scrolled_window.funktion_treeview, save_status_method)
 		
-		vbox = gtk.VBox()
-		vbox.pack_start(self.scrolled_window)
-		vbox.pack_start(self.buttonbox_funktionen, False, False)
+		vbox = Gtk.VBox()
+		vbox.pack_start(self.scrolled_window, True, True, 0)
+		vbox.pack_start(self.buttonbox_funktionen, False, False, 0)
 		self.add(vbox)
 
-class ScrolledWindowFunktionen(gtk.ScrolledWindow):
+class ScrolledWindowFunktionen(Gtk.ScrolledWindow):
 	def __init__(self, save_status_method):
-		gtk.ScrolledWindow.__init__(self)
-		self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		super(ScrolledWindowFunktionen, self).__init__()
+		self.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 		self.funktion_treeview = FunktionTreeView(save_status_method)
-		width, height = self.funktion_treeview.size_request()
-		self.set_size_request(width, height+40)
+		min_req, natural_req = self.funktion_treeview.get_preferred_size()
+		self.set_size_request(natural_req.width, natural_req.height+40)
 		self.add(self.funktion_treeview)
 		
-class LokFrame(gtk.Frame):
+class LokFrame(Gtk.Frame):
 	def __init__(self, funktion_treeview, fenster, save_status_method):
-		gtk.Frame.__init__(self)
+		super(LokFrame, self).__init__()
 		self.set_border_width(10) # Schönheitsabstand
 		beschriftung = Beschriftung("Allgemeine Eigenschaften")
 		self.set_label_widget(beschriftung)
-		self.set_shadow_type(gtk.SHADOW_OUT)
+		self.set_shadow_type(Gtk.ShadowType.OUT)
 		
 		self.scrolled_window = ScrolledWindowLok(funktion_treeview, fenster, save_status_method)
 		self.buttonbox_lok = ButtonboxLokAktionen(self.scrolled_window.lok_treeview, funktion_treeview, save_status_method)
 		
-		vbox = gtk.VBox()
-		vbox.pack_start(self.scrolled_window)
-		vbox.pack_start(self.buttonbox_lok, False, False)
+		vbox = Gtk.VBox()
+		vbox.pack_start(self.scrolled_window, True, True, 0)
+		vbox.pack_start(self.buttonbox_lok, False, False, 0)
 		self.add(vbox)
 
-class ScrolledWindowLok(gtk.ScrolledWindow):
+class ScrolledWindowLok(Gtk.ScrolledWindow):
 	def __init__(self, funktion_treeview, fenster, save_status_method):
-		gtk.ScrolledWindow.__init__(self)
-		self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		super(Gtk.ScrolledWindow, self).__init__()
+		self.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 		self.lok_treeview = LokTreeView(funktion_treeview, fenster, save_status_method)
-		width, height = self.lok_treeview.size_request()
-		self.set_size_request(width, height+40)
+		req_min, req_natural = self.lok_treeview.get_preferred_size()
+		self.set_size_request(req_natural.width, req_natural.height+40)
 		self.add(self.lok_treeview)
 		
-class ServerTable(gtk.Table):
+class ServerTable(Gtk.Table):
 	def __init__(self, save_status_method):
-		gtk.Table.__init__(self, len(CONFIG_SERVER_PARAMETERS), 3)
+		super(ServerTable, self).__init__(len(CONFIG_SERVER_PARAMETERS), 3)
 		self.set_col_spacings(10)
 		self.set_row_spacings(5)
 		self.set_border_width(6) # Schönheitsabstand
 		self.eingabefelder = []
 		y = 0
 		for parameter, definition in CONFIG_SERVER_PARAMETERS:
-			eingabefeld = gtk.Entry()
+			eingabefeld = Gtk.Entry()
 			eingabefeld.connect("changed", save_status_method, True)
 			parameter_label = Beschriftung(parameter)
-			definition_label = gtk.Label(definition)
+			definition_label = Gtk.Label(label=definition)
 			definition_label.set_alignment(0, 0.5)
 			self.attach(parameter_label, 0, 1, y, y+1)
 			self.attach(eingabefeld, 1, 2, y, y+1)
@@ -558,19 +558,19 @@ class ServerTable(gtk.Table):
 			self.eingabefelder[i].set_text(str(joydict[parameter]))
 			i += 1
 
-class JoystickTable(gtk.Table):
+class JoystickTable(Gtk.Table):
 	def __init__(self, save_status_method):
-		gtk.Table.__init__(self, len(CONFIG_JOYSTICK_PARAMETERS), 3)
+		super(JoystickTable, self).__init__(len(CONFIG_JOYSTICK_PARAMETERS), 3)
 		self.set_col_spacings(10)
 		self.set_row_spacings(5)
 		self.set_border_width(6) # Schönheitsabstand
 		self.eingabefelder = []
 		y = 0
 		for parameter, definition in CONFIG_JOYSTICK_PARAMETERS:
-			eingabefeld = gtk.Entry()
+			eingabefeld = Gtk.Entry()
 			eingabefeld.connect("changed", save_status_method, True)
 			parameter_label = Beschriftung(parameter)
-			definition_label = gtk.Label(definition)
+			definition_label = Gtk.Label(label=definition)
 			definition_label.set_alignment(0, 0.5)
 			self.attach(parameter_label, 0, 1, y, y+1)
 			self.attach(eingabefeld, 1, 2, y, y+1)
@@ -584,25 +584,25 @@ class JoystickTable(gtk.Table):
 			self.eingabefelder[i].set_text(str(joydict[parameter]))
 			i += 1
 
-class FunktionTreeView(gtk.TreeView):
+class FunktionTreeView(Gtk.TreeView):
 	def __init__(self, save_status_method):
 		self.funktionslisten = []
 		self.save_status_method = save_status_method
 		self.cell_renderers = []
 			
 		# CellRenderer für Textfelder erzeugen
-		textrenderer = gtk.CellRendererText()	
+		textrenderer = Gtk.CellRendererText()	
 		textrenderer.set_property("editable", True)
-		textrenderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+		textrenderer.set_property("ellipsize", Pango.EllipsizeMode.END)
 		textrenderer.connect("edited", self.neuer_wert)
 		self.cell_renderers.append(textrenderer)
 		# CellRenderer für nicht editierbare Textfelder erzeugen
-		textrenderer_not_editable = gtk.CellRendererText()
+		textrenderer_not_editable = Gtk.CellRendererText()
 		self.cell_renderers.append(textrenderer_not_editable)
 		
 		# CellRenderer für Combobox erzeugen
 		for i in range(2): # Liste mit CellRendererCombos auffüllen
-			comborenderer = gtk.CellRendererCombo()
+			comborenderer = Gtk.CellRendererCombo()
 			comborenderer.set_property("editable", True)
 			comborenderer.set_property("has-entry", False)
 			comborenderer.set_property("text-column", 0)
@@ -610,25 +610,25 @@ class FunktionTreeView(gtk.TreeView):
 			self.cell_renderers.append(comborenderer)
 		
 		# Comborenderer 0 aus ListStore für Wert füllen
-		combostore_wert = gtk.ListStore(gobject.TYPE_STRING)
+		combostore_wert = Gtk.ListStore(GObject.TYPE_STRING)
 		combostore_wert.append(["An"])
 		combostore_wert.append(["Aus"])
 		self.cell_renderers[2].set_property("model", combostore_wert)
 		
 		# Comborenderer 1 aus ListStore für Taster füllen
-		combostore_taster = gtk.ListStore(gobject.TYPE_STRING)
+		combostore_taster = Gtk.ListStore(GObject.TYPE_STRING)
 		combostore_taster.append(["Taster"])
 		combostore_taster.append(["Umschalter"])
 		self.cell_renderers[3].set_property("model", combostore_taster)		
 
-		gtk.TreeView.__init__(self)
+		super(FunktionTreeView, self).__init__()
 		
 		nr = 0
 		for column_name, column_tooltip, renderer_id in CONFIG_FUNCTION_COLUMN_NAMES_TOOLTIPS_RENDERERS:
-			label = gtk.Label(column_name)
+			label = Gtk.Label(label=column_name)
 			label.show()
 			label.set_tooltip_text(column_tooltip)
-			column = gtk.TreeViewColumn(None, self.cell_renderers[renderer_id], text = nr)
+			column = Gtk.TreeViewColumn(None, self.cell_renderers[renderer_id], text = nr)
 			column.set_widget(label)
 			column.set_resizable(True) # Spalten vergrößerbar / verkleinerbar machen
 			column.set_data("colnr", nr) # Versehe jede Spalte mit einer Nummer, zur leichten Identifizierung
@@ -639,7 +639,7 @@ class FunktionTreeView(gtk.TreeView):
 		del self.funktionslisten[:]
 		i = 0
 		for lok in loks:
-			self.funktionslisten.append(gtk.ListStore(*CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES))
+			self.funktionslisten.append(Gtk.ListStore(*CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES))
 			for funktion in lok.funktionen:
 					if funktion["Wert"]:
 						wert = "An"
@@ -671,7 +671,7 @@ class FunktionTreeView(gtk.TreeView):
 		else:
 			neuer_text = text
 		
-		if CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES[column_nr] == gobject.TYPE_INT:
+		if CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES[column_nr] == GObject.TYPE_INT:
 			try:
 				liste[path][column_nr] = int(neuer_text)
 			except ValueError:
@@ -680,27 +680,27 @@ class FunktionTreeView(gtk.TreeView):
 			liste[path][column_nr] = neuer_text
 		self.save_status_method("FunktionTreeView", True)
 
-class LokTreeView(gtk.TreeView):
+class LokTreeView(Gtk.TreeView):
 	def __init__(self, funktion_treeview, fenster, save_status_method):
-		self.liste = gtk.ListStore(*CONFIG_LOCO_TREEVIEW_COLUMN_TYPES)
+		self.liste = Gtk.ListStore(*CONFIG_LOCO_TREEVIEW_COLUMN_TYPES)
 		self.save_status_method = save_status_method
 		self.cell_renderers = [] # Liste, in der alle cellrenderer abegelegt werden
 		
 		# CellRenderer für Textfelder erzeugen
-		textrenderer = gtk.CellRendererText()
+		textrenderer = Gtk.CellRendererText()
 		textrenderer.set_property("editable", True)
-		textrenderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+		textrenderer.set_property("ellipsize", Pango.EllipsizeMode.END)
 		textrenderer.connect("edited", self.neuer_wert)
 		self.cell_renderers.append(textrenderer)
 		
-		textrenderer_not_editable = gtk.CellRendererText()
-		textrenderer_not_editable.set_property("ellipsize", pango.ELLIPSIZE_END)
+		textrenderer_not_editable = Gtk.CellRendererText()
+		textrenderer_not_editable.set_property("ellipsize", Pango.EllipsizeMode.END)
 		self.cell_renderers.append(textrenderer_not_editable)
 		
 		# CellRenderer-Liste für ComboBoxen erzeugen
 		#self.comborenderer = []
 		for i in range(3): # Liste mit CellRendererCombos auffüllen
-			comborenderer = gtk.CellRendererCombo()
+			comborenderer = Gtk.CellRendererCombo()
 			comborenderer.set_property("editable", True)
 			comborenderer.set_property("text-column", 0)
 			comborenderer.set_property("has-entry", False)
@@ -709,37 +709,37 @@ class LokTreeView(gtk.TreeView):
 		
 		# ComboRenderer aus kleinen ListStores füllen
 		# Combostore_Protokoll
-		combostore_protokoll = gtk.ListStore(gobject.TYPE_STRING)
+		combostore_protokoll = Gtk.ListStore(GObject.TYPE_STRING)
 		combostore_protokoll.append(["M 1"])
 		combostore_protokoll.append(["M 2"])
 		combostore_protokoll.append(["N 1"])
 		combostore_protokoll.append(["N 2"])
 		self.cell_renderers[2].set_property("model", combostore_protokoll)
 		# Combostore_Fahrstufen
-		combostore_fahrstufen = gtk.ListStore(gobject.TYPE_STRING) # Für CellRendererCombo muss Type String sein, sonst segfault!
+		combostore_fahrstufen = Gtk.ListStore(GObject.TYPE_INT) # Für CellRendererCombo muss Type String sein, sonst segfault!
 		combostore_fahrstufen.append([14])
 		combostore_fahrstufen.append([27])
 		combostore_fahrstufen.append([28])
 		combostore_fahrstufen.append([128])
 		self.cell_renderers[3].set_property("model", combostore_fahrstufen)
 		# Combostore_Fahrtrichtung
-		combostore_fahrtrichtung = gtk.ListStore(gobject.TYPE_STRING)
+		combostore_fahrtrichtung = Gtk.ListStore(GObject.TYPE_STRING)
 		combostore_fahrtrichtung.append(["Vorwärts"])
 		combostore_fahrtrichtung.append(["Rückwärts"])
 		self.cell_renderers[4].set_property("model", combostore_fahrtrichtung)
 		
 		# SortModel erstellen: Verbindung zwischen angezeigter und gespeicherter Datenreihenfolge
-		gtk.TreeView.__init__(self, self.liste)
+		super(LokTreeView, self).__init__(self.liste)
 		self.connect("cursor-changed", self.lok_auswahl, funktion_treeview)
 		self.connect("row-activated", self.bild_auswahl, fenster)
 		
 		# Spalten hinzufügen
 		nr = 0
 		for column_name, column_tooltip, renderer_id in CONFIG_LOCO_COLUMN_NAMES_TOOLTIPS_RENDERERS:
-			label = gtk.Label(column_name)
+			label = Gtk.Label(label=column_name)
 			label.show()
 			label.set_tooltip_text(column_tooltip)
-			column = gtk.TreeViewColumn(None, self.cell_renderers[renderer_id], text = nr)
+			column = Gtk.TreeViewColumn(None, self.cell_renderers[renderer_id], text = nr)
 			column.set_widget(label)
 			column.set_resizable(True) # Spalten vergrößerbar / verkleinerbar machen
 			column.set_data("colnr", nr) # Versehe jede Spalte mit einer Nummer, zur leichten Identifizierung
@@ -754,6 +754,8 @@ class LokTreeView(gtk.TreeView):
 				fahrtrichtung = "Vorwärts"
 			else:
 				fahrtrichtung = "Rückwärts"
+			if lok.bild == None: #########################################################################################################
+				lok.bild = "" # Kompatibilität mit altem Dateiformat
 			self.liste.append([lok.id, lok.name, lok.adresse, lok.protokoll, lok.fahrstufen, lok.beschleunigungszeit, fahrtrichtung, lok.bild])
 	
 	def nummerieren(self):
@@ -766,12 +768,12 @@ class LokTreeView(gtk.TreeView):
 		path, column = self.get_cursor()
 		column_nr = column.get_data("colnr") # Rufe zugewiesene Eigenschaft "colnr" auf (siehe oben -> 'set_data')
 
-		if CONFIG_LOCO_TREEVIEW_COLUMN_TYPES[column_nr] == gobject.TYPE_INT:
+		if CONFIG_LOCO_TREEVIEW_COLUMN_TYPES[column_nr] == GObject.TYPE_INT:
 			try:
 				self.liste[path][column_nr] = int(neuer_text)
 			except ValueError:
 				locked_print("Falsche Eingabe, Sie haben keinen Wert eingegeben, der in den Typ Integer umgewandelt werden kann.")
-		elif CONFIG_LOCO_TREEVIEW_COLUMN_TYPES[column_nr] == gobject.TYPE_FLOAT:
+		elif CONFIG_LOCO_TREEVIEW_COLUMN_TYPES[column_nr] == GObject.TYPE_FLOAT:
 			try:
 				self.liste[zeile][column_nr] = float(neuer_text.replace(",",".")) # Kommas zur Umwandlung String-->Float durch Punkte ersetzen
 			except ValueError:
@@ -785,7 +787,7 @@ class LokTreeView(gtk.TreeView):
 		if path == None:
 			funktion_treeview.set_model(None)
 		else:
-			zeile = path[0]
+			zeile = path.get_indices()[0]
 			funktion_treeview.set_model(funktion_treeview.funktionslisten[zeile]) # Zugehörige Funktionenliste auswählen
 			
 	def bild_auswahl(self, treeview, path, column, fenster):
@@ -793,15 +795,15 @@ class LokTreeView(gtk.TreeView):
 		if column_nr == CONFIG_PICTURE_COLUMN: # wenn bildspalte ausgewählt, starte filechooser-dialog
 			file_chooser_dialog = SaveAndLoad.BildLadenDialog(fenster)
 			response = file_chooser_dialog.run()
-			if response == gtk.RESPONSE_OK:
+			if response == Gtk.ResponseType.OK:
 				verzeichnis = file_chooser_dialog.get_filename()
 				self.liste.set_value(self.liste.get_iter(path), column_nr, verzeichnis)
-			elif response == gtk.RESPONSE_CANCEL:
+			elif response == Gtk.ResponseType.CANCEL:
 				locked_print('Laden abgebrochen.')
 			file_chooser_dialog.destroy()
 		fenster.grundbox.status_changed("LokTreeView", True)
 
 if __name__ == "__main__":
 	ELECTRIP = Fenster()
-	glib.threads_init() # Möglichkeit schaffen, socket_thread auszuführen
-	gtk.main()
+	GLib.threads_init() # Möglichkeit schaffen, socket_thread auszuführen
+	Gtk.main()

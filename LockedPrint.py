@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-# -*- coding: UTF 8 -*-
+# -*- coding: utf-8 -*-
 
 import threading
 import time
 
 def locked_print(*args):
-	strings = map(str, args)
+	strings = map(unicode, args)
 	string = " ".join(strings)
 	print_lock.acquire()
 	print string

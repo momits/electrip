@@ -2,10 +2,20 @@
 # -*- coding: utf-8 -*-
 # ELECTRIP - Umgebungskonstanten
 
-import gobject
+from gi.repository import GObject
 
-# 0. Version
-ELECTRIP_VERSION = "1.7.0"
+# 0. ----------- Allgemein -----------
+
+# 0.1. Version
+ELECTRIP_VERSION = "2.0.0"
+
+# 0.2. ICONS
+ICON_PATH_LIST = [
+"Icons/logo_icon_128.png",
+"Icons/logo_icon_64.png",
+"Icons/logo_icon_32.png",
+"Icons/logo_icon_16.png"
+]
 
 # ----------- 1. Konfiguration -----------
 
@@ -39,7 +49,7 @@ CONFIG_JOYSTICK_PARAMETERS = [
 ] # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
 
 # 1.2.4 FunktionTreeView
-CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES = [gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING] # Datentypen in den Spalten des FunktionTreeView
+CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES = [GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING] # Datentypen in den Spalten des FunktionTreeView
 
 CONFIG_LOCO_FUNCTION_STANDARD_VALUES = [0, "", 0, "An", 0, "Umschalter"] # Standardwerte für neu eingefügte Zeilen
 
@@ -53,11 +63,9 @@ CONFIG_FUNCTION_COLUMN_NAMES_TOOLTIPS_RENDERERS = [
 ]
 
 # 1.2.5 LokTreeView
-CONFIG_LOCO_TREEVIEW_COLUMN_TYPES = [gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_FLOAT, gobject.TYPE_STRING, gobject.TYPE_STRING] # Datentypen in den Spalten des LokTreeView
+CONFIG_LOCO_TREEVIEW_COLUMN_TYPES = [GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_DOUBLE, GObject.TYPE_STRING, GObject.TYPE_STRING] # Datentypen in den Spalten des LokTreeView
 
-CONFIG_LOCO_STANDARD_VALUES = [0, "", 0 , "M 1", 14, 3, "Vorwärts", ""] # Standardwerte für neu eingefügte Zeilen
-
-CONFIG_LOCO_COLUMN_WIDTH = 90 # Breite der Spalte mit Lokname im TreeView
+CONFIG_LOCO_STANDARD_VALUES = [0, "", 0, "M 1", 14, 3.0, "Vorwärts", ""] # Standardwerte für neu eingefügte Zeilen
 
 CONFIG_LOCO_COLUMN_NAMES_TOOLTIPS_RENDERERS = [
 ("Position", "Die Position der Lok im Steuerungsfenster\nvon links nach rechts", 1),
@@ -76,11 +84,11 @@ CONFIG_LOCO_COLUMN_NAMES_TOOLTIPS_RENDERERS = [
 CONTROL_NUMBER_FUNCTION_BUTTONS = 5 # Anzahl der Funktionen-Buttons in einer Spalte, wenn mehr wird eine neue Spalte angelegt
 
 # 2.2 Notstopbutton
-CONTROL_EMERGENCY_COLOR_RED = [60000, 30000, 30000] # RGB-Farben für Notstopbutton
+CONTROL_EMERGENCY_COLOR_RED = [60000, 30000, 30000, 1.0] # RGBA-Farben für Notstopbutton
 
-CONTROL_EMERGENCY_COLOR_GREY = [45600, 45600, 45600]
+CONTROL_EMERGENCY_COLOR_GREY = [45600, 45600, 45600, 1.0]
 
-CONTROL_EMERGENCY_COLOR_DARK_GREY = [20500, 20500, 20500]
+CONTROL_EMERGENCY_COLOR_DARK_GREY = [20500, 20500, 20500, 1.0]
 
 # ----------- 3. JoystickKonsole -----------
 JOYSTICK_SCROLL_ACTIVATE_TIME = 500 # Zeit die der Joystick-Rundblickschalter gedrückt werden muss bis gescrollt wird (in ms)

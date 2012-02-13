@@ -2,15 +2,13 @@
 # -*- coding: UTF-8 -*-
 
 from Constants import *
-from gtk.gdk import pixbuf_new_from_file
-import glib
+from gi.repository import GdkPixbuf, GLib
 from LockedPrint import locked_print
 try:
 	import pygame
 	from pygame.locals import * # Importiere Konstanten (JOYBUTTTONDOWN, ...) für kurze Namen
 except ImportError:
-	locked_print("PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
-
+	locked_print(u"PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
 import threading
 
 class JoystickKonsole():
@@ -26,7 +24,7 @@ class JoystickKonsole():
 			if not len(self.joysticks) == len(regler):
 				self.joysticks.append([pygame.joystick.Joystick(id), id, 0, None]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links), ID des Scroll-Threads] -> start_scrolling = True wenn joyhat 500 ms gedrückt wird
 			else:
-				locked_print("Joystick '" + pygame.joystick.Joystick(id).get_name() + "' wurde ignoriert, da ", pygame.joystick.get_count(), " Joysticks zuviel für ", len(regler), " Loks sind.")
+				locked_print("Joystick '" + pygame.joystick.Joystick(id).get_name() + "' wurde ignoriert, da ", pygame.joystick.get_count(), u" Joysticks zuviel für ", len(regler), " Loks sind.")
 		
 		locked_print("Erkannte Joysticks:", len(self.joysticks))
 		
@@ -37,27 +35,24 @@ class JoystickKonsole():
 			joystick.init() # Joystick initialisieren
 			locked_print(joystick.get_name())
 			locked_print("Anzahl Achsen:", joystick.get_numaxes())
-			locked_print("Anzahl Knöpfe:", joystick.get_numbuttons(), "\n")
+			locked_print(u"Anzahl Knöpfe:", joystick.get_numbuttons(), "\n")
 		
 		self.joy_thread = JoystickThread(self.joysticks, loks, regler, nothaltbutton, joy_dict["Notstop"], joy_dict["Richtungswender"], joy_dict["Fokus"])
 		self.joy_thread.start()
 		self.geschw_thread = GeschwindigkeitsThread(self.joysticks, loks, regler, joy_dict["Achse"])
-		self.geschw_thread_id = glib.timeout_add(100, self.geschw_thread.go)
+		self.geschw_thread_id = GObject.timeout_add(100, self.geschw_thread.go)
 		
 	
 	def quit(self):
 		locked_print("Stoppe Threads ...")
 		self.joy_thread.quit()
-		glib.source_remove(self.geschw_thread_id)
+		GObject.source_remove(self.geschw_thread_id)
 		pygame.event.post(pygame.event.Event(MOUSEBUTTONDOWN, {"pos": 0, "button": 0})) # Event posten, um joystick_thread zu beenden
 
 class JoystickThread(threading.Thread):
 	def __init__(self, joystickliste, loks, regler, nothaltbutton, joy_button_notstop, joy_button_richtungswender, joy_button_set_focus):
 		threading.Thread.__init__(self)
-		self.bildliste = []
-		for bild_nr in range(1,13):
-			pixbuf = pixbuf_new_from_file("Joystick/Bilder/" + str(bild_nr) + ".png")
-			self.bildliste.append(pixbuf)
+		self.bildliste = [GdkPixbuf.Pixbuf.new_from_file("Joystick/Pictures/" + str(bild_nr) + ".png") for bild_nr in range(1,13)]
 			
 		self.joysticks = joystickliste
 		if len(self.joysticks) == 1:
@@ -97,7 +92,7 @@ class JoystickThread(threading.Thread):
 				elif event.button == self.joy_button_set_focus:
 					glib.idle_add(self.regler[lokid].set_focus) # Lässt die Gtk-Hauptschleife die Funktion Regler.set_focus aufrufen, verhindert raise-conditions die zum crash führen können
 				elif not konfiguriert:  # Ist Button nicht in Lokfunktionen oder Spezialbuttons, ist er nicht konfiguriert
-					locked_print("Nicht konfigurierter Button wurde gedrückt.")
+					locked_print(u"Nicht konfigurierter Button wurde gedrückt.")
 					
 			elif event.type == JOYBUTTONUP:
 				lokid = self.joysticks[event.joy][1]
@@ -111,15 +106,15 @@ class JoystickThread(threading.Thread):
 				if richtung == 1 != self.joysticks[event.joy][2]:
 					self.scrollen(1, event.joy)
 					self.joysticks[event.joy][2] = 1 # Starte scroll-Prozess nach rechts wenn joyhat länger als 500 ms gedrückt wird
-					glib.timeout_add(JOYSTICK_SCROLL_ACTIVATE_TIME, self.set_auto_scroll, 1, event.joy)
+					GObject.timeout_add(JOYSTICK_SCROLL_ACTIVATE_TIME, self.set_auto_scroll, 1, event.joy)
 				elif richtung == -1 != self.joysticks[event.joy][2]:
 					self.scrollen(-1, event.joy)
 					self.joysticks[event.joy][2] = -1
-					glib.timeout_add(JOYSTICK_SCROLL_ACTIVATE_TIME, self.set_auto_scroll, -1, event.joy)
+					GObject.timeout_add(JOYSTICK_SCROLL_ACTIVATE_TIME, self.set_auto_scroll, -1, event.joy)
 				elif richtung == 0 != self.joysticks[event.joy][2]: # wenn joyhat losgelassen und noch gescrollt wird
 						self.joysticks[event.joy][2] = 0 # start_scrolling = 0 -> Scroll-Prozess wird nicht gestartet falls er noch nicht am Laufen ist
 						if self.joysticks[event.joy][3] != None:
-							is_stopped = glib.source_remove(self.joysticks[event.joy][3]) # Stoppe scroll-Prozess falls er läuft
+							is_stopped = GObject.source_remove(self.joysticks[event.joy][3]) # Stoppe scroll-Prozess falls er läuft
 							self.joysticks[event.joy][3] = None # Setze scroll-id auf None
 				
 		
@@ -154,7 +149,7 @@ class JoystickThread(threading.Thread):
 	
 	def set_auto_scroll(self, richtung, joystick): # wenn immer noch die gleiche joyhat-richtung gedrückt ist
 		if self.joysticks[joystick][2] == richtung and self.joysticks[joystick][3] == None: # verhindere raise-condition dass zwei scroll-threads gleichzeitig gestartet werden und nur einer gestoppt wird
-			self.joysticks[joystick][3] = glib.timeout_add(JOYSTICK_SCROLL_REPEAT_TIME, self.scrollen, richtung, joystick)
+			self.joysticks[joystick][3] = GObject.timeout_add(JOYSTICK_SCROLL_REPEAT_TIME, self.scrollen, richtung, joystick)
 		return False
 	
 	def quit(self):
