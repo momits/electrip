@@ -43,7 +43,7 @@ class Fenster(Gtk.Window):
 		
 	def delete_event(self, window, event):
 		if self.grundbox.has_unsaved_changes:
-			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Die Datei besitzt, ungespeicherte Änderungen.\n Wollen Sie diese speichern?")
+			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Die Datei besitzt ungespeicherte Änderungen.\n Wollen Sie diese speichern?")
 			response = dialog.run()
 			dialog.destroy()
 			if response == Gtk.ResponseType.YES and self.grundbox.verzeichnis == None:
