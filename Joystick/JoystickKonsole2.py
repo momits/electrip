@@ -83,14 +83,14 @@ class JoystickThread(threading.Thread):
 				konfiguriert = False
 				for funktion in self.loks[lokid].funktionen:
 					if event.button == funktion["Button"]:
-						glib.idle_add(self.regler[lokid].hbox.buttons[funktion["Nr"]].clicked)
+						GLib.idle_add(self.regler[lokid].hbox.buttons[funktion["Nr"]].clicked)
 						konfiguriert = True
 				if event.button == self.joy_button_richtungswender: # Gtk ist NICHT thread-safe, d.h. es können Probleme auftreten wenn von anderen threads Gtk-Objekte geändert werden
-					glib.idle_add(self.regler[lokid].richtungswender.clicked) # Deshalb: glib.idle_add(Funktion, Parameter1, ...) -> Gtk-Hauptschleife führt Funktion mit Parametern aus, wenn sie Zeit hat
+					GLib.idle_add(self.regler[lokid].richtungswender.clicked) # Deshalb: GLib.idle_add(Funktion, Parameter1, ...) -> Gtk-Hauptschleife führt Funktion mit Parametern aus, wenn sie Zeit hat
 				elif event.button == self.joy_button_notstop:
-					glib.idle_add(self.nothaltbutton.clicked)
+					GLib.idle_add(self.nothaltbutton.clicked)
 				elif event.button == self.joy_button_set_focus:
-					glib.idle_add(self.regler[lokid].set_focus) # Lässt die Gtk-Hauptschleife die Funktion Regler.set_focus aufrufen, verhindert raise-conditions die zum crash führen können
+					GLib.idle_add(self.regler[lokid].set_focus) # Lässt die Gtk-Hauptschleife die Funktion Regler.set_focus aufrufen, verhindert raise-conditions die zum crash führen können
 				elif not konfiguriert:  # Ist Button nicht in Lokfunktionen oder Spezialbuttons, ist er nicht konfiguriert
 					locked_print(u"Nicht konfigurierter Button wurde gedrückt.")
 					
@@ -98,7 +98,7 @@ class JoystickThread(threading.Thread):
 				lokid = self.joysticks[event.joy][1]
 				for funktion in self.loks[lokid].funktionen:
 					if event.button == funktion["Button"] and funktion["Taster"]:
-						glib.idle_add(self.regler[lokid].hbox.buttons[funktion["Nr"]].clicked)
+						GLib.idle_add(self.regler[lokid].hbox.buttons[funktion["Nr"]].clicked)
 						
 			elif event.type == JOYHATMOTION:
 				richtung = event.value[0]
@@ -119,14 +119,14 @@ class JoystickThread(threading.Thread):
 				
 		
 	def lok_wechseln(self, lokid, neue_lokid, joystick):
-		glib.idle_add(self.regler[lokid].gamepad_bild.clear)
-		glib.idle_add(self.regler[lokid].lokschild.set_bold, False)
+		GLib.idle_add(self.regler[lokid].gamepad_bild.clear)
+		GLib.idle_add(self.regler[lokid].lokschild.set_bold, False)
 		self.regler[lokid].joystick = None
-		glib.idle_add(self.regler[neue_lokid].gamepad_bild.set_from_pixbuf, self.bildliste[joystick])
-		glib.idle_add(self.regler[neue_lokid].lokschild.set_bold, True)
+		GLib.idle_add(self.regler[neue_lokid].gamepad_bild.set_from_pixbuf, self.bildliste[joystick])
+		GLib.idle_add(self.regler[neue_lokid].lokschild.set_bold, True)
 		self.regler[neue_lokid].joystick = self.joysticks[joystick][0]
 		if self.auto_focus: # Wenn nur ein Joystick, dann diesen fokussieren
-			glib.idle_add(self.regler[neue_lokid].set_focus) # Siehe oben
+			GLib.idle_add(self.regler[neue_lokid].set_focus) # Siehe oben
 		lokid = neue_lokid
 		self.joysticks[joystick][1] = lokid
 		

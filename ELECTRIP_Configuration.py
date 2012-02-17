@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.0.0
+# this is ELECTRIP VERSION 2.0.1
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
