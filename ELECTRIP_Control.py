@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.0.1
+# this is ELECTRIP VERSION 2.0.2
 
 # Import von Modulen
 
@@ -214,7 +214,8 @@ class Regler(Gtk.VBox):
 		
 	def set_focus(self): # Regler im ScrolledWindow sichtbar machen
 		adjust = self.scrolled_window.get_hadjustment()
-		adjust.clamp_page(self.allocation.x, self.allocation.x + self.allocation.width)
+		allocation = self.get_allocation()
+		adjust.clamp_page(allocation.x, allocation.x + allocation.width)
 	
 class Lokbild(Gtk.Image):
 	def __init__(self, pfad):
