@@ -97,9 +97,9 @@ class Grundbox(Gtk.VBox):
 			nummer = 0
 			for eigenschaft in row:
 				# dafür sorgen dass die Fahrtrichtung in boolean konvertiert wird:
-				if eigenschaft == u'Vorwärts':
+				if unicode(eigenschaft) == u'Vorwärts':
 					eigenschaft = True
-				elif eigenschaft == u'Rückwärts':
+				elif unicode(eigenschaft) == u'Rückwärts':
 					eigenschaft = False
 				lok.append(eigenschaft)
 				nummer += 1
@@ -328,7 +328,7 @@ class LokLoeschenButton(Gtk.Button):
 				
 			save_status_method("LokLoeschenButton", True)
 		except TypeError:
-			locked_print("Keine Zeile ausgewählt.")
+			locked_print(u"Keine Zeile ausgewählt.")
 
 class NeueFunktionButton(Gtk.Button):
 	def __init__(self, funktion_treeview, save_status_method):
@@ -344,7 +344,7 @@ class NeueFunktionButton(Gtk.Button):
 			funktionsliste.append(werte)
 			save_status_method("NeueFunktionButton", True)
 		except TypeError:
-			locked_print("Keine Lok ausgewählt.")
+			locked_print(u"Keine Lok ausgewählt.")
 			
 class FunktionLoeschenButton(Gtk.Button):
 	def __init__(self, funktion_treeview, save_status_method):
@@ -409,7 +409,7 @@ class ButtonboxLokAktionen(Gtk.HButtonBox):
 			else:
 				locked_print("Lok befindet sich schon am Rand, kann nicht weiter verschoben werden.")
 		except TypeError:
-			locked_print("Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
+			locked_print(u"Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
 
 class ButtonboxFunktionAktionen(Gtk.HButtonBox):
 	def __init__(self, funktion_treeview, save_status_method):
@@ -450,9 +450,9 @@ class ButtonboxFunktionAktionen(Gtk.HButtonBox):
 			else:
 				locked_print("Funktion befindet sich schon am Rand, kann nicht weiter verschoben werden.")
 		except AttributeError:
-			locked_print("Keine Lok (und damit keine Funktion) ausgewählt, es kann nichts verschoben werden.")
+			locked_print(u"Keine Lok (und damit keine Funktion) ausgewählt, es kann nichts verschoben werden.")
 		except TypeError:
-			locked_print("Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
+			locked_print(u"Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
 
 class Beschriftung(Gtk.Label):
 	def __init__(self, text):
