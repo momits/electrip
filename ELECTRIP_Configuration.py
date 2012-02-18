@@ -16,6 +16,7 @@ from Lok import Lok
 from Constants import *
 import SaveAndLoad
 import ELECTRIP_Control
+from types import UnicodeType
 from LockedPrint import locked_print
 
 class Fenster(Gtk.Window):
@@ -97,9 +98,11 @@ class Grundbox(Gtk.VBox):
 			nummer = 0
 			for eigenschaft in row:
 				# dafür sorgen dass die Fahrtrichtung in boolean konvertiert wird:
-				if unicode(eigenschaft) == u'Vorwärts':
+				if type(eigenschaft) == UnicodeType:
+					eigenschaft = eigenschaft.encode("UTF-8")
+				if eigenschaft == 'Vorwärts':
 					eigenschaft = True
-				elif unicode(eigenschaft) == u'Rückwärts':
+				elif eigenschaft == 'Rückwärts':
 					eigenschaft = False
 				lok.append(eigenschaft)
 				nummer += 1
