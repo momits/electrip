@@ -719,11 +719,11 @@ class LokTreeView(Gtk.TreeView):
 		combostore_protokoll.append(["N 2"])
 		self.cell_renderers[2].set_property("model", combostore_protokoll)
 		# Combostore_Fahrstufen
-		combostore_fahrstufen = Gtk.ListStore(GObject.TYPE_INT) # Für CellRendererCombo muss Type String sein, sonst segfault!
-		combostore_fahrstufen.append([14])
-		combostore_fahrstufen.append([27])
-		combostore_fahrstufen.append([28])
-		combostore_fahrstufen.append([128])
+		combostore_fahrstufen = Gtk.ListStore(GObject.TYPE_STRING) # Für CellRendererCombo muss Type String sein, sonst segfault!
+		combostore_fahrstufen.append(["14"])
+		combostore_fahrstufen.append(["27"])
+		combostore_fahrstufen.append(["28"])
+		combostore_fahrstufen.append(["128"])
 		self.cell_renderers[3].set_property("model", combostore_fahrstufen)
 		# Combostore_Fahrtrichtung
 		combostore_fahrtrichtung = Gtk.ListStore(GObject.TYPE_STRING)
