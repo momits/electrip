@@ -8,7 +8,7 @@ try:
 	import pygame
 	from pygame.locals import * # Importiere Konstanten (JOYBUTTTONDOWN, ...) für kurze Namen
 except ImportError:
-	locked_print(u"PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
+	locked_print("PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
 import threading
 
 class JoystickKonsole():
@@ -24,7 +24,7 @@ class JoystickKonsole():
 			if not len(self.joysticks) == len(regler):
 				self.joysticks.append([pygame.joystick.Joystick(id), id, 0, None]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links), ID des Scroll-Threads] -> start_scrolling = True wenn joyhat 500 ms gedrückt wird
 			else:
-				locked_print("Joystick '" + pygame.joystick.Joystick(id).get_name() + "' wurde ignoriert, da ", pygame.joystick.get_count(), u" Joysticks zuviel für ", len(regler), " Loks sind.")
+				locked_print("Joystick '" + pygame.joystick.Joystick(id).get_name() + "' wurde ignoriert, da ", pygame.joystick.get_count(), " Joysticks zuviel für ", len(regler), " Loks sind.")
 		
 		locked_print("Erkannte Joysticks:", len(self.joysticks))
 		
@@ -35,7 +35,7 @@ class JoystickKonsole():
 			joystick.init() # Joystick initialisieren
 			locked_print(joystick.get_name())
 			locked_print("Anzahl Achsen:", joystick.get_numaxes())
-			locked_print(u"Anzahl Knöpfe:", joystick.get_numbuttons(), "\n")
+			locked_print("Anzahl Knöpfe:", joystick.get_numbuttons(), "\n")
 		
 		self.joy_thread = JoystickThread(self.joysticks, loks, regler, nothaltbutton, joy_dict["Notstop"], joy_dict["Richtungswender"], joy_dict["Fokus"])
 		self.joy_thread.start()
@@ -92,7 +92,7 @@ class JoystickThread(threading.Thread):
 				elif event.button == self.joy_button_set_focus:
 					GLib.idle_add(self.regler[lokid].set_focus) # Lässt die Gtk-Hauptschleife die Funktion Regler.set_focus aufrufen, verhindert raise-conditions die zum crash führen können
 				elif not konfiguriert:  # Ist Button nicht in Lokfunktionen oder Spezialbuttons, ist er nicht konfiguriert
-					locked_print(u"Nicht konfigurierter Button wurde gedrückt.")
+					locked_print("Nicht konfigurierter Button wurde gedrückt.")
 					
 			elif event.type == JOYBUTTONUP:
 				lokid = self.joysticks[event.joy][1]
