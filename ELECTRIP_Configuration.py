@@ -98,7 +98,7 @@ class Grundbox(Gtk.VBox):
 			nummer = 0
 			for eigenschaft in row:
 				# dafür sorgen dass die Fahrtrichtung in boolean konvertiert wird:
-				if type(eigenschaft) == UnicodeType:
+				if type(eigenschaft) == UnicodeType: # Bug in pygobject: TreeView liefert nur Unicode-Objekte zurück, die nicht einfach verglichen werden können
 					eigenschaft = eigenschaft.encode("UTF-8")
 				if eigenschaft == 'Vorwärts':
 					eigenschaft = True
