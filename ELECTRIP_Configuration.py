@@ -79,7 +79,7 @@ class Grundbox(Gtk.VBox):
 			self.has_unsaved_changes = True
 			if self.verzeichnis != None:
 				self.buttonbox_oben.speicherbutton.set_sensitive(True)
-			locked_print("Widget '" + unicode(widget) + u"' meldet ungespeicherte Änderungen.")
+			locked_print("Widget '" + str(widget) + "' meldet ungespeicherte Änderungen.")
 		elif not unsaved_changes and self.has_unsaved_changes:
 			self.has_unsaved_changes = False
 			self.buttonbox_oben.speicherbutton.set_sensitive(False)
@@ -141,7 +141,7 @@ class Grundbox(Gtk.VBox):
 		try:
 			server["Port"] = int(server["Port"])
 		except ValueError:
-			locked_print(u"Server-Parameter Port ist nicht gültig.")
+			locked_print("Server-Parameter Port ist nicht gültig.")
 			server["Port"] = "" # Setze Server-Port auf leer, weil Angabe unkorrekt
 			
 		# 3. Joystickdict der Form {"Notstop": notstopbutton, "Richtungswender": wendebutton, "Achse": joyachse} erzeugen
@@ -154,7 +154,7 @@ class Grundbox(Gtk.VBox):
 				wert = int(wert)
 				joystick[parameter] = wert
 			except ValueError:
-				locked_print("Joystick-Parameter", parameter, u"ist nicht gültig.")
+				locked_print("Joystick-Parameter", parameter, "ist nicht gültig.")
 				joystick[parameter] = "" # Setze Parameter auf leer, weil Angabe unkorrekt
 			i += 1
 		
@@ -216,10 +216,10 @@ class Ladebutton(StockBildButton):
 			fenster.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration - " + verzeichnis)
 			return True
 		except IOError:
-			fenster.error(u"Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
+			fenster.error("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
 			return False
 		except:
-			fenster.error(u"Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
+			fenster.error("Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
 			return False
 
 class SpeichernUnterButton(StockBildButton):
@@ -331,7 +331,7 @@ class LokLoeschenButton(Gtk.Button):
 				
 			save_status_method("LokLoeschenButton", True)
 		except TypeError:
-			locked_print(u"Keine Zeile ausgewählt.")
+			locked_print("Keine Zeile ausgewählt.")
 
 class NeueFunktionButton(Gtk.Button):
 	def __init__(self, funktion_treeview, save_status_method):
@@ -347,7 +347,7 @@ class NeueFunktionButton(Gtk.Button):
 			funktionsliste.append(werte)
 			save_status_method("NeueFunktionButton", True)
 		except TypeError:
-			locked_print(u"Keine Lok ausgewählt.")
+			locked_print("Keine Lok ausgewählt.")
 			
 class FunktionLoeschenButton(Gtk.Button):
 	def __init__(self, funktion_treeview, save_status_method):
@@ -412,7 +412,7 @@ class ButtonboxLokAktionen(Gtk.HButtonBox):
 			else:
 				locked_print("Lok befindet sich schon am Rand, kann nicht weiter verschoben werden.")
 		except TypeError:
-			locked_print(u"Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
+			locked_print("Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
 
 class ButtonboxFunktionAktionen(Gtk.HButtonBox):
 	def __init__(self, funktion_treeview, save_status_method):
@@ -453,9 +453,9 @@ class ButtonboxFunktionAktionen(Gtk.HButtonBox):
 			else:
 				locked_print("Funktion befindet sich schon am Rand, kann nicht weiter verschoben werden.")
 		except AttributeError:
-			locked_print(u"Keine Lok (und damit keine Funktion) ausgewählt, es kann nichts verschoben werden.")
+			locked_print("Keine Lok (und damit keine Funktion) ausgewählt, es kann nichts verschoben werden.")
 		except TypeError:
-			locked_print(u"Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
+			locked_print("Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
 
 class Beschriftung(Gtk.Label):
 	def __init__(self, text):

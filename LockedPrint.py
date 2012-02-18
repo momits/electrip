@@ -5,7 +5,7 @@ import threading
 import time
 
 def locked_print(*args):
-	strings = map(unicode, args)
+	strings = map(str, args)
 	string = " ".join(strings)
 	print_lock.acquire()
 	print string

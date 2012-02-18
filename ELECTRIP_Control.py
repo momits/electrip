@@ -230,7 +230,7 @@ class Lokbild(Gtk.Image):
 				self.set_from_pixbuf(small_pixbuf)
 			except GError:
 				self.set_from_stock(Gtk.STOCK_MISSING_IMAGE, Gtk.IconSize.BUTTON)
-				locked_print(u"Dateipfad '" + pfad + u"' für Lokbild ist ungültig.")
+				locked_print("Dateipfad '" + pfad + "' für Lokbild ist ungültig.")
 
 class Geschwindigkeitsregler(Gtk.Scale):
 	def __init__(self, lok, socket):
@@ -246,7 +246,7 @@ class Geschwindigkeitsregler(Gtk.Scale):
 	def geschw_aenderung(self, scale, lok, socket):
 		geschw_aktuell = self.get_value()
 		lok.geschwindigkeit = geschw_aktuell
-		locked_print("Lok", lok.name, u"fährt jetzt", lok.geschwindigkeit, ", das entspricht", int(lok.geschwindigkeit), "Fahrstufen.")
+		locked_print("Lok", lok.name, "fährt jetzt", lok.geschwindigkeit, ", das entspricht", int(lok.geschwindigkeit), "Fahrstufen.")
 		if int(lok.geschwindigkeit) != lok.letzte_gesendete_geschwindigkeit:
 			lok.an_server_senden(socket)
 
@@ -273,7 +273,7 @@ class Richtungswender(Gtk.Button):
 
 	def richtungswechsel(self, button, lok, socket, scale):
 		lok.richtung = not lok.richtung
-		locked_print("\nLok", lok.name, u"hat die Richtung gewechselt und fährt nun", lok.richtung)
+		locked_print("\nLok", lok.name, "hat die Richtung gewechselt und fährt nun", lok.richtung)
 		
 		if lok.geschwindigkeit == 0:
 			lok.an_server_senden(socket)
