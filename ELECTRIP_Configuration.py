@@ -362,6 +362,8 @@ class FunktionLoeschenButton(Gtk.Button):
 			liste.remove(zeile) # Zeile im Liststore löschen
 			funktion_treeview.nummerieren()
 			save_status_method("FunktionLoeschenButton", True)
+		else:
+			locked_print("Keine Funktion ausgewählt.")
 			
 class ArrowButton(Gtk.Button):
 	def __init__(self, direction): # direction: True = nach oben
