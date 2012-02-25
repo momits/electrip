@@ -7,7 +7,7 @@ from gi.repository import GObject
 # 0. ----------- Allgemein -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "2.0.2"
+ELECTRIP_VERSION = "2.0.3"
 
 # 0.2. ICONS
 ICON_PATH_LIST = [
@@ -28,14 +28,16 @@ CONFIG_LOCO_FUNCTION_PARAMETERS = ["Nr","Name","SendeNr","Wert","Button", "Taste
 CONFIG_PICTURE_COLUMN = 7 # Spalte im LokTreeView in der das Bild eingetragen wird
 
 # 1.2.2 ServerFrame
-CONFIG_SERVER_PARAMETERS= [
+CONFIG_SERVER_TEXT_PARAMETERS= [
 ("Host", "Die IP-Adresse des Rechners auf dem der Server läuft"),
-("Port", "Der Port unter dem der Server erreichbar ist, standardmäßig 4303")
+("Port", "Der Port unter dem der Server erreichbar ist, standardmäßig 4303"),
+("Bus", "Der Bus auf dem der Server Befehle empfangen soll, standardmäßig 1")
 ] # Namen und Definition der Parameter für die Kommunikation mit dem SRCP-Server
 
-CONFIG_SERVER_PARAMETERS_SHORT= [
+CONFIG_SERVER_TEXT_PARAMETERS_SHORT= [
 "Host",
-"Port"
+"Port",
+"Bus"
 ] # Namen der Parameter für die Kommunikation mit dem SRCP-Server
 
 # 1.2.3 JoystickFrame

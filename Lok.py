@@ -4,7 +4,7 @@
 from LockedPrint import locked_print
 
 class Lok():
-	def __init__(self, id, name, adresse, protokoll, fahrstufen, beschleunigungszeit, fahrtrichtung, bildpfad, funktionen):
+	def __init__(self, id, name, adresse, protokoll, fahrstufen, beschleunigungszeit, fahrtrichtung, bildpfad, funktionen, server_bus):
 		self.id = id
 		self.name = name
 		self.adresse = adresse
@@ -20,6 +20,7 @@ class Lok():
 		for funktion in self.funktionen:
 			if funktion["SendeNr"] + 1 > self.anzahl_funktionen:
 				self.anzahl_funktionen = funktion["SendeNr"] + 1 # Ermittle höchste SendeNr, für SRCP-Befehle
+		self.server_bus = str(server_bus)
 
 	def an_server_senden(self, socket):
 		self.letzte_gesendete_geschwindigkeit = int(self.geschwindigkeit)
@@ -30,7 +31,7 @@ class Lok():
 			if funktion["Wert"]:
 				geschaltet[funktion["SendeNr"]] = True
 		funktionen = " ".join(str(int(n)) for n in geschaltet)
-		sendetext = "SET 1 GL " + str(self.adresse) + " " + str(int(self.richtung)) + " " + str(int(self.geschwindigkeit)) + " " + str(self.fahrstufen) + " " + funktionen + "\n"
+		sendetext = "SET " + self.server_bus + " GL " + str(self.adresse) + " " + str(int(self.richtung)) + " " + str(int(self.geschwindigkeit)) + " " + str(self.fahrstufen) + " " + funktionen + "\n"
 		
 		locked_print("\n" + sendetext)
 		socket.send(sendetext)

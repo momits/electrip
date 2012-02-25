@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.0.2
+# this is ELECTRIP VERSION 2.0.3
 
 # Import von Modulen
 
@@ -30,7 +30,7 @@ class Fenster(Gtk.Window):
 		joy_dict = speicher_dict["Joystick"]
 		
 		try:
-			self.socket_init(server_dict["Host"], int(server_dict["Port"]), loks)
+			self.socket_init(server_dict, loks)
 			self.scrolled_window = ScrolledWindow(self.socket, loks, self) # ScrolledWindow und darin HBox für Regler erzeugen
 			self.nothalt_button = Nothaltbutton(self.socket) # HBox für Notstop erzeugen
 			self.konfiguration_button = KonfigurationButton(self, self.config_fenster)
@@ -75,9 +75,10 @@ class Fenster(Gtk.Window):
 			self.config_fenster.show_all()
 		locked_print("Steuerung geschlossen.")
 	
-	def socket_init(self, host, port, loks):
+	def socket_init(self, server_dict, loks):
+		server_bus = str(server_dict["Bus"])
 		# Socket-Verbindung herstellen
-		self.socket = socket.create_connection((host, port))
+		self.socket = socket.create_connection((server_dict["Host"], int(server_dict["Port"])))
 		#-------- Handshake ----------
 		locked_print("Socketverbindung aktiv mit:")
 		locked_print(self.socket.recv(4096))
@@ -96,12 +97,12 @@ class Fenster(Gtk.Window):
 		
 		# -------- Stromversorgung auf Bus 1 initiieren ---------
 		locked_print("Strom wird angeschaltet")
-		self.socket.send("INIT 1 POWER\n")
+		self.socket.send("INIT " + server_bus + " POWER\n")
 		locked_print(self.socket.recv(4096))
 		# ---------- Loks initialisieren -------------
 		for lok in loks:
 			if lok.protokoll == "M 1" or "M 2" or "N 1" or "N 2":
-				text = "INIT 1 GL " + str(lok.adresse) + " " + str(lok.protokoll) + " " + str(lok.fahrstufen) + " " + str(lok.anzahl_funktionen) + "\n"
+				text = "INIT " + server_bus + " GL " + str(lok.adresse) + " " + str(lok.protokoll) + " " + str(lok.fahrstufen) + " " + str(lok.anzahl_funktionen) + "\n"
 				locked_print(text)
 				self.socket.send(text)
 				locked_print(self.socket.recv(4096))

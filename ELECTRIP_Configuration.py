@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.0.2
+# this is ELECTRIP VERSION 2.0.3
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
@@ -69,7 +69,7 @@ class Grundbox(Gtk.VBox):
 		self.verzeichnis = verzeichnis # Zu Beginn ist keine Datei geladen
 		
 		self.tabbed_box = TabbedBox(fenster, self.status_changed)
-		self.buttonbox_oben = ButtonboxOben(self.tabbed_box.lok_frame.scrolled_window.lok_treeview, self.tabbed_box.funktionen_frame.scrolled_window.funktion_treeview, self.tabbed_box.server_table, self.tabbed_box.joystick_table, fenster)
+		self.buttonbox_oben = ButtonboxOben(self.tabbed_box.lok_frame.scrolled_window.lok_treeview, self.tabbed_box.funktionen_frame.scrolled_window.funktion_treeview, self.tabbed_box.server_entry_table, self.tabbed_box.joystick_table, fenster)
 		
 		self.pack_start(self.buttonbox_oben, False, False, 0)
 		self.pack_start(self.tabbed_box, True, True, 0)
@@ -86,8 +86,28 @@ class Grundbox(Gtk.VBox):
 	
 	def get_speicherdict(self):
 		# Dictionary mit allen Konfigurationsdaten der Benutzeroberfläche erzeugen
+
+		# 1. Serverdict der Form {"Host": host, "Port": port, "Bus": bus} erzeugen
+		server = {}
+		server_entry_table = self.tabbed_box.server_entry_table
+		i = 0
+		for parameter in CONFIG_SERVER_TEXT_PARAMETERS_SHORT:
+			wert = server_entry_table.eingabefelder[i].get_text()
+			server[parameter] = wert
+			i += 1
+		try:
+			server["Port"] = int(server["Port"])
+		except ValueError:
+			locked_print("Server-Parameter Port ist nicht gültig.")
+			server["Port"] = "" # Setze Server-Port auf leer, weil Angabe inkorrekt
+		try:
+			server["Bus"] = int(server["Bus"])
+		except ValueError:
+			locked_print("Server-Parameter Bus ist nicht gültig.")
+			server["Bus"] = "" # Setze Server-Bus auf leer, weil Angabe inkorrekt
+
 		
-		# 1. Erstellt eine Liste der Form <ID> <Name> <Bildpfad> <Adresse> <Protokoll> <Fahrstufen> <Fahrtrichtung (True = vorwärts)> <Beschleunigungszeit in s> <Funktionsliste {name, sende_nr, wert, Joybutton} und erzeugt daraus Lokobjekte
+		# 2. LokListe der Form <ID> <Name> <Bildpfad> <Adresse> <Protokoll> <Fahrstufen> <Fahrtrichtung (True = vorwärts)> <Beschleunigungszeit in s> <Funktionsliste {name, sende_nr, wert, Joybutton} erstellen und daraus Lokobjekte erzeugen
 		liste = self.tabbed_box.lok_frame.scrolled_window.lok_treeview.liste
 		funktionslisten = self.tabbed_box.funktionen_frame.scrolled_window.funktion_treeview.funktionslisten
 		loks = []
@@ -127,22 +147,9 @@ class Grundbox(Gtk.VBox):
 				funktionen.append(funktion)
 			row_nr += 1
 			lok.append(funktionen)
+			lok.append(server["Bus"])
 			lok_instanz = Lok(*lok) # Liste in Parameter für Lokobjekt verwandeln
 			loks.append(lok_instanz)
-			
-		# 2. Serverdict der Form {"Host": host, "Port": port} erzeugen
-		server = {}
-		server_table = self.tabbed_box.server_table
-		i = 0
-		for parameter in CONFIG_SERVER_PARAMETERS_SHORT:
-			wert = server_table.eingabefelder[i].get_text()
-			server[parameter] = wert
-			i += 1
-		try:
-			server["Port"] = int(server["Port"])
-		except ValueError:
-			locked_print("Server-Parameter Port ist nicht gültig.")
-			server["Port"] = "" # Setze Server-Port auf leer, weil Angabe unkorrekt
 			
 		# 3. Joystickdict der Form {"Notstop": notstopbutton, "Richtungswender": wendebutton, "Achse": joyachse} erzeugen
 		joystick = {}
@@ -174,11 +181,11 @@ class StockBildButton(Gtk.Button):
 		self.add(hbox)
 
 class Ladebutton(StockBildButton):
-	def __init__(self, lok_treeview, funktions_treeview, server_table, joystick_table, fenster):
+	def __init__(self, lok_treeview, funktions_treeview, server_entry_table, joystick_table, fenster):
 		StockBildButton.__init__(self, "Laden", Gtk.STOCK_OPEN)
 		self.lok_treeview = lok_treeview
 		self.funktions_treeview = funktions_treeview
-		self.server_table = server_table
+		self.server_entry_table = server_entry_table
 		self.joystick_table = joystick_table
 		
 		self.connect("clicked", self.lade_dialog, fenster)
@@ -208,7 +215,7 @@ class Ladebutton(StockBildButton):
 			self.lok_treeview.laden(loks) # loks
 			self.funktions_treeview.laden(loks) # loks
 			self.joystick_table.laden(joystick) # joystick
-			self.server_table.laden(server) # server
+			self.server_entry_table.laden(server) # server
 			pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
 			fenster.grundbox.verzeichnis = verzeichnis
 			fenster.grundbox.status_changed(None, False)
@@ -277,9 +284,9 @@ class ElectripLadebutton(StockBildButton):
 		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster(fenster)
 
 class ButtonboxOben(Gtk.HBox):
-	def __init__(self, lok_treeview, funktion_treeview, server_table, joystick_table, fenster):
+	def __init__(self, lok_treeview, funktion_treeview, server_entry_table, joystick_table, fenster):
 		super(ButtonboxOben, self).__init__()
-		self.ladebutton = Ladebutton(lok_treeview, funktion_treeview, server_table, joystick_table, fenster)
+		self.ladebutton = Ladebutton(lok_treeview, funktion_treeview, server_entry_table, joystick_table, fenster)
 		self.speichern_unter_button = SpeichernUnterButton(fenster)
 		self.speicherbutton = SpeicherButton(fenster)
 		self.electrip_ladebutton = ElectripLadebutton(fenster)
@@ -480,8 +487,8 @@ class TabbedBox(Gtk.Notebook):
 		self.hbox_lok.pack_start(self.funktionen_frame, False, False, 0)
 		self.append_page(self.hbox_lok, Gtk.Label(label="Lokomotiven"))
 		
-		self.server_table = ServerTable(save_status_method)
-		self.append_page(TopAlignment(self.server_table), Gtk.Label(label="SRCP-Server"))
+		self.server_entry_table = ServerEntryTable(save_status_method)
+		self.append_page(TopAlignment(self.server_entry_table), Gtk.Label(label="SRCP-Server"))
 		
 		self.joystick_table = JoystickTable(save_status_method)
 		self.append_page(TopAlignment(self.joystick_table), Gtk.Label(label="Joystick / Gamepad"))
@@ -537,15 +544,15 @@ class ScrolledWindowLok(Gtk.ScrolledWindow):
 		self.set_size_request(req_natural.width, req_natural.height+40)
 		self.add(self.lok_treeview)
 		
-class ServerTable(Gtk.Table):
+class ServerEntryTable(Gtk.Table):
 	def __init__(self, save_status_method):
-		super(ServerTable, self).__init__(len(CONFIG_SERVER_PARAMETERS), 3)
+		super(ServerEntryTable, self).__init__(len(CONFIG_SERVER_TEXT_PARAMETERS), 3)
 		self.set_col_spacings(10)
 		self.set_row_spacings(5)
 		self.set_border_width(6) # Schönheitsabstand
 		self.eingabefelder = []
 		y = 0
-		for parameter, definition in CONFIG_SERVER_PARAMETERS:
+		for parameter, definition in CONFIG_SERVER_TEXT_PARAMETERS:
 			eingabefeld = Gtk.Entry()
 			eingabefeld.connect("changed", save_status_method, True)
 			parameter_label = Beschriftung(parameter)
@@ -559,7 +566,7 @@ class ServerTable(Gtk.Table):
 		
 	def laden(self, joydict):
 		i = 0
-		for parameter in CONFIG_SERVER_PARAMETERS_SHORT:
+		for parameter in CONFIG_SERVER_TEXT_PARAMETERS_SHORT:
 			self.eingabefelder[i].set_text(str(joydict[parameter]))
 			i += 1
 
@@ -778,9 +785,9 @@ class LokTreeView(Gtk.TreeView):
 				self.liste[path][column_nr] = int(neuer_text)
 			except ValueError:
 				locked_print("Falsche Eingabe, Sie haben keinen Wert eingegeben, der in den Typ Integer umgewandelt werden kann.")
-		elif CONFIG_LOCO_TREEVIEW_COLUMN_TYPES[column_nr] == GObject.TYPE_FLOAT:
+		elif CONFIG_LOCO_TREEVIEW_COLUMN_TYPES[column_nr] == GObject.TYPE_DOUBLE:
 			try:
-				self.liste[zeile][column_nr] = float(neuer_text.replace(",",".")) # Kommas zur Umwandlung String-->Float durch Punkte ersetzen
+				self.liste[path][column_nr] = float(neuer_text.replace(",",".")) # Kommas zur Umwandlung String-->Float durch Punkte ersetzen
 			except ValueError:
 				locked_print("Falsche Eingabe: Sie haben keinen Wert eingegeben, der in den Typ Float umgewandelt werden kann.")
 		else:
