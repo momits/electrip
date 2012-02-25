@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.0.3
+# this is ELECTRIP VERSION 2.1.0
 
 # Import von Modulen
 
@@ -31,8 +31,8 @@ class Fenster(Gtk.Window):
 		
 		try:
 			self.socket_init(server_dict, loks)
-			self.scrolled_window = ScrolledWindow(self.socket, loks, self) # ScrolledWindow und darin HBox für Regler erzeugen
-			self.nothalt_button = Nothaltbutton(self.socket) # HBox für Notstop erzeugen
+			self.scrolled_window = ScrolledWindow(self.socket, loks, joy_dict["ShowFunktionButtonNr"], self) # ScrolledWindow und darin HBox für Regler erzeugen
+			self.nothalt_button = Nothaltbutton(server_dict["Power"], self.socket) # HBox für Notstop erzeugen
 			self.konfiguration_button = KonfigurationButton(self, self.config_fenster)
 			self.fullscreen_button = FullscreenButton(self)
 			
@@ -99,6 +99,7 @@ class Fenster(Gtk.Window):
 		locked_print("Strom wird angeschaltet")
 		self.socket.send("INIT " + server_bus + " POWER\n")
 		locked_print(self.socket.recv(4096))
+		
 		# ---------- Loks initialisieren -------------
 		for lok in loks:
 			if lok.protokoll == "M 1" or "M 2" or "N 1" or "N 2":
@@ -153,23 +154,23 @@ class FullscreenButton(Gtk.ToggleButton):
 			fenster.is_fullscreen = True
 		
 class ScrolledWindow(Gtk.ScrolledWindow):
-	def __init__(self, socket, loks, fenster):
+	def __init__(self, socket, loks, display_func_nr, fenster):
 		super(ScrolledWindow, self).__init__()
 		self.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-		self.hbox_mitte = HBoxMitte(socket, loks, fenster, self)
+		self.hbox_mitte = HBoxMitte(socket, loks, fenster, display_func_nr, self)
 		self.add_with_viewport(self.hbox_mitte)
 		
 class HBoxMitte(Gtk.HBox):
-	def __init__(self, socket, loks, fenster, scrolled_window):
+	def __init__(self, socket, loks, fenster, display_func_nr, scrolled_window):
 		super(HBoxMitte, self).__init__()
 		self.regler = []
 		self.socket = socket
 		for i in range(len(loks)): # Alle Regler hinzufügen
 			self.regler.append(Regler(socket, loks[i], scrolled_window))
 			self.pack_start(self.regler[i], True, True, 0)
-		self.connect("realize", self.realized, fenster)
+		self.connect("realize", self.realized, display_func_nr, fenster)
 				
-	def realized(self, hbox, fenster):
+	def realized(self, hbox, display_func_nr, fenster):
 		min_req, natural_req = self.get_preferred_size()
 		#width, height = self.size_request()
 		fenster.resize(natural_req.width + 100, natural_req.height + 100)
@@ -177,7 +178,7 @@ class HBoxMitte(Gtk.HBox):
 		max_funktionsbuttons = 0
 		search_pending = True # Suche nach einem Funktionsbutton um Höhe zu ermitteln
 		for regler in self.regler:
-			regler.hbox = HBoxFunktionen(regler.lok, self.socket)
+			regler.hbox = HBoxFunktionen(regler.lok, display_func_nr, self.socket) ##############################################
 			regler.hbox.show_all()
 			regler.pack_start(regler.hbox, False, False, 10)
 			if regler.hbox.max_anzahl_buttons > max_funktionsbuttons: # finde spalte mit den meisten buttons (mit der bedingung geht einher, dass regler.hbox mindestens einen Funktionsbutton besitzt)
@@ -314,12 +315,16 @@ class FunktionButton(Gtk.ToggleButton):
 		self.toggled()
 			
 class HBoxFunktionen(Gtk.HBox):
-	def __init__(self, lok, socket):
+	def __init__(self, lok, display_func_nr, socket):
 		super(HBoxFunktionen, self).__init__()
 		self.boxen = []
 		self.max_anzahl_buttons = 0
-		self.buttons = [FunktionButton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
 		
+		if display_func_nr:
+			self.buttons = [FunktionButton(lok, str(funktion["Nr"]) + " " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
+		else:
+			self.buttons = [FunktionButton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
+
 		if len(lok.funktionen) > 0:			
 			anzahl_boxen, rest_boxen = divmod(len(lok.funktionen), CONTROL_NUMBER_FUNCTION_BUTTONS) # ermittle, wie viele boxen erzeugt werden müssen
 			if rest_boxen > 0:
@@ -353,12 +358,11 @@ class HBoxFunktionen(Gtk.HBox):
 				self.pack_start(box, True, True, 0)
 
 class Nothaltbutton(Gtk.ToggleButton):
-	def __init__(self, socket):
+	def __init__(self, power_on, socket):
 		super(Nothaltbutton, self).__init__()
 		self.set_label("Nothalt")
 		self.set_size_request(-1 , 60)
 		self.socket = socket
-		self.strom_an = False
 		
 		rot = Gdk.RGBA(*CONTROL_EMERGENCY_COLOR_RED)
 		dunkelgrau = Gdk.RGBA(*CONTROL_EMERGENCY_COLOR_DARK_GREY)
@@ -368,7 +372,13 @@ class Nothaltbutton(Gtk.ToggleButton):
 		#child_label.override_color(Gtk.StateFlags.ACTIVE, dunkelgrau)
 		
 		self.connect("clicked", self.set_strom)
-		self.set_strom()
+		
+		if power_on:
+			self.strom_an = False
+			self.set_strom()
+		else:
+			self.strom_an = True
+			self.clicked()
 	
 	def set_strom(self, *args):
 		self.strom_an = not self.strom_an

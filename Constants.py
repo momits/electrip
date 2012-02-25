@@ -7,7 +7,7 @@ from gi.repository import GObject
 # 0. ----------- Allgemein -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "2.0.3"
+ELECTRIP_VERSION = "2.1.0"
 
 # 0.2. ICONS
 ICON_PATH_LIST = [
@@ -27,7 +27,7 @@ CONFIG_LOCO_FUNCTION_PARAMETERS = ["Nr","Name","SendeNr","Wert","Button", "Taste
 # 1.2.1 LokFrame
 CONFIG_PICTURE_COLUMN = 7 # Spalte im LokTreeView in der das Bild eingetragen wird
 
-# 1.2.2 ServerFrame
+# 1.2.2 ServerTab
 CONFIG_SERVER_TEXT_PARAMETERS= [
 ("Host", "Die IP-Adresse des Rechners auf dem der Server läuft"),
 ("Port", "Der Port unter dem der Server erreichbar ist, standardmäßig 4303"),
@@ -40,15 +40,38 @@ CONFIG_SERVER_TEXT_PARAMETERS_SHORT= [
 "Bus"
 ] # Namen der Parameter für die Kommunikation mit dem SRCP-Server
 
-# 1.2.3 JoystickFrame
-CONFIG_JOYSTICK_PARAMETERS_SHORT = ["Notstop", "Richtungswender", "Achse", "Fokus"] # Namen der Parameter für die Bedienung mit einem Joystick
+CONFIG_SERVER_CHECKBUTTON_DEFINITIONS = [
+("Schalte den Strom beim Starten der Steuerung ein")
+]
 
-CONFIG_JOYSTICK_PARAMETERS = [
+CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT = [
+("Power")
+]
+
+# 1.2.3 JoystickTab
+CONFIG_JOYSTICK_TEXT_PARAMETERS = [
 ("Nothalt (JoyButton)", "Der Button am Gamepad, über den die Gleisspannung ausgeschaltet werden kann"),
 ("Richtungswender (JoyButton)", "Der Button am Joystick, der einen Richtungswechsel der Lokomotive bewirkt"),
 ("Beschleunigung (JoyAchse)", "Die Achse am Gamepad, mit der die Geschwindigkeit der Lok geregelt wird"),
 ("Fokus (JoyButton)", "Der Button am Gamepad, der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt")
 ] # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
+
+CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT = [
+"Notstop",
+"Richtungswender",
+"Achse",
+"Fokus"
+] # Namen der Parameter für die Bedienung mit einem Joystick
+
+CONFIG_JOYSTICK_CHECKBUTTON_DEFINITIONS = [
+"Die ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist",
+"Die Nummer des zugehörigen Tasters am Gamepad auf den Funktions-Buttons anzeigen"
+]
+
+CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT = [
+"AutoFokus",
+"ShowFunktionButtonNr"
+]
 
 # 1.2.4 FunktionTreeView
 CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES = [GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING] # Datentypen in den Spalten des FunktionTreeView

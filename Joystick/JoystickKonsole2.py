@@ -37,7 +37,7 @@ class JoystickKonsole():
 			locked_print("Anzahl Achsen:", joystick.get_numaxes())
 			locked_print("Anzahl Knöpfe:", joystick.get_numbuttons(), "\n")
 		
-		self.joy_thread = JoystickThread(self.joysticks, loks, regler, nothaltbutton, joy_dict["Notstop"], joy_dict["Richtungswender"], joy_dict["Fokus"])
+		self.joy_thread = JoystickThread(self.joysticks, loks, regler, nothaltbutton, joy_dict["Notstop"], joy_dict["Richtungswender"], joy_dict["Fokus"], joy_dict["AutoFokus"])
 		self.joy_thread.start()
 		self.geschw_thread = GeschwindigkeitsThread(self.joysticks, loks, regler, joy_dict["Achse"])
 		self.geschw_thread_id = GObject.timeout_add(100, self.geschw_thread.go)
@@ -50,12 +50,12 @@ class JoystickKonsole():
 		pygame.event.post(pygame.event.Event(MOUSEBUTTONDOWN, {"pos": 0, "button": 0})) # Event posten, um joystick_thread zu beenden
 
 class JoystickThread(threading.Thread):
-	def __init__(self, joystickliste, loks, regler, nothaltbutton, joy_button_notstop, joy_button_richtungswender, joy_button_set_focus):
+	def __init__(self, joystickliste, loks, regler, nothaltbutton, joy_button_notstop, joy_button_richtungswender, joy_button_set_focus, use_auto_focus):
 		threading.Thread.__init__(self)
 		self.bildliste = [GdkPixbuf.Pixbuf.new_from_file("Joystick/Pictures/" + str(bild_nr) + ".png") for bild_nr in range(1,13)]
 			
 		self.joysticks = joystickliste
-		if len(self.joysticks) == 1:
+		if len(self.joysticks) == 1 and use_auto_focus:
 			self.auto_focus = True
 		else:
 			self.auto_focus = False

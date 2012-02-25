@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.0.3
+# this is ELECTRIP VERSION 2.1.0
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
@@ -69,7 +69,7 @@ class Grundbox(Gtk.VBox):
 		self.verzeichnis = verzeichnis # Zu Beginn ist keine Datei geladen
 		
 		self.tabbed_box = TabbedBox(fenster, self.status_changed)
-		self.buttonbox_oben = ButtonboxOben(self.tabbed_box.lok_frame.scrolled_window.lok_treeview, self.tabbed_box.funktionen_frame.scrolled_window.funktion_treeview, self.tabbed_box.server_entry_table, self.tabbed_box.joystick_table, fenster)
+		self.buttonbox_oben = ButtonboxOben(self.tabbed_box.lok_frame.scrolled_window.lok_treeview, self.tabbed_box.funktionen_frame.scrolled_window.funktion_treeview, self.tabbed_box.server_tab, self.tabbed_box.joystick_tab, fenster)
 		
 		self.pack_start(self.buttonbox_oben, False, False, 0)
 		self.pack_start(self.tabbed_box, True, True, 0)
@@ -89,7 +89,7 @@ class Grundbox(Gtk.VBox):
 
 		# 1. Serverdict der Form {"Host": host, "Port": port, "Bus": bus} erzeugen
 		server = {}
-		server_entry_table = self.tabbed_box.server_entry_table
+		server_entry_table = self.tabbed_box.server_tab.entry_table
 		i = 0
 		for parameter in CONFIG_SERVER_TEXT_PARAMETERS_SHORT:
 			wert = server_entry_table.eingabefelder[i].get_text()
@@ -105,6 +105,13 @@ class Grundbox(Gtk.VBox):
 		except ValueError:
 			locked_print("Server-Parameter Bus ist nicht gültig.")
 			server["Bus"] = "" # Setze Server-Bus auf leer, weil Angabe inkorrekt
+			
+		server_check_button_box = self.tabbed_box.server_tab.check_button_box
+		i = 0
+		for parameter in CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT:
+			wert = server_check_button_box.checkbuttons[i].get_active()
+			server[parameter] = wert
+			i += 1
 
 		
 		# 2. LokListe der Form <ID> <Name> <Bildpfad> <Adresse> <Protokoll> <Fahrstufen> <Fahrtrichtung (True = vorwärts)> <Beschleunigungszeit in s> <Funktionsliste {name, sende_nr, wert, Joybutton} erstellen und daraus Lokobjekte erzeugen
@@ -153,9 +160,9 @@ class Grundbox(Gtk.VBox):
 			
 		# 3. Joystickdict der Form {"Notstop": notstopbutton, "Richtungswender": wendebutton, "Achse": joyachse} erzeugen
 		joystick = {}
-		joystick_table = self.tabbed_box.joystick_table
+		joystick_table = self.tabbed_box.joystick_tab.entry_table
 		i = 0
-		for parameter in CONFIG_JOYSTICK_PARAMETERS_SHORT:
+		for parameter in CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT:
 			try:
 				wert = joystick_table.eingabefelder[i].get_text()
 				wert = int(wert)
@@ -163,6 +170,13 @@ class Grundbox(Gtk.VBox):
 			except ValueError:
 				locked_print("Joystick-Parameter", parameter, "ist nicht gültig.")
 				joystick[parameter] = "" # Setze Parameter auf leer, weil Angabe unkorrekt
+			i += 1
+		
+		joystick_check_button_box = self.tabbed_box.joystick_tab.check_button_box
+		i = 0
+		for parameter in CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT:
+			wert = joystick_check_button_box.checkbuttons[i].get_active()
+			joystick[parameter] = wert
 			i += 1
 		
 		# Finales Speicherdict erzeugen
@@ -181,12 +195,12 @@ class StockBildButton(Gtk.Button):
 		self.add(hbox)
 
 class Ladebutton(StockBildButton):
-	def __init__(self, lok_treeview, funktions_treeview, server_entry_table, joystick_table, fenster):
+	def __init__(self, lok_treeview, funktions_treeview, server_tab, joystick_tab, fenster):
 		StockBildButton.__init__(self, "Laden", Gtk.STOCK_OPEN)
 		self.lok_treeview = lok_treeview
 		self.funktions_treeview = funktions_treeview
-		self.server_entry_table = server_entry_table
-		self.joystick_table = joystick_table
+		self.server_tab = server_tab
+		self.joystick_tab = joystick_tab
 		
 		self.connect("clicked", self.lade_dialog, fenster)
 		
@@ -214,8 +228,8 @@ class Ladebutton(StockBildButton):
 			joystick = speicher_dict["Joystick"]
 			self.lok_treeview.laden(loks) # loks
 			self.funktions_treeview.laden(loks) # loks
-			self.joystick_table.laden(joystick) # joystick
-			self.server_entry_table.laden(server) # server
+			self.joystick_tab.laden(joystick) # joystick
+			self.server_tab.laden(server)
 			pickle.dump(verzeichnis, open("electrip.conf", 'wb'))
 			fenster.grundbox.verzeichnis = verzeichnis
 			fenster.grundbox.status_changed(None, False)
@@ -225,9 +239,9 @@ class Ladebutton(StockBildButton):
 		except IOError:
 			fenster.error("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
 			return False
-		except:
-			fenster.error("Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
-			return False
+		#except:
+		#	fenster.error("Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
+		#	return False
 
 class SpeichernUnterButton(StockBildButton):
 	def __init__(self, fenster):
@@ -284,9 +298,9 @@ class ElectripLadebutton(StockBildButton):
 		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster(fenster)
 
 class ButtonboxOben(Gtk.HBox):
-	def __init__(self, lok_treeview, funktion_treeview, server_entry_table, joystick_table, fenster):
+	def __init__(self, lok_treeview, funktion_treeview, server_tab, joystick_table, fenster):
 		super(ButtonboxOben, self).__init__()
-		self.ladebutton = Ladebutton(lok_treeview, funktion_treeview, server_entry_table, joystick_table, fenster)
+		self.ladebutton = Ladebutton(lok_treeview, funktion_treeview, server_tab, joystick_table, fenster)
 		self.speichern_unter_button = SpeichernUnterButton(fenster)
 		self.speicherbutton = SpeicherButton(fenster)
 		self.electrip_ladebutton = ElectripLadebutton(fenster)
@@ -487,11 +501,11 @@ class TabbedBox(Gtk.Notebook):
 		self.hbox_lok.pack_start(self.funktionen_frame, False, False, 0)
 		self.append_page(self.hbox_lok, Gtk.Label(label="Lokomotiven"))
 		
-		self.server_entry_table = ServerEntryTable(save_status_method)
-		self.append_page(TopAlignment(self.server_entry_table), Gtk.Label(label="SRCP-Server"))
+		self.server_tab = ServerTab(save_status_method)
+		self.append_page(TopAlignment(self.server_tab), Gtk.Label(label="SRCP-Server"))
 		
-		self.joystick_table = JoystickTable(save_status_method)
-		self.append_page(TopAlignment(self.joystick_table), Gtk.Label(label="Joystick / Gamepad"))
+		self.joystick_tab = JoystickTab(save_status_method)
+		self.append_page(TopAlignment(self.joystick_tab), Gtk.Label(label="Joystick / Gamepad"))
 		
 
 class FunktionenFrame(Gtk.Frame):
@@ -543,42 +557,18 @@ class ScrolledWindowLok(Gtk.ScrolledWindow):
 		req_min, req_natural = self.lok_treeview.get_preferred_size()
 		self.set_size_request(req_natural.width, req_natural.height+40)
 		self.add(self.lok_treeview)
-		
-class ServerEntryTable(Gtk.Table):
-	def __init__(self, save_status_method):
-		super(ServerEntryTable, self).__init__(len(CONFIG_SERVER_TEXT_PARAMETERS), 3)
-		self.set_col_spacings(10)
-		self.set_row_spacings(5)
-		self.set_border_width(6) # Schönheitsabstand
-		self.eingabefelder = []
-		y = 0
-		for parameter, definition in CONFIG_SERVER_TEXT_PARAMETERS:
-			eingabefeld = Gtk.Entry()
-			eingabefeld.connect("changed", save_status_method, True)
-			parameter_label = Beschriftung(parameter)
-			definition_label = Gtk.Label(label=definition)
-			definition_label.set_alignment(0, 0.5)
-			self.attach(parameter_label, 0, 1, y, y+1)
-			self.attach(eingabefeld, 1, 2, y, y+1)
-			self.attach(definition_label, 2, 3, y , y+1)
-			self.eingabefelder.append(eingabefeld)
-			y += 1
-		
-	def laden(self, joydict):
-		i = 0
-		for parameter in CONFIG_SERVER_TEXT_PARAMETERS_SHORT:
-			self.eingabefelder[i].set_text(str(joydict[parameter]))
-			i += 1
 
-class JoystickTable(Gtk.Table):
-	def __init__(self, save_status_method):
-		super(JoystickTable, self).__init__(len(CONFIG_JOYSTICK_PARAMETERS), 3)
+class EntryTable(Gtk.Table):
+	def __init__(self, long_parameters, short_parameters, save_status_method):
+		super(EntryTable, self).__init__(len(long_parameters), 3)
+		self.long_parameters = long_parameters
+		self.short_parameters = short_parameters
 		self.set_col_spacings(10)
 		self.set_row_spacings(5)
 		self.set_border_width(6) # Schönheitsabstand
 		self.eingabefelder = []
 		y = 0
-		for parameter, definition in CONFIG_JOYSTICK_PARAMETERS:
+		for parameter, definition in self.long_parameters:
 			eingabefeld = Gtk.Entry()
 			eingabefeld.connect("changed", save_status_method, True)
 			parameter_label = Beschriftung(parameter)
@@ -590,11 +580,60 @@ class JoystickTable(Gtk.Table):
 			self.eingabefelder.append(eingabefeld)
 			y += 1
 		
-	def laden(self, joydict):
+	def laden(self, parameter_dict):
 		i = 0
-		for parameter in CONFIG_JOYSTICK_PARAMETERS_SHORT:
-			self.eingabefelder[i].set_text(str(joydict[parameter]))
+		for parameter in self.short_parameters:
+			try:
+				self.eingabefelder[i].set_text(str(parameter_dict[parameter]))
+			except KeyError:
+				locked_print("Parameter", parameter, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
 			i += 1
+			
+class CheckButtonBox(Gtk.VBox):
+	def __init__(self, definitions, short_parameters, save_status_method):
+		super(CheckButtonBox, self).__init__()
+		self.definitions = definitions
+		self.short_parameters = short_parameters
+		self.checkbuttons = []
+		
+		for definition in self.definitions:
+			checkbutton = Gtk.CheckButton.new_with_label(definition)
+			checkbutton.connect("toggled", save_status_method, True)
+			self.pack_start(checkbutton, False, False, 0)
+			self.checkbuttons.append(checkbutton)
+		
+	def laden(self, parameter_dict):
+		i = 0
+		for parameter in self.short_parameters:
+			try:
+				self.checkbuttons[i].set_active(parameter_dict[parameter])
+			except KeyError:
+				locked_print("Parameter", parameter, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
+			i += 1
+		
+class ServerTab(Gtk.VBox):
+	def __init__(self, save_status_method):
+		super(ServerTab, self).__init__()
+		self.entry_table = EntryTable(CONFIG_SERVER_TEXT_PARAMETERS, CONFIG_SERVER_TEXT_PARAMETERS_SHORT, save_status_method)
+		self.pack_start(self.entry_table, False, False, 0)
+		self.check_button_box = CheckButtonBox(CONFIG_SERVER_CHECKBUTTON_DEFINITIONS, CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
+		self.pack_start(self.check_button_box, False, False, 0)
+
+	def laden(self, server_dict):
+		self.entry_table.laden(server_dict)
+		self.check_button_box.laden(server_dict)
+
+class JoystickTab(Gtk.VBox):
+	def __init__(self, save_status_method):
+		super(JoystickTab, self).__init__()
+		self.entry_table = EntryTable(CONFIG_JOYSTICK_TEXT_PARAMETERS, CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT, save_status_method)
+		self.pack_start(self.entry_table, False, False, 0)
+		self.check_button_box = CheckButtonBox(CONFIG_JOYSTICK_CHECKBUTTON_DEFINITIONS, CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
+		self.pack_start(self.check_button_box, False, False, 0)
+
+	def laden(self, joy_dict):
+		self.entry_table.laden(joy_dict)
+		self.check_button_box.laden(joy_dict)
 
 class FunktionTreeView(Gtk.TreeView):
 	def __init__(self, save_status_method):
