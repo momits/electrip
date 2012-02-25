@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.0
+# this is ELECTRIP VERSION 2.1.1
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
@@ -613,7 +613,7 @@ class CheckButtonBox(Gtk.VBox):
 		
 class ServerTab(Gtk.VBox):
 	def __init__(self, save_status_method):
-		super(ServerTab, self).__init__()
+		super(ServerTab, self).__init__(False, 8)
 		self.entry_table = EntryTable(CONFIG_SERVER_TEXT_PARAMETERS, CONFIG_SERVER_TEXT_PARAMETERS_SHORT, save_status_method)
 		self.pack_start(self.entry_table, False, False, 0)
 		self.check_button_box = CheckButtonBox(CONFIG_SERVER_CHECKBUTTON_DEFINITIONS, CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
@@ -625,7 +625,7 @@ class ServerTab(Gtk.VBox):
 
 class JoystickTab(Gtk.VBox):
 	def __init__(self, save_status_method):
-		super(JoystickTab, self).__init__()
+		super(JoystickTab, self).__init__(False, 8)
 		self.entry_table = EntryTable(CONFIG_JOYSTICK_TEXT_PARAMETERS, CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT, save_status_method)
 		self.pack_start(self.entry_table, False, False, 0)
 		self.check_button_box = CheckButtonBox(CONFIG_JOYSTICK_CHECKBUTTON_DEFINITIONS, CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)

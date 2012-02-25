@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.1.0
+# this is ELECTRIP VERSION 2.1.1
 
 # Import von Modulen
 
@@ -321,7 +321,7 @@ class HBoxFunktionen(Gtk.HBox):
 		self.max_anzahl_buttons = 0
 		
 		if display_func_nr:
-			self.buttons = [FunktionButton(lok, str(funktion["Nr"]) + " " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
+			self.buttons = [FunktionButton(lok, str(funktion["Button"]) + " " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
 		else:
 			self.buttons = [FunktionButton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
 
