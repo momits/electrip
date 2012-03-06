@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.1.1
+# this is ELECTRIP VERSION 2.1.2
 
 # Import von Modulen
 
@@ -36,11 +36,13 @@ class Fenster(Gtk.Window):
 			self.konfiguration_button = KonfigurationButton(self, self.config_fenster)
 			self.fullscreen_button = FullscreenButton(self)
 			
-			self.hbox_oben = Gtk.HBox()
+			self.hbox_oben = Gtk.Box()
+			self.hbox_oben.set_orientation(Gtk.Orientation.HORIZONTAL)
 			self.hbox_oben.pack_start(self.konfiguration_button, True, True, 0)
 			self.hbox_oben.pack_start(self.fullscreen_button, False, False, 0)
 			
-			self.grundbox = Gtk.VBox() # Grundbox erzeugen
+			self.grundbox = Gtk.Box() # Grundbox erzeugen
+			self.grundbox.set_orientation(Gtk.Orientation.VERTICAL)
 			self.grundbox.pack_start(self.hbox_oben, False, False, 0)
 			self.grundbox.pack_start(self.scrolled_window, True, True, 0)
 			self.grundbox.pack_start(self.nothalt_button, False, False, 0)
@@ -136,7 +138,8 @@ class FullscreenButton(Gtk.ToggleButton):
 		icon = Gtk.Image()
 		icon.set_from_stock(Gtk.STOCK_FULLSCREEN, Gtk.IconSize.BUTTON)
 		label = Gtk.Label(label="Vollbild")
-		hbox = Gtk.HBox(False, 5)
+		hbox = Gtk.Box(False, 5)
+		hbox.set_orientation(Gtk.Orientation.HORIZONTAL)
 		hbox.pack_start(label, True, True, 0)
 		hbox.pack_start(icon, True, True, 0)
 		self.add(hbox)
@@ -160,9 +163,10 @@ class ScrolledWindow(Gtk.ScrolledWindow):
 		self.hbox_mitte = HBoxMitte(socket, loks, fenster, display_func_nr, self)
 		self.add_with_viewport(self.hbox_mitte)
 		
-class HBoxMitte(Gtk.HBox):
+class HBoxMitte(Gtk.Box):
 	def __init__(self, socket, loks, fenster, display_func_nr, scrolled_window):
 		super(HBoxMitte, self).__init__()
+		self.set_orientation(Gtk.Orientation.HORIZONTAL)
 		self.regler = []
 		self.socket = socket
 		for i in range(len(loks)): # Alle Regler hinzufügen
@@ -178,7 +182,7 @@ class HBoxMitte(Gtk.HBox):
 		max_funktionsbuttons = 0
 		search_pending = True # Suche nach einem Funktionsbutton um Höhe zu ermitteln
 		for regler in self.regler:
-			regler.hbox = HBoxFunktionen(regler.lok, display_func_nr, self.socket) ##############################################
+			regler.hbox = HBoxFunktionen(regler.lok, display_func_nr, self.socket)
 			regler.hbox.show_all()
 			regler.pack_start(regler.hbox, False, False, 10)
 			if regler.hbox.max_anzahl_buttons > max_funktionsbuttons: # finde spalte mit den meisten buttons (mit der bedingung geht einher, dass regler.hbox mindestens einen Funktionsbutton besitzt)
@@ -195,9 +199,10 @@ class HBoxMitte(Gtk.HBox):
 				regler.hbox.set_size_request(-1, button_req.height * max_funktionsbuttons)
 			
 
-class Regler(Gtk.VBox):
+class Regler(Gtk.Box):
 	def __init__(self, socket, lok, scrolled_window):
 		super(Regler, self).__init__()
+		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.lok = lok
 		self.joystick = None
 		self.lokbild = Lokbild(lok.bild)
@@ -268,8 +273,8 @@ class Richtungswender(Gtk.Button):
 	def __init__(self, lok, socket, scale):
 		super(Richtungswender, self).__init__()
 		self.set_size_request(-1, 30)
-		self.pfeil_hoch = Gtk.Arrow.new(Gtk.ArrowType.UP, Gtk.ShadowType.NONE)
-		self.pfeil_runter = Gtk.Arrow.new(Gtk.ArrowType.DOWN, Gtk.ShadowType.NONE)
+		self.pfeil_hoch = Gtk.Image.new_from_stock(Gtk.STOCK_GO_UP, Gtk.IconSize.BUTTON)
+		self.pfeil_runter = Gtk.Image.new_from_stock(Gtk.STOCK_GO_DOWN, Gtk.IconSize.BUTTON)
 		self.zeige_richtungspfeil(lok.richtung)
 		self.connect("clicked", self.richtungswechsel, lok, socket, scale)
 
@@ -282,7 +287,7 @@ class Richtungswender(Gtk.Button):
 		else:
 			scale.set_value(0)
 		
-		self.zeige_richtungspfeil(lok.richtung)
+			self.zeige_richtungspfeil(lok.richtung)
 	
 	def zeige_richtungspfeil(self, richtung):
 		if richtung:
@@ -291,9 +296,12 @@ class Richtungswender(Gtk.Button):
 			self.set_image(self.pfeil_runter)
 
 class FunktionButton(Gtk.ToggleButton):
-	def __init__(self, lok, funktionsname, wert, nr, socket):
-		self.text = funktionsname
-		super(FunktionButton, self).__init__(self.text)
+	def __init__(self, lok, text, wert, nr, socket):
+		super(FunktionButton, self).__init__()
+		self.child_label = Gtk.Label()
+		self.child_label.set_markup(text)
+		self.add(self.child_label)
+		
 		self.child_label = self.get_child()
 		self.child_label.set_ellipsize(Pango.EllipsizeMode.END)
 		self.wert = wert
@@ -314,14 +322,15 @@ class FunktionButton(Gtk.ToggleButton):
 			lok.an_server_senden(socket)
 		self.toggled()
 			
-class HBoxFunktionen(Gtk.HBox):
+class HBoxFunktionen(Gtk.Box):
 	def __init__(self, lok, display_func_nr, socket):
 		super(HBoxFunktionen, self).__init__()
+		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.boxen = []
 		self.max_anzahl_buttons = 0
 		
 		if display_func_nr:
-			self.buttons = [FunktionButton(lok, str(funktion["Button"]) + " " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
+			self.buttons = [FunktionButton(lok, "<b>" + str(funktion["Button"]) + "</b> - " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
 		else:
 			self.buttons = [FunktionButton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
 
@@ -334,7 +343,8 @@ class HBoxFunktionen(Gtk.HBox):
 			zu_packende_buttons = len(lok.funktionen)
 
 			for box_nr in range(int(anzahl_boxen)):
-				box = Gtk.VButtonBox()
+				box = Gtk.ButtonBox()
+				box.set_orientation(Gtk.Orientation.VERTICAL)
 				box.set_layout(Gtk.ButtonBoxStyle.START)
 				
 				if zu_packende_buttons > buttons_pro_box:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.1
+# this is ELECTRIP VERSION 2.1.2
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
@@ -62,9 +62,10 @@ class Fenster(Gtk.Window):
 		fehlermeldung.run()
 		fehlermeldung.destroy()
 
-class Grundbox(Gtk.VBox):
+class Grundbox(Gtk.Box):
 	def __init__(self, fenster, verzeichnis):
 		super(Grundbox, self).__init__()
+		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.has_unsaved_changes = False # Zu Beginn keine ungespeicherten Änderungen
 		self.verzeichnis = verzeichnis # Zu Beginn ist keine Datei geladen
 		
@@ -189,7 +190,8 @@ class StockBildButton(Gtk.Button):
 		icon = Gtk.Image()
 		icon.set_from_stock(stock, Gtk.IconSize.BUTTON)
 		label = Gtk.Label(label=label)
-		hbox = Gtk.HBox(False, 5)
+		hbox = Gtk.Box(False, 5)
+		hbox.set_orientation(Gtk.Orientation.HORIZONTAL)
 		hbox.pack_start(label, True, True, 0)
 		hbox.pack_start(icon, True, True, 0)
 		self.add(hbox)
@@ -297,9 +299,10 @@ class ElectripLadebutton(StockBildButton):
 			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
 		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster(fenster)
 
-class ButtonboxOben(Gtk.HBox):
+class ButtonboxOben(Gtk.Box):
 	def __init__(self, lok_treeview, funktion_treeview, server_tab, joystick_table, fenster):
 		super(ButtonboxOben, self).__init__()
+		self.set_orientation(Gtk.Orientation.HORIZONTAL)
 		self.ladebutton = Ladebutton(lok_treeview, funktion_treeview, server_tab, joystick_table, fenster)
 		self.speichern_unter_button = SpeichernUnterButton(fenster)
 		self.speicherbutton = SpeicherButton(fenster)
@@ -494,7 +497,8 @@ class TopAlignment(Gtk.Alignment):
 class TabbedBox(Gtk.Notebook):
 	def __init__(self, fenster, save_status_method):
 		super(TabbedBox, self).__init__()
-		self.hbox_lok = Gtk.HBox()
+		self.hbox_lok = Gtk.Box()
+		self.hbox_lok.set_orientation(Gtk.Orientation.HORIZONTAL)
 		self.funktionen_frame = FunktionenFrame(save_status_method)
 		self.lok_frame = LokFrame(self.funktionen_frame.scrolled_window.funktion_treeview, fenster, save_status_method)
 		self.hbox_lok.pack_start(self.lok_frame, True, True, 0)
@@ -519,7 +523,8 @@ class FunktionenFrame(Gtk.Frame):
 		self.scrolled_window = ScrolledWindowFunktionen(save_status_method)
 		self.buttonbox_funktionen = ButtonboxFunktionAktionen(self.scrolled_window.funktion_treeview, save_status_method)
 		
-		vbox = Gtk.VBox()
+		vbox = Gtk.Box()
+		vbox.set_orientation(Gtk.Orientation.VERTICAL)
 		vbox.pack_start(self.scrolled_window, True, True, 0)
 		vbox.pack_start(self.buttonbox_funktionen, False, False, 0)
 		self.add(vbox)
@@ -544,7 +549,8 @@ class LokFrame(Gtk.Frame):
 		self.scrolled_window = ScrolledWindowLok(funktion_treeview, fenster, save_status_method)
 		self.buttonbox_lok = ButtonboxLokAktionen(self.scrolled_window.lok_treeview, funktion_treeview, save_status_method)
 		
-		vbox = Gtk.VBox()
+		vbox = Gtk.Box()
+		vbox.set_orientation(Gtk.Orientation.VERTICAL)
 		vbox.pack_start(self.scrolled_window, True, True, 0)
 		vbox.pack_start(self.buttonbox_lok, False, False, 0)
 		self.add(vbox)
@@ -589,9 +595,10 @@ class EntryTable(Gtk.Table):
 				locked_print("Parameter", parameter, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
 			i += 1
 			
-class CheckButtonBox(Gtk.VBox):
+class CheckButtonBox(Gtk.Box):
 	def __init__(self, definitions, short_parameters, save_status_method):
 		super(CheckButtonBox, self).__init__()
+		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.definitions = definitions
 		self.short_parameters = short_parameters
 		self.checkbuttons = []
@@ -611,9 +618,10 @@ class CheckButtonBox(Gtk.VBox):
 				locked_print("Parameter", parameter, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
 			i += 1
 		
-class ServerTab(Gtk.VBox):
+class ServerTab(Gtk.Box):
 	def __init__(self, save_status_method):
 		super(ServerTab, self).__init__(False, 8)
+		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.entry_table = EntryTable(CONFIG_SERVER_TEXT_PARAMETERS, CONFIG_SERVER_TEXT_PARAMETERS_SHORT, save_status_method)
 		self.pack_start(self.entry_table, False, False, 0)
 		self.check_button_box = CheckButtonBox(CONFIG_SERVER_CHECKBUTTON_DEFINITIONS, CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
@@ -623,9 +631,10 @@ class ServerTab(Gtk.VBox):
 		self.entry_table.laden(server_dict)
 		self.check_button_box.laden(server_dict)
 
-class JoystickTab(Gtk.VBox):
+class JoystickTab(Gtk.Box):
 	def __init__(self, save_status_method):
 		super(JoystickTab, self).__init__(False, 8)
+		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.entry_table = EntryTable(CONFIG_JOYSTICK_TEXT_PARAMETERS, CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT, save_status_method)
 		self.pack_start(self.entry_table, False, False, 0)
 		self.check_button_box = CheckButtonBox(CONFIG_JOYSTICK_CHECKBUTTON_DEFINITIONS, CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
