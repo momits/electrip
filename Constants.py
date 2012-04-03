@@ -7,7 +7,7 @@ from gi.repository import GObject
 # 0. ----------- Allgemein -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "2.1.2"
+ELECTRIP_VERSION = "2.1.3"
 
 # 0.2. ICONS
 ICON_PATH_LIST = [

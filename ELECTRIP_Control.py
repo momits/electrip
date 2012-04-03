@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.1.2
+# this is ELECTRIP VERSION 2.1.3
 
 # Import von Modulen
 
@@ -50,7 +50,7 @@ class Fenster(Gtk.Window):
 			
 			self.joystick_konsole = joystick_konsole.JoystickKonsole(loks, self.scrolled_window.hbox_mitte.regler, self.nothalt_button, joy_dict)
 			self.maximize()
-			self.show_all()			
+			self.show_all()
 			
 		except ValueError:
 			self.destroy()
@@ -108,6 +108,8 @@ class Fenster(Gtk.Window):
 				text = "INIT " + server_bus + " GL " + str(lok.adresse) + " " + str(lok.protokoll) + " " + str(lok.fahrstufen) + " " + str(lok.anzahl_funktionen) + "\n"
 				locked_print(text)
 				self.socket.send(text)
+				locked_print(self.socket.recv(4096))
+				lok.an_server_senden(self.socket);
 				locked_print(self.socket.recv(4096))
 			else:
 				locked_print("Lok", lok.name, "verwendet ein nicht unterstütztes Digitalprotokoll.")
@@ -272,7 +274,6 @@ class Lokschild(Gtk.Label):
 class Richtungswender(Gtk.Button):
 	def __init__(self, lok, socket, scale):
 		super(Richtungswender, self).__init__()
-		self.set_size_request(-1, 30)
 		self.pfeil_hoch = Gtk.Image.new_from_stock(Gtk.STOCK_GO_UP, Gtk.IconSize.BUTTON)
 		self.pfeil_runter = Gtk.Image.new_from_stock(Gtk.STOCK_GO_DOWN, Gtk.IconSize.BUTTON)
 		self.zeige_richtungspfeil(lok.richtung)
@@ -286,8 +287,7 @@ class Richtungswender(Gtk.Button):
 			lok.an_server_senden(socket)
 		else:
 			scale.set_value(0)
-		
-			self.zeige_richtungspfeil(lok.richtung)
+		self.zeige_richtungspfeil(lok.richtung)
 	
 	def zeige_richtungspfeil(self, richtung):
 		if richtung:
@@ -298,6 +298,10 @@ class Richtungswender(Gtk.Button):
 class FunktionButton(Gtk.ToggleButton):
 	def __init__(self, lok, text, wert, nr, socket):
 		super(FunktionButton, self).__init__()
+		self.lok = lok
+		self.nr = nr
+		self.socket = socket
+		
 		self.child_label = Gtk.Label()
 		self.child_label.set_markup(text)
 		self.add(self.child_label)
@@ -307,19 +311,19 @@ class FunktionButton(Gtk.ToggleButton):
 		self.wert = wert
 		if self.wert:
 			self.set_active(True)
-		self.connect("clicked", self.funktion_umschalten, lok, nr, socket)
+		self.connect("clicked", self.funktion_umschalten)
 		
 
-	def funktion_umschalten(self, button, lok, nr, socket):
+	def funktion_umschalten(self, button):
 		self.wert = not self.wert
 		if self.wert:
-			lok.funktionen[nr]["Wert"] = True
-			locked_print("Lok", lok.name, "hat die Funktion", self.text, "angeschaltet.")
-			lok.an_server_senden(socket)
+			self.lok.funktionen[self.nr]["Wert"] = True
+			locked_print("Lok", self.lok.name, "hat die Funktion", self.lok.funktionen[self.nr]["Name"], "angeschaltet.")
+			self.lok.an_server_senden(self.socket)
 		else:
-			lok.funktionen[nr]["Wert"] = False
-			locked_print("Lok", lok.name, "hat die Funktion", self.text, "ausgeschaltet.")
-			lok.an_server_senden(socket)
+			self.lok.funktionen[self.nr]["Wert"] = False
+			locked_print("Lok", self.lok.name, "hat die Funktion", self.lok.funktionen[self.nr]["Name"], "ausgeschaltet.")
+			self.lok.an_server_senden(self.socket)
 		self.toggled()
 			
 class HBoxFunktionen(Gtk.Box):
@@ -330,9 +334,9 @@ class HBoxFunktionen(Gtk.Box):
 		self.max_anzahl_buttons = 0
 		
 		if display_func_nr:
-			self.buttons = [FunktionButton(lok, "<b>" + str(funktion["Button"]) + "</b> - " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
+			self.buttons = [FunktionButton(lok, "<b>" + str(funktion["Button"]) + "</b> - " + funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons mit Button-Nummer
 		else:
-			self.buttons = [FunktionButton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons
+			self.buttons = [FunktionButton(lok, funktion["Name"], funktion["Wert"], funktion["Nr"], socket) for funktion in lok.funktionen] # erzeuge funktionsbuttons ohne Button-Nummer
 
 		if len(lok.funktionen) > 0:			
 			anzahl_boxen, rest_boxen = divmod(len(lok.funktionen), CONTROL_NUMBER_FUNCTION_BUTTONS) # ermittle, wie viele boxen erzeugt werden müssen
