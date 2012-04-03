@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.1.4
-
-# Import von Modulen
+# -*- coding: utf-8 -*-
+# this is ELECTRIP VERSION 2.1.5
 
 from gi.repository.GLib import GError
 from gi.repository import Gtk, Pango, Gdk, GdkPixbuf
@@ -178,7 +176,6 @@ class HBoxMitte(Gtk.Box):
 				
 	def realized(self, hbox, display_func_nr, fenster):
 		min_req, natural_req = self.get_preferred_size()
-		#width, height = self.size_request()
 		fenster.resize(natural_req.width + 100, natural_req.height + 100)
 		
 		max_funktionsbuttons = 0

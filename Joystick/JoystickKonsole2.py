@@ -22,7 +22,7 @@ class JoystickKonsole():
 		self.joysticks = []
 		for id in range(pygame.joystick.get_count()):
 			if not len(self.joysticks) == len(regler):
-				self.joysticks.append([pygame.joystick.Joystick(id), id, 0, None]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links), ID des Scroll-Threads] -> start_scrolling = True wenn joyhat 500 ms gedrückt wird
+				self.joysticks.append([pygame.joystick.Joystick(id), id, 0]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links)] -> start_scrolling = True wenn joyhat 500 ms gedrückt wird
 			else:
 				locked_print("Joystick '" + pygame.joystick.Joystick(id).get_name() + "' wurde ignoriert, da ", pygame.joystick.get_count(), " Joysticks zuviel für ", len(regler), " Loks sind.")
 		
@@ -102,20 +102,16 @@ class JoystickThread(threading.Thread):
 						
 			elif event.type == JOYHATMOTION:
 				richtung = event.value[0]
-				
 				if richtung == 1 != self.joysticks[event.joy][2]:
-					self.scrollen(1, event.joy)
 					self.joysticks[event.joy][2] = 1 # Starte scroll-Prozess nach rechts wenn joyhat länger als 500 ms gedrückt wird
+					self.scrollen(1, event.joy)
 					GObject.timeout_add(JOYSTICK_SCROLL_ACTIVATE_TIME, self.set_auto_scroll, 1, event.joy)
 				elif richtung == -1 != self.joysticks[event.joy][2]:
-					self.scrollen(-1, event.joy)
 					self.joysticks[event.joy][2] = -1
+					self.scrollen(-1, event.joy)
 					GObject.timeout_add(JOYSTICK_SCROLL_ACTIVATE_TIME, self.set_auto_scroll, -1, event.joy)
 				elif richtung == 0 != self.joysticks[event.joy][2]: # wenn joyhat losgelassen und noch gescrollt wird
-						self.joysticks[event.joy][2] = 0 # start_scrolling = 0 -> Scroll-Prozess wird nicht gestartet falls er noch nicht am Laufen ist
-						if self.joysticks[event.joy][3] != None:
-							is_stopped = GObject.source_remove(self.joysticks[event.joy][3]) # Stoppe scroll-Prozess falls er läuft
-							self.joysticks[event.joy][3] = None # Setze scroll-id auf None
+					self.joysticks[event.joy][2] = 0 # richtung = 0 -> Scroll-Prozess wird gestoppt
 				
 		
 	def lok_wechseln(self, lokid, neue_lokid, joystick):
@@ -132,24 +128,26 @@ class JoystickThread(threading.Thread):
 		
 	def scrollen(self, richtung, joystick):
 		lokid = self.joysticks[joystick][1]
-		if richtung == 1 and lokid < len(self.regler)-1: # wenn lokid = länge von self.regler muss nicht gewechselt werden
-			neue_lokid = lokid
-			while neue_lokid < len(self.loks)-1 and self.regler[neue_lokid].joystick != None:
-				neue_lokid += 1 # Findet nächste freie Lok-ID
-			if self.regler[neue_lokid].joystick == None: # Prüfen, ob Lok frei ist (falls alle Loks mit Joysticks besetzt sind)
-				self.lok_wechseln(lokid, neue_lokid, joystick)
+		if richtung == self.joysticks[joystick][2]:
+			if richtung == 1 and lokid < len(self.regler)-1: # wenn lokid = länge von self.regler muss nicht gewechselt werden
+				neue_lokid = lokid
+				while neue_lokid < len(self.loks)-1 and self.regler[neue_lokid].joystick != None:
+					neue_lokid += 1 # Findet nächste freie Lok-ID
+				if self.regler[neue_lokid].joystick == None: # Prüfen, ob Lok frei ist (falls alle Loks mit Joysticks besetzt sind)
+					self.lok_wechseln(lokid, neue_lokid, joystick)
 				
-		elif richtung == -1 and lokid > 0: # wenn lokid = 0 muss nicht gewechselt werden
-			neue_lokid = lokid
-			while neue_lokid > 0 and self.regler[neue_lokid].joystick != None:
-				neue_lokid -= 1
-			if self.regler[neue_lokid].joystick == None:
-				self.lok_wechseln(lokid, neue_lokid, joystick)
-		return True
+			elif richtung == -1 and lokid > 0: # wenn lokid = 0 muss nicht gewechselt werden
+				neue_lokid = lokid
+				while neue_lokid > 0 and self.regler[neue_lokid].joystick != None:
+					neue_lokid -= 1
+				if self.regler[neue_lokid].joystick == None:
+					self.lok_wechseln(lokid, neue_lokid, joystick)
+			return True # Wenn nichts zurückgegeben wird, wird der gobject-scroll-thread automatisch beendet
+
 	
-	def set_auto_scroll(self, richtung, joystick): # wenn immer noch die gleiche joyhat-richtung gedrückt ist
-		if self.joysticks[joystick][2] == richtung and self.joysticks[joystick][3] == None: # verhindere raise-condition dass zwei scroll-threads gleichzeitig gestartet werden und nur einer gestoppt wird
-			self.joysticks[joystick][3] = GObject.timeout_add(JOYSTICK_SCROLL_REPEAT_TIME, self.scrollen, richtung, joystick)
+	def set_auto_scroll(self, richtung, joystick):
+		if self.joysticks[joystick][2] == richtung: # wenn immer noch die gleiche joyhat-richtung gedrückt ist
+			GObject.timeout_add(JOYSTICK_SCROLL_REPEAT_TIME, self.scrollen, richtung, joystick)
 		return False
 	
 	def quit(self):
