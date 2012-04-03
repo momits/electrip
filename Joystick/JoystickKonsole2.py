@@ -13,7 +13,7 @@ import threading
 
 class JoystickKonsole():
 	def __init__(self, loks, regler, nothaltbutton, joy_dict):
-			
+		global pygame
 		pygame.init()
 				
 		self.AmLaufen = True # Status setzen
@@ -51,7 +51,7 @@ class JoystickKonsole():
 
 class JoystickThread(threading.Thread):
 	def __init__(self, joystickliste, loks, regler, nothaltbutton, joy_button_notstop, joy_button_richtungswender, joy_button_set_focus, use_auto_focus):
-		threading.Thread.__init__(self)
+		super(JoystickThread, self).__init__()
 		self.bildliste = [GdkPixbuf.Pixbuf.new_from_file("Joystick/Pictures/" + str(bild_nr) + ".png") for bild_nr in range(1,13)]
 			
 		self.joysticks = joystickliste

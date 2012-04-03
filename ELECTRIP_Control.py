@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
-# this is ELECTRIP VERSION 2.1.3
+# this is ELECTRIP VERSION 2.1.4
 
 # Import von Modulen
 
@@ -15,7 +15,7 @@ from LockedPrint import *
 		
 class Fenster(Gtk.Window):
 	def __init__(self, config_fenster):
-		super(Fenster, self).__init__() #Gtk.WindowType.TOPLEVEL
+		super(Fenster, self).__init__()
 		config_fenster.control_window_is_alive = True
 		self.connect("delete-event", self.delete_event)
 		self.set_title("ELECTRIP " + ELECTRIP_VERSION + " Steuerung - " + str(config_fenster.grundbox.verzeichnis))

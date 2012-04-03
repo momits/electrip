@@ -7,7 +7,7 @@ from gi.repository import GObject
 # 0. ----------- Allgemein -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "2.1.3"
+ELECTRIP_VERSION = "2.1.4"
 
 # 0.2. ICONS
 ICON_PATH_LIST = [
@@ -29,9 +29,9 @@ CONFIG_PICTURE_COLUMN = 7 # Spalte im LokTreeView in der das Bild eingetragen wi
 
 # 1.2.2 ServerTab
 CONFIG_SERVER_TEXT_PARAMETERS= [
-("Host", "Die IP-Adresse des Rechners auf dem der Server läuft"),
-("Port", "Der Port unter dem der Server erreichbar ist, standardmäßig 4303"),
-("Bus", "Der Bus auf dem der Server Befehle empfangen soll, standardmäßig 1")
+("Host", "Die IP-Adresse des Rechners auf dem der Server läuft", "localhost"),
+("Port", "Der Port unter dem der Server erreichbar ist, standardmäßig 4303", "4303"),
+("Bus", "Der Bus auf dem der Server Befehle empfangen soll, standardmäßig 1", "1")
 ] # Namen und Definition der Parameter für die Kommunikation mit dem SRCP-Server
 
 CONFIG_SERVER_TEXT_PARAMETERS_SHORT= [
@@ -40,20 +40,16 @@ CONFIG_SERVER_TEXT_PARAMETERS_SHORT= [
 "Bus"
 ] # Namen der Parameter für die Kommunikation mit dem SRCP-Server
 
-CONFIG_SERVER_CHECKBUTTON_DEFINITIONS = [
-("Schalte den Strom beim Starten der Steuerung ein")
-]
-
-CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT = [
-("Power")
+CONFIG_SERVER_CHECKBUTTON_PARAMETERS = [
+("Power", "Schalte den Strom beim Starten der Steuerung ein", True)
 ]
 
 # 1.2.3 JoystickTab
 CONFIG_JOYSTICK_TEXT_PARAMETERS = [
-("Nothalt (JoyButton)", "Der Button am Gamepad, über den die Gleisspannung ausgeschaltet werden kann"),
-("Richtungswender (JoyButton)", "Der Button am Joystick, der einen Richtungswechsel der Lokomotive bewirkt"),
-("Beschleunigung (JoyAchse)", "Die Achse am Gamepad, mit der die Geschwindigkeit der Lok geregelt wird"),
-("Fokus (JoyButton)", "Der Button am Gamepad, der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt")
+("Nothalt (JoyButton)", "Der Button am Gamepad, über den die Gleisspannung ausgeschaltet werden kann", ""),
+("Richtungswender (JoyButton)", "Der Button am Joystick, der einen Richtungswechsel der Lokomotive bewirkt", ""),
+("Beschleunigung (JoyAchse)", "Die Achse am Gamepad, mit der die Geschwindigkeit der Lok geregelt wird", ""),
+("Fokus (JoyButton)", "Der Button am Gamepad, der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", "")
 ] # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
 
 CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT = [
@@ -63,15 +59,11 @@ CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT = [
 "Fokus"
 ] # Namen der Parameter für die Bedienung mit einem Joystick
 
-CONFIG_JOYSTICK_CHECKBUTTON_DEFINITIONS = [
-"Die ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist",
-"Die Nummer des zugehörigen Tasters am Gamepad auf den Funktions-Buttons anzeigen"
+CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS = [
+("AutoFokus", "Die ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist", True),
+("ShowFunktionButtonNr", "Die Nummer des zugehörigen Tasters am Gamepad auf den Funktions-Buttons anzeigen", False)
 ]
 
-CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT = [
-"AutoFokus",
-"ShowFunktionButtonNr"
-]
 
 # 1.2.4 FunktionTreeView
 CONFIG_FUNCTION_TREEVIEW_COLUMN_TYPES = [GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING] # Datentypen in den Spalten des FunktionTreeView

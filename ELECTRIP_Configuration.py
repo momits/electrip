@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.3
+# this is ELECTRIP VERSION 2.1.4
 
 from os import getcwd, path
 package_path = path.dirname(getcwd()) # finde das parent-directory vom aktuellen working-directory
@@ -21,7 +21,7 @@ from LockedPrint import locked_print
 
 class Fenster(Gtk.Window):
 	def __init__(self):
-		super(Fenster, self).__init__() #Gtk.WindowType.TOPLEVEL
+		super(Fenster, self).__init__()
 		self.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration")
 		icon_list = [GdkPixbuf.Pixbuf.new_from_file(path) for path in ICON_PATH_LIST]
 		self.set_icon_list(icon_list)
@@ -109,9 +109,9 @@ class Grundbox(Gtk.Box):
 			
 		server_check_button_box = self.tabbed_box.server_tab.check_button_box
 		i = 0
-		for parameter in CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT:
+		for triple in CONFIG_SERVER_CHECKBUTTON_PARAMETERS:
 			wert = server_check_button_box.checkbuttons[i].get_active()
-			server[parameter] = wert
+			server[triple[0]] = wert
 			i += 1
 
 		
@@ -175,9 +175,9 @@ class Grundbox(Gtk.Box):
 		
 		joystick_check_button_box = self.tabbed_box.joystick_tab.check_button_box
 		i = 0
-		for parameter in CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT:
+		for triple in CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS:
 			wert = joystick_check_button_box.checkbuttons[i].get_active()
-			joystick[parameter] = wert
+			joystick[triple[0]] = wert
 			i += 1
 		
 		# Finales Speicherdict erzeugen
@@ -241,9 +241,9 @@ class Ladebutton(StockBildButton):
 		except IOError:
 			fenster.error("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
 			return False
-		#except:
-		#	fenster.error("Laden gescheitert.\nEs handelt sich um keine gültige ELECTRIP-Datei.")
-		#	return False
+		except:
+			fenster.error("Laden gescheitert.\nEs handelt sich wahrscheinlich um keine gültige ELECTRIP-Datei.")
+			return False
 
 class SpeichernUnterButton(StockBildButton):
 	def __init__(self, fenster):
@@ -297,7 +297,7 @@ class ElectripLadebutton(StockBildButton):
 		fenster.hide()
 		if fenster.steuerungsfenster != None:
 			fenster.steuerungsfenster.delete_event(show_config_fenster=False) # Alte Steuerung beenden und danach nicht das Konfigurationsfenster einblenden, sondern ein neues Steuerungsfenster starten
-		fenster.steuerungsfenster = ELECTRIP = ELECTRIP_Control.Fenster(fenster)
+		fenster.steuerungsfenster = ELECTRIP_Control.Fenster(fenster)
 
 class ButtonboxOben(Gtk.Box):
 	def __init__(self, lok_treeview, funktion_treeview, server_tab, joystick_table, fenster):
@@ -574,8 +574,9 @@ class EntryTable(Gtk.Table):
 		self.set_border_width(6) # Schönheitsabstand
 		self.eingabefelder = []
 		y = 0
-		for parameter, definition in self.long_parameters:
+		for parameter, definition, wert in self.long_parameters:
 			eingabefeld = Gtk.Entry()
+			eingabefeld.set_text(wert)
 			eingabefeld.connect("changed", save_status_method, True)
 			parameter_label = Beschriftung(parameter)
 			definition_label = Gtk.Label(label=definition)
@@ -596,24 +597,24 @@ class EntryTable(Gtk.Table):
 			i += 1
 			
 class CheckButtonBox(Gtk.Box):
-	def __init__(self, definitions, short_parameters, save_status_method):
+	def __init__(self, parameters, save_status_method):
 		super(CheckButtonBox, self).__init__()
 		self.set_orientation(Gtk.Orientation.VERTICAL)
-		self.definitions = definitions
-		self.short_parameters = short_parameters
+		self.parameters = parameters
 		self.checkbuttons = []
 		
-		for definition in self.definitions:
-			checkbutton = Gtk.CheckButton.new_with_label(definition)
+		for triple in self.parameters:
+			checkbutton = Gtk.CheckButton.new_with_label(triple[1])
 			checkbutton.connect("toggled", save_status_method, True)
+			checkbutton.set_active(triple[2])
 			self.pack_start(checkbutton, False, False, 0)
 			self.checkbuttons.append(checkbutton)
 		
 	def laden(self, parameter_dict):
 		i = 0
-		for parameter in self.short_parameters:
+		for triple in self.parameters:
 			try:
-				self.checkbuttons[i].set_active(parameter_dict[parameter])
+				self.checkbuttons[i].set_active(parameter_dict[triple[0]])
 			except KeyError:
 				locked_print("Parameter", parameter, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
 			i += 1
@@ -624,7 +625,7 @@ class ServerTab(Gtk.Box):
 		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.entry_table = EntryTable(CONFIG_SERVER_TEXT_PARAMETERS, CONFIG_SERVER_TEXT_PARAMETERS_SHORT, save_status_method)
 		self.pack_start(self.entry_table, False, False, 0)
-		self.check_button_box = CheckButtonBox(CONFIG_SERVER_CHECKBUTTON_DEFINITIONS, CONFIG_SERVER_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
+		self.check_button_box = CheckButtonBox(CONFIG_SERVER_CHECKBUTTON_PARAMETERS, save_status_method)
 		self.pack_start(self.check_button_box, False, False, 0)
 
 	def laden(self, server_dict):
@@ -637,7 +638,7 @@ class JoystickTab(Gtk.Box):
 		self.set_orientation(Gtk.Orientation.VERTICAL)
 		self.entry_table = EntryTable(CONFIG_JOYSTICK_TEXT_PARAMETERS, CONFIG_JOYSTICK_TEXT_PARAMETERS_SHORT, save_status_method)
 		self.pack_start(self.entry_table, False, False, 0)
-		self.check_button_box = CheckButtonBox(CONFIG_JOYSTICK_CHECKBUTTON_DEFINITIONS, CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS_SHORT, save_status_method)
+		self.check_button_box = CheckButtonBox(CONFIG_JOYSTICK_CHECKBUTTON_PARAMETERS, save_status_method)
 		self.pack_start(self.check_button_box, False, False, 0)
 
 	def laden(self, joy_dict):
