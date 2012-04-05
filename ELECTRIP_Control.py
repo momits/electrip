@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.5
+# this is ELECTRIP VERSION 2.1.6
 
 from gi.repository.GLib import GError
 from gi.repository import Gtk, Pango, Gdk, GdkPixbuf
@@ -167,6 +167,7 @@ class HBoxMitte(Gtk.Box):
 	def __init__(self, socket, loks, fenster, display_func_nr, scrolled_window):
 		super(HBoxMitte, self).__init__()
 		self.set_orientation(Gtk.Orientation.HORIZONTAL)
+		self.set_homogeneous(True)
 		self.regler = []
 		self.socket = socket
 		for i in range(len(loks)): # Alle Regler hinzufügen
