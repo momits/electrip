@@ -20,7 +20,7 @@ class JoystickConsole():
         pygame.joystick.init() # Joystick Modul initialisieren
         
         self.joysticks = []
-        for id in range(pygame.joystick.get_count()):
+        for id in xrange(pygame.joystick.get_count()):
             if not len(self.joysticks) == len(controller):
                 self.joysticks.append([pygame.joystick.Joystick(id), id, 0]) # Liste mit Joystickobjekten erstellen Format: [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links)] -> start_scrolling = True wenn joyhat 500 ms gedrückt wird
             else:
@@ -40,7 +40,7 @@ class JoystickConsole():
         self.joy_thread = JoystickThread(self.joysticks, controller, emergency_button)
         self.joy_thread.start()
         self.speed_thread = SpeedThread(self.joysticks, controller)
-        self.speed_thread_id = GLib.timeout_add(100, self.speed_thread.go)
+        self.speed_thread_id = GLib.timeout_add(50, self.speed_thread.go)
         
     
     def quit(self):
@@ -155,5 +155,5 @@ class SpeedThread():
         
     def go(self):
         for joystick, loco_id, start_scrolling in self.joysticks:
-            Config.locos[loco_id].accelerate(joystick.get_axis(Config.joystick.accel_axis), self.controllers)
+            Config.locos[loco_id].accelerate(joystick.get_axis(Config.joystick.accel_axis), self.controllers[loco_id])
         return True

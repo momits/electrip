@@ -1,0 +1,6 @@
+
+GtkButton#emergency-button:active {
+	transition: 550ms ease;
+	background: #DA5555;
+	color: #FFF;
+}

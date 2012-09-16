@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 # this is ELECTRIP VERSION 2.1.6
 
-from os import getcwd, path
-package_path = path.dirname(getcwd()) # find parent-directory of current working-directory
+from os import getcwd, path as os_path
+package_path = os_path.dirname(getcwd()) # find parent-directory of current working-directory
 from sys import path, argv
 path.append(package_path) # add path to sys.path, to allow relative imports in submodules
 
-from gi.repository import GObject, Gtk, GdkPixbuf
+from gi.repository import GObject, Gtk, GdkPixbuf, Gdk
 import config
-Config = config.Config()
 from copy import deepcopy
 from Constants import ELECTRIP_VERSION, ICON_PATH_LIST
 import ELECTRIP_Configuration
@@ -31,16 +30,14 @@ class MainWindow(Gtk.Window):
         self.basic_vbox = BasicVBox(self)
         self.add(self.basic_vbox)
         
-#        if file_path == None:
-#            self.show_all()
-#        else:
-#            success = self.basic_vbox.buttonbox_top.load_button.load(file_path, self)
-#            if success:
-#                self.basic_vbox.buttonbox_top.config_control_switch.load(None, self)
-#            else:
+        if file_path != None:
+            success = self.basic_vbox.top_grid.load_button.load(file_path, self)
+            if success:
+                self.basic_vbox.top_grid.config_control_switch.control_button.set_active(True)
+        
+        Config.notice_unsaved_changes = True
         self.maximize()
         self.show_all()
-        Config.notice_unsaved_changes = True
         
     def delete_event(self, window, event):
         if Config.has_unsaved_changes:
@@ -52,10 +49,10 @@ class MainWindow(Gtk.Window):
             response = dialog.run()
             dialog.destroy()
             if response == Gtk.ResponseType.YES and Config.last_file == "":
-                self.basic_vbox.buttonbox_top.save_as_button.save(None, self)
+                self.basic_vbox.top_grid.save_as_button.save(None, self)
             elif response == Gtk.ResponseType.YES:
                 Config.save(Config.last_file)
-        if self.basic_vbox.buttonbox_top.config_control_switch.control_button.get_active():
+        if self.basic_vbox.top_grid.config_control_switch.control_button.get_active():
             self.basic_vbox.control_box.quit()
         Gtk.main_quit()
         locked_print("ELECTRIP wurde beendet.")
@@ -65,34 +62,41 @@ class MainWindow(Gtk.Window):
         error_dialog.run()
         error_dialog.destroy()
 
-class BasicVBox(Gtk.Box):
+class BasicVBox(Gtk.Grid):
     def __init__(self, main_window):
-        super(BasicVBox, self).__init__()
+        Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         
         self.config_box = ELECTRIP_Configuration.MainBox(Config, main_window)
-        self.buttonbox_top = ButtonBoxTop(self.config_box.scrolled_window_loco_selection.treeview,
-                                          self.config_box.loco_property_frame.table,
+        self.top_grid = TopGrid(self.config_box.scrolled_window_loco_selection.treeview,
+                                          self.config_box.loco_properties_frame.table,
                                           self.config_box.loco_function_frame.scrolled_window.treeview,
-                                          self.config_box.server_tab,
-                                          self.config_box.joystick_tab,
+                                          self.config_box.server_table,
+                                          self.config_box.joystick_table,
                                           main_window)
+        screen = Gdk.Screen.get_default()
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_path('gtk_styles_and_transitions.css')
+        context = Gtk.StyleContext()
+        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
         
-        self.pack_start(self.buttonbox_top, False, False, 0)
-        self.pack_start(self.config_box, True, True, 0)
+        self.add(self.top_grid)
+        self.add(self.config_box)
 
 class StockImageButton(Gtk.Button):
     def __init__(self, label, stock):
         Gtk.Button.__init__(self)
         icon = Gtk.Image()
         icon.set_from_stock(stock, Gtk.IconSize.BUTTON)
-        hbox = Gtk.Box(False, 5)
-        hbox.set_orientation(Gtk.Orientation.HORIZONTAL)
+        grid = Gtk.Grid()
+        grid.set_orientation(Gtk.Orientation.HORIZONTAL)
+        grid.set_column_spacing(5)
         if label != None:
-            label = Gtk.Label(label=label)
-            hbox.pack_start(label, True, True, 0)
-        hbox.pack_start(icon, True, True, 0)
-        self.add(hbox)
+            label = Gtk.Label(label)
+            label.set_hexpand(True)
+            grid.add(label)
+        grid.add(icon)
+        self.add(grid)
 
 class LoadButton(StockImageButton):
     def __init__(self, loco_selection_treeview, loco_property_table, loco_function_treeview, server_tab, joystick_tab, main_window):
@@ -100,8 +104,8 @@ class LoadButton(StockImageButton):
         self.loco_selection_treeview = loco_selection_treeview
         self.loco_function_treeview = loco_function_treeview
         self.loco_property_table = loco_property_table
-        self.server_tab = server_tab
-        self.joystick_tab = joystick_tab
+        self.server_table = server_tab
+        self.joystick_table = joystick_tab
         
         self.connect("clicked", self.load_dialog, main_window)
         
@@ -122,17 +126,22 @@ class LoadButton(StockImageButton):
             Config.load(path)
             self.loco_function_treeview.load()
             self.loco_selection_treeview.load()
-            self.joystick_tab.load()
-            self.server_tab.load()
-            if main_window.basic_vbox.buttonbox_top.config_control_switch.control_button.get_active():
+            self.joystick_table.load(Config.joystick)
+            self.server_table.load(Config.server)
+            if main_window.basic_vbox.top_grid.config_control_switch.control_button.get_active(): # if control is active
                 main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Steuerung - " + path)
+                if hasattr(Config, "new_unsaved_changes_method"):
+                    del Config.new_unsaved_changes_method
                 new_control_box = ELECTRIP_Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by ELECTRIP_Control
                 main_window.basic_vbox.control_box.quit()
                 main_window.basic_vbox.control_box = new_control_box
-                main_window.basic_vbox.pack_start(main_window.basic_vbox.control_box, True, True, 0)
+                main_window.basic_vbox.add(main_window.basic_vbox.control_box)
             else:
                 main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration - " + path)
             return True
+        except ValueError:
+            main_window.error("Die Datei ist ungültig! Konnte Konfiguration nicht laden.")
+            return False
         except IOError:
             main_window.error("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
             return False
@@ -164,16 +173,22 @@ class SaveButton(StockImageButton):
         StockImageButton.__init__(self, "Speichern", Gtk.STOCK_SAVE)
         self.connect("clicked", self.save, main_window)
         self.set_sensitive(False)
+        Config.set_unsaved_changes_method(self.new_unsaved_changes)
         
-    def save(self, button, config_window): # FIXME: save-button doesn't work
+    def save(self, button, config_window):
         Config.save(Config.last_file)
+        self.set_sensitive(False)
+        
+    def new_unsaved_changes(self):
+        self.set_sensitive(True)
 
 class ConfigControlSwitch(Gtk.ButtonBox):
     def __init__(self, main_window):
         Gtk.ButtonBox.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_layout(Gtk.ButtonBoxStyle.CENTER)
-        self.config_button = Gtk.RadioButton.new_with_label_from_widget(None, "Konfiguration") # Gtk.STOCK_EXECUTE
+        
+        self.config_button = Gtk.RadioButton.new_with_label_from_widget(None, "Konfiguration")
         self.pack_start(self.config_button, True, True, 0)
         
         self.control_button = Gtk.RadioButton.new_with_label_from_widget(self.config_button, "Steuerung")
@@ -184,29 +199,62 @@ class ConfigControlSwitch(Gtk.ButtonBox):
     def toggled(self, button, main_window):
         if button.get_active():
             main_window.basic_vbox.remove(main_window.basic_vbox.config_box)
+            del Config.new_unsaved_changes_method # delete any references to GObjects because they are non-copyable
             main_window.basic_vbox.control_box = ELECTRIP_Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by ELECTRIP_Control
-            main_window.basic_vbox.pack_start(main_window.basic_vbox.control_box, True, True, 0)   
+            main_window.basic_vbox.add(main_window.basic_vbox.control_box)
         else:
             if hasattr(main_window.basic_vbox, "control_box"):
                 main_window.basic_vbox.control_box.quit()
-            main_window.basic_vbox.pack_start(main_window.basic_vbox.config_box, True, True, 0)
+            main_window.basic_vbox.add(main_window.basic_vbox.config_box)
+            Config.new_unsaved_changes_method = main_window.basic_vbox.top_grid.save_button.new_unsaved_changes # restore references to GObjects (in this case save_button)
+            
+class FullscreenButton(Gtk.ToggleButton):
+    def __init__(self, main_window):
+        Gtk.ToggleButton.__init__(self)
+        icon = Gtk.Image()
+        icon.set_from_stock(Gtk.STOCK_FULLSCREEN, Gtk.IconSize.BUTTON)
+        label = Gtk.Label(label="Vollbild")
+        label.set_hexpand(True)
+        grid = Gtk.Grid.new()
+        grid.set_orientation(Gtk.Orientation.HORIZONTAL)
+        grid.set_column_spacing(5)
+        grid.add(label)
+        grid.add(icon)
+        self.add(grid)
+        self.connect("toggled", self.toggled, main_window)
+    
+    def toggled(self, button, main_window):
+        if self.get_active():
+            main_window.fullscreen()
+        else:
+            main_window.unfullscreen()
 
-
-class ButtonBoxTop(Gtk.Box):
+class TopGrid(Gtk.Grid):
     def __init__(self, loco_selection_treeview, loco_property_table, loco_function_treeview, server_tab, joystick_table, main_window):
-        Gtk.Box.__init__(self)
+        Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
+        
+        button_box = Gtk.ButtonBox.new(Gtk.Orientation.HORIZONTAL)
+        button_box.set_layout(Gtk.ButtonBoxStyle.START)
+        button_box.set_hexpand(False)
+        context = button_box.get_style_context()
+        context.add_class(Gtk.STYLE_CLASS_LINKED)
+        
         self.load_button = LoadButton(loco_selection_treeview, loco_property_table, loco_function_treeview, server_tab, joystick_table, main_window)
         self.save_as_button = SaveAsButton(main_window)
         self.save_button = SaveButton(main_window)
+        self.fullscreen_button = FullscreenButton(main_window)
         self.config_control_switch = ConfigControlSwitch(main_window)
 
-        self.pack_start(self.load_button, False, False, 0)
-        self.pack_start(self.save_as_button, False, False, 0)
-        self.pack_start(self.save_button, False, False, 0)
-        self.pack_start(self.config_control_switch, False, False, 0)
+        button_box.pack_start(self.load_button, False, False, 0)
+        button_box.pack_start(self.save_as_button, False, False, 0)
+        button_box.pack_start(self.save_button, False, False, 0)
+        button_box.pack_start(self.fullscreen_button, False, False, 0)
+        self.add(button_box)
+        self.add(self.config_control_switch)
         
 if __name__ == "__main__":
+    Config = config.Config()
     ELECTRIP = MainWindow()
     GObject.threads_init() # Needed to start socket_thread
     Gtk.main()

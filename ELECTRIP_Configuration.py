@@ -13,31 +13,36 @@ from LockedPrint import locked_print
 
 class MainBox(Gtk.Notebook):
     def __init__(self, config, main_window):
-        super(MainBox, self).__init__()
+        Gtk.Notebook.__init__(self)
         global Config
         Config = config
         self.loco_function_frame = LocoFunctionFrame()
         self.loco_speed_frame = LocoSpeedGraphFrame()
-        self.loco_property_frame = LocoPropertyFrame(main_window, self.loco_speed_frame.graph)
+        self.loco_properties_frame = LocoPropertiesFrame(main_window, self.loco_speed_frame.graph)
 
-        self.scrolled_window_loco_selection = ScrolledTreeView(LocoSelectionTreeView(self.loco_property_frame, self.loco_function_frame, self.loco_speed_frame))
-        self.buttonbox_loco = ButtonBoxLocoActions(self.scrolled_window_loco_selection.treeview, self.loco_property_frame, self.loco_function_frame, self.loco_speed_frame)
+        self.scrolled_window_loco_selection = ScrolledTreeView(LocoSelectionTreeView(self.loco_properties_frame, self.loco_function_frame, self.loco_speed_frame))
+        self.buttonbox_loco = ButtonBoxLocoActions(self.scrolled_window_loco_selection.treeview, self.loco_properties_frame, self.loco_function_frame, self.loco_speed_frame)
         
         self.loco_grid = Gtk.Grid()
-        self.loco_grid.attach(self.scrolled_window_loco_selection, 0, 0, 1, 2)
-        self.loco_grid.attach(self.buttonbox_loco, 0, 2, 1, 1)
+        self.loco_grid.attach(self.scrolled_window_loco_selection, 0, 0, 1, 1)
+        self.loco_grid.attach(self.buttonbox_loco, 0, 1, 1, 1)
+        self.loco_grid.attach(Gtk.Separator.new(Gtk.Orientation.VERTICAL), 1, 0, 1, 2)
         
-        self.loco_grid.attach(Gtk.Separator.new(Gtk.Orientation.VERTICAL), 1, 0, 1, 3)
-        self.loco_grid.attach(self.loco_property_frame, 2, 0, 1, 1)
-        self.loco_grid.attach(self.loco_function_frame, 3, 0, 1, 1)
-        self.loco_grid.attach(self.loco_speed_frame, 2, 1, 2, 1)
+        self.scrolled_window_loco_properties = Gtk.ScrolledWindow()
+        self.loco_properties_grid = Gtk.Grid()
+        self.loco_properties_grid.attach(self.loco_properties_frame, 0, 0, 1, 1)
+        self.loco_properties_grid.attach(self.loco_function_frame, 1, 0, 1, 1)
+        self.loco_properties_grid.attach(self.loco_speed_frame, 0, 1, 2, 1)
+        self.scrolled_window_loco_properties.add_with_viewport(self.loco_properties_grid)
+        
+        self.loco_grid.attach(self.scrolled_window_loco_properties, 2, 0, 1, 1)
         self.append_page(self.loco_grid, Gtk.Label("Lokomotiven"))
         
-        self.server_tab = ServerTab()
-        self.append_page(TopAlignment(self.server_tab), Gtk.Label("SRCP-Server"))
+        self.server_table = ServerTable()
+        self.append_page(TopAlignment(self.server_table), Gtk.Label("SRCP-Server"))
         
-        self.joystick_tab = JoystickTab()
-        self.append_page(TopAlignment(self.joystick_tab), Gtk.Label("Joystick / Gamepad"))
+        self.joystick_table = JoystickTable()
+        self.append_page(TopAlignment(self.joystick_table), Gtk.Label("Joystick / Gamepad"))
         self.show_all()
 
 class NewLocoButton(Gtk.Button):
@@ -60,14 +65,19 @@ class DeleteLocoButton(Gtk.Button):
             liststore = loco_function_frame.scrolled_window.treeview.get_model()
             loco_function_frame.scrolled_window.treeview.function_liststores.remove(liststore) # Aktuelle Funktionsliste löschen
             loco_selection_treeview.liststore.remove(row) # Zeile im Liststore löschen
-            loco_selection_treeview.set_cursor(path, None, False) # wähle selbe row wieder aus, damit viele locos auf einmal gelöscht werden können
+            new_row_nr = path.get_indices()[0] - 1
+            if new_row_nr >= 0:
+                loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string(str(new_row_nr)), None, False) # wähle selbe row wieder aus, damit viele locos auf einmal gelöscht werden können
+            else:
+                loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string("0"))
             Config.locos.pop(path.get_indices()[0])
             
             if len(loco_selection_treeview.liststore) == 0:
+                loco_speed_frame.graph.clear()
                 loco_property_frame.set_sensitive(False)
                 loco_function_frame.set_sensitive(False)
                 loco_speed_frame.set_sensitive(False)
-                
+            
         except TypeError:
             locked_print("Keine Zeile ausgewählt.")
 
@@ -145,7 +155,7 @@ class ButtonBoxLocoActions(Gtk.ButtonBox):
                 following_row = loco_selection_treeview.liststore.iter_nth_child(None, row_nr + 1)
                 loco_function_treeview.function_liststores.insert(row_nr + 1, loco_function_treeview.function_liststores.pop(row_nr)) # Funktionen-Liststore an andere Stelle setzen
                 loco_selection_treeview.liststore.move_after(row, following_row)
-                Config.locos.insert(row_nr + 2, Config.locos.pop(row_nr))
+                Config.locos.insert(row_nr + 1, Config.locos.pop(row_nr))
                 loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr + 1)), None, False)
             else:
                 locked_print("Lok befindet sich schon am Rand, kann nicht weiter verschoben werden.")
@@ -157,7 +167,6 @@ class ButtonBoxLocoFunctionActions(Gtk.ButtonBox):
         Gtk.ButtonBox.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_layout(Gtk.ButtonBoxStyle.START)
-        self.set_halign = Gtk.Align.FILL
         self.add_function_button = NewLocoFunctionButton(loco_function_treeview)
         self.delete_function_button = DeleteLocoFunctionButton(loco_function_treeview)
         self.move_up_button = ArrowButton(True)
@@ -223,16 +232,77 @@ class LocoFunctionFrame(Gtk.Frame):
         self.set_sensitive(False)
         
 class LocoSpeedGraphFrame(Gtk.Frame):
+    notice_combo_change = False
     def __init__(self):
         Gtk.Frame.__init__(self)
         self.set_border_width(10) # Schönheitsabstand
-        beschriftung = BoldLabel("Geschwindigkeitsverlauf")
-        self.set_label_widget(beschriftung)
+        self.set_valign(Gtk.Align.START)
+        self.set_label_widget(BoldLabel("Geschwindigkeitsverlauf"))
         self.set_shadow_type(Gtk.ShadowType.OUT)
-                
+        
         self.graph = SpeedStepGraph()
-        self.add(self.graph)
+        liststore = Gtk.ListStore(GObject.TYPE_INT)
+        for value in [14, 27, 28, 128]:
+            liststore.append([value])
+        self.speed_steps_combo = EasyComboBox(liststore)
+        self.speed_steps_combo.connect("changed", self.changed)
+        self.speed_steps_combo.set_tooltip_text("Die Anzahl Fahrstufen des Lokdecoders")
+        self.max_speed_spin_button = Gtk.SpinButton.new_with_range(1, 999, 0.1) # lowest possible speed is 1 km/h, highest possible 999
+        self.max_speed_spin_button.connect("value-changed", self.changed)
+        self.max_speed_spin_button.set_tooltip_text("Die reale Höchstgeschwindigkeit der Lokomotive in km/h")
+        self.cancel_button = Gtk.Button.new_from_stock(Gtk.STOCK_CANCEL)
+        self.cancel_button.connect("clicked", self.set_graph, False)
+        self.accept_button = Gtk.Button.new_from_stock(Gtk.STOCK_OK)
+        self.accept_button.connect("clicked", self.set_graph, True)
+        self.warn_image = Gtk.Image.new_from_stock(Gtk.STOCK_DIALOG_WARNING, Gtk.IconSize.BUTTON)
+        self.warn_label = Gtk.Label("Durch Änderung der Achsen wird die Geschwindigkeitskennlinie zurückgesetzt")
+        self.warn_label.set_vexpand(True)
+        
+        self.warn_grid = Gtk.Grid()
+        self.warn_grid.set_column_spacing(5)
+        self.warn_grid.set_halign(Gtk.Align.CENTER)
+        self.warn_grid.set_valign(Gtk.Align.CENTER)
+        self.warn_grid.attach(self.warn_image, 0, 0, 1, 1)
+        self.warn_grid.attach(self.warn_label, 1, 0, 2, 1)
+        self.warn_grid.attach(self.cancel_button, 1, 1, 1, 1)
+        self.warn_grid.attach(self.accept_button, 2, 1, 1, 1)
+        
+        self.grid = Gtk.Grid()
+        self.grid.set_row_spacing(5)
+        self.grid.attach(self.graph, 0, 0, 3, 1)
+        self.grid.attach(Gtk.Label("Anzahl Fahrstufen"), 0, 1, 1, 1)
+        self.grid.attach(self.speed_steps_combo, 1, 1, 1, 1)
+        self.grid.attach(Gtk.Label("Höchstgeschwindigkeit"), 0, 2, 1, 1)
+        self.grid.attach(self.max_speed_spin_button, 1, 2, 1, 1)
+        self.grid.attach(self.warn_grid, 2, 1, 1, 2)
+        
+        self.add(self.grid)
         self.set_sensitive(False)
+        
+    def changed(self, widget):
+        if self.notice_combo_change:
+            self.warn_grid.set_sensitive(True)
+        
+
+    def set_graph(self, widget, accept_changes):
+        if accept_changes:
+            self.loco.max_speed = self.max_speed_spin_button.get_value()
+            self.loco.speed_steps = self.speed_steps_combo.retrieve_value()
+            func = self.loco.speed_to_step_func
+            func.control_points = [(0, 0), (float(self.loco.max_speed), float(self.loco.speed_steps))]
+            func.func_segments = [func.calc_func_segment(*func.control_points[-2:])] # update the linear function between the two control points
+            self.graph.load(self.loco)
+        else:
+            self.max_speed_spin_button.set_value(self.loco.max_speed)
+            self.speed_steps_combo.set_value(self.loco.speed_steps)
+        self.warn_grid.set_sensitive(False)
+        
+    def load(self, loco):
+        self.loco = loco
+        self.graph.load(loco)
+        self.max_speed_spin_button.set_value(self.loco.max_speed)
+        self.speed_steps_combo.set_value(self.loco.speed_steps)
+        self.warn_grid.set_sensitive(False)
 
 class ScrolledTreeView(Gtk.ScrolledWindow):
     def __init__(self, treeview):
@@ -243,14 +313,14 @@ class ScrolledTreeView(Gtk.ScrolledWindow):
         self.set_size_request(natural_req.width, natural_req.height + 40)
         self.add(self.treeview)
         
-class EntryTable(Gtk.Table):
+class EntryTable(Gtk.Grid):
     def __init__(self, params_w_defs, config_object_attributes, use_tooltips, use_bold_params):
-        Gtk.Table.__init__(self, len(params_w_defs), 3)
+        Gtk.Grid.__init__(self)
         self.params_w_defs = params_w_defs
         self.config_object_attributes = config_object_attributes
         
-        self.set_col_spacings(10)
-        self.set_row_spacings(5)
+        self.set_column_spacing(10)
+        self.set_row_spacing(5)
         self.set_border_width(6) # Schönheitsabstand
         self.entry_fields = []
         y = 0
@@ -263,11 +333,11 @@ class EntryTable(Gtk.Table):
             elif input_type[0] == ENTRY_TABLE_INPUT_INT:
                 entry_field = Gtk.SpinButton.new_with_range(0, 9999, 1)
                 entry_field.retrieve_value = entry_field.get_value_as_int
-                entry_field.connect("changed", self.save_changes, config_object_attributes[y])
+                entry_field.connect("value-changed", self.save_changes, config_object_attributes[y])
             elif input_type[0] == ENTRY_TABLE_INPUT_FLOAT:
                 entry_field = Gtk.SpinButton.new_with_range(0, 9999, 0.1)
                 entry_field.retrieve_value = entry_field.get_value
-                entry_field.connect("changed", self.save_changes, config_object_attributes[y])
+                entry_field.connect("value-changed", self.save_changes, config_object_attributes[y])
             elif input_type[0] == ENTRY_TABLE_INPUT_COMBO:
                 liststore = Gtk.ListStore(input_type[1])
                 for value in input_type[2:len(input_type)]:
@@ -286,17 +356,17 @@ class EntryTable(Gtk.Table):
                 parameter_label = BoldLabel(parameter)
             else:
                 parameter_label = Gtk.Label(parameter)
-            self.attach(parameter_label, 0, 1, y, y + 1)
+            self.attach(parameter_label, 0, y, 1, 1)
                 
             if use_tooltips and input_type[0] != ENTRY_TABLE_INPUT_EMPTY:
                 entry_field.set_tooltip_text(definition)
             elif input_type[0] != ENTRY_TABLE_INPUT_EMPTY:
                 definition_label = Gtk.Label(label=definition)
                 definition_label.set_alignment(0, 0.5)
-                self.attach(definition_label, 2, 3, y , y + 1)
+                self.attach(definition_label, 2, y, 1, 1)
 
             if input_type[0] != ENTRY_TABLE_INPUT_EMPTY:
-                self.attach(entry_field, 1, 2, y, y + 1)
+                self.attach(entry_field, 1, y, 1, 1)
                 self.entry_fields.append(entry_field)
             y += 1
         
@@ -341,13 +411,13 @@ class EasyComboBox(Gtk.ComboBox): # subclassed combobox with methods allowing to
                 self.set_active(row_nr)
                 break
             
-class EasyFileButton(Gtk.Box):
+class EasyFileButton(Gtk.Grid):
     __gsignals__ = {
       "selection-finished": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
     
     def __init__(self, main_window):
-        Gtk.Box.__init__(self)
+        Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.select_button = Gtk.Button("Datei wählen")
         self.select_button.connect("clicked", self.image_selection, main_window)
@@ -355,9 +425,9 @@ class EasyFileButton(Gtk.Box):
         self.label.set_ellipsize(Pango.EllipsizeMode.END)
         
         self.clear_button = StockImageButton(None, Gtk.STOCK_CLEAR)
-        self.clear_button.connect("clicked", self.reset)
-        self.pack_start(self.select_button, True, True, 0)
-        self.pack_start(self.clear_button, False, False, 0)
+        self.clear_button.connect("clicked", self.clear)
+        self.add(self.select_button)
+        self.add(self.clear_button)
         
     def retrieve_value(self):
         return self.label.get_text()
@@ -381,21 +451,18 @@ class EasyFileButton(Gtk.Box):
             locked_print('Laden abgebrochen.')
         file_chooser_dialog.destroy()
         
-    def reset(self, button):
+    def clear(self, button):
         self.set_value("Datei wählen")
         self.emit("selection-finished")
 
-class LocoPropertyFrame(Gtk.Frame):
-    loco_attributes = ["address", "protocol", "speed_steps", "v_max", "accel_duration", "direction", "img_path"]
-    notice_speed_combo_change = False
+class LocoPropertiesFrame(Gtk.Frame):
+    loco_attributes = ["address", "protocol", "accel_duration", "direction", "img_path"]
     def __init__(self, main_window, loco_speed_graph):
-        super(LocoPropertyFrame, self).__init__()
+        super(LocoPropertiesFrame, self).__init__()
         self.params_w_defs = [
 ("Adresse", "Die Adresse des Digitaldecoders der Lok", [ENTRY_TABLE_INPUT_INT]),
 ("Protokoll", "Das Digitalprotokoll, das vom Lokdecoder verwendet wird:\n    -> M 1: Märklin Motorola 1. Version\n    -> M 2: Märklin Motorola 2. Version\n    -> N1: DCC kurzes Adressformat\n    -> N2: DCC langes Adressformat",
 [ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "M 1", "M 2", "N 1", "N 2"]),
-("Fahrstufen", "Die Anzahl Fahrstufen, die der Lokdecoder besitzt", [ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_INT, 14, 27, 28, 128]),
-("Höchstgeschwindigkeit", "Die Maximalgeschwindigkeit der Lok in km/h", [ENTRY_TABLE_INPUT_INT]),
 ("Beschleunigungsdauer", "Die Zeit in s, die benötigt wird, um die Fahrstufe der Lok bei voller Auslenkung des Joysticks von 0 auf den höchstmöglichen Wert zu bringen", [ENTRY_TABLE_INPUT_FLOAT]),
 ("Fahrtrichtung", "Die voreingestellte Fahrtrichtung der Lokomotive", [ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "Vorwärts", "Rückwärts"]),
 ("Bild", "Der Pfad an dem das passende Lokbild abgelegt ist", [ENTRY_TABLE_INPUT_FILE, main_window]) # this list is built in the __init__-method because 'main_window' is needed for the file-selection-dialog
@@ -406,28 +473,12 @@ class LocoPropertyFrame(Gtk.Frame):
         self.set_shadow_type(Gtk.ShadowType.OUT)
         
         self.table = EntryTable(self.params_w_defs, self.loco_attributes, True, False)
-        self.table.entry_fields[2].connect("changed", self.set_speed_points, loco_speed_graph)
-        self.table.entry_fields[3].connect("changed", self.set_v_max, loco_speed_graph)
         self.add(self.table)
         self.set_sensitive(False)
+        #self.set_valign(Gtk.Align.START)
+        #self.set_halign(Gtk.Align.FILL)
         
-    def set_speed_points(self, combo, loco_speed_graph):
-        if self.notice_speed_combo_change:
-            loco = self.table.config_object
-            func = loco.deviation_speed_func
-            func.control_points = [(0, 0), (float(loco.v_max), float(loco.speed_steps))]
-            func.func_segments = [func.calc_func_segment(*func.control_points[-2:])] # update the linear function between the two control points
-            loco_speed_graph.load(loco)
-            
-    def set_v_max(self, combo, loco_speed_graph):
-        if self.notice_speed_combo_change:
-            loco = self.table.config_object
-            func = loco.deviation_speed_func
-            func.control_points[-1] = (float(loco.v_max), func.control_points[-1][1])
-            func.func_segments[-1] = func.calc_func_segment(*func.control_points[-2:])
-            loco_speed_graph.load(loco)
-        
-class ServerTab(Gtk.Box):
+class ServerTable(EntryTable):
     params_w_defs = [
 ("Host", "Die IP-Adresse des Rechners auf dem der Server läuft", [ENTRY_TABLE_INPUT_STRING]),
 ("Port", "Der Port unter dem der Server erreichbar ist", [ENTRY_TABLE_INPUT_INT]),
@@ -437,16 +488,10 @@ class ServerTab(Gtk.Box):
 ] # Namen und Definition der Parameter für die Kommunikation mit dem SRCP-Server]
     
     def __init__(self):
-        super(ServerTab, self).__init__(False, 8)
-        self.set_orientation(Gtk.Orientation.VERTICAL)
-        self.table = EntryTable(self.params_w_defs, Config.server_attributes, False, True) 
-        self.pack_start(self.table, False, False, 0)
-        self.load()
-        
-    def load(self):
-        self.table.load(Config.server)
+        EntryTable.__init__(self, self.params_w_defs, Config.server_attributes, False, True)
+        self.load(Config.server)
 
-class JoystickTab(Gtk.Box):
+class JoystickTable(EntryTable):
     params_w_defs = [
 ("Nothalt (JoyButton)", "Der Button am Gamepad, über den die Gleisspannung ausgeschaltet werden kann", [ENTRY_TABLE_INPUT_INT]),
 ("Richtungswender (JoyButton)", "Der Button am Joystick, der einen Richtungswechsel der Lokomotive bewirkt", [ENTRY_TABLE_INPUT_INT]),
@@ -457,14 +502,8 @@ class JoystickTab(Gtk.Box):
 ] # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
     
     def __init__(self):
-        super(JoystickTab, self).__init__(False, 8)
-        self.set_orientation(Gtk.Orientation.VERTICAL)
-        self.table = EntryTable(self.params_w_defs, Config.joystick_attributes, False, True)
-        self.pack_start(self.table, False, False, 0)
-        self.load()
-
-    def load(self):
-        self.table.load(Config.joystick)
+        EntryTable.__init__(self, self.params_w_defs, Config.joystick_attributes, False, True)
+        self.load(Config.joystick)
 
 class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropertyTreeView und LocoFunctionTreeView
     def __init__(self, cell_renderers, columnnames_tooltips_renderers, column_types, name, save_method, liststore=None):
@@ -484,9 +523,6 @@ class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropert
             column.set_data("colnr", nr) # Versehe jede Spalte mit einer Nummer, zur leichten Identifizierung
             self.append_column(column)
             nr += 1
-            
-        self.set_vexpand(True)
-        self.set_hexpand(True)
             
     def new_value(self, cellrenderer, path, new_value): # new_value = None
         liststore = self.get_model()
@@ -562,6 +598,9 @@ class LocoFunctionTreeView(StandardTreeView):
             self.column_types,
             "LocoFunctionTreeView",
             self.save_changes)
+        
+        self.set_vexpand(True)
+        self.set_hexpand(True)
     
     def add_liststore(self, position):
         liststore = Gtk.ListStore(*self.column_types)
@@ -608,9 +647,9 @@ class LocoSelectionTreeView(StandardTreeView):
     def __init__(self, loco_property_frame, loco_function_frame, loco_speed_frame):
         self.liststore = Gtk.ListStore(*self.column_types)
         self.loco_function_frame = loco_function_frame
-        self.loco_property_frame = loco_property_frame
+        self.loco_properties_frame = loco_property_frame
         self.loco_function_treeview = self.loco_function_frame.scrolled_window.treeview
-        self.loco_property_table = self.loco_property_frame.table
+        self.loco_property_table = self.loco_properties_frame.table
         self.loco_speed_frame = loco_speed_frame
         self.loco_speed_graph = loco_speed_frame.graph
         textrenderer = Gtk.CellRendererText()
@@ -636,26 +675,26 @@ class LocoSelectionTreeView(StandardTreeView):
         else:
             row = path.get_indices()[0]
             self.loco_function_treeview.set_model(self.loco_function_treeview.function_liststores[row]) # Zugehörige Funktionenliste auswählen
-            self.loco_property_frame.notice_speed_combo_change = False
+            self.loco_speed_frame.notice_combo_change = False
             self.loco_property_table.load(Config.locos[row])
-            self.loco_speed_graph.load(Config.locos[row])
-            self.loco_property_frame.notice_speed_combo_change = True
+            self.loco_speed_frame.load(Config.locos[row])
+            self.loco_speed_frame.notice_combo_change = True
         
     def new_loco(self):
         path = self.get_cursor()[0]
         if path == None:
             nr = len(self.liststore)
-            loco = config.Loco(Config.unsaved_changes, nr)
+            loco = config.Loco(Config.unsaved_changes)
             Config.locos.append(loco)
             self.loco_function_treeview.add_liststore(-1)
             new_row = self.append_loco(loco)
-            self.loco_property_frame.set_sensitive(True)
+            self.loco_properties_frame.set_sensitive(True)
             self.loco_function_frame.set_sensitive(True)
             self.loco_speed_frame.set_sensitive(True)
         else: # if a row is selected, place loco beneath that row
             row = self.liststore.get_iter(path)
             row_nr = path.get_indices()[0]
-            loco = config.Loco(Config.unsaved_changes, row_nr + 1)
+            loco = config.Loco(Config.unsaved_changes)
             Config.locos.insert(row_nr + 1, loco)
             self.loco_function_treeview.add_liststore(row_nr + 1) # add new liststore to function_treeview
             new_row = self.liststore.insert_after(row, [getattr(loco, attrib) for attrib in self.loco_attributes]) # Nach der ausgewählten Zeile eine neue Zeile mit Standardwerten einfügen
@@ -670,7 +709,7 @@ class LocoSelectionTreeView(StandardTreeView):
             for loco in Config.locos:
                 self.append_loco(loco)
             self.set_cursor(Gtk.TreePath.new_from_string("0"))
-            self.loco_property_frame.set_sensitive(True)
+            self.loco_properties_frame.set_sensitive(True)
             self.loco_function_frame.set_sensitive(True)
             self.loco_speed_frame.set_sensitive(True)
             
@@ -686,13 +725,14 @@ class SpeedStepGraph(Gtk.DrawingArea):
     drag = None
     line_color = (0.2, 0.2, 0.4)
     control_point_outer_color = (0.1686, 0.1686, 0.1686)
-    control_point_inner_color = (0.804, 0.804, 0.757) #(0.1686, 0.1686, 0.1686)
+    control_point_inner_color = (0.804, 0.804, 0.757)
     point_color = (0.35, 0.35, 0.7216)
     axes_color = (0, 0, 0)
     legend_color = (0.1, 0.1, 0.1)
-    x_legend_text = "Reglerstellung"
+    x_legend_text = "Geschwindigkeit in km/h"
     y_legend_text = "Fahrstufe"
-    step_dict = {128: 10, 28: 2, 27: 2, 14: 1} # defines the axis-resolution for different nrs of speed steps (e.g. steps of 10 for 128 speed steps)
+    x_res_list = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2.5, 5, 10, 20, 50] # list of acceptable x-resolutions
+    y_res_dict = {128: 10, 28: 2, 27: 2, 14: 1} # defines the axis-resolution for different nrs of speed steps (e.g. steps of 10 for 128 speed steps)
     
     def __init__(self):
         Gtk.DrawingArea.__init__(self)
@@ -704,6 +744,8 @@ class SpeedStepGraph(Gtk.DrawingArea):
         self.connect("button-press-event", self.button_pressed)
         self.connect("button-release-event", self.button_released)
         self.set_valign(Gtk.Align.FILL)
+        self.set_hexpand(True)
+        self.set_vexpand(True)
         self.set_size_request(self.width, self.height)
         
         self.popup = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
@@ -727,16 +769,16 @@ class SpeedStepGraph(Gtk.DrawingArea):
             
             cr.set_source_rgb(*self.point_color)
             for y in xrange(1, self.loco.speed_steps):
-                x = self.loco.deviation_speed_func.get_x(y)
+                x = self.loco.speed_to_step_func.get_x(y)
                 if x != None:
                     x_abs, y_abs = self.get_abs_coords(x, y)
                     cr.arc(x_abs, y_abs, self.radius_small, 0, 2 * pi)
                     cr.fill()
             cr.stroke()
         
-            for nr in xrange(len(self.loco.deviation_speed_func.control_points) - 1):
-                x_abs_1, y_abs_1 = self.get_abs_coords(*self.loco.deviation_speed_func.control_points[nr])
-                x_abs_2, y_abs_2 = self.get_abs_coords(*self.loco.deviation_speed_func.control_points[nr + 1])
+            for nr in xrange(len(self.loco.speed_to_step_func.control_points) - 1):
+                x_abs_1, y_abs_1 = self.get_abs_coords(*self.loco.speed_to_step_func.control_points[nr])
+                x_abs_2, y_abs_2 = self.get_abs_coords(*self.loco.speed_to_step_func.control_points[nr + 1])
                 
                 cr.move_to(x_abs_1, y_abs_1)
                 cr.set_source_rgb(*self.line_color)
@@ -759,12 +801,12 @@ class SpeedStepGraph(Gtk.DrawingArea):
             cr.stroke()
     
     def update_loco(self):
-        self.loco.speed_funcs = self.loco.deviation_speed_func.func_segments
-        self.loco.speed_control_points = self.loco.deviation_speed_func.control_points
+        self.loco.speed_funcs = self.loco.speed_to_step_func.func_segments
+        self.loco.speed_control_points = self.loco.speed_to_step_func.control_points
     
     def get_touched_point(self, x, y):
         result = None, None
-        for nr, point in enumerate(self.loco.deviation_speed_func.control_points):
+        for nr, point in enumerate(self.loco.speed_to_step_func.control_points):
             x_abs, y_abs = self.get_abs_coords(*point)
             circle_left_end = x_abs - self.radius_large
             circle_right_end = x_abs + self.radius_large
@@ -785,17 +827,17 @@ class SpeedStepGraph(Gtk.DrawingArea):
         nr, point = self.get_touched_point(event.x, event.y)
         if nr != None:
             if event.button == 3:
-                self.loco.deviation_speed_func.remove_control_point(nr)
+                self.loco.speed_to_step_func.remove_control_point(nr)
                 self.queue_draw()
                 self.update_loco()
             else:
                 self.drag = nr
                 self.popup.set_position(Gtk.WindowPosition.MOUSE)
-                self.popup.label.set_text(str("%0.2f" %point[0]) + "\n" + str("%0.2f" %point[1]))
+                self.popup.label.set_text(str("%0.2f" % point[0]) + "\n" + str("%0.2f" % point[1]))
                 self.popup.show_all()
         else:
             x, y = self.get_speed_coords(event.x, event.y)
-            self.loco.deviation_speed_func.add_control_point(x, y)
+            self.loco.speed_to_step_func.add_control_point(x, y)
             self.queue_draw()
             self.update_loco()
     
@@ -808,18 +850,18 @@ class SpeedStepGraph(Gtk.DrawingArea):
             x, y = self.get_speed_coords(event.x, event.y)
             if x < 0:
                 x = 0
-            elif x > self.loco.v_max:
-                x = self.loco.v_max
+            elif x > self.loco.max_speed:
+                x = self.loco.max_speed
             if y < 0:
                 y = 0
             elif y > self.loco.speed_steps:
                 y = self.loco.speed_steps
-            old_point = self.loco.deviation_speed_func.control_points[self.drag]
-            new_point = self.loco.deviation_speed_func.move_control_point(self.drag, x, y)
+            old_point = self.loco.speed_to_step_func.control_points[self.drag]
+            new_point = self.loco.speed_to_step_func.move_control_point(self.drag, x, y)
             self.queue_draw()
             if old_point != new_point:
-                self.update_loco() # TODO: call only when there are changes
-            self.popup.label.set_text(str("%0.2f" %new_point[0]) + "\n" + str("%0.2f" %new_point[1]))
+                self.update_loco()
+            self.popup.label.set_text(str("%0.2f" % new_point[0]) + "\n" + str("%0.2f" % new_point[1]))
                 
     def create_coordinate_system(self):
         self.coordinate_system = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.width, self.height)
@@ -845,8 +887,12 @@ class SpeedStepGraph(Gtk.DrawingArea):
         c.set_source_rgb(*self.axes_color)
         
         max_width = c.text_extents(str(128))[2] # calculate highest possible width of a number-label at y-axis (obviously the width of str(128))
-        step = self.step_dict[self.loco.speed_steps]
-        for pos in xrange(0, self.loco.v_max + 1, 5):
+        estimated_res = self.loco.max_speed / 20.0
+        for res in self.x_res_list: # find best resolution
+            if res >= estimated_res:
+                break
+        pos = 0
+        while pos <= self.loco.max_speed:
             text = str(pos)
             width, height = c.text_extents(text)[2:4]
             x, y = self.get_abs_coords(pos, pos)
@@ -855,8 +901,10 @@ class SpeedStepGraph(Gtk.DrawingArea):
             c.line_to(x, y_axis_end - height - 3)
             c.move_to(x - 0.5 * width, y_axis_end)
             c.show_text(text)
-            
-        for pos in xrange(0, self.loco.speed_steps + step, step):
+            pos += res
+        
+        res = self.y_res_dict[self.loco.speed_steps]
+        for pos in xrange(0, self.loco.speed_steps + res, res):
             if pos > self.loco.speed_steps:
                 pos = self.loco.speed_steps
             text = str(pos)
@@ -870,11 +918,15 @@ class SpeedStepGraph(Gtk.DrawingArea):
         c.stroke_preserve()
     
     def calc_size_factors(self):
-        self.x_factor = (self.width - self.border - self.radius_large - 10) / float(self.loco.v_max)
+        self.x_factor = (self.width - self.border - self.radius_large - 10) / float(self.loco.max_speed)
         self.y_factor = (self.height - self.border - self.radius_large) / float(self.loco.speed_steps)
     
     def load(self, loco):
         self.loco = loco
         self.calc_size_factors()
         self.create_coordinate_system()
+        self.queue_draw()
+        
+    def clear(self):
+        del self.loco
         self.queue_draw()

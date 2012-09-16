@@ -83,27 +83,31 @@ class LinearSegmentFunction():
 
 class Loco(UnsavedChangesHandler):
     def __init__(self,
-                 save_status_method,
-                 id,
-                 functions=[],
-                 deviation_speed_func=None,
+                 save_status_method, #id
+                 functions=None,
+                 speed_to_step_func=None,
                  name="Neue Lok",
                  speed_steps=14,
-                 v_max=100,
-                 address=0,
+                 max_speed=100.0,
+                 address=1,
                  protocol="M 1",
                  accel_duration=3.8,
                  direction=True,
                  img_path="Datei wählen"):
         UnsavedChangesHandler.__init__(self, save_status_method)
-        self.id = id
-        self.functions = functions
-        self.speed_steps = speed_steps
-        if deviation_speed_func == None:
-            self.deviation_speed_func = LinearSegmentFunction()
-            self.deviation_speed_func.load([(0.0, 0.0), (100.0, 14.0)])
+#        self.id = id
+        # it is not possible to set the default value for the "functions"-parameter above,
+        # because it is a list and will therefore be the same object for all locos, resulting in the same functions for all locos
+        if functions == None:
+            self.functions = []
         else:
-            self.deviation_speed_func = deviation_speed_func
+            self.functions = functions
+        self.speed_steps = speed_steps
+        if speed_to_step_func == None:
+            self.speed_to_step_func = LinearSegmentFunction()
+            self.speed_to_step_func.load([(0.0, 0.0), (100.0, 14.0)])
+        else:
+            self.speed_to_step_func = speed_to_step_func
         
         self.name = name
         self.address = address
@@ -112,26 +116,26 @@ class Loco(UnsavedChangesHandler):
         self.accel_duration = accel_duration
         self.direction = direction
         self.img_path = img_path
-        self.v_max = 100
-        self.deviation = 0.0
+        self.max_speed = max_speed
         self.speed = 0.0
-        self.last_speed = 0
+        self.speed_step = 0.0
+        self.last_speed_step = 0
 
     def send_to_server(self, bus, socket):
-        self.last_speed = int(self.speed)
+        self.last_speed_step = int(self.speed_step)
         toggled = [False for i in range(max([0] + [function.nr for function in self.functions]))]
         for function in self.functions:
             if function.state:
                 toggled[function.nr - 1] = True
         functions = " ".join(str(int(n)) for n in toggled)
-        text = "SET " + str(bus) + " GL " + str(self.address) + " " + str(int(self.direction)) + " " + str(int(self.speed)) + " " + str(self.speed_steps) + " " + functions + "\n"
+        text = "SET " + str(bus) + " GL " + str(self.address) + " " + str(int(self.direction)) + " " + str(int(self.speed_step)) + " " + str(self.speed_steps) + " " + functions + "\n"
         
         locked_print("\n" + text)
         socket.send(text)
     
     def accelerate(self, value, controller):
-        self.deviation = self.deviation - value * (0.1 / self.accel_duration * self.v_max)
-        controller[self.id].speed_scale.set_value(self.deviation)
+        self.speed = self.speed - value * (0.05 / self.accel_duration * self.max_speed)
+        controller.speed_scale.set_value(self.speed)
         
     def toggle_direction(self):
         self.direction = not self.direction
@@ -170,11 +174,12 @@ class Joystick(UnsavedChangesHandler):
         self.use_auto_focus = use_auto_focus
         self.show_function_nr = show_function_nr
     
-class Config:
+class Config():
     notice_unsaved_changes = False
     has_unsaved_changes = False
+    opened_file = None
     
-    loco_attributes = ["name", "speed_steps", "address", "protocol", "accel_duration", "direction", "img_path"] #, "deviation_speed_func.control_points"
+    loco_attributes = ["name", "speed_steps", "max_speed", "address", "protocol", "accel_duration", "direction", "img_path"] #, "speed_to_step_func.control_points"
     function_attributes = ["name", "nr", "state", "button", "use_push_to_make"]
     server_attributes = ["host", "port", "session_bus", "loco_bus", "power"]
     joystick_attributes = ["emergency_button", "reverse_button", "accel_axis", "focus_button", "use_auto_focus", "show_function_nr"]
@@ -195,7 +200,7 @@ class Config:
         loco_list = []
         for loco in self.locos:
             loco_dict = {attrib: getattr(loco, attrib) for attrib in self.loco_attributes}
-            loco_dict["speed_control_points"] = loco.deviation_speed_func.control_points
+            loco_dict["speed_control_points"] = loco.speed_to_step_func.control_points
             function_list = [{attrib: getattr(function, attrib) for attrib in self.function_attributes} for function in loco.functions]
             loco_dict["functions"] = function_list
             loco_list.append(loco_dict)
@@ -221,7 +226,7 @@ class Config:
             functions = [Function(self.unsaved_changes, *[function_dict[attrib] for attrib in self.function_attributes]) for function_dict in loco_dict["functions"]]
             speed_func = LinearSegmentFunction()
             speed_func.load(loco_dict["speed_control_points"])
-            self.locos.append(Loco(self.unsaved_changes, nr, functions, speed_func, *[loco_dict[attrib] for attrib in self.loco_attributes]))
+            self.locos.append(Loco(self.unsaved_changes, functions, speed_func, *[loco_dict[attrib] for attrib in self.loco_attributes])) # TODO: sort entries of dict to match the Parameter-order but dont require all
         self.server = Server(self.unsaved_changes, *[Config["server"][attrib] for attrib in self.server_attributes])
         self.joystick = Joystick(self.unsaved_changes, *[Config["joystick"][attrib] for attrib in self.joystick_attributes])
         
@@ -234,9 +239,15 @@ class Config:
             f = open("last_file.json", "w")
             json.dump({"last_file": file_path}, f, indent=2)
             f.close()
-        self.last_file = file_path
+            self.last_file = file_path
+        self.opened_file = file_path
         
-    def unsaved_changes(self, object, name, value):
+    def set_unsaved_changes_method(self, method):
+        self.new_unsaved_changes_method = method
+        
+    def unsaved_changes(self, obj, name, value):
         if self.notice_unsaved_changes:
-            locked_print("Attribute '" + name + "' of object '" + str(object) + "' has new value:", value)
+            locked_print("Attribute '" + name + "' of object '" + str(obj) + "' has new value:", value)
             self.has_unsaved_changes = True
+            if self.opened_file != None and hasattr(self, "new_unsaved_changes_method"): # if method has been setup, call it
+                self.new_unsaved_changes_method()
