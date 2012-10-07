@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-#from Constants import *
 from gi.repository import GdkPixbuf, GLib
 from LockedPrint import locked_print
 try:
@@ -78,7 +77,7 @@ class JoystickThread(threading.Thread):
                 configured = False
                 for nr, function in enumerate(Config.locos[loco_id].functions):
                     if event.button == function.button:
-                        GLib.idle_add(self.controller[loco_id].hbox.buttons[nr].clicked)
+                        GLib.idle_add(self.controller[loco_id].function_box.buttons[nr].clicked)
                         configured = True
                 if event.button == Config.joystick.reverse_button: # Gtk ist NICHT thread-safe, d.h. es können Probleme auftreten wenn von anderen threads Gtk-Objekte geändert werden
                     GLib.idle_add(self.controller[loco_id].reverser.clicked) # Deshalb: GLib.idle_add(Funktion, Parameter1, ...) -> Gtk-Hauptschleife führt Funktion mit Parametern aus, wenn sie Zeit hat
@@ -93,7 +92,7 @@ class JoystickThread(threading.Thread):
                 loco_id = self.joysticks[event.joy][1]
                 for nr, function in enumerate(Config.locos[loco_id].functions):
                     if event.button == function.button and function.use_push_to_make:
-                        GLib.idle_add(self.controller[loco_id].hbox.buttons[nr].clicked)
+                        GLib.idle_add(self.controller[loco_id].function_box.buttons[nr].clicked)
                         
             elif event.type == JOYHATMOTION:
                 direction = event.value[0]
@@ -155,5 +154,5 @@ class SpeedThread():
         
     def go(self):
         for joystick, loco_id, start_scrolling in self.joysticks:
-            Config.locos[loco_id].accelerate(joystick.get_axis(Config.joystick.accel_axis), self.controllers[loco_id])
+            self.controllers[loco_id].speed_scale.set_value(Config.locos[loco_id].accelerate(joystick.get_axis(Config.joystick.accel_axis)))
         return True

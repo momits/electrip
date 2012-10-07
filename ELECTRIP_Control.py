@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.6
 
 from gi.repository.GLib import GError
-from gi.repository import Gdk, Gtk, Pango, GdkPixbuf
+from gi.repository import Gtk, Pango, GdkPixbuf
 import socket
 import Joystick.JoystickConsole as joystick_console
 from LockedPrint import locked_print, SocketRecvThread
@@ -12,13 +11,16 @@ class MainBox(Gtk.Grid):
     def __init__(self, config_copy, main_window):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
-        self.set_row_spacing(10)
         global Config
         Config = config_copy
         Config.notice_unsaved_changes = False
         self.main_window = main_window
         try:
             self.socket_init()
+        except socket.error:
+            self.main_window.error("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\nÜberprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server am Laufen?")
+            self.main_window.basic_vbox.top_grid.config_control_switch.config_button.set_active(True)
+        else:
             self.scrolled_window = ScrolledWindow(self.socket, self) # ScrolledWindow und darin HBox für Controller erzeugen
             self.emergency_button = EmergencyButton(self.socket) # HBox für Notstop erzeugen
             self.add(self.scrolled_window)
@@ -28,9 +30,6 @@ class MainBox(Gtk.Grid):
             except NameError:
                 locked_print("Konnte pygame-Threads nicht starten, Joysticks werden folglich nicht erkannt.")
             self.show_all()
-        except socket.error:
-            self.main_window.error("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\nÜberprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server am Laufen?")
-            self.main_window.basic_vbox.top_grid.config_control_switch.config_button.set_active(True)
     
     def quit(self):
         try:
@@ -44,7 +43,7 @@ class MainBox(Gtk.Grid):
         locked_print("Steuerung geschlossen.")
     
     def socket_init(self):
-        server_bus = str(Config.server.loco_bus)
+        bus = str(Config.server.loco_bus)
         # Create Socket-Connection
         self.socket = socket.create_connection((Config.server.host, Config.server.port))
         #-------- Handshake ----------
@@ -59,17 +58,16 @@ class MainBox(Gtk.Grid):
         locked_print(self.socket.recv(4096))
         
         # -------- Initialize Power on Server-Bus ---------
-        locked_print("Strom wird angeschaltet")
-        self.socket.send("INIT " + server_bus + " POWER\n")
+        self.socket.send("INIT " + bus + " POWER\n")
         locked_print(self.socket.recv(4096))
         
         # ---------- Initialize Locos -------------
         for loco in Config.locos:
-            if len(loco.functions) > 0:
-                nr_functions_to_send = max(function.nr for function in loco.functions)
+            if len(loco.functions) > 0: # nr_functions_to_send is NOT the same as len(loco.functions), but the highest decoder-function-nr
+                nr_functions_to_send = max(function.nr + 1 for function in loco.functions)
             else:
                 nr_functions_to_send = 0
-            text = "INIT " + server_bus + " GL " + str(loco.address) + " " + str(loco.protocol) + " " + str(int(loco.speed_steps)) + " " + str(nr_functions_to_send) + "\n"
+            text = "INIT " + bus + " GL " + str(loco.address) + " " + str(loco.protocol) + " " + str(int(loco.speed_steps)) + " " + str(nr_functions_to_send) + "\n"
             locked_print(text)
             self.socket.send(text)
             locked_print(self.socket.recv(4096))
@@ -83,7 +81,7 @@ class ScrolledWindow(Gtk.ScrolledWindow):
     def __init__(self, socket, main_window):
         Gtk.ScrolledWindow.__init__(self)
         self.set_vexpand(True)
-        self.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.set_hexpand(True)
         self.center_hbox = CenterGrid(socket, main_window, self)
         self.add_with_viewport(self.center_hbox)
         
@@ -92,32 +90,37 @@ class CenterGrid(Gtk.Grid):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_column_spacing(8)
+        self.set_margin_bottom(8)
         self.controllers = []
         self.socket = socket
-        for i in range(len(Config.locos)): # Alle Controller hinzufügen
-            self.controllers.append(Controller(socket, Config.locos[i], scrolled_window))
+        for i, loco in enumerate(Config.locos): # Alle Controller hinzufügen
+            self.controllers.append(Controller(socket, loco, scrolled_window))
             self.add(self.controllers[i])
         self.connect("realize", self.realized, main_window)
                 
-    def realized(self, hbox, control_window):
-        min_req, natural_req = self.get_preferred_size()
-        
+    def realized(self, hbox, control_window):        
         max_nr_rows = 0
+        max_label_width = 0
         search_pending = True # Suche nach einem Funktionsbutton um Höhe zu ermitteln
         for controller in self.controllers:
-            controller.hbox = FunctionVBox(controller.loco, self.socket)
-            controller.hbox.show_all()
-            controller.add(controller.hbox)
-            if controller.hbox.nr_rows > max_nr_rows: # finde spalte mit den meisten buttons (mit der bedingung geht einher, dass controller.hbox mindestens einen Funktionsbutton besitzt)
-                max_nr_rows = controller.hbox.nr_rows
+            controller.function_box = FunctionBox(controller.loco, self.socket)
+            controller.function_box.show_all()
+            controller.add(controller.function_box)
+            if controller.function_box.nr_rows > max_nr_rows: # finde spalte mit den meisten buttons (mit der bedingung geht einher, dass controller.function_box mindestens einen Funktionsbutton besitzt)
+                max_nr_rows = controller.function_box.nr_rows
                 if search_pending:
-                    button_req = controller.hbox.buttons[0].get_preferred_size()[1]
+                    button_req = controller.function_box.buttons[0].get_preferred_size()[1]
                     search_pending = False
-        locked_print("max nr rows:", max_nr_rows)
-        height = button_req.height * max_nr_rows
+            width = controller.loco_label.get_preferred_width()[1]
+            if width > max_label_width :
+                max_label_width = width
+        
         if max_nr_rows > 0:
+            height = button_req.height * max_nr_rows
             for controller in self.controllers:
-                controller.hbox.set_size_request(-1, height)
+                controller.function_box.set_size_request(-1, height)
+                if controller.get_preferred_width()[1] <= max_label_width:
+                    controller.set_size_request(max_label_width, -1) # if the label-width of another controller is bigger than controllers width, request size -> nicer layout
 
 class Controller(Gtk.Grid):
     def __init__(self, socket, loco, scrolled_window):
@@ -137,6 +140,7 @@ class Controller(Gtk.Grid):
         
         self.add(self.loco_image)
         self.add(self.speed_scale)
+        self.add(Gtk.Label.new("km/h"))
         self.add(self.loco_label)
         self.add(self.gamepad_image)
         self.add(self.reverser)
@@ -186,6 +190,8 @@ class LocoLabel(Gtk.Label):
         self.text = loco.name
         Gtk.Label.__init__(self, self.text)
         self.set_ellipsize(Pango.EllipsizeMode.END)
+        self.set_max_width_chars(20)
+        self.set_margin_top(7)
     
     def set_bold(self, is_bold):
         if is_bold:
@@ -201,6 +207,7 @@ class Reverser(Gtk.Button):
         self.loco = loco
         self.set_arrow()
         self.connect("clicked", self.toggle_direction, socket, scale)
+        self.set_hexpand(True)
 
     def toggle_direction(self, button, socket, scale):
         self.loco.toggle_direction()
@@ -217,7 +224,7 @@ class Reverser(Gtk.Button):
         else:
             self.set_image(self.arrow_down)
 
-class FunctionButton(Gtk.ToggleButton):
+class FunctionToggleButton(Gtk.ToggleButton):
     def __init__(self, loco, function, socket):
         Gtk.ToggleButton.__init__(self)
         self.loco = loco
@@ -240,15 +247,14 @@ class FunctionButton(Gtk.ToggleButton):
     def toggle_function(self, button):
         self.function.toggle()
         self.loco.send_to_server(Config.server.loco_bus, self.socket)
-        self.toggled()
         locked_print("Funktion", self.function.name, "von Lok", self.loco.name, "hat nun den Status", self.function.state)
             
-class FunctionVBox(Gtk.Grid):
+class FunctionBox(Gtk.Grid):
     def __init__(self, loco, socket):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_halign(Gtk.Align.CENTER)
-        self.buttons = [FunctionButton(loco, function, socket) for function in loco.functions]
+        self.buttons = [FunctionToggleButton(loco, function, socket) for function in loco.functions]
         self.boxes = []
         self.nr_rows = 0
 
@@ -298,17 +304,22 @@ class EmergencyButton(Gtk.ToggleButton):
         self.set_label("Nothalt")
         self.set_size_request(-1 , 60)
         self.socket = socket
-        self.connect("clicked", self.toggle_power)
         
         if not Config.server.power:
             self.set_active(True)
+        self.send_power()
+            
+        self.connect("clicked", self.toggle_power)
     
     def toggle_power(self, *args):
         Config.server.toggle_power()
+        self.send_power()
+        
+    def send_power(self):
         if Config.server.power:
             self.socket.send("SET 1 POWER ON\n")
             locked_print("\nStrom angeschaltet")
         else:
             self.socket.send("SET 1 POWER OFF\n")
             locked_print("\nNotstop eingeleitet")
-        self.toggled()
+        #self.toggled()

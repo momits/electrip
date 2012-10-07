@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.6
 
 from gi.repository import GObject, Gtk, Pango, Gdk
 import cairo
@@ -42,7 +41,7 @@ class MainBox(Gtk.Notebook):
         self.append_page(TopAlignment(self.server_table), Gtk.Label("SRCP-Server"))
         
         self.joystick_table = JoystickTable()
-        self.append_page(TopAlignment(self.joystick_table), Gtk.Label("Joystick / Gamepad"))
+        self.append_page(TopAlignment(self.joystick_table), Gtk.Label("Gamepad"))
         self.show_all()
 
 class NewLocoButton(Gtk.Button):
@@ -52,6 +51,7 @@ class NewLocoButton(Gtk.Button):
         
     def new_loco(self, button, loco_selection_treeview, loco_property_frame, loco_function_frame):
         loco_selection_treeview.new_loco()
+        Config.unsaved_changes(Config, "locos", Config.locos)
 
 class DeleteLocoButton(Gtk.Button):
     def __init__(self, loco_selection_treeview, loco_property_frame, loco_function_frame, loco_speed_frame):
@@ -59,27 +59,25 @@ class DeleteLocoButton(Gtk.Button):
         self.connect("clicked", self.delete_loco, loco_selection_treeview, loco_property_frame, loco_function_frame, loco_speed_frame)
         
     def delete_loco(self, button, loco_selection_treeview, loco_property_frame, loco_function_frame, loco_speed_frame):
+        path = loco_selection_treeview.get_cursor()[0]
         try:
-            path = loco_selection_treeview.get_cursor()[0]
             row = loco_selection_treeview.liststore.get_iter(path)
+        except TypeError:
+            locked_print("Keine Zeile ausgewählt.")
+        else:
             liststore = loco_function_frame.scrolled_window.treeview.get_model()
             loco_function_frame.scrolled_window.treeview.function_liststores.remove(liststore) # Aktuelle Funktionsliste löschen
             loco_selection_treeview.liststore.remove(row) # Zeile im Liststore löschen
-            new_row_nr = path.get_indices()[0] - 1
-            if new_row_nr >= 0:
-                loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string(str(new_row_nr)), None, False) # wähle selbe row wieder aus, damit viele locos auf einmal gelöscht werden können
-            else:
-                loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string("0"))
             Config.locos.pop(path.get_indices()[0])
-            
+            Config.unsaved_changes(Config, "locos", Config.locos)
+                
             if len(loco_selection_treeview.liststore) == 0:
                 loco_speed_frame.graph.clear()
                 loco_property_frame.set_sensitive(False)
                 loco_function_frame.set_sensitive(False)
                 loco_speed_frame.set_sensitive(False)
             
-        except TypeError:
-            locked_print("Keine Zeile ausgewählt.")
+        
 
 class NewLocoFunctionButton(Gtk.Button):
     def __init__(self, loco_function_treeview):
@@ -87,15 +85,17 @@ class NewLocoFunctionButton(Gtk.Button):
         self.connect("clicked", self.new_function, loco_function_treeview)
         
     def new_function(self, button, loco_function_treeview):
+        liststore = loco_function_treeview.get_model()
         try:
-            liststore = loco_function_treeview.get_model()
             loco_id = loco_function_treeview.function_liststores.index(liststore)
+        except TypeError:
+            locked_print("Keine Lok ausgewählt.")
+        else:
             function = config.Function(Config.unsaved_changes)
             loco = Config.locos[loco_id]
             loco.functions.append(function)
+            Config.unsaved_changes(Config.locos[loco_id], "functions", Config.locos[loco_id].functions)  # call unsaved changes method manually, cause list object "functions" doesnt do this
             loco_function_treeview.function_liststores[loco_id].append([function.name, function.nr, "An", function.button, "Umschalter"])
-        except TypeError:
-            locked_print("Keine Lok ausgewählt.")
             
 class DeleteLocoFunctionButton(Gtk.Button):
     def __init__(self, loco_function_treeview):
@@ -110,6 +110,7 @@ class DeleteLocoFunctionButton(Gtk.Button):
             liststore.remove(row) # Zeile im Liststore löschen
             loco_id = loco_function_treeview.function_liststores.index(liststore)
             Config.locos[loco_id].functions.pop(path.get_indices()[0])
+            Config.unsaved_changes(Config.locos[loco_id], "functions", Config.locos[loco_id].functions) # call unsaved changes method manually, cause list object "functions" doesnt do this
         else:
             locked_print("Keine Funktion ausgewählt.")
             
@@ -141,9 +142,12 @@ class ButtonBoxLocoActions(Gtk.ButtonBox):
         self.add(self.move_down_button)
 
     def clicked(self, button, loco_selection_treeview, loco_function_treeview):
+        path, column = loco_selection_treeview.get_cursor()
         try:
-            path, column = loco_selection_treeview.get_cursor()
             row = loco_selection_treeview.liststore.get_iter(path)
+        except TypeError:
+            locked_print("Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
+        else:
             row_nr = path.get_indices()[0]
             if button.direction and row_nr > 0: # wenn verschiebe-richtung nach oben und row nicht ganz oben steht
                 prev_row = loco_selection_treeview.liststore.iter_nth_child(None, row_nr - 1)
@@ -159,8 +163,6 @@ class ButtonBoxLocoActions(Gtk.ButtonBox):
                 loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr + 1)), None, False)
             else:
                 locked_print("Lok befindet sich schon am Rand, kann nicht weiter verschoben werden.")
-        except TypeError:
-            locked_print("Es ist keine Lok ausgewählt, es kann nichts verschoben werden.")
 
 class ButtonBoxLocoFunctionActions(Gtk.ButtonBox):
     def __init__(self, loco_function_treeview):
@@ -180,10 +182,13 @@ class ButtonBoxLocoFunctionActions(Gtk.ButtonBox):
         self.add(self.move_down_button)
     
     def clicked(self, button, loco_function_treeview):
-        try:
-            liststore = loco_function_treeview.get_model()
-            path, column = loco_function_treeview.get_cursor()
+        liststore = loco_function_treeview.get_model()
+        path, column = loco_function_treeview.get_cursor()
+        try: 
             row = liststore.get_iter(path)
+        except TypeError:
+            locked_print("Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
+        else:
             row_nr = path.get_indices()[0]
             loco_id = loco_function_treeview.function_liststores.index(liststore)
             if button.direction and row_nr > 0: # wenn verschiebe-richtung nach oben und row nicht ganz oben steht
@@ -198,10 +203,8 @@ class ButtonBoxLocoFunctionActions(Gtk.ButtonBox):
                 loco_function_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr + 1)), None, False)
             else:
                 locked_print("Funktion befindet sich schon am Rand, kann nicht weiter verschoben werden.")
-        except AttributeError:
-            locked_print("Keine Loco (und damit keine Funktion) ausgewählt, es kann nichts verschoben werden.")
-        except TypeError:
-            locked_print("Es ist keine Funktion ausgewählt, es kann nichts verschoben werden.")
+        #except AttributeError:
+            #locked_print("Keine Lok (und damit keine Funktion) ausgewählt, es kann nichts verschoben werden.")
 
 class BoldLabel(Gtk.Label):
     def __init__(self, text):
@@ -218,9 +221,7 @@ class LocoFunctionFrame(Gtk.Frame):
     def __init__(self):
         Gtk.Frame.__init__(self)
         self.set_border_width(10) # Schönheitsabstand
-        beschriftung = BoldLabel("Funktionen")
-        self.set_label_widget(beschriftung)
-        self.set_shadow_type(Gtk.ShadowType.OUT)
+        self.set_label_widget(BoldLabel("Funktionen"))
                 
         self.scrolled_window = ScrolledTreeView(LocoFunctionTreeView())
         self.buttonbox_function_actions = ButtonBoxLocoFunctionActions(self.scrolled_window.treeview)
@@ -238,7 +239,6 @@ class LocoSpeedGraphFrame(Gtk.Frame):
         self.set_border_width(10) # Schönheitsabstand
         self.set_valign(Gtk.Align.START)
         self.set_label_widget(BoldLabel("Geschwindigkeitsverlauf"))
-        self.set_shadow_type(Gtk.ShadowType.OUT)
         
         self.graph = SpeedStepGraph()
         liststore = Gtk.ListStore(GObject.TYPE_INT)
@@ -358,16 +358,15 @@ class EntryTable(Gtk.Grid):
                 parameter_label = Gtk.Label(parameter)
             self.attach(parameter_label, 0, y, 1, 1)
                 
-            if use_tooltips and input_type[0] != ENTRY_TABLE_INPUT_EMPTY:
+            if use_tooltips:
                 entry_field.set_tooltip_text(definition)
-            elif input_type[0] != ENTRY_TABLE_INPUT_EMPTY:
+            else:
                 definition_label = Gtk.Label(label=definition)
                 definition_label.set_alignment(0, 0.5)
                 self.attach(definition_label, 2, y, 1, 1)
-
-            if input_type[0] != ENTRY_TABLE_INPUT_EMPTY:
-                self.attach(entry_field, 1, y, 1, 1)
-                self.entry_fields.append(entry_field)
+            
+            self.attach(entry_field, 1, y, 1, 1)
+            self.entry_fields.append(entry_field)
             y += 1
         
     def load(self, config_object):
@@ -375,14 +374,15 @@ class EntryTable(Gtk.Grid):
         for nr, config_attrib in enumerate(self.config_object_attributes):
             try:
                 value = getattr(config_object, config_attrib)
+            except AttributeError:
+                locked_print("Attribut", config_attrib, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
+            else:
                 if config_attrib == "direction":
                     if value: # we need to do the conversion between displayed value and saved value whenever they are of a different kind
                         value = "Vorwärts"
                     else:
                         value = "Rückwärts"
                 self.entry_fields[nr].set_value(value)
-            except AttributeError:
-                locked_print("Attribut", config_attrib, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
             
     def save_changes(self, widget, config_attrib):
         value = widget.retrieve_value()
@@ -435,7 +435,7 @@ class EasyFileButton(Gtk.Grid):
     def set_value(self, string):
         self.label.set_text(string)
         layout = self.label.get_layout()
-        if layout.is_ellipsized: # find out if the path can be displayed on the select_button without getting ellipsized
+        if layout.is_ellipsized(): # find out if the path can be displayed on the select_button without getting ellipsized
             self.set_tooltip_text(string)
         else:
             self.set_tooltip_text("Der Pfad an dem das passende Lokbild abgelegt ist")
@@ -458,51 +458,48 @@ class EasyFileButton(Gtk.Grid):
 class LocoPropertiesFrame(Gtk.Frame):
     loco_attributes = ["address", "protocol", "accel_duration", "direction", "img_path"]
     def __init__(self, main_window, loco_speed_graph):
-        super(LocoPropertiesFrame, self).__init__()
+        Gtk.Frame.__init__(self)
         self.params_w_defs = [
 ("Adresse", "Die Adresse des Digitaldecoders der Lok", [ENTRY_TABLE_INPUT_INT]),
 ("Protokoll", "Das Digitalprotokoll, das vom Lokdecoder verwendet wird:\n    -> M 1: Märklin Motorola 1. Version\n    -> M 2: Märklin Motorola 2. Version\n    -> N1: DCC kurzes Adressformat\n    -> N2: DCC langes Adressformat",
 [ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "M 1", "M 2", "N 1", "N 2"]),
-("Beschleunigungsdauer", "Die Zeit in s, die benötigt wird, um die Fahrstufe der Lok bei voller Auslenkung des Joysticks von 0 auf den höchstmöglichen Wert zu bringen", [ENTRY_TABLE_INPUT_FLOAT]),
+("Beschleunigungsdauer", "Die Zeit in s, die benötigt wird, um die Geschwindigkeit der Lok bei voller Auslenkung des Joysticks von 0 auf den höchstmöglichen Wert zu bringen", [ENTRY_TABLE_INPUT_FLOAT]),
 ("Fahrtrichtung", "Die voreingestellte Fahrtrichtung der Lokomotive", [ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "Vorwärts", "Rückwärts"]),
 ("Bild", "Der Pfad an dem das passende Lokbild abgelegt ist", [ENTRY_TABLE_INPUT_FILE, main_window]) # this list is built in the __init__-method because 'main_window' is needed for the file-selection-dialog
 ]
         self.set_border_width(10) # Schönheitsabstand
-        beschriftung = BoldLabel("Allgemeine Eigenschaften")
-        self.set_label_widget(beschriftung)
-        self.set_shadow_type(Gtk.ShadowType.OUT)
+        self.set_label_widget(BoldLabel("Allgemeine Eigenschaften"))
         
         self.table = EntryTable(self.params_w_defs, self.loco_attributes, True, False)
         self.add(self.table)
         self.set_sensitive(False)
-        #self.set_valign(Gtk.Align.START)
-        #self.set_halign(Gtk.Align.FILL)
         
-class ServerTable(EntryTable):
-    params_w_defs = [
+class ServerTable(EntryTable): # every class using EntryTable defines two list: params_w_defs and some_attributes
+    server_attributes = ["host", "port", "loco_bus", "power"]
+    params_w_defs = [ # the list of attributes says which attribute of index a in the config_object maps to the Entry in EntryTable with index a
 ("Host", "Die IP-Adresse des Rechners auf dem der Server läuft", [ENTRY_TABLE_INPUT_STRING]),
 ("Port", "Der Port unter dem der Server erreichbar ist", [ENTRY_TABLE_INPUT_INT]),
-("Session-Bus", "Der Bus auf dem die Session gestartet wird", [ENTRY_TABLE_INPUT_INT]),
-("Lok-Bus", "Der Bus auf dem Steuerungsbefehle gesendet werden sollen", [ENTRY_TABLE_INPUT_INT]),
+("Bus", "Der Bus auf dem Steuerungsbefehle gesendet werden sollen", [ENTRY_TABLE_INPUT_INT]),
 ("Strom", "Schalte den Strom beim Starten der Steuerung ein", [ENTRY_TABLE_INPUT_BOOL])
-] # Namen und Definition der Parameter für die Kommunikation mit dem SRCP-Server]
+] # The list called params_w_defs works like this: (parameter as bold text, explanation of the parameter, widget used to display the parameter)
     
     def __init__(self):
-        EntryTable.__init__(self, self.params_w_defs, Config.server_attributes, False, True)
+        EntryTable.__init__(self, self.params_w_defs, self.server_attributes, False, True)
         self.load(Config.server)
 
 class JoystickTable(EntryTable):
+    joystick_attributes = ["emergency_button", "reverse_button", "accel_axis", "focus_button", "use_auto_focus", "show_function_nr"]
     params_w_defs = [
-("Nothalt (JoyButton)", "Der Button am Gamepad, über den die Gleisspannung ausgeschaltet werden kann", [ENTRY_TABLE_INPUT_INT]),
-("Richtungswender (JoyButton)", "Der Button am Joystick, der einen Richtungswechsel der Lokomotive bewirkt", [ENTRY_TABLE_INPUT_INT]),
-("Beschleunigung (JoyAchse)", "Die Achse am Gamepad, mit der die Geschwindigkeit der Lok geregelt wird", [ENTRY_TABLE_INPUT_INT]),
-("Fokus (JoyButton)", "Der Button am Gamepad, der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", [ENTRY_TABLE_INPUT_INT]),
+("Nothalt", "Der Button am Gamepad, über den die Gleisspannung ausgeschaltet werden kann", [ENTRY_TABLE_INPUT_INT]),
+("Richtungswender", "Der Button am Gamepad, der einen Richtungswechsel der Lokomotive bewirkt", [ENTRY_TABLE_INPUT_INT]),
+("Beschleunigung", "Die Achse am Gamepad, mit der die Geschwindigkeit der Lok geregelt wird", [ENTRY_TABLE_INPUT_INT]),
+("Fokus", "Der Button am Gamepad, der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", [ENTRY_TABLE_INPUT_INT]),
 ("Auto-Fokus", "Die ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist", [ENTRY_TABLE_INPUT_BOOL]),
 ("Button-Nr", "Die Nummer des zugehörigen Tasters am Gamepad auf den Funktions-Buttons anzeigen", [ENTRY_TABLE_INPUT_BOOL])
 ] # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
     
     def __init__(self):
-        EntryTable.__init__(self, self.params_w_defs, Config.joystick_attributes, False, True)
+        EntryTable.__init__(self, self.params_w_defs, self.joystick_attributes, False, True)
         self.load(Config.joystick)
 
 class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropertyTreeView und LocoFunctionTreeView
@@ -510,7 +507,7 @@ class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropert
         self.column_types = column_types
         self.name = name
         self.save_method = save_method
-        super(StandardTreeView, self).__init__(liststore)
+        Gtk.TreeView.__init__(self, liststore)
         
         nr = 0
         for column_name, column_tooltip, renderer_id in columnnames_tooltips_renderers:
@@ -524,34 +521,38 @@ class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropert
             self.append_column(column)
             nr += 1
             
-    def new_value(self, cellrenderer, path, new_value): # new_value = None
+    def new_value(self, cellrenderer, path, new_value):
         liststore = self.get_model()
         path, column = self.get_cursor()
         column_nr = column.get_data("colnr") # Rufe zugewiesene Eigenschaft "colnr" auf (siehe oben -> 'set_data')
 
         if self.column_types[column_nr] == GObject.TYPE_INT:
             try:
-                liststore[path][column_nr] = int(new_value)
                 new_value = int(new_value)
             except ValueError:
                 locked_print("Falsche Eingabe, Sie haben keinen Wert eingegeben, der in den Typ Integer umgewandelt werden kann.")
+            else:
+                liststore[path][column_nr] = new_value
+                self.save_method(path, column_nr, new_value)
         elif self.column_types[column_nr] == GObject.TYPE_DOUBLE:
             try:
-                liststore[path][column_nr] = float(new_value.replace(",", ".")) # Kommas zur Umwandlung String-->Float durch Punkte ersetzen
-                new_value = float(new_value)
+                new_value = float(new_value.replace(",", ".")) # Kommas zur Umwandlung String-->Float durch Punkte ersetzen
             except ValueError:
                 locked_print("Falsche Eingabe: Sie haben keinen Wert eingegeben, der in den Typ Float umgewandelt werden kann.")
+            else:
+                liststore[path][column_nr] = new_value
+                self.save_method(path, column_nr, new_value)
         else:
             liststore[path][column_nr] = new_value
-        self.save_method(path, column_nr, new_value)
+            self.save_method(path, column_nr, new_value)
         
 class LocoFunctionTreeView(StandardTreeView):
     column_names_tooltips_renderers = [
 ("Bezeichnung", "Der Name der Funktion ('Licht', 'Hupe' ...)", 0),
-("Funktion", "Die Nummer der Funktion im Lokdecoder", 0),
+("Funktion", "Die Nummer der Funktion im Lok-Decoder", 0),
 ("Wert", "Der voreingestellte Zustand der Funktion: An oder Aus", 2),
-("JoyButton", "Der Button am Joystick, dem die Lokfunktion zugewiesen ist", 0),
-("Schaltart", "Die Art, mit der eine Funktion durch einen Joystick-Button geschaltet wird: Taster oder Umschalter", 3)
+("Gamepad-Button", "Der Button am Gamepad, dem die Lok-Funktion zugewiesen ist", 0),
+("Schaltart", "Die Art, mit der eine Funktion durch einen Gamepad-Button geschaltet wird: Taster oder Umschalter", 3)
 ]
     column_types = [GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING]
     
@@ -635,7 +636,7 @@ class LocoFunctionTreeView(StandardTreeView):
             new_value = True
         elif new_value == 'Aus':
             new_value = False
-        setattr(Config.locos[loco_id].functions[path.get_indices()[0]], Config.function_attributes[column_nr], new_value)
+        setattr(Config.locos[loco_id].functions[path.get_indices()[0]], Config.function_attributes[column_nr][0], new_value)
         
 class LocoSelectionTreeView(StandardTreeView):
     column_names_tooltips_renderers = [

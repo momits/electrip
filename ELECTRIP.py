@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# this is ELECTRIP VERSION 2.1.6
 
 from os import getcwd, path as os_path
 package_path = os_path.dirname(getcwd()) # find parent-directory of current working-directory
@@ -19,7 +18,7 @@ from LockedPrint import locked_print
 class MainWindow(Gtk.Window):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration")
+        self.set_title("ELECTRIP " + ELECTRIP_VERSION)
         icon_list = [GdkPixbuf.Pixbuf.new_from_file(path) for path in ICON_PATH_LIST]
         self.set_icon_list(icon_list)
         self.connect("delete-event", self.delete_event)
@@ -35,7 +34,7 @@ class MainWindow(Gtk.Window):
             if success:
                 self.basic_vbox.top_grid.config_control_switch.control_button.set_active(True)
         
-        Config.notice_unsaved_changes = True
+        Config.notice_unsaved_changes = True # this  can't be set earlier, because loading process would cause unsaved changes
         self.maximize()
         self.show_all()
         
@@ -48,7 +47,7 @@ class MainWindow(Gtk.Window):
                                        "Die Datei besitzt ungespeicherte Änderungen.\n Wollen Sie diese speichern?")
             response = dialog.run()
             dialog.destroy()
-            if response == Gtk.ResponseType.YES and Config.last_file == "":
+            if response == Gtk.ResponseType.YES and Config.opened_file == None:
                 self.basic_vbox.top_grid.save_as_button.save(None, self)
             elif response == Gtk.ResponseType.YES:
                 Config.save(Config.last_file)
@@ -58,6 +57,7 @@ class MainWindow(Gtk.Window):
         locked_print("ELECTRIP wurde beendet.")
     
     def error(self, warnung):
+        self.show_all()
         error_dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE, warnung)
         error_dialog.run()
         error_dialog.destroy()
@@ -124,21 +124,6 @@ class LoadButton(StockImageButton):
     def load(self, path, main_window):
         try:
             Config.load(path)
-            self.loco_function_treeview.load()
-            self.loco_selection_treeview.load()
-            self.joystick_table.load(Config.joystick)
-            self.server_table.load(Config.server)
-            if main_window.basic_vbox.top_grid.config_control_switch.control_button.get_active(): # if control is active
-                main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Steuerung - " + path)
-                if hasattr(Config, "new_unsaved_changes_method"):
-                    del Config.new_unsaved_changes_method
-                new_control_box = ELECTRIP_Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by ELECTRIP_Control
-                main_window.basic_vbox.control_box.quit()
-                main_window.basic_vbox.control_box = new_control_box
-                main_window.basic_vbox.add(main_window.basic_vbox.control_box)
-            else:
-                main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration - " + path)
-            return True
         except ValueError:
             main_window.error("Die Datei ist ungültig! Konnte Konfiguration nicht laden.")
             return False
@@ -148,6 +133,22 @@ class LoadButton(StockImageButton):
         except KeyError:
             main_window.error("Ein Parameter konnte nicht geladen werden, evtl. handelt es ich um eine veraltete ELECTRIP-Datei.")
             return False
+        else:
+            self.loco_function_treeview.load()
+            self.loco_selection_treeview.load()
+            self.joystick_table.load(Config.joystick)
+            self.server_table.load(Config.server)
+            if main_window.basic_vbox.top_grid.config_control_switch.control_button.get_active(): # if control is active
+                #main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Steuerung - " + path)
+                if hasattr(Config, "new_unsaved_changes_method"):
+                    del Config.new_unsaved_changes_method
+                new_control_box = ELECTRIP_Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by ELECTRIP_Control
+                main_window.basic_vbox.control_box.quit()
+                main_window.basic_vbox.control_box = new_control_box
+                main_window.basic_vbox.add(main_window.basic_vbox.control_box)
+
+            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + path)
+            return True
             
 class SaveAsButton(StockImageButton):
     def __init__(self, main_window):
@@ -163,7 +164,7 @@ class SaveAsButton(StockImageButton):
             if path != "" and path[len(path) - 5:len(path)] != ".json": # Wenn Dateiendung fehlt und ein Dateiname angegeben wurde, Endung anhängen
                 path += ".json"
             Config.save(path)
-            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Konfiguration - " + path)
+            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + path)
         elif response == Gtk.ResponseType.CANCEL:
             locked_print('Speichern abgebrochen.')
         file_chooser_dialog.destroy()
@@ -173,7 +174,7 @@ class SaveButton(StockImageButton):
         StockImageButton.__init__(self, "Speichern", Gtk.STOCK_SAVE)
         self.connect("clicked", self.save, main_window)
         self.set_sensitive(False)
-        Config.set_unsaved_changes_method(self.new_unsaved_changes)
+        Config.new_unsaved_changes_method = self.new_unsaved_changes
         
     def save(self, button, config_window):
         Config.save(Config.last_file)

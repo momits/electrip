@@ -14,14 +14,14 @@ class UnsavedChangesHandler(object):
 
 class LinearSegmentFunction():
     def load(self, control_points):
-        self.control_points = [control_points[0], control_points[-1]] #control_points[1], 
-        self.func_segments = [self.calc_func_segment(self.control_points[0], self.control_points[-1])] #self.control_points[0], self.control_points[1]), 
+        self.control_points = [control_points[0], control_points[-1]]
+        self.func_segments = [self.calc_func_segment(self.control_points[0], self.control_points[-1])]
         for point in control_points[:len(control_points) - 1]:
             self.add_control_point(*point)
     
     def add_control_point(self, x, y):
         nr = self.get_segment_nr_from_x(x)
-        if nr != None and self.control_points[nr][1] < y < self.control_points[nr + 1][1]: #and nr != 0 
+        if nr != None and self.control_points[nr][1] < y < self.control_points[nr + 1][1]:
             self.control_points.insert(nr + 1, (x, y))
             self.func_segments[nr] = self.calc_func_segment(self.control_points[nr], self.control_points[nr + 1])
             self.func_segments.insert(nr + 1, self.calc_func_segment(self.control_points[nr + 1], self.control_points[nr + 2]))
@@ -83,7 +83,7 @@ class LinearSegmentFunction():
 
 class Loco(UnsavedChangesHandler):
     def __init__(self,
-                 save_status_method, #id
+                 save_status_method,
                  functions=None,
                  speed_to_step_func=None,
                  name="Neue Lok",
@@ -91,11 +91,10 @@ class Loco(UnsavedChangesHandler):
                  max_speed=100.0,
                  address=1,
                  protocol="M 1",
-                 accel_duration=3.8,
+                 accel_duration=4.5,
                  direction=True,
                  img_path="Datei wählen"):
         UnsavedChangesHandler.__init__(self, save_status_method)
-#        self.id = id
         # it is not possible to set the default value for the "functions"-parameter above,
         # because it is a list and will therefore be the same object for all locos, resulting in the same functions for all locos
         if functions == None:
@@ -123,19 +122,19 @@ class Loco(UnsavedChangesHandler):
 
     def send_to_server(self, bus, socket):
         self.last_speed_step = int(self.speed_step)
-        toggled = [False for i in range(max([0] + [function.nr for function in self.functions]))]
+        toggled = [False for i in range(max([1] + [function.nr + 1 for function in self.functions]))]
         for function in self.functions:
             if function.state:
-                toggled[function.nr - 1] = True
+                toggled[function.nr] = True
         functions = " ".join(str(int(n)) for n in toggled)
         text = "SET " + str(bus) + " GL " + str(self.address) + " " + str(int(self.direction)) + " " + str(int(self.speed_step)) + " " + str(self.speed_steps) + " " + functions + "\n"
         
         locked_print("\n" + text)
         socket.send(text)
     
-    def accelerate(self, value, controller):
-        self.speed = self.speed - value * (0.05 / self.accel_duration * self.max_speed)
-        controller.speed_scale.set_value(self.speed)
+    def accelerate(self, value):
+        self.speed = min(self.max_speed, max(0, self.speed - value * (0.05 / self.accel_duration * self.max_speed)))
+        return self.speed
         
     def toggle_direction(self):
         self.direction = not self.direction
@@ -153,11 +152,10 @@ class Function(UnsavedChangesHandler):
         self.state = not self.state
         
 class Server(UnsavedChangesHandler):
-    def __init__(self, save_status_method, host="localhost", port=4303, session_bus=0, loco_bus=1, power=True):
+    def __init__(self, save_status_method, host="localhost", port=4303, loco_bus=1, power=True):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.host = host
         self.port = port
-        self.session_bus = session_bus
         self.loco_bus = loco_bus
         self.power = power
         
@@ -179,10 +177,10 @@ class Config():
     has_unsaved_changes = False
     opened_file = None
     
-    loco_attributes = ["name", "speed_steps", "max_speed", "address", "protocol", "accel_duration", "direction", "img_path"] #, "speed_to_step_func.control_points"
-    function_attributes = ["name", "nr", "state", "button", "use_push_to_make"]
-    server_attributes = ["host", "port", "session_bus", "loco_bus", "power"]
-    joystick_attributes = ["emergency_button", "reverse_button", "accel_axis", "focus_button", "use_auto_focus", "show_function_nr"]
+    loco_attributes = [("name", "Neue Lok"), ("speed_steps", 14), ("max_speed", 100.0), ("address", 1), ("protocol", "M 1"), ("accel_duration", 4.5), ("direction", True), ("img_path", "Datei wählen")]
+    function_attributes = [("name", ""), ("nr", 0), ("state", False), ("button", 0), ("use_push_to_make", False)]
+    server_attributes = [("host", "localhost"), ("port", 4303), ("loco_bus", 1), ("power", True)]
+    joystick_attributes = [("emergency_button", 0), ("reverse_button", 1), ("accel_axis", 2), ("focus_button", 3), ("use_auto_focus", True), ("show_function_nr", False)]
     
     def __init__(self):
         self.locos = []
@@ -199,40 +197,56 @@ class Config():
     def save(self, file_path):
         loco_list = []
         for loco in self.locos:
-            loco_dict = {attrib: getattr(loco, attrib) for attrib in self.loco_attributes}
+            loco_dict = self.get_param_dict(loco, self.loco_attributes)
             loco_dict["speed_control_points"] = loco.speed_to_step_func.control_points
-            function_list = [{attrib: getattr(function, attrib) for attrib in self.function_attributes} for function in loco.functions]
+            function_list = [self.get_param_dict(function, self.function_attributes) for function in loco.functions]
             loco_dict["functions"] = function_list
             loco_list.append(loco_dict)
-            server_dict = {attrib: getattr(self.server, attrib) for attrib in self.server_attributes}
-            joystick_dict = {attrib: getattr(self.joystick, attrib) for attrib in self.joystick_attributes}
-            Config = {"locos": loco_list, "server": server_dict, "joystick": joystick_dict}
             
-            f = open(file_path, "w")
-            json.dump(Config, f, indent=2)
-            f.close()
+        server_dict = self.get_param_dict(self.server, self.server_attributes)
+        joystick_dict = self.get_param_dict(self.joystick, self.joystick_attributes)
+        Config = {"locos": loco_list, "server": server_dict, "joystick": joystick_dict}
+            
+        f = open(file_path, "w")
+        json.dump(Config, f, indent=2)
+        f.close()
             
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
         locked_print("Einstellungen wurden gespeichert in " + file_path)
         
-    def load(self, file_path): #TODO: allow loading older files which don't have all the attribs of the new format
+    def get_param_dict(self, config_object, attribute_list):
+        return {attrib[0]: getattr(config_object, attrib[0]) for attrib in attribute_list}
+        
+    def load(self, file_path):
         f = open(file_path)
         Config = json.load(f)
         f.close()
         
+        self.notice_unsaved_changes = False
         self.locos = []
-        for nr, loco_dict in enumerate(Config["locos"]):
-            functions = [Function(self.unsaved_changes, *[function_dict[attrib] for attrib in self.function_attributes]) for function_dict in loco_dict["functions"]]
+        for loco_dict in Config["locos"]:
+            functions = [Function(self.unsaved_changes, *self.get_param_list(function_dict, self.function_attributes)) for function_dict in loco_dict["functions"]]
             speed_func = LinearSegmentFunction()
             speed_func.load(loco_dict["speed_control_points"])
-            self.locos.append(Loco(self.unsaved_changes, functions, speed_func, *[loco_dict[attrib] for attrib in self.loco_attributes])) # TODO: sort entries of dict to match the Parameter-order but dont require all
-        self.server = Server(self.unsaved_changes, *[Config["server"][attrib] for attrib in self.server_attributes])
-        self.joystick = Joystick(self.unsaved_changes, *[Config["joystick"][attrib] for attrib in self.joystick_attributes])
+            self.locos.append(Loco(self.unsaved_changes, functions, speed_func, *self.get_param_list(loco_dict, self.loco_attributes)))
+        self.server = Server(self.unsaved_changes, *self.get_param_list(Config["server"], self.server_attributes))
+        self.joystick = Joystick(self.unsaved_changes, *self.get_param_list(Config["joystick"], self.joystick_attributes))
         
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
         locked_print("Einstellungen wurden geladen aus " + file_path)
+        self.notice_unsaved_changes = True
+    
+    def get_param_list(self, config_dict, attribute_list):
+        param_list = []
+        for attrib, standard_value in attribute_list:
+            try:
+                param_list.append(config_dict[attrib])
+            except KeyError:
+                param_list.append(standard_value)
+                locked_print("Dateiformat inkorrekt: Attribut", attrib, "ist nicht enthalten, es wurde der Standardwert", standard_value, "verwendet.")
+        return param_list
     
     def save_opened_file(self, file_path):
         if self.last_file != file_path:
@@ -241,10 +255,7 @@ class Config():
             f.close()
             self.last_file = file_path
         self.opened_file = file_path
-        
-    def set_unsaved_changes_method(self, method):
-        self.new_unsaved_changes_method = method
-        
+
     def unsaved_changes(self, obj, name, value):
         if self.notice_unsaved_changes:
             locked_print("Attribute '" + name + "' of object '" + str(obj) + "' has new value:", value)

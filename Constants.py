@@ -5,7 +5,7 @@
 # 0. ----------- General -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "2.1.6"
+ELECTRIP_VERSION = "3.0.4"
 
 # 0.2. Icons
 ICON_PATH_LIST = [
@@ -24,4 +24,3 @@ ENTRY_TABLE_INPUT_FLOAT = 2 # Entry for Float
 ENTRY_TABLE_INPUT_COMBO = 3 # ComboBox
 ENTRY_TABLE_INPUT_BOOL = 4 # CheckButton
 ENTRY_TABLE_INPUT_FILE = 5 # Button that opens a file-selection-dialog
-ENTRY_TABLE_INPUT_EMPTY = 6 # Empty field to fill with special widgets
