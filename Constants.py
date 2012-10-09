@@ -5,7 +5,7 @@
 # 0. ----------- General -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "3.0.4"
+ELECTRIP_VERSION = "3.0.5"
 
 # 0.2. Icons
 ICON_PATH_LIST = [
