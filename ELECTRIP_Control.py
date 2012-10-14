@@ -99,26 +99,25 @@ class CenterGrid(Gtk.Grid):
         self.connect("realize", self.realized, main_window)
                 
     def realized(self, hbox, control_window):        
-        max_nr_rows = 0
+        max_height = 0
         max_label_width = 0
-        search_pending = True # Suche nach einem Funktionsbutton um Höhe zu ermitteln
+        config_has_functions = False
         for controller in self.controllers:
             controller.function_box = FunctionBox(controller.loco, self.socket)
             controller.function_box.show_all()
             controller.add(controller.function_box)
-            if controller.function_box.nr_rows > max_nr_rows: # finde spalte mit den meisten buttons (mit der bedingung geht einher, dass controller.function_box mindestens einen Funktionsbutton besitzt)
-                max_nr_rows = controller.function_box.nr_rows
-                if search_pending:
-                    button_req = controller.function_box.buttons[0].get_preferred_size()[1]
-                    search_pending = False
+            height = controller.function_box.get_preferred_height()[1]
+            if height > max_height:
+                max_height = height
+            if not config_has_functions and len(controller.function_box.buttons) > 0:
+                config_has_functions = True
             width = controller.loco_label.get_preferred_width()[1]
             if width > max_label_width :
                 max_label_width = width
         
-        if max_nr_rows > 0:
-            height = button_req.height * max_nr_rows
+        if config_has_functions: # if there are no functions, we dont need to do special size-requests
             for controller in self.controllers:
-                controller.function_box.set_size_request(-1, height)
+                controller.function_box.set_size_request(-1, max_height)
                 if controller.get_preferred_width()[1] <= max_label_width:
                     controller.set_size_request(max_label_width, -1) # if the label-width of another controller is bigger than controllers width, request size -> nicer layout
 
