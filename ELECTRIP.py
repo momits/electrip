@@ -147,7 +147,7 @@ class LoadButton(StockImageButton):
                 main_window.basic_vbox.control_box = new_control_box
                 main_window.basic_vbox.add(main_window.basic_vbox.control_box)
 
-            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + path)
+            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + path)
             return True
             
 class SaveAsButton(StockImageButton):
@@ -164,7 +164,7 @@ class SaveAsButton(StockImageButton):
             if path != "" and path[len(path) - 5:len(path)] != ".json": # Wenn Dateiendung fehlt und ein Dateiname angegeben wurde, Endung anhängen
                 path += ".json"
             Config.save(path)
-            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + path)
+            main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + path)
         elif response == Gtk.ResponseType.CANCEL:
             locked_print('Speichern abgebrochen.')
         file_chooser_dialog.destroy()
