@@ -242,7 +242,10 @@ class Config():
         param_list = []
         for attrib, standard_value in attribute_list:
             try:
-                param_list.append(config_dict[attrib])
+                value = config_dict[attrib]
+                if isinstance(value, unicode): # convert all unicode-objects into utf-8-bytestrings to avoid ascii-related problems
+                    value = value.encode("utf-8")
+                param_list.append(value)
             except KeyError:
                 param_list.append(standard_value)
                 locked_print("Dateiformat inkorrekt: Attribut", attrib, "ist nicht enthalten, es wurde der Standardwert", standard_value, "verwendet.")

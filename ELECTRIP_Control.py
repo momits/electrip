@@ -162,7 +162,7 @@ class LocoImage(Gtk.Image):
                 self.set_from_pixbuf(small_pixbuf)
             except GError:
                 self.set_from_stock(Gtk.STOCK_MISSING_IMAGE, Gtk.IconSize.BUTTON)
-                locked_print("Dateipfad '" + path.encode("utf-8") + "' für Lokbild ist ungültig.")
+                locked_print("Dateipfad '" + path + "' für Lokbild ist ungültig.")
 
 class SpeedScale(Gtk.Scale):
     def __init__(self, loco, socket):

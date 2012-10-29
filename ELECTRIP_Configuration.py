@@ -461,8 +461,15 @@ class LocoPropertiesFrame(Gtk.Frame):
         Gtk.Frame.__init__(self)
         self.params_w_defs = [
 ("Adresse", "Die Adresse des Digitaldecoders der Lok", [ENTRY_TABLE_INPUT_INT]),
-("Protokoll", "Das Digitalprotokoll, das vom Lokdecoder verwendet wird:\n    -> M 1: Märklin Motorola 1. Version\n    -> M 2: Märklin Motorola 2. Version\n    -> N1: DCC kurzes Adressformat\n    -> N2: DCC langes Adressformat",
-[ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "M 1", "M 2", "N 1", "N 2"]),
+("Protokoll", """Das Digitalprotokoll, das vom Lokdecoder verwendet wird:
+    -> M 1: MM, 80 Adressen, 14 Fahrstufen
+    -> M 2: MM, 80 Adr., 14 Fahrst. (neuere Decoder)
+    -> M 3: MM, Spezialprotokoll für sog. Wikingerdekoder
+    -> M 4: MM, 256 Adressen, 14 Fahrst.
+    -> M 5: MM, 256 Adressen, 28 Fahrst.
+    -> N1: DCC kurzes Adressformat
+    -> N2: DCC langes Adressformat""",
+[ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "M 1", "M 2", "M 3", "M 4", "M 5", "N 1", "N 2"]),
 ("Beschleunigungsdauer", "Die Zeit in s, die benötigt wird, um die Geschwindigkeit der Lok bei voller Auslenkung des Joysticks von 0 auf den höchstmöglichen Wert zu bringen", [ENTRY_TABLE_INPUT_FLOAT]),
 ("Fahrtrichtung", "Die voreingestellte Fahrtrichtung der Lokomotive", [ENTRY_TABLE_INPUT_COMBO, GObject.TYPE_STRING, "Vorwärts", "Rückwärts"]),
 ("Bild", "Der Pfad an dem das passende Lokbild abgelegt ist", [ENTRY_TABLE_INPUT_FILE, main_window]) # this list is built in the __init__-method because 'main_window' is needed for the file-selection-dialog
