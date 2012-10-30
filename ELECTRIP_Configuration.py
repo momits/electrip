@@ -695,7 +695,6 @@ class LocoSelectionTreeView(StandardTreeView):
     def new_loco(self):
         path = self.get_cursor()[0]
         if path == None:
-            nr = len(self.liststore)
             loco = config.Loco(Config.unsaved_changes)
             Config.locos.append(loco)
             self.loco_function_treeview.add_liststore(-1)
