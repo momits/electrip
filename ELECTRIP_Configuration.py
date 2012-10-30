@@ -154,12 +154,14 @@ class ButtonBoxLocoActions(Gtk.ButtonBox):
                 loco_function_treeview.function_liststores.insert(row_nr - 1, loco_function_treeview.function_liststores.pop(row_nr)) # Funktionen-Liststore an andere Stelle setzen
                 loco_selection_treeview.liststore.move_before(row, prev_row)
                 Config.locos.insert(row_nr - 1, Config.locos.pop(row_nr))
+                Config.unsaved_changes(Config, "locos", Config.locos)
                 loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr - 1)), None, False)
             elif not button.direction and row_nr < len(loco_selection_treeview.liststore) - 1:
                 following_row = loco_selection_treeview.liststore.iter_nth_child(None, row_nr + 1)
                 loco_function_treeview.function_liststores.insert(row_nr + 1, loco_function_treeview.function_liststores.pop(row_nr)) # Funktionen-Liststore an andere Stelle setzen
                 loco_selection_treeview.liststore.move_after(row, following_row)
                 Config.locos.insert(row_nr + 1, Config.locos.pop(row_nr))
+                Config.unsaved_changes(Config, "locos", Config.locos)
                 loco_selection_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr + 1)), None, False)
             else:
                 locked_print("Lok befindet sich schon am Rand, kann nicht weiter verschoben werden.")
@@ -195,11 +197,13 @@ class ButtonBoxLocoFunctionActions(Gtk.ButtonBox):
                 prev_row = liststore.iter_nth_child(None, row_nr - 1)
                 liststore.move_before(row, prev_row)
                 Config.locos[loco_id].functions.insert(row_nr - 1, Config.locos[loco_id].functions.pop(row_nr))
+                Config.unsaved_changes(Config.locos[loco_id], "functions", Config.locos[loco_id].functions)
                 loco_function_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr - 1)), None, False)
             elif not button.direction and row_nr < len(liststore) - 1:
                 following_row = liststore.iter_nth_child(None, row_nr + 1)
                 liststore.move_after(row, following_row)
                 Config.locos[loco_id].functions.insert(row_nr + 2, Config.locos[loco_id].functions.pop(row_nr))
+                Config.unsaved_changes(Config.locos[loco_id], "functions", Config.locos[loco_id].functions)
                 loco_function_treeview.set_cursor(Gtk.TreePath.new_from_string(str(row_nr + 1)), None, False)
             else:
                 locked_print("Funktion befindet sich schon am Rand, kann nicht weiter verschoben werden.")
