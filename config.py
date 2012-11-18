@@ -332,7 +332,11 @@ class Config():
                          for function_dict in loco_dict["functions"]]
             speed_func = LinearSegmentFunction()
             speed_func.load(loco_dict["speed_control_points"])
-            sound_segments = [SoundSegment(self.unsaved_changes, segment_dict) for segment_dict in loco_dict["sound_segments"]]
+            try:
+                sound_segments = [SoundSegment(self.unsaved_changes, segment_dict) for segment_dict in loco_dict["sound_segments"]]
+            except KeyError:
+                locked_print("Die Datei besitzt noch keine Geräusch-Informationen.")
+                sound_segments = None
             self.locos.append(Loco(self.unsaved_changes,
                                    functions,
                                    speed_func,
