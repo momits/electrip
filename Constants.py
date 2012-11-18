@@ -5,7 +5,7 @@
 # 0. ----------- General -----------
 
 # 0.1. Version
-ELECTRIP_VERSION = "3.0.10"
+ELECTRIP_VERSION = "3.1.0"
 
 # 0.2. Icons
 ICON_PATH_LIST = [
@@ -18,9 +18,25 @@ ICON_PATH_LIST = [
 # 1. ----------- Configuration -----------
 
 # 1.2 EntryTable
-ENTRY_TABLE_INPUT_STRING = 0 # Entry for text
-ENTRY_TABLE_INPUT_INT = 1 # Entry for Integer
-ENTRY_TABLE_INPUT_FLOAT = 2 # Entry for Float
-ENTRY_TABLE_INPUT_COMBO = 3 # ComboBox
-ENTRY_TABLE_INPUT_BOOL = 4 # CheckButton
-ENTRY_TABLE_INPUT_FILE = 5 # Button that opens a file-selection-dialog
+class EntryTableType:
+    STRING = 0 # Entry for text
+    INT = 1 # Entry for Integer
+    FLOAT = 2 # Entry for Float
+    COMBO = 3 # ComboBox
+    BOOL = 4 # CheckButton
+    FILE = 5 # Button that opens a file-selection-dialog
+
+class SoundType:
+    LOAD = "load"
+    IDLE = "idle"
+    ACCEL = "accel"
+    DECEL = "decel"
+    
+class SegmentType:
+    LOWER = 0
+    MIDDLE = 1
+    UPPER = 2
+
+END_EVENT_LOWER_BOUND = 35
+STOP_EVENT = 25
+    

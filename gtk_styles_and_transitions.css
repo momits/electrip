@@ -1,6 +1,16 @@
 
 GtkButton#emergency-button:active {
 	transition: 550ms ease;
-	background: #DA6559;
+	background-color: #DA6559;
 	color: #FFF;
 }
+
+
+GtkPaned#custom-handle-pane {
+	-GtkPaned-handle-size: 6px;
+}
+
+GtkPaned#custom-handle-pane.pane-separator {
+	background-image: url("./Icons/sound-bar-pane-handle3.png");
+}
+

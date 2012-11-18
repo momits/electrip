@@ -10,14 +10,14 @@ from gi.repository import GObject, Gtk, GdkPixbuf, Gdk
 import config
 from copy import deepcopy
 from Constants import ELECTRIP_VERSION, ICON_PATH_LIST
-import ELECTRIP_Configuration
-import SaveAndLoad
-import ELECTRIP_Control
+import Configuration
+import DialogUtilities
+import Control
 from LockedPrint import locked_print
 
 class MainWindow(Gtk.Window):
     def __init__(self):
-        super(MainWindow, self).__init__()
+        Gtk.Window.__init__(self)
         self.set_title("ELECTRIP " + ELECTRIP_VERSION)
         icon_list = [GdkPixbuf.Pixbuf.new_from_file(path) for path in ICON_PATH_LIST]
         self.set_icon_list(icon_list)
@@ -67,9 +67,9 @@ class BasicVBox(Gtk.Grid):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         
-        self.config_box = ELECTRIP_Configuration.MainBox(Config, main_window)
+        self.config_box = Configuration.MainBox(Config)
         self.top_grid = TopGrid(self.config_box.scrolled_window_loco_selection.treeview,
-                                          self.config_box.loco_properties_frame.table,
+                                          self.config_box.loco_properties_frame.engine_table,
                                           self.config_box.loco_function_frame.scrolled_window.treeview,
                                           self.config_box.server_table,
                                           self.config_box.joystick_table,
@@ -110,7 +110,7 @@ class LoadButton(StockImageButton):
         self.connect("clicked", self.load_dialog, main_window)
         
     def load_dialog(self, button, main_window):
-        file_chooser_dialog = SaveAndLoad.FileLoadDialog(main_window)
+        file_chooser_dialog = DialogUtilities.FileLoadDialog(main_window)
         file_chooser_dialog.set_filename(Config.last_file)
         response = file_chooser_dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -139,10 +139,9 @@ class LoadButton(StockImageButton):
             self.joystick_table.load(Config.joystick)
             self.server_table.load(Config.server)
             if main_window.basic_vbox.top_grid.config_control_switch.control_button.get_active(): # if control is active
-                #main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " Steuerung - " + path)
                 if hasattr(Config, "new_unsaved_changes_method"):
                     del Config.new_unsaved_changes_method
-                new_control_box = ELECTRIP_Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by ELECTRIP_Control
+                new_control_box = Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by Control
                 main_window.basic_vbox.control_box.quit()
                 main_window.basic_vbox.control_box = new_control_box
                 main_window.basic_vbox.add(main_window.basic_vbox.control_box)
@@ -156,12 +155,12 @@ class SaveAsButton(StockImageButton):
         self.connect("clicked", self.save, main_window)
         
     def save(self, button, main_window):
-        file_chooser_dialog = SaveAndLoad.FileSaveDialog(main_window)
+        file_chooser_dialog = DialogUtilities.FileSaveDialog(main_window)
         file_chooser_dialog.set_filename(Config.last_file)
         response = file_chooser_dialog.run()
         if response == Gtk.ResponseType.OK:
             path = file_chooser_dialog.get_filename()
-            if path != "" and path[len(path) - 5:len(path)] != ".json": # Wenn Dateiendung fehlt und ein Dateiname angegeben wurde, Endung anhängen
+            if path != "" and path[len(path) - 5:len(path)] != ".json": # if a file-name was chosen but ending is missing, add ending
                 path += ".json"
             Config.save(path)
             main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + path)
@@ -201,7 +200,7 @@ class ConfigControlSwitch(Gtk.ButtonBox):
         if button.get_active():
             main_window.basic_vbox.remove(main_window.basic_vbox.config_box)
             del Config.new_unsaved_changes_method # delete any references to GObjects because they are non-copyable
-            main_window.basic_vbox.control_box = ELECTRIP_Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by ELECTRIP_Control
+            main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by Control
             main_window.basic_vbox.add(main_window.basic_vbox.control_box)
         else:
             if hasattr(main_window.basic_vbox, "control_box"):

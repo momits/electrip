@@ -3,6 +3,7 @@
 
 from LockedPrint import locked_print
 import json
+from Constants import SegmentType
 
 class UnsavedChangesHandler(object):
     def __init__(self, save_status_method):
@@ -86,6 +87,7 @@ class Loco(UnsavedChangesHandler):
                  save_status_method,
                  functions=None,
                  speed_to_step_func=None,
+                 sound_segments=None,
                  name="Neue Lok",
                  speed_steps=14,
                  max_speed=100.0,
@@ -93,7 +95,10 @@ class Loco(UnsavedChangesHandler):
                  protocol="M 1",
                  accel_duration=4.5,
                  direction=True,
-                 img_path="Datei wählen"):
+                 img_path="Datei wählen",
+                 use_sound=False,
+                 start_engine_sound=None,
+                 quit_engine_sound=None,):
         UnsavedChangesHandler.__init__(self, save_status_method)
         # it is not possible to set the default value for the "functions"-parameter above,
         # because it is a list and will therefore be the same object for all locos, resulting in the same functions for all locos
@@ -119,6 +124,13 @@ class Loco(UnsavedChangesHandler):
         self.speed = 0.0
         self.speed_step = 0.0
         self.last_speed_step = 0
+        
+        self.use_sound = use_sound
+        self.sound_segments = sound_segments
+#        if use_sound:
+#            self.sound_controller = SoundController(self.start_engine_sound, self.quit_engine_sound, sound_segments)
+        self.start_engine_sound = start_engine_sound
+        self.quit_engine_sound = quit_engine_sound
 
     def send_to_server(self, bus, socket):
         self.last_speed_step = int(self.speed_step)
@@ -163,7 +175,14 @@ class Server(UnsavedChangesHandler):
         self.power = not self.power
         
 class Joystick(UnsavedChangesHandler):
-    def __init__(self, save_status_method, emergency_button=0, reverse_button=1, accel_axis=2, focus_button=3, use_auto_focus=True, show_function_nr=False):
+    def __init__(self,
+                 save_status_method,
+                 emergency_button=0,
+                 reverse_button=1,
+                 accel_axis=2,
+                 focus_button=3,
+                 use_auto_focus=True,
+                 show_function_nr=False):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.emergency_button = emergency_button
         self.reverse_button = reverse_button
@@ -171,16 +190,96 @@ class Joystick(UnsavedChangesHandler):
         self.focus_button = focus_button
         self.use_auto_focus = use_auto_focus
         self.show_function_nr = show_function_nr
+
+class SoundFunction():
+    def __init__(self, segments):
+        self.segments = segments
+        
+    def get_sound(self, x, sound_type):
+        segment = self.get_segment_from_x(x)
+        if segment != None:
+            return getattr(segment, sound_type)
+        
+    def get_segment_nr_from_x(self, x):
+        for nr, segment in enumerate(self.segments):
+            if segment.start <= x <= segment.end:
+                return nr
+                break
+
+class SoundSegment(object):
+    private_keys = ["type", "store", "save_status_method"]
+    allowed_keys = ["start", "end", "load_sound", "idle_sound", "accel_sound", "decel_sound"] + private_keys
     
+    def __init__(self, save_status_method, attrib_dict):
+        self.store = {}
+        self.save_status_method = save_status_method
+        for attrib, value in attrib_dict.items():
+            setattr(self, attrib, value)
+
+    def __setattr__(self, key, value): # the great thing about this class: it calculates if it's in the lower, upper position or one in between
+        if key in self.allowed_keys:
+            object.__setattr__(self, key, value)
+            if key not in self.private_keys:
+                self.store[key] = value
+                self.check_type()
+                self.save_status_method(self, key, value)
+        else:
+            raise LookupError(str(key) + " is not an allowed key for a SoundSegment-Dict")
+        
+    def __delattr__(self, key):
+        object.__delattr__(self, key)
+        del self.store[key]
+        self.check_type()
+        
+    def check_type(self):
+        keys = self.store.keys()
+        #print keys
+        if "accel_sound" in keys:
+            if "decel_sound" in keys:
+                self.type = SegmentType.MIDDLE
+            else:
+                self.type = SegmentType.LOWER
+        elif "decel_sound" in keys:
+            self.type = SegmentType.UPPER
+            
+    def to_dict(self):
+        return self.store
+            
+
 class Config():
     notice_unsaved_changes = False
     has_unsaved_changes = False
     opened_file = None
     
-    loco_attributes = [("name", "Neue Lok"), ("speed_steps", 14), ("max_speed", 100.0), ("address", 1), ("protocol", "M 1"), ("accel_duration", 4.5), ("direction", True), ("img_path", "Datei wählen")]
-    function_attributes = [("name", ""), ("nr", 0), ("state", False), ("button", 0), ("use_push_to_make", False)]
-    server_attributes = [("host", "localhost"), ("port", 4303), ("loco_bus", 1), ("power", True)]
-    joystick_attributes = [("emergency_button", 0), ("reverse_button", 1), ("accel_axis", 2), ("focus_button", 3), ("use_auto_focus", True), ("show_function_nr", False)]
+    loco_attributes = [("name", "Neue Lok"),
+                       ("speed_steps", 14),
+                       ("max_speed", 100.0),
+                       ("address", 1),
+                       ("protocol", "M 1"),
+                       ("accel_duration", 4.5),
+                       ("direction", True),
+                       ("img_path", None),
+                       ("use_sound", False),
+                       ("start_engine_sound", None),
+                       ("quit_engine_sound", None),]
+    
+    function_attributes = [("name", ""),
+                           ("nr", 0),
+                           ("state", False),
+                           ("button", 0),
+                           ("use_push_to_make", False)]
+    
+    server_attributes = [("host", "localhost"),
+                         ("port", 4303),
+                         ("loco_bus", 1),
+                         ("power", True)]
+    
+    joystick_attributes = [("emergency_button", 0),
+                           ("reverse_button", 1),
+                           ("accel_axis", 2),
+                           ("focus_button", 3),
+                           ("use_auto_focus", True),
+                           ("show_function_nr", False)]
     
     def __init__(self):
         self.locos = []
@@ -199,7 +298,9 @@ class Config():
         for loco in self.locos:
             loco_dict = self.get_param_dict(loco, self.loco_attributes)
             loco_dict["speed_control_points"] = loco.speed_to_step_func.control_points
-            function_list = [self.get_param_dict(function, self.function_attributes) for function in loco.functions]
+            loco_dict["sound_segments"] = [segment.to_dict() for segment in loco.sound_segments]
+            function_list = [self.get_param_dict(function, self.function_attributes)
+                             for function in loco.functions]
             loco_dict["functions"] = function_list
             loco_list.append(loco_dict)
             
@@ -226,12 +327,21 @@ class Config():
         self.notice_unsaved_changes = False
         self.locos = []
         for loco_dict in Config["locos"]:
-            functions = [Function(self.unsaved_changes, *self.get_param_list(function_dict, self.function_attributes)) for function_dict in loco_dict["functions"]]
+            functions = [Function(self.unsaved_changes,
+                                  *self.get_param_list(function_dict, self.function_attributes))
+                         for function_dict in loco_dict["functions"]]
             speed_func = LinearSegmentFunction()
             speed_func.load(loco_dict["speed_control_points"])
-            self.locos.append(Loco(self.unsaved_changes, functions, speed_func, *self.get_param_list(loco_dict, self.loco_attributes)))
-        self.server = Server(self.unsaved_changes, *self.get_param_list(Config["server"], self.server_attributes))
-        self.joystick = Joystick(self.unsaved_changes, *self.get_param_list(Config["joystick"], self.joystick_attributes))
+            sound_segments = [SoundSegment(self.unsaved_changes, segment_dict) for segment_dict in loco_dict["sound_segments"]]
+            self.locos.append(Loco(self.unsaved_changes,
+                                   functions,
+                                   speed_func,
+                                   sound_segments,
+                                   *self.get_param_list(loco_dict, self.loco_attributes)))
+        self.server = Server(self.unsaved_changes,
+                             *self.get_param_list(Config["server"], self.server_attributes))
+        self.joystick = Joystick(self.unsaved_changes,
+                                 *self.get_param_list(Config["joystick"], self.joystick_attributes))
         
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
@@ -248,7 +358,11 @@ class Config():
                 param_list.append(value)
             except KeyError:
                 param_list.append(standard_value)
-                locked_print("Dateiformat inkorrekt: Attribut", attrib, "ist nicht enthalten, es wurde der Standardwert", standard_value, "verwendet.")
+                locked_print("Dateiformat inkorrekt: Attribut",
+                             attrib,
+                             "ist nicht enthalten, es wurde der Standardwert",
+                             standard_value,
+                             "verwendet.")
         return param_list
     
     def save_opened_file(self, file_path):
