@@ -98,7 +98,8 @@ class Loco(UnsavedChangesHandler):
                  img_path="Datei wählen",
                  use_sound=False,
                  start_engine_sound=None,
-                 quit_engine_sound=None,):
+                 idle_sound=None,
+                 quit_engine_sound=None):
         UnsavedChangesHandler.__init__(self, save_status_method)
         # it is not possible to set the default value for the "functions"-parameter above,
         # because it is a list and will therefore be the same object for all locos, resulting in the same functions for all locos
@@ -126,11 +127,10 @@ class Loco(UnsavedChangesHandler):
         self.last_speed_step = 0
         
         self.use_sound = use_sound
-        self.sound_segments = sound_segments
-#        if use_sound:
-#            self.sound_controller = SoundController(self.start_engine_sound, self.quit_engine_sound, sound_segments)
         self.start_engine_sound = start_engine_sound
+        self.idle_sound = idle_sound
         self.quit_engine_sound = quit_engine_sound
+        self.sound_segments = sound_segments
 
     def send_to_server(self, bus, socket):
         self.last_speed_step = int(self.speed_step)
@@ -152,6 +152,8 @@ class Loco(UnsavedChangesHandler):
         self.direction = not self.direction
         
 class Function(UnsavedChangesHandler):
+#    state_translation = [(True, "An"), (False, "Aus")]
+#    use_push_to_make_translation =[(True, "Taster"), (False, "Umschalter")]
     def __init__(self, save_status_method, name="", function=0, state=False, button=0, use_push_to_make=False):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.name = name
@@ -190,7 +192,7 @@ class Joystick(UnsavedChangesHandler):
         self.focus_button = focus_button
         self.use_auto_focus = use_auto_focus
         self.show_function_nr = show_function_nr
-
+        
 class SoundFunction():
     def __init__(self, segments):
         self.segments = segments
@@ -201,10 +203,13 @@ class SoundFunction():
             return getattr(segment, sound_type)
         
     def get_segment_nr_from_x(self, x):
-        for nr, segment in enumerate(self.segments):
-            if segment.start <= x <= segment.end:
-                return nr
-                break
+        if x == 0:
+            return -1
+        else:
+            for nr, segment in enumerate(self.segments):
+                if segment.start < x <= segment.end:
+                    return nr
+                    break
 
 class SoundSegment(object):
     private_keys = ["type", "store", "save_status_method"]
@@ -234,13 +239,12 @@ class SoundSegment(object):
     def check_type(self):
         keys = self.store.keys()
         #print keys
-        if "accel_sound" in keys:
-            if "decel_sound" in keys:
+        if "decel_sound" in keys:
+            if "accel_sound" in keys:
                 self.type = SegmentType.MIDDLE
             else:
-                self.type = SegmentType.LOWER
-        elif "decel_sound" in keys:
-            self.type = SegmentType.UPPER
+                self.type = SegmentType.UPPER
+            
             
     def to_dict(self):
         return self.store
@@ -261,7 +265,8 @@ class Config():
                        ("img_path", None),
                        ("use_sound", False),
                        ("start_engine_sound", None),
-                       ("quit_engine_sound", None),]
+                       ("idle_sound", None),
+                       ("quit_engine_sound", None)]
     
     function_attributes = [("name", ""),
                            ("nr", 0),
@@ -298,7 +303,10 @@ class Config():
         for loco in self.locos:
             loco_dict = self.get_param_dict(loco, self.loco_attributes)
             loco_dict["speed_control_points"] = loco.speed_to_step_func.control_points
-            loco_dict["sound_segments"] = [segment.to_dict() for segment in loco.sound_segments]
+            if loco.sound_segments != None:
+                loco_dict["sound_segments"] = [segment.to_dict() for segment in loco.sound_segments]
+            else:
+                loco_dict["sound_segments"] = None
             function_list = [self.get_param_dict(function, self.function_attributes)
                              for function in loco.functions]
             loco_dict["functions"] = function_list
@@ -332,11 +340,15 @@ class Config():
                          for function_dict in loco_dict["functions"]]
             speed_func = LinearSegmentFunction()
             speed_func.load(loco_dict["speed_control_points"])
-            try:
-                sound_segments = [SoundSegment(self.unsaved_changes, segment_dict) for segment_dict in loco_dict["sound_segments"]]
-            except KeyError:
-                locked_print("Die Datei besitzt noch keine Geräusch-Informationen.")
+            if loco_dict["sound_segments"] != None:
+                try:
+                    sound_segments = [SoundSegment(self.unsaved_changes, segment_dict) for segment_dict in loco_dict["sound_segments"]]
+                except KeyError:
+                    locked_print("Die Datei besitzt noch keine Geräusch-Informationen.")
+                    sound_segments = None
+            else:
                 sound_segments = None
+            
             self.locos.append(Loco(self.unsaved_changes,
                                    functions,
                                    speed_func,

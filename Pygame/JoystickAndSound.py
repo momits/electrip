@@ -152,7 +152,7 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
         self.callbacks[channel_id] = callback_func
         
     def queue_sound(self, channel_id, sound):
-        locked_print("\nqueueing", sound)
+#        locked_print("\nqueueing", sound)
         self.channels[channel_id].queue(sound)
         
     def acquire_channel_id(self):
@@ -170,8 +170,8 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
             
 class SoundController(GObject.GObject):
     engine_is_running = False
-    scheduled_speed = 0
-    actual_speed = 0
+    scheduled_speed = -1
+    actual_speed = -1
     on_load = False
     __gsignals__ = {
       "speed-changed": (GObject.SIGNAL_RUN_FIRST, None, (int, float,)),
@@ -195,6 +195,7 @@ class SoundController(GObject.GObject):
         self.sound_segments = loco.sound_segments
         
         self.start_engine_sound = self.convert_to_sound(loco.start_engine_sound)
+        self.idle_sound = self.convert_to_sound(loco.idle_sound)
         self.quit_engine_sound = self.convert_to_sound(loco.quit_engine_sound)
         #self.extras = loco.extras
         self.sound_function = config.SoundFunction(self.sound_segments)
@@ -210,24 +211,23 @@ class SoundController(GObject.GObject):
         channel = self.mixer.channels[self.engine_channel_id]
         if not self.engine_is_running and not channel.get_busy():
             self.mixer.queue_sound(self.engine_channel_id, self.start_engine_sound)
-            self.mixer.queue_sound(self.engine_channel_id, self.sound_segments[0].idle_sound)
+            self.mixer.queue_sound(self.engine_channel_id, self.idle_sound)
             self.engine_is_running = True
-            #self.set_speed(self.actual_speed)
         else:
             raise RuntimeError("Engine is already running!")
         
     def quit_engine(self):
-        if self.engine_is_running and self.actual_speed == 0:
+        if self.engine_is_running and self.actual_speed == -1:
             self.mixer.queue_sound(self.engine_channel_id, self.quit_engine_sound)
             self.engine_is_running = False
         else:
             raise RuntimeError("You didn't start the engine or it is still running at a speed > 0!")
         
     def set_speed(self, speed): # new speed may be a float!
-        #sound_speed = self.sound_function.get_segment_nr_from_x(speed)
         if self.engine_is_running:
+            
             self.scheduled_speed = self.sound_function.get_segment_nr_from_x(speed) #min(self.sound_speed_steps, max(0, int(round(sound_speed))))
-            locked_print("new scheduled speed", self.scheduled_speed)
+            #locked_print("new scheduled speed", self.scheduled_speed)
         else:
             raise RuntimeError("You need to start the Engine first.")
             
@@ -241,43 +241,36 @@ class SoundController(GObject.GObject):
     def update_engine_queue(self):
         old_speed = self.actual_speed
         emit_idle = False
-        #locked_print("updating engine queue_sound")
-        scheduled_segment = self.sound_segments[self.actual_speed]
+        #locked_print("actual speed:", self.actual_speed, "scheduled speed", self.scheduled_speed)
         if self.engine_is_running:
-            if self.actual_speed < self.scheduled_speed:
-                print 1
-                sound = scheduled_segment.accel_sound
-                path = self.path_sound_segments[self.actual_speed].accel_sound #########
-                self.actual_speed += 1
-                self.on_load = True
+            if self.scheduled_speed == self.actual_speed == -1:
+                sound = self.idle_sound
+                self.emit("engine-idle")
+            else:
+                actual_segment = self.sound_segments[self.actual_speed]
+                if self.actual_speed < self.scheduled_speed:
+                    sound = self.sound_segments[self.actual_speed + 1].accel_sound
+                    self.actual_speed += 1
+                    self.on_load = True
+                    
+                elif self.actual_speed == self.scheduled_speed:
+                    if self.on_load:
+                        sound = actual_segment.load_sound
+                    else:
+                        sound = actual_segment.idle_sound
+                    
+                elif self.actual_speed > self.scheduled_speed:
+                    sound = actual_segment.decel_sound
+                    self.actual_speed -= 1
+                    self.on_load = False
                 
-            elif self.actual_speed == self.scheduled_speed:
-                print 2
-                if self.on_load:
-                    sound = scheduled_segment.load_sound
-                    path = self.path_sound_segments[self.actual_speed].load_sound ##########
-                else:
-                    if self.actual_speed == 0:
-                        emit_idle = True
-                    sound = scheduled_segment.idle_sound
-                    path = self.path_sound_segments[self.actual_speed].idle_sound #############
-                
-            elif self.actual_speed > self.scheduled_speed:
-                print 3
-                sound = scheduled_segment.decel_sound
-                path = self.path_sound_segments[self.actual_speed].decel_sound ##########
-                self.actual_speed -= 1
-                self.on_load = False
-            
             if sound != None:
-                locked_print("Going to play", path, "for speed", self.actual_speed, "with length", sound.get_length(), "s")
+                #locked_print("Going to play", path, "for speed", self.actual_speed, "with length", sound.get_length(), "s")
                 self.mixer.queue_sound(self.engine_channel_id, sound)
             else:
                 locked_print("Geräusch", self.actual_speed, "ist keine gültige Datei.")
             if old_speed != self.actual_speed:
                 self.emit("speed-changed", self.actual_speed, sound.get_length() * 1000) # sound_length is needed in ms
-            if emit_idle:
-                self.emit("engine-idle")
                 
         elif not self.mixer.channels[self.engine_channel_id].get_busy():
             self.emit("engine-stopped")

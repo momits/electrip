@@ -134,6 +134,8 @@ class Controller(Gtk.Grid):
         self.loco_image = LocoImage(loco.img_path)
         if loco.use_sound:
             sound_controller = JoystickAndSound.SoundController(event_thread, loco)
+        else:
+            sound_controller = None
         self.speed_scale = SpeedScale(loco, socket, sound_controller)
         self.loco_label = LocoLabel(loco)
         self.reverser = Reverser(loco, socket, self.speed_scale)
@@ -172,7 +174,7 @@ class LocoImage(Gtk.Image):
                 locked_print("Dateipfad '" + path + "' für Lokbild ist ungültig.")
 
 class SpeedScale(Gtk.Scale):
-    def __init__(self, loco, socket, sound_controller):
+    def __init__(self, loco, socket, sound_controller=None):
         Gtk.Scale.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         self.set_vexpand(True)

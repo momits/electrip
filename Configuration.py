@@ -67,9 +67,9 @@ class DeleteLocoButton(Gtk.Button):
         else:
             liststore = loco_function_frame.scrolled_window.treeview.get_model()
             loco_function_frame.scrolled_window.treeview.function_liststores.remove(liststore) # Aktuelle Funktionsliste löschen
-            loco_selection_treeview.liststore.remove(row) # Zeile im Liststore löschen
             Config.locos.pop(path.get_indices()[0])
             Config.unsaved_changes(Config, "locos", Config.locos)
+            loco_selection_treeview.liststore.remove(row) # Zeile im Liststore löschen
                 
             if len(loco_selection_treeview.liststore) == 0:
                 loco_speed_frame.graph.clear()
@@ -95,7 +95,11 @@ class NewLocoFunctionButton(Gtk.Button):
             loco = Config.locos[loco_id]
             loco.functions.append(function)
             Config.unsaved_changes(Config.locos[loco_id], "functions", Config.locos[loco_id].functions)  # call unsaved changes method manually, cause list object "functions" doesnt do this
-            loco_function_treeview.function_liststores[loco_id].append([function.name, function.nr, "An", function.button, "Umschalter"])
+            loco_function_treeview.function_liststores[loco_id].append([function.name,
+                                                                        function.nr, # TODO: rethink conversion between saved-attribs and displayed-attribs!
+                                                                        "Aus",
+                                                                        function.button,
+                                                                        "Umschalter"])
             
 class DeleteLocoFunctionButton(Gtk.Button):
     def __init__(self, loco_function_treeview):
@@ -322,7 +326,6 @@ class ScrolledTreeView(Gtk.ScrolledWindow):
 class EntryTable(Gtk.Grid):
     def __init__(self, params_w_defs, config_object_attributes, use_tooltips, use_bold_params, orientation=Gtk.Orientation.VERTICAL):
         Gtk.Grid.__init__(self)
-        #self.set_orientation(orientation)
         self.params_w_defs = params_w_defs
         self.config_object_attributes = config_object_attributes
         
@@ -498,14 +501,14 @@ class JoystickTable(EntryTable):
         self.load(Config.joystick)
 
 class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropertyTreeView und LocoFunctionTreeView
-    def __init__(self, cell_renderers, columnnames_tooltips_renderers, column_types, name, save_method, liststore=None):
+    def __init__(self, cell_renderers, column_attributes, column_types, name, save_method, liststore=None):
         self.column_types = column_types
         self.name = name
         self.save_method = save_method
         Gtk.TreeView.__init__(self, liststore)
         
         nr = 0
-        for column_name, column_tooltip, renderer_id in columnnames_tooltips_renderers:
+        for column_name, column_tooltip, renderer_id in column_attributes:
             label = Gtk.Label(label=column_name)
             label.show()
             label.set_tooltip_text(column_tooltip)
@@ -542,7 +545,7 @@ class StandardTreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropert
             self.save_method(path, column_nr, new_value)
         
 class LocoFunctionTreeView(StandardTreeView):
-    column_names_tooltips_renderers = [
+    column_attributes = [ # list to set up the standard treeview: column-name, column-tooltip, renderer-id
 ("Bezeichnung", "Der Name der Funktion ('Licht', 'Hupe' ...)", 0),
 ("Funktion", "Die Nummer der Funktion im Lok-Decoder", 0),
 ("Wert", "Der voreingestellte Zustand der Funktion: An oder Aus", 2),
@@ -552,7 +555,6 @@ class LocoFunctionTreeView(StandardTreeView):
     column_types = [GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING]
     
     def __init__(self):
-        # self.save_status_method = save_status_method
         self.function_liststores = []
         cell_renderers = []
             
@@ -590,7 +592,7 @@ class LocoFunctionTreeView(StandardTreeView):
         StandardTreeView.__init__(
             self,
             cell_renderers,
-            self.column_names_tooltips_renderers,
+            self.column_attributes,
             self.column_types,
             "LocoFunctionTreeView",
             self.save_changes)
@@ -634,7 +636,7 @@ class LocoFunctionTreeView(StandardTreeView):
         setattr(Config.locos[loco_id].functions[path.get_indices()[0]], Config.function_attributes[column_nr][0], new_value)
         
 class LocoSelectionTreeView(StandardTreeView):
-    column_names_tooltips_renderers = [
+    column_attributes = [
 ("Zu konfigurierende Lok wählen", "", 0)
 ]
     column_types = [GObject.TYPE_STRING]
@@ -656,7 +658,7 @@ class LocoSelectionTreeView(StandardTreeView):
         StandardTreeView.__init__(
             self,
             [textrenderer],
-            self.column_names_tooltips_renderers,
+            self.column_attributes,
             self.column_types,
             "LocoSelectionTreeView",
             self.save_changes,
@@ -933,8 +935,9 @@ class SpeedStepGraph(Gtk.DrawingArea):
 class SpeedSoundGrid(Gtk.Frame):
     loco_sound_bars = {}
     params_w_defs = [("Start-Geräusch", "Geräusch für das Starten der Lokomotive", [EntryTableType.FILE, SoundFileFilter()]),
+                     ("Leerlaufgeräusch", "Geräusch im Leerlauf", [EntryTableType.FILE, SoundFileFilter()]),
                      ("Abstellgeräusch", "Geräusch für das Herunterfahren / Abstellen der Lokomotive", [EntryTableType.FILE, SoundFileFilter()])]
-    loco_attributes = ["start_engine_sound", "quit_engine_sound"]
+    loco_attributes = ["start_engine_sound", "idle_sound", "quit_engine_sound"]
     inner_margin = 10
     
     def __init__(self, graph):
@@ -969,14 +972,15 @@ class SpeedSoundGrid(Gtk.Frame):
             self.loco.sound_segments = [config.SoundSegment(Config.unsaved_changes,
                                                             {"start": 0,
                                                             "end": 0.5 * self.loco.max_speed,
-                                                            "idle_sound": None,
+                                                            "load_sound": None,
+                                                            "decel_sound": None,
                                                             "accel_sound": None})]
         if hasattr(self, "sound_bar"):
             self.grid.remove(self.sound_bar)
         if self.loco in self.loco_sound_bars:
             self.sound_bar = self.loco_sound_bars[self.loco]
         else:
-            self.sound_bar = SegmentedSoundBar(self.graph)
+            self.sound_bar = SegmentedSoundBar(self.graph, self)
             self.sound_bar.load(self.loco)
             self.sound_bar.set_horizontal_margins(self.inner_margin - 0.5 * self.sound_bar.handle_width)
             self.loco_sound_bars[self.loco] = self.sound_bar
@@ -1021,9 +1025,10 @@ class CustomHandlePaned(Gtk.Paned):
 class SegmentedSoundBar(Gtk.Grid):
     handle_width = 6 # has to fit the width set in gtk_styles_and_transitions.css
     
-    def __init__(self, graph):
+    def __init__(self, graph, speed_sound_grid):
         Gtk.Grid.__init__(self)
         self.graph = graph
+        self.speed_sound_grid = speed_sound_grid
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.left_handle = Gtk.Image.new_from_file("./Icons/sound-bar-pane-handle3.png")
         self.left_handle.set_halign(Gtk.Align.START)
@@ -1093,7 +1098,7 @@ class SoundSelectorButton(PopupButton):
     params_w_defs = [
     ("Unter Last:", "Geräusch das im gewählten Geschwindigkeitsbereich\nunter Last abgespielt wird", [EntryTableType.FILE, SoundFileFilter()]),
     ("Im Leerlauf:", "Geräusch das im gewählten Geschwindigkeitsbereich\nim Leerlauf abgespielt wird", [EntryTableType.FILE, SoundFileFilter()]),
-    ("Beschleunigungsvorgang:", "Beschleunigungsvorgang zur nächsten Geräusch-Stufe", [EntryTableType.FILE, SoundFileFilter()]),
+    ("Beschleunigungsvorgang:", "Beschleunigungsvorgang zu dieser Geräusch-Stufe", [EntryTableType.FILE, SoundFileFilter()]),
     ("Bremsvorgang:", "Bremsvorgang zur vorherigen Geräusch-Stufe", [EntryTableType.FILE, SoundFileFilter()])]
     segment_attributes = ["load_sound", "idle_sound", "accel_sound", "decel_sound"]
     
@@ -1111,11 +1116,10 @@ class SoundSelectorButton(PopupButton):
         self.table = EntryTable(params_w_defs, attributes, True, False)
         self.grid.attach(self.table, 0, 0, 2, 1)
         
-        if segment.type != SegmentType.LOWER:
-            delete_sound_button = StockImageButton("Geräusch löschen", Gtk.STOCK_DELETE)
-            delete_sound_button.set_halign(Gtk.Align.START)
-            delete_sound_button.connect("clicked", self.delete_sound)
-            self.grid.attach(delete_sound_button, 0, 1, 1, 1)
+        delete_sound_button = StockImageButton("Geräusch löschen", Gtk.STOCK_DELETE)
+        delete_sound_button.set_halign(Gtk.Align.START)
+        delete_sound_button.connect("clicked", self.delete_sound)
+        self.grid.attach(delete_sound_button, 0, 1, 1, 1)
         
         insert_sound_button = StockImageButton("Geräusch rechts einfügen", Gtk.STOCK_ADD)
         insert_sound_button.set_halign(Gtk.Align.END)
@@ -1130,18 +1134,20 @@ class SoundSelectorButton(PopupButton):
         self.segment = segment
         
     def delete_sound(self, button):
-        sound_bar = self.sound_bar
         loco = self.sound_bar.loco
         index = loco.sound_segments.index(self.segment)
         
         loco.sound_segments.remove(self.segment)
-        prev_segment = loco.sound_segments[index - 1]
-        prev_segment.end = self.segment.end
-        if self.segment.type == SegmentType.UPPER:
-            del prev_segment.accel_sound
-            del prev_segment.idle_sound
-            pass
-        sound_bar.load(loco)
+        if len(loco.sound_segments) > 0:
+            prev_segment = loco.sound_segments[index - 1]
+            prev_segment.end = self.segment.end
+            if self.segment.type == SegmentType.UPPER:
+                del prev_segment.idle_sound
+            self.sound_bar.load(loco)
+        else:
+            loco.sound_segments = None
+            del self.sound_bar.speed_sound_grid.loco_sound_bars[loco]
+            self.sound_bar.speed_sound_grid.enable_sound_button.set_active(False)
         self.popup.hide()
         
     def insert_sound(self, button):
@@ -1154,9 +1160,8 @@ class SoundSelectorButton(PopupButton):
 #                self.segment.accel_sound = None
 #                if hasattr(self.segment, "decel_sound"):
 #                    del self.segment.decel_sound
-            if self.segment.type == SegmentType.UPPER:
-                self.segment.accel_sound = None
-                self.segment.idle_sound = None
+            #self.segment.accel_sound = None
+            self.segment.idle_sound = None
 #                if hasattr(self.segment, "accel_sound"):
 #                    del self.segment.accel_sound
 #                if hasattr(self.segment, "idle_sound"):
@@ -1164,6 +1169,7 @@ class SoundSelectorButton(PopupButton):
             sound_segments.append(config.SoundSegment(Config.unsaved_changes,
                                                       {"start": self.segment.end,
                                                       "end": 0.5 * (loco.max_speed + self.segment.end),
+                                                      "accel_sound": None,
                                                       "load_sound": None,
                                                       "decel_sound": None}))
         else:
