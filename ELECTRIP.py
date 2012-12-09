@@ -21,7 +21,7 @@ class MainWindow(Gtk.Window):
         self.set_title("ELECTRIP " + ELECTRIP_VERSION)
         icon_list = [GdkPixbuf.Pixbuf.new_from_file(path) for path in ICON_PATH_LIST]
         self.set_icon_list(icon_list)
-        self.connect("delete-event", self.delete_event)
+        self.connect("delete-event", self.quit)
         if len(argv) > 2 and (argv[1] == "-f" or argv[1] == "--file"):
             file_path = argv[2]
         else:
@@ -38,23 +38,29 @@ class MainWindow(Gtk.Window):
         self.maximize()
         self.show_all()
         
-    def delete_event(self, window, event):
+    def quit(self, window, event):
+        response = 1
         if Config.has_unsaved_changes:
             dialog = Gtk.MessageDialog(self,
                                        0,
                                        Gtk.MessageType.QUESTION,
-                                       Gtk.ButtonsType.YES_NO,
+                                       Gtk.ButtonsType.NONE,
                                        "Die Datei besitzt ungespeicherte Änderungen.\n Wollen Sie diese speichern?")
+            dialog.add_buttons("Speichern", 0, "Verwerfen und ELECTRIP beenden", 1, "Abbrechen", 2)
             response = dialog.run()
             dialog.destroy()
-            if response == Gtk.ResponseType.YES and Config.opened_file == None:
+            if response == 0 and Config.opened_file == None:
                 self.basic_vbox.top_grid.save_as_button.save(None, self)
-            elif response == Gtk.ResponseType.YES:
+            elif response == 0:
                 Config.save(Config.last_file)
-        if self.basic_vbox.top_grid.config_control_switch.control_button.get_active():
-            self.basic_vbox.control_box.quit()
-        Gtk.main_quit()
-        locked_print("ELECTRIP wurde beendet.")
+        if response != 2:
+            if self.basic_vbox.top_grid.config_control_switch.control_button.get_active():
+                self.basic_vbox.control_box.quit()
+            Gtk.main_quit()
+            locked_print("ELECTRIP wurde beendet.")
+        else:
+            dialog.destroy()
+            return True
     
     def error(self, warnung):
         self.show_all()
@@ -141,9 +147,8 @@ class LoadButton(StockImageButton):
             if main_window.basic_vbox.top_grid.config_control_switch.control_button.get_active(): # if control is active
                 if hasattr(Config, "new_unsaved_changes_method"):
                     del Config.new_unsaved_changes_method
-                new_control_box = Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by Control
                 main_window.basic_vbox.control_box.quit()
-                main_window.basic_vbox.control_box = new_control_box
+                main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by Control
                 main_window.basic_vbox.add(main_window.basic_vbox.control_box)
 
             main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + path)
@@ -192,11 +197,11 @@ class ConfigControlSwitch(Gtk.ButtonBox):
         self.pack_start(self.config_button, True, True, 0)
         
         self.control_button = Gtk.RadioButton.new_with_label_from_widget(self.config_button, "Steuerung")
-        self.control_button.connect("toggled", self.toggled, main_window)
+        self.control_button.connect("toggled", self.control_toggled, main_window)
         self.pack_start(self.control_button, True, True, 0)
         main_window.control_window = None
     
-    def toggled(self, button, main_window):
+    def control_toggled(self, button, main_window):
         if button.get_active():
             main_window.basic_vbox.remove(main_window.basic_vbox.config_box)
             del Config.new_unsaved_changes_method # delete any references to GObjects because they are non-copyable
@@ -206,7 +211,7 @@ class ConfigControlSwitch(Gtk.ButtonBox):
             if hasattr(main_window.basic_vbox, "control_box"):
                 main_window.basic_vbox.control_box.quit()
             main_window.basic_vbox.add(main_window.basic_vbox.config_box)
-            Config.new_unsaved_changes_method = main_window.basic_vbox.top_grid.save_button.new_unsaved_changes # restore references to GObjects (in this case save_button)
+            Config.new_unsaved_changes_method = main_window.basic_vbox.top_grid.save_button.new_unsaved_changes # restore references to GObjects (save_button)
             
 class FullscreenButton(Gtk.ToggleButton):
     def __init__(self, main_window):

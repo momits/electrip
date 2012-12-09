@@ -18,7 +18,7 @@ class MainBox(Gtk.Grid):
         try:
             self.socket_init()
         except socket.error:
-            self.main_window.error("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\nÜberprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server am Laufen?")
+            self.main_window.error("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\nÜberprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server aktiv?")
             self.main_window.basic_vbox.top_grid.config_control_switch.config_button.set_active(True)
         else:
             self.event_thread = JoystickAndSound.EventHandlerThread(Config)
@@ -49,12 +49,13 @@ class MainBox(Gtk.Grid):
         #-------- Handshake ----------
         locked_print("Socketverbindung aktiv mit:")
         locked_print(self.socket.recv(4096))
+        
         self.socket.send("SET CONNECTIONMODE SRCP COMMAND\n")
         locked_print("Connectionmode 'Command' wird angefordert:")
         locked_print(self.socket.recv(4096))
-        self.socket.send('GO\n')
         
-        locked_print("Von ELECTRIP aus kanns losgehen, was sagt der Server?")
+        self.socket.send('GO\n')
+        locked_print("Es kann losgehen, was sagt der Server?")
         locked_print(self.socket.recv(4096))
         
         # -------- Initialize Power on Server-Bus ---------
@@ -150,7 +151,7 @@ class Controller(Gtk.Grid):
         self.add(self.gamepad_image)
         self.add(self.reverser)
         if loco.use_sound:
-            self.sound_switch = SoundEngineSwitch(sound_controller)
+            self.sound_switch = SoundEngineSwitch(sound_controller, self.speed_scale)
             self.add(self.sound_switch)
         
     def set_focus(self): # Put the Controller in the visible area of ScrolledWindow
@@ -191,9 +192,9 @@ class SpeedScale(Gtk.Scale):
             loco.speed_step = speed_step
         if int(loco.speed_step) != loco.last_speed_step:
             loco.send_to_server(Config.server.loco_bus, socket)
-        if sound_controller != None:
-            sound_controller.set_speed(loco.speed)
-        locked_print("Loco", loco.name, "fährt jetzt", loco.speed, "km/h, das entspricht", int(loco.speed_step), "Fahrstufen.")
+        if sound_controller != None and sound_controller.engine_is_running:
+            sound_controller.set_scheduled_speed(loco.speed)
+        locked_print("Lok", loco.name, "fährt jetzt", loco.speed, "km/h, das entspricht", int(loco.speed_step), "Fahrstufen.")
 
 class LocoLabel(Gtk.Label):
     def __init__(self, loco):
@@ -221,12 +222,12 @@ class Reverser(Gtk.Button):
 
     def toggle_direction(self, button, socket, scale):
         self.loco.toggle_direction()
-        if self.loco.speed_step == 0: # if direction has changed but speed is already 0
+        if int(self.loco.speed_step) == 0: # if direction has changed but speed is already 0
             self.loco.send_to_server(Config.server.loco_bus, socket)
         else:
             scale.set_value(0)
         self.set_arrow()
-        locked_print("\nloco", self.loco.name, "hat die Richtung gewechselt und fährt nun", self.loco.direction)
+        locked_print("\nLok", self.loco.name, "hat die Richtung gewechselt und fährt nun", self.loco.direction)
     
     def set_arrow(self):
         if self.loco.direction:
@@ -234,45 +235,67 @@ class Reverser(Gtk.Button):
         else:
             self.set_image(self.arrow_down)
 
-class SoundEngineSwitch(Gtk.Grid):
-    def __init__(self, sound_controller):
-        Gtk.Grid.__init__(self)
-        self.set_orientation(Gtk.Orientation.VERTICAL)
-        self.add(Gtk.Label("Geräusch:"))
-        self.switch = Gtk.Switch()
-        self.switch.set_active(False)
-        self.switch.set_halign(Gtk.Align.CENTER)
-        self.switch.connect("notify::active", self.engine_toggled)
-        self.add(self.switch)
+class SoundEngineSwitch(Gtk.ToggleButton):
+    def __init__(self, sound_controller, speed_scale):
+        Gtk.ToggleButton.__init__(self)
+        self.label = Gtk.Label("Geräusch")
+        self.label.set_hexpand(True)
+        
+        self.grid = Gtk.Grid()
+        self.grid.set_orientation(Gtk.Orientation.HORIZONTAL)
+        self.grid.set_column_spacing(5)
+        self.grid.add(self.label)
+        self.add(self.grid)
+        
+        self.spinner = Gtk.Spinner()
+        self.spinner.show()
+        
+        self.set_active(False)
+        self.connect("notify::active", self.engine_toggled)
         self.sound_controller = sound_controller
+        self.speed_scale = speed_scale
         
     def engine_toggled(self, switch, is_active):
-        switch.set_sensitive(False)
-        if switch.get_active() and not self.sound_controller.engine_is_running:
-            self.sound_controller.start_engine()
-            self.idle_handler_id = self.sound_controller.connect("engine-idle", self.finished_starting_engine, switch)
+        loco_speed = self.speed_scale.get_value()
+        if self.get_active() and not self.sound_controller.engine_is_running:
+            if loco_speed == 0:
+                self.start_spinner()
+                self.sound_controller.start_engine()
+                self.idle_handler_id = self.sound_controller.connect("engine-idle", self.finished_starting_engine)
+            else:
+                self.sound_controller.start_engine_with_speed(loco_speed)
             
         elif not switch.get_active() and self.sound_controller.engine_is_running:
-#            self.scale.set_sensitive(False)
-#            self.scale.set_value(0.0)
-            self.idle_handler_id = self.sound_controller.connect("engine-idle", self.quit_engine, switch) # quit engine when it is idle! otherwise error
+            if loco_speed == 0:
+                GObject.idle_add(self.start_spinner)
+                self.idle_handler_id = self.sound_controller.connect("engine-idle", self.quit_engine) # quit engine when it is idle! otherwise error
+            else:
+                self.sound_controller.pause_engine()
                 
-    def quit_engine(self, sound_controller, switch):
+    def quit_engine(self, sound_controller):
         sound_controller.disconnect(self.idle_handler_id)
-        #del self.idle_handler_id
-        self.stopped_handler_id = self.sound_controller.connect("engine-stopped", self.finished_stopping_engine, switch) # quit engine when it is idle!
         sound_controller.quit_engine()
+        self.stopped_handler_id = self.sound_controller.connect("engine-stopped", self.finished_stopping_engine)
         
-    def finished_stopping_engine(self, sound_controller, switch):
+    def finished_stopping_engine(self, sound_controller):
         sound_controller.disconnect(self.stopped_handler_id)
-        #del self.stopped_handler_id
-        switch.set_sensitive(True)
+        self.stop_spinner()
         
-    def finished_starting_engine(self, sound_controller, switch):
+    def finished_starting_engine(self, sound_controller):
         sound_controller.disconnect(self.idle_handler_id)
-        #del self.idle_handler_ids[nr]
-#        self.scale.set_sensitive(True)
-        switch.set_sensitive(True)
+        self.stop_spinner()
+        
+    def start_spinner(self):
+        self.spinner.start()
+        self.grid.add(self.spinner)
+        self.speed_scale.set_sensitive(False)
+        self.set_sensitive(False)
+        
+    def stop_spinner(self):
+        self.grid.remove(self.spinner)
+        self.spinner.stop()
+        self.speed_scale.set_sensitive(True)
+        self.set_sensitive(True)
 
 class FunctionToggleButton(Gtk.ToggleButton):
     def __init__(self, loco, function, socket):

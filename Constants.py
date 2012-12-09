@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 # ELECTRIP-Constants
 
-# 0. ----------- General -----------
+# ----------- General -----------
 
-# 0.1. Version
-ELECTRIP_VERSION = "3.1.5"
+ELECTRIP_VERSION = "3.1.9"
 
-# 0.2. Icons
 ICON_PATH_LIST = [
 "Icons/logo_icon_128.png",
 "Icons/logo_icon_64.png",
@@ -15,9 +14,8 @@ ICON_PATH_LIST = [
 "Icons/logo_icon_16.png"
 ]
 
-# 1. ----------- Configuration -----------
+# ----------- Configuration -----------
 
-# 1.2 EntryTable
 class EntryTableType:
     STRING = 0 # Entry for text
     INT = 1 # Entry for Integer

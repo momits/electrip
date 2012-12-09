@@ -6,11 +6,10 @@ GtkButton#emergency-button:active {
 }
 
 
-GtkPaned#custom-handle-pane {
+GtkPaned#custom-handle-paned {
 	-GtkPaned-handle-size: 6px;
 }
 
-GtkPaned#custom-handle-pane.pane-separator {
+GtkPaned#custom-handle-paned.pane-separator {
 	background-image: url("./Icons/sound-bar-pane-handle3.png");
 }
-

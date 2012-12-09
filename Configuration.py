@@ -96,7 +96,7 @@ class NewLocoFunctionButton(Gtk.Button):
             loco.functions.append(function)
             Config.unsaved_changes(Config.locos[loco_id], "functions", Config.locos[loco_id].functions)  # call unsaved changes method manually, cause list object "functions" doesnt do this
             loco_function_treeview.function_liststores[loco_id].append([function.name,
-                                                                        function.nr, # TODO: rethink conversion between saved-attribs and displayed-attribs!
+                                                                        function.nr,
                                                                         "Aus",
                                                                         function.button,
                                                                         "Umschalter"])
@@ -299,7 +299,7 @@ class LocoSpeedGraphFrame(Gtk.Frame):
             self.loco.speed_steps = self.speed_steps_combo.retrieve_value()
             func = self.loco.speed_to_step_func
             func.control_points = [(0, 0), (float(self.loco.max_speed), float(self.loco.speed_steps))]
-            func.func_segments = [func.calc_func_segment(*func.control_points[-2:])] # update the linear function between the two control points
+            func.func_segments = [func.calc_func_segment(*func.control_points)] # update the linear function between the two control points
             self.graph.load(self.loco)
         else:
             self.max_speed_spin_button.set_value(self.loco.max_speed)
@@ -798,9 +798,9 @@ class SpeedStepGraph(Gtk.DrawingArea):
             cr.fill()
             cr.stroke()
     
-    def update_loco(self):
-        self.loco.speed_funcs = self.loco.speed_to_step_func.func_segments
-        self.loco.speed_control_points = self.loco.speed_to_step_func.control_points
+#    def update_loco(self):
+#        self.loco.speed_funcs = self.loco.speed_to_step_func.func_segments
+#        self.loco.speed_control_points = self.loco.speed_to_step_func.control_points
     
     def get_touched_point(self, x, y):
         result = None, None
@@ -838,6 +838,10 @@ class SpeedStepGraph(Gtk.DrawingArea):
             self.loco.speed_to_step_func.add_control_point(x, y)
             self.queue_draw()
             self.update_loco()
+            
+    def update_loco(self):
+        Config.unsaved_changes(self.loco.speed_to_step_func, "control_points", self.loco.speed_to_step_func.control_points)
+        Config.unsaved_changes(self.loco.speed_to_step_func, "func_segments", self.loco.speed_to_step_func.func_segments)
     
     def button_released(self, area, event):
         self.drag = None
@@ -998,13 +1002,15 @@ class SpeedSoundGrid(Gtk.Frame):
         
     def toggle_sound(self, button):
         if button.get_active():
-            self.loco.use_sound = True
+            use_sound = True
             self.show_sound_options()
             self.engine_table.set_sensitive(True)
         else:
-            self.loco.use_sound = False
+            use_sound = False
             self.hide_sound_options()
             self.engine_table.set_sensitive(False)
+        if self.loco.use_sound != use_sound: # only set the property if it changed, otherwise unsaved-changes-callback gets called, which is wrong
+            self.loco.use_sound = use_sound
             
     def set_horizontal_margins(self):
         graph_margin_left, graph_margin_right = self.graph.get_needed_space()
@@ -1018,7 +1024,7 @@ class CustomHandlePaned(Gtk.Paned):
     def __init__(self):
         Gtk.Paned.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.set_name("custom-handle-pane")
+        self.set_name("custom-handle-paned")
         self.set_hexpand(True)
         self.set_size_request(-1, 30) # Attention: these values fit to the shipped handle-icon!
 

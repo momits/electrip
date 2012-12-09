@@ -10,7 +10,6 @@ except ImportError:
     locked_print("PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
 import threading
 import config
-from copy import deepcopy # TODO: remove this import when no need to debug anymore
 from Constants import STOP_EVENT, END_EVENT_LOWER_BOUND
 
 class EventHandlerThread(threading.Thread): # class for mixed event handling: gamepads + sound
@@ -152,7 +151,6 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
         self.callbacks[channel_id] = callback_func
         
     def queue_sound(self, channel_id, sound):
-#        locked_print("\nqueueing", sound)
         self.channels[channel_id].queue(sound)
         
     def acquire_channel_id(self):
@@ -179,15 +177,13 @@ class SoundController(GObject.GObject):
       "engine-stopped": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
     segment_attribs = ["load_sound", "idle_sound", "accel_sound", "decel_sound"]
-    path_sound_segments = []
     
-    def __init__(self, handler_thread, loco): # extras = [(channel_id1, extra_sound1), (channel_id2, extra_sound2) ...]
+    def __init__(self, handler_thread, loco):
         GObject.GObject.__init__(self)
         self.mixer = handler_thread
         self.engine_channel_id = self.mixer.acquire_channel_id()
         self.mixer.add_callback(self.engine_channel_id, self.update_engine_queue)
         
-        self.path_sound_segments = deepcopy(loco.sound_segments)
         for segment in loco.sound_segments:
             for attrib in self.segment_attribs:
                 if hasattr(segment, attrib):
@@ -197,9 +193,7 @@ class SoundController(GObject.GObject):
         self.start_engine_sound = self.convert_to_sound(loco.start_engine_sound)
         self.idle_sound = self.convert_to_sound(loco.idle_sound)
         self.quit_engine_sound = self.convert_to_sound(loco.quit_engine_sound)
-        #self.extras = loco.extras
         self.sound_function = config.SoundFunction(self.sound_segments)
-        self.sound_speed_steps = len(self.sound_segments) + 1
     
     def convert_to_sound(self, sound_file):
         try:
@@ -223,54 +217,64 @@ class SoundController(GObject.GObject):
         else:
             raise RuntimeError("You didn't start the engine or it is still running at a speed > 0!")
         
-    def set_speed(self, speed): # new speed may be a float!
+    def set_scheduled_speed(self, speed): # new speed may be a float!
         if self.engine_is_running:
-            
-            self.scheduled_speed = self.sound_function.get_segment_nr_from_x(speed) #min(self.sound_speed_steps, max(0, int(round(sound_speed))))
-            #locked_print("new scheduled speed", self.scheduled_speed)
+            self.scheduled_speed = self.sound_function.get_segment_nr_from_x(speed)
         else:
             raise RuntimeError("You need to start the Engine first.")
+        
+    def start_engine_with_speed(self, speed): # starts the sound at a specific speed, engine doesn't have to be started first
+        self.actual_speed = self.scheduled_speed = self.sound_function.get_segment_nr_from_x(speed)
+        self.engine_is_running = True
+        self.update_engine_queue() # Must be called two times, to fill the pygame-queue
+        self.update_engine_queue()
+        
+    def pause_engine(self): # stops the engine-sound 
+        self.mixer.channels[self.engine_channel_id].stop()
+        self.engine_is_running = False
             
-    def extra_sound(self, nr):
-        if self.extras == None:
-            raise AttributeError("extras_sound_ids oder extras_channel_id wurden nicht konfiguriert.")
-        else:
-            self.mixer.queue_sound(*self.extras[nr])
-            locked_print("Extra function added to queue_sound!")
+#    def extra_sound(self, nr):
+#        if self.extras == None:
+#            raise AttributeError("extras_sound_ids oder extras_channel_id wurden nicht konfiguriert.")
+#        else:
+#            self.mixer.queue_sound(*self.extras[nr])
+#            locked_print("Extra function added to queue!")
             
     def update_engine_queue(self):
         old_speed = self.actual_speed
         emit_idle = False
-        #locked_print("actual speed:", self.actual_speed, "scheduled speed", self.scheduled_speed)
+#        locked_print("actual speed:", self.actual_speed, "scheduled speed", self.scheduled_speed)
         if self.engine_is_running:
-            if self.scheduled_speed == self.actual_speed == -1:
-                sound = self.idle_sound
-                self.emit("engine-idle")
-            else:
-                actual_segment = self.sound_segments[self.actual_speed]
-                if self.actual_speed < self.scheduled_speed:
-                    sound = self.sound_segments[self.actual_speed + 1].accel_sound
-                    self.actual_speed += 1
-                    self.on_load = True
-                    
-                elif self.actual_speed == self.scheduled_speed:
-                    if self.on_load:
-                        sound = actual_segment.load_sound
-                    else:
-                        sound = actual_segment.idle_sound
-                    
-                elif self.actual_speed > self.scheduled_speed:
-                    sound = actual_segment.decel_sound
-                    self.actual_speed -= 1
-                    self.on_load = False
+            actual_segment = self.sound_segments[self.actual_speed]
+            if self.actual_speed < self.scheduled_speed:
+                sound = self.sound_segments[self.actual_speed + 1].accel_sound
+                self.actual_speed += 1
+                self.on_load = True
+                
+            elif self.actual_speed == self.scheduled_speed:
+                if self.actual_speed == -1:
+                    emit_idle = True
+                    sound = self.idle_sound
+                elif self.on_load:
+                    sound = actual_segment.load_sound
+                else:
+                    sound = actual_segment.idle_sound
+                
+            elif self.actual_speed > self.scheduled_speed:
+                sound = actual_segment.decel_sound
+                self.actual_speed -= 1
+                self.on_load = False
                 
             if sound != None:
-                #locked_print("Going to play", path, "for speed", self.actual_speed, "with length", sound.get_length(), "s")
+#                locked_print("Going to play sound for speed", self.actual_speed + 1, "with length", sound.get_length(), "sec")
                 self.mixer.queue_sound(self.engine_channel_id, sound)
             else:
                 locked_print("Geräusch", self.actual_speed, "ist keine gültige Datei.")
+                
             if old_speed != self.actual_speed:
                 self.emit("speed-changed", self.actual_speed, sound.get_length() * 1000) # sound_length is needed in ms
+            elif emit_idle:
+                self.emit("engine-idle")
                 
         elif not self.mixer.channels[self.engine_channel_id].get_busy():
             self.emit("engine-stopped")

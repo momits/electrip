@@ -152,8 +152,6 @@ class Loco(UnsavedChangesHandler):
         self.direction = not self.direction
         
 class Function(UnsavedChangesHandler):
-#    state_translation = [(True, "An"), (False, "Aus")]
-#    use_push_to_make_translation =[(True, "Taster"), (False, "Umschalter")]
     def __init__(self, save_status_method, name="", function=0, state=False, button=0, use_push_to_make=False):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.name = name
