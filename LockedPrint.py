@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import threading
-import time
 
 def locked_print(*args):
 	strings = map(str, args)
