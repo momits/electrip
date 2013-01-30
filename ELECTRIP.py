@@ -62,9 +62,9 @@ class MainWindow(Gtk.Window):
             dialog.destroy()
             return True
     
-    def error(self, warnung):
+    def error_dialog(self, warning):
         self.show_all()
-        error_dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE, warnung)
+        error_dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE, warning)
         error_dialog.run()
         error_dialog.destroy()
 
@@ -73,10 +73,10 @@ class BasicVBox(Gtk.Grid):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         
-        self.config_box = Configuration.MainBox(Config)
+        self.config_box = Configuration.MainBox(Config, main_window)
         self.top_grid = TopGrid(self.config_box.scrolled_window_loco_selection.treeview,
-                                          self.config_box.loco_properties_frame.engine_table,
-                                          self.config_box.loco_function_frame.scrolled_window.treeview,
+                                          self.config_box.loco_properties_frame.table,
+                                          self.config_box.function_frame.treeview,
                                           self.config_box.server_table,
                                           self.config_box.joystick_table,
                                           main_window)
@@ -108,7 +108,7 @@ class LoadButton(StockImageButton):
     def __init__(self, loco_selection_treeview, loco_property_table, loco_function_treeview, server_tab, joystick_tab, main_window):
         StockImageButton.__init__(self, "Laden", Gtk.STOCK_OPEN)
         self.loco_selection_treeview = loco_selection_treeview
-        self.loco_function_treeview = loco_function_treeview
+        self.function_treeview = loco_function_treeview
         self.loco_property_table = loco_property_table
         self.server_table = server_tab
         self.joystick_table = joystick_tab
@@ -131,16 +131,15 @@ class LoadButton(StockImageButton):
         try:
             Config.load(path)
         except ValueError:
-            main_window.error("Die Datei ist ungültig! Konnte Konfiguration nicht laden.")
+            main_window.error_dialog("Die Datei ist ungültig! Konnte Konfiguration nicht laden.")
             return False
         except IOError:
-            main_window.error("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
+            main_window.error_dialog("Der Dateipfad ist ungültig! Konnte Konfiguration nicht laden.")
             return False
         except KeyError:
-            main_window.error("Ein Parameter konnte nicht geladen werden, evtl. handelt es ich um eine veraltete ELECTRIP-Datei.")
+            main_window.error_dialog("Ein Parameter konnte nicht geladen werden, evtl. handelt es ich um eine veraltete ELECTRIP-Datei.")
             return False
         else:
-            self.loco_function_treeview.load()
             self.loco_selection_treeview.load()
             self.joystick_table.load(Config.joystick)
             self.server_table.load(Config.server)
@@ -261,5 +260,5 @@ class TopGrid(Gtk.Grid):
 if __name__ == "__main__":
     Config = config.Config()
     ELECTRIP = MainWindow()
-    GObject.threads_init() # Needed to start socket_thread
+    GObject.threads_init() # Needed to start threads
     Gtk.main()

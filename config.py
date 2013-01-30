@@ -3,7 +3,7 @@
 
 from LockedPrint import locked_print
 import json
-from Constants import SegmentType
+from Constants import SegmentPosition, EngineType, FunctionType, ToggleMode
 
 class UnsavedChangesHandler(object):
     def __init__(self, save_status_method):
@@ -13,17 +13,23 @@ class UnsavedChangesHandler(object):
         object.__setattr__(self, name, value)
         self.save_status_method(self, name, value)
 
-class LinearSegmentFunction():
+class LinearSegmentFunction:
+    def __init__(self, type=FunctionType.MONOTONIC_INCREASE):
+        self.type = type
+        
     def load(self, control_points):
         self.control_points = [control_points[0], control_points[-1]]
         self.func_segments = [self.calc_func_segment(self.control_points[0], self.control_points[-1])]
-        for point in control_points[:len(control_points) - 1]:
+        for point in control_points[1:len(control_points) - 1]:
             self.add_control_point(*point)
     
     def add_control_point(self, x, y):
         nr = self.get_segment_nr_from_x(x)
-        if nr != None and self.control_points[nr][1] < y < self.control_points[nr + 1][1]:
-            self.control_points.insert(nr + 1, (x, y))
+        if nr != None:
+            if self.type == FunctionType.MONOTONIC_INCREASE: # and self.control_points[nr][1] < y < self.control_points[nr + 1][1]) \
+                self.control_points.insert(nr + 1, (x, max(self.control_points[nr][1] , min(y, self.control_points[nr + 1][1]))))
+            elif self.type == FunctionType.MONOTONIC_DECREASE: # and self.control_points[nr][1] > y > self.control_points[nr + 1][1]):
+                self.control_points.insert(nr + 1, (x, min(self.control_points[nr][1] , max(y, self.control_points[nr + 1][1]))))
             self.func_segments[nr] = self.calc_func_segment(self.control_points[nr], self.control_points[nr + 1])
             self.func_segments.insert(nr + 1, self.calc_func_segment(self.control_points[nr + 1], self.control_points[nr + 2]))
                 
@@ -36,14 +42,19 @@ class LinearSegmentFunction():
     def move_control_point(self, nr, x, y):
         if nr == len(self.control_points) - 1:
             point_left = self.control_points[nr - 1]
-            if point_left[1] < y:
-                self.control_points[nr] = (self.control_points[nr][0], y)
-                self.func_segments[nr - 1] = self.calc_func_segment(point_left, self.control_points[nr])
+            if self.type == FunctionType.MONOTONIC_INCREASE: # and point_left[1] < y) \
+                self.control_points[nr] = (self.control_points[nr][0], max(y, point_left[1]))
+            elif self.type == FunctionType.MONOTONIC_DECREASE: # and point_left[1] > y):
+                self.control_points[nr] = (self.control_points[nr][0], min(y, point_left[1]))
+            self.func_segments[nr - 1] = self.calc_func_segment(point_left, self.control_points[nr])
         else:
             point_left = self.control_points[nr - 1]
             point_right = self.control_points[nr + 1]
-            if point_left[0] < x < point_right[0] and point_left[1] < y < point_right[1]:
-                self.control_points[nr] = (x, y)
+            if point_left[0] < x < point_right[0]:
+                if self.type == FunctionType.MONOTONIC_INCREASE:
+                    self.control_points[nr] = (x, min(point_right[1], max(y, point_left[1])))
+                elif self.type == FunctionType.MONOTONIC_DECREASE:
+                    self.control_points[nr] = (x, min(point_left[1], max(y, point_right[1])))
                 self.func_segments[nr] = self.calc_func_segment(self.control_points[nr], point_right)
                 self.func_segments[nr - 1] = self.calc_func_segment(point_left, self.control_points[nr])
         return self.control_points[nr]
@@ -87,8 +98,9 @@ class Loco(UnsavedChangesHandler):
                  save_status_method,
                  functions=None,
                  speed_to_step_func=None,
-                 sound_segments=None,
-                 name="Neue Lok",
+                 function_sounds=None,
+                 engine=None,
+                 name="Unbenannte Lok",
                  speed_steps=14,
                  max_speed=100.0,
                  address=1,
@@ -96,10 +108,7 @@ class Loco(UnsavedChangesHandler):
                  accel_duration=4.5,
                  direction=True,
                  img_path="Datei wählen",
-                 use_sound=False,
-                 start_engine_sound=None,
-                 idle_sound=None,
-                 quit_engine_sound=None):
+                 sound_volume=0.8,):
         UnsavedChangesHandler.__init__(self, save_status_method)
         # it is not possible to set the default value for the "functions"-parameter above,
         # because it is a list and will therefore be the same object for all locos, resulting in the same functions for all locos
@@ -113,7 +122,10 @@ class Loco(UnsavedChangesHandler):
             self.speed_to_step_func.load([(0.0, 0.0), (100.0, 14.0)])
         else:
             self.speed_to_step_func = speed_to_step_func
-        
+        if function_sounds == None:
+            self.function_sounds = []
+        else:
+            self.function_sounds = function_sounds
         self.name = name
         self.address = address
         self.protocol = protocol
@@ -126,23 +138,22 @@ class Loco(UnsavedChangesHandler):
         self.speed_step = 0.0
         self.last_speed_step = 0
         
-        self.use_sound = use_sound
-        self.start_engine_sound = start_engine_sound
-        self.idle_sound = idle_sound
-        self.quit_engine_sound = quit_engine_sound
-        self.sound_segments = sound_segments
+        self.sound_volume = sound_volume
+        self.engine = engine
 
-    def send_to_server(self, bus, socket):
+    def get_srcp_status(self, bus):
         self.last_speed_step = int(self.speed_step)
         toggled = [False for i in range(max([1] + [function.nr + 1 for function in self.functions]))]
         for function in self.functions:
             if function.state:
                 toggled[function.nr] = True
         functions = " ".join(str(int(n)) for n in toggled)
-        text = "SET " + str(bus) + " GL " + str(self.address) + " " + str(int(self.direction)) + " " + str(int(self.speed_step)) + " " + str(self.speed_steps) + " " + functions + "\n"
+        text = "SET " + str(bus) + " GL " + str(self.address) + " " \
+                + str(int(self.direction)) + " " + str(int(self.speed_step)) \
+                + " " + str(self.speed_steps) + " " + functions + "\n"
         
         locked_print("\n" + text)
-        socket.send(text)
+        return text
     
     def accelerate(self, value):
         self.speed = min(self.max_speed, max(0, self.speed - value * (0.05 / self.accel_duration * self.max_speed)))
@@ -151,24 +162,32 @@ class Loco(UnsavedChangesHandler):
     def toggle_direction(self):
         self.direction = not self.direction
         
-class Function(UnsavedChangesHandler):
-    def __init__(self, save_status_method, name="", function=0, state=False, button=0, use_push_to_make=False):
+class GamepadFunction(UnsavedChangesHandler):
+    def __init__(self, save_status_method, name="", state=False, button=0):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.name = name
-        self.nr = function
         self.state = state
         self.button = button
-        self.use_push_to_make = use_push_to_make
         
     def toggle(self):
         self.state = not self.state
         
+class Function(GamepadFunction):
+    def __init__(self, save_status_method, name="", function=0, state=False, button=0, toggle_mode=ToggleMode.TAP):
+        GamepadFunction.__init__(self,
+                                 save_status_method,
+                                 name,
+                                 state,
+                                 button)
+        self.nr = function
+        self.toggle_mode = toggle_mode
+        
 class Server(UnsavedChangesHandler):
-    def __init__(self, save_status_method, host="localhost", port=4303, loco_bus=1, power=True):
+    def __init__(self, save_status_method, host="localhost", port=4303, bus=1, power=True):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.host = host
         self.port = port
-        self.loco_bus = loco_bus
+        self.bus = bus
         self.power = power
         
     def toggle_power(self):
@@ -181,6 +200,7 @@ class Joystick(UnsavedChangesHandler):
                  reverse_button=1,
                  accel_axis=2,
                  focus_button=3,
+                 sound_button=4,
                  use_auto_focus=True,
                  show_function_nr=False):
         UnsavedChangesHandler.__init__(self, save_status_method)
@@ -188,17 +208,50 @@ class Joystick(UnsavedChangesHandler):
         self.reverse_button = reverse_button
         self.accel_axis = accel_axis
         self.focus_button = focus_button
+        self.sound_button = sound_button
         self.use_auto_focus = use_auto_focus
         self.show_function_nr = show_function_nr
         
-class SoundFunction():
+class EventSound(GamepadFunction):
+    def __init__(self,
+                 save_status_method,
+                 name="",
+                 file_path=None,
+                 state=True,
+                 min_speed=None,
+                 max_speed=None,
+                 min_accel=None,
+                 max_accel=None,
+                 button=0):
+        GamepadFunction.__init__(self,
+                                 save_status_method,
+                                 name,
+                                 state,
+                                 button)
+        self.file_path = file_path
+        self.min_speed = min_speed
+        self.max_speed = max_speed
+        self.min_accel = min_accel
+        self.max_accel = max_accel
+        
+class FunctionSound(GamepadFunction):
+    def __init__(self, save_status_method, name="", file_path="", state=False, button=0, toggle_mode=ToggleMode.TAP):
+        GamepadFunction.__init__(self,
+                                 save_status_method,
+                                 name,
+                                 state,
+                                 button)
+        self.file_path = file_path
+        self.toggle_mode = toggle_mode
+
+class SoundFunction:
     def __init__(self, segments):
         self.segments = segments
         
     def get_sound(self, x, sound_type):
-        segment = self.get_segment_from_x(x)
-        if segment != None:
-            return getattr(segment, sound_type)
+        nr = self.get_segment_nr_from_x(x)
+        if nr != None:
+            return getattr(self.segments[nr], sound_type)
         
     def get_segment_nr_from_x(self, x):
         if x == 0:
@@ -209,46 +262,113 @@ class SoundFunction():
                     return nr
                     break
 
-class SoundSegment(object):
-    private_keys = ["type", "store", "save_status_method"]
-    allowed_keys = ["start", "end", "load_sound", "idle_sound", "accel_sound", "decel_sound"] + private_keys
+def create_sound_segment(engine_type, *args):
+    if engine_type == EngineType.STEAM:
+        return SteamSoundSegment(*args)
+    elif engine_type == EngineType.DIESEL:
+        return DieselSoundSegment(*args)
+
+class SoundSegment(UnsavedChangesHandler):
+    position = SegmentPosition.MIDDLE
+    def __init__(self, save_status_method, start, end):
+        UnsavedChangesHandler.__init__(self, save_status_method)
+        self.start = start
+        self.end = end
     
-    def __init__(self, save_status_method, attrib_dict):
-        self.store = {}
-        self.save_status_method = save_status_method
-        for attrib, value in attrib_dict.items():
-            setattr(self, attrib, value)
+class DieselSoundSegment(SoundSegment):
+    type = "diesel"
+    attributes = {SegmentPosition.UPPER: ["start", "end", "load_sound", "accel_sound", "decel_sound"],
+                  SegmentPosition.MIDDLE: ["start", "end", "load_sound", "idle_sound", "accel_sound", "decel_sound"]}
+    position = SegmentPosition.MIDDLE
+    def __init__(self,
+                 save_status_method,
+                 start,
+                 end,
+                 load_sound=None,
+                 idle_sound=None,
+                 accel_sound=None,
+                 decel_sound=None):
+        SoundSegment.__init__(self, save_status_method, start, end)
+        self.load_sound = load_sound
+        self.idle_sound = idle_sound
+        self.accel_sound = accel_sound
+        self.decel_sound = decel_sound
+                
+    def set_position(self, position):
+        if position != self.position:
+            if position == SegmentPosition.MIDDLE:
+                self.idle_sound = None
+                self.position = SegmentPosition.MIDDLE
+            elif position == SegmentPosition.UPPER:
+                del self.idle_sound
+                self.position = SegmentPosition.UPPER
 
-    def __setattr__(self, key, value): # the great thing about this class: it calculates if it's in the lower, upper position or one in between
-        if key in self.allowed_keys:
-            object.__setattr__(self, key, value)
-            if key not in self.private_keys:
-                self.store[key] = value
-                self.check_type()
-                self.save_status_method(self, key, value)
+class SteamSoundSegment(SoundSegment):
+    type = "steam"
+    def __init__(self,
+                 save_status_method,
+                 start,
+                 end,
+                 stroke_sounds=None):
+        SoundSegment.__init__(self, save_status_method, start, end)
+        self.stroke_sounds = stroke_sounds
+        
+    def set_position(self, position):
+        pass # no need to do anything (position just doesnt matter)
+
+def create_engine(engine_type, *args):
+    if engine_type == EngineType.DIESEL:
+        return DieselEngine(*args)
+    elif engine_type == EngineType.STEAM:
+        return SteamEngine(*args)
+
+class Engine(UnsavedChangesHandler):
+    def __init__(self, save_status_method, sound_segments, event_sounds):
+        UnsavedChangesHandler.__init__(self, save_status_method)
+        self.sound_segments = sound_segments
+        if event_sounds == None:
+            self.event_sounds = []
         else:
-            raise LookupError(str(key) + " is not an allowed key for a SoundSegment-Dict")
-        
-    def __delattr__(self, key):
-        object.__delattr__(self, key)
-        del self.store[key]
-        self.check_type()
-        
-    def check_type(self):
-        keys = self.store.keys()
-        #print keys
-        if "decel_sound" in keys:
-            if "accel_sound" in keys:
-                self.type = SegmentType.MIDDLE
-            else:
-                self.type = SegmentType.UPPER
-            
-            
-    def to_dict(self):
-        return self.store
-            
+            self.event_sounds = event_sounds
 
-class Config():
+class DieselEngine(Engine):
+    type = "diesel"
+    def __init__(self,
+                 save_status_method,
+                 start_sound=None,
+                 idle_sound=None,
+                 quit_sound=None,
+                 sound_segments=None,
+                 event_sounds=None):
+        Engine.__init__(self, save_status_method, sound_segments, event_sounds)
+        self.start_sound = start_sound
+        self.idle_sound = idle_sound
+        self.quit_sound = quit_sound
+        
+class SteamEngine(Engine):
+    type = "steam"
+    def __init__(self,
+                 save_status_method,
+                 idle_sound=None,
+                 cylinder_steam_sound=None,
+                 nr_strokes=4,
+                 stroke_start_delay=2.0,
+                 wheel_diameter=1.2,
+                 min_freq=0.2,
+                 sound_segments=None,
+                 event_sounds=None):
+        Engine.__init__(self, save_status_method, sound_segments, event_sounds)
+        self.idle_sound = idle_sound
+        self.cylinder_steam_sound = cylinder_steam_sound
+        self.nr_strokes = nr_strokes
+        self.stroke_start_delay = stroke_start_delay
+        self.wheel_diameter = wheel_diameter
+        self.min_freq = min_freq
+        self.sound_segments = sound_segments
+        if sound_segments != None:
+            self.sound_function = SoundFunction(self.sound_segments)
+               
+class Config:
     notice_unsaved_changes = False
     has_unsaved_changes = False
     opened_file = None
@@ -261,31 +381,73 @@ class Config():
                        ("accel_duration", 4.5),
                        ("direction", True),
                        ("img_path", None),
-                       ("use_sound", False),
-                       ("start_engine_sound", None),
-                       ("idle_sound", None),
-                       ("quit_engine_sound", None)]
+                       ("sound_volume", 0)
+                       ]
+    
+    engine_attributes = {"diesel":
+                         [("type", "diesel"),
+                          ("start_sound", None),
+                          ("idle_sound", None),
+                          ("quit_sound", None)],
+                         "steam":
+                         [
+                          ("type", "steam"),
+                          ("idle_sound", None),
+                          ("cylinder_steam_sound", None),
+                          ("nr_strokes", 4),
+                          ("stroke_start_delay", 2.0),
+                          ("wheel_diameter", 1.2),
+                          ("min_freq", 0.2)]}
+    
+    event_sound_attributes = [("name", ""),
+                              ("file_path", None),
+                              ("state", True),
+                              ("min_speed", None),
+                              ("max_speed", None),
+                              ("min_accel", None),
+                              ("max_accel", None),
+                              ("button", 0)]
+    
+    function_sound_attributes = [("name", ""),
+                                 ("file_path", ""),
+                                 ("state", False),
+                                 ("button", 0),
+                                 ("toggle_mode", ToggleMode.TAP)]
+    
+    segment_attributes = {"diesel":
+                          [("start", 0),
+                           ("end", 100),
+                           ("load_sound", None),
+                           ("idle_sound", None),
+                           ("accel_sound", None),
+                           ("decel_sound", None)],
+                          "steam":
+                          [("start", 0),
+                           ("end", 100),
+                           ("stroke_sounds", None)]}
     
     function_attributes = [("name", ""),
                            ("nr", 0),
                            ("state", False),
                            ("button", 0),
-                           ("use_push_to_make", False)]
+                           ("toggle_mode", ToggleMode.SWITCH)]
     
     server_attributes = [("host", "localhost"),
                          ("port", 4303),
-                         ("loco_bus", 1),
+                         ("bus", 1),
                          ("power", True)]
     
     joystick_attributes = [("emergency_button", 0),
                            ("reverse_button", 1),
                            ("accel_axis", 2),
                            ("focus_button", 3),
+                           ("sound_button", 4),
                            ("use_auto_focus", True),
                            ("show_function_nr", False)]
     
     def __init__(self):
         self.locos = []
+        self.active_loco = None # loco that is currently configured
         self.server = Server(self.unsaved_changes)
         self.joystick = Joystick(self.unsaved_changes)
         try:
@@ -301,10 +463,23 @@ class Config():
         for loco in self.locos:
             loco_dict = self.get_param_dict(loco, self.loco_attributes)
             loco_dict["speed_control_points"] = loco.speed_to_step_func.control_points
-            if loco.sound_segments != None:
-                loco_dict["sound_segments"] = [segment.to_dict() for segment in loco.sound_segments]
+            loco_dict["function_sounds"] = [self.get_param_dict(function_sound, self.function_sound_attributes)
+                                            for function_sound in loco.function_sounds]
+            if loco.engine != None:
+                engine_dict = self.get_param_dict(loco.engine, self.engine_attributes[loco.engine.type])
+                if loco.engine.sound_segments != None:
+                    engine_dict["sound_segments"] = [self.get_param_dict(segment, self.segment_attributes[segment.type])
+                                                     for segment in loco.engine.sound_segments]
+                else:
+                    engine_dict["sound_segments"] = None
+                if loco.engine.event_sounds != None:
+                    engine_dict["event_sounds"] = [self.get_param_dict(event_sound, self.event_sound_attributes)
+                                                     for event_sound in loco.engine.event_sounds]
+                else:
+                    engine_dict["event_sounds"] = None
+                loco_dict["engine"] = engine_dict
             else:
-                loco_dict["sound_segments"] = None
+                loco_dict["engine"] = None
             function_list = [self.get_param_dict(function, self.function_attributes)
                              for function in loco.functions]
             loco_dict["functions"] = function_list
@@ -323,7 +498,13 @@ class Config():
         locked_print("Einstellungen wurden gespeichert in " + file_path)
         
     def get_param_dict(self, config_object, attribute_list):
-        return {attrib[0]: getattr(config_object, attrib[0]) for attrib in attribute_list}
+        param_dict = {}
+        for attrib in attribute_list:
+            try:
+                param_dict[attrib[0]] = getattr(config_object, attrib[0])
+            except AttributeError:
+                pass # needed for objects where we don't know if they have a certain attribute
+        return param_dict
         
     def load(self, file_path):
         f = open(file_path)
@@ -337,20 +518,43 @@ class Config():
                                   *self.get_param_list(function_dict, self.function_attributes))
                          for function_dict in loco_dict["functions"]]
             speed_func = LinearSegmentFunction()
-            speed_func.load(loco_dict["speed_control_points"])
-            if loco_dict["sound_segments"] != None:
-                try:
-                    sound_segments = [SoundSegment(self.unsaved_changes, segment_dict) for segment_dict in loco_dict["sound_segments"]]
-                except KeyError:
-                    locked_print("Die Datei besitzt noch keine Geräusch-Informationen.")
-                    sound_segments = None
+            speed_func.load(map(tuple, loco_dict["speed_control_points"]))
+            if "function_sounds" in loco_dict:
+                function_sounds = [FunctionSound(self.unsaved_changes,
+                                  *self.get_param_list(function_sound_dict, self.function_sound_attributes))
+                         for function_sound_dict in loco_dict["function_sounds"]]
             else:
-                sound_segments = None
-            
+                function_sounds = None
+            if "engine" in loco_dict and loco_dict["engine"] != None:
+                engine_dict = loco_dict["engine"]
+                param_list = self.get_param_list(engine_dict, self.engine_attributes[engine_dict["type"]])
+                param_list.insert(1, self.unsaved_changes)
+                if engine_dict["sound_segments"] != None:
+                    try:
+                        sound_segments = [create_sound_segment(engine_dict["type"],
+                                                               self.unsaved_changes,
+                                                               *self.get_param_list(segment_dict,
+                                                                                    self.segment_attributes[engine_dict["type"]],
+                                                                                    True))
+                                          for segment_dict in engine_dict["sound_segments"]]
+                    except KeyError:
+                        locked_print("Die Datei besitzt noch keine Geräusch-Informationen.")
+                        sound_segments = None
+                else:
+                    sound_segments = None
+                param_list.append(sound_segments)
+                if "event_sounds" in engine_dict:
+                    if engine_dict["event_sounds"] != None:
+                        param_list.append([EventSound(self.unsaved_changes, *self.get_param_list(event_sound_dict, self.event_sound_attributes))
+                                           for event_sound_dict in engine_dict["event_sounds"]])
+                engine = create_engine(*param_list)
+            else:
+                engine = None
             self.locos.append(Loco(self.unsaved_changes,
                                    functions,
                                    speed_func,
-                                   sound_segments,
+                                   function_sounds,
+                                   engine,
                                    *self.get_param_list(loco_dict, self.loco_attributes)))
         self.server = Server(self.unsaved_changes,
                              *self.get_param_list(Config["server"], self.server_attributes))
@@ -362,7 +566,7 @@ class Config():
         locked_print("Einstellungen wurden geladen aus " + file_path)
         self.notice_unsaved_changes = True
     
-    def get_param_list(self, config_dict, attribute_list):
+    def get_param_list(self, config_dict, attribute_list, ignore=False):
         param_list = []
         for attrib, standard_value in attribute_list:
             try:
@@ -372,11 +576,12 @@ class Config():
                 param_list.append(value)
             except KeyError:
                 param_list.append(standard_value)
-                locked_print("Dateiformat inkorrekt: Attribut",
-                             attrib,
-                             "ist nicht enthalten, es wurde der Standardwert",
-                             standard_value,
-                             "verwendet.")
+                if not ignore:
+                    locked_print("Dateiformat inkorrekt: Attribut",
+                                 attrib,
+                                 "ist nicht enthalten, es wurde der Standardwert",
+                                 standard_value,
+                                 "verwendet.")
         return param_list
     
     def save_opened_file(self, file_path):

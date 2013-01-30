@@ -5,7 +5,7 @@
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "3.1.9"
+ELECTRIP_VERSION = "4.0.0"
 
 ICON_PATH_LIST = [
 "Icons/logo_icon_128.png",
@@ -22,7 +22,28 @@ class EntryTableType:
     FLOAT = 2 # Entry for Float
     COMBO = 3 # ComboBox
     BOOL = 4 # CheckButton
-    FILE = 5 # Button that opens a file-selection-dialog
+    SOUND_FILE = 5 # Button that opens a file-selection-dialog for sounds
+    IMAGE_FILE = 6 # Button that opens a file-selection-dialog for images
+    VOLUME = 7 # Volume Slider
+    BUTTON = 8 # Button which can be connected to a custom callback
+    
+class CellType:
+    TEXT = 0
+    COMBO = 1
+    TEXT_NOT_EDITABLE = 2
+# ----------- Control -----------
+
+class ToggleMode:
+    SWITCH = 0 # first click = On, second click = Off
+    PUSH = 1 # button-pressed = On, button-released = Off
+    PUSH_LIMITED = 2 # button-pressed = On, button-released = Off, program may turn Off earlier
+    TAP = 3 # first click = On, program decides when Off
+
+# ----------- Sound -----------
+
+class EngineType:
+    STEAM = "steam"
+    DIESEL = "diesel"
 
 class SoundType:
     LOAD = "load"
@@ -30,10 +51,13 @@ class SoundType:
     ACCEL = "accel"
     DECEL = "decel"
     
-class SegmentType:
-    LOWER = 0
+class SegmentPosition:
     MIDDLE = 1
     UPPER = 2
+    
+class FunctionType:
+    MONOTONIC_INCREASE = 0
+    MONOTONIC_DECREASE = 1
 
 END_EVENT_LOWER_BOUND = 35
 STOP_EVENT = 25

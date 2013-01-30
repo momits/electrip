@@ -4,12 +4,20 @@
 from gi.repository import Gtk
 
 class FileLoadDialog(Gtk.FileChooserDialog):
-    def __init__(self, parent_window):
+    def __init__(self, parent_window, filters=None):
         Gtk.FileChooserDialog.__init__(self, "Datei laden ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         self.set_default_response(Gtk.ResponseType.OK)
         self.add_filter(ElectripFileFilter())
         self.add_filter(AllFileFilter())
 
+
+class SoundLoadDialog(Gtk.FileChooserDialog):
+    def __init__(self, parent_window, filters=None):
+        Gtk.FileChooserDialog.__init__(self, "Geräusch auswählen ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        self.set_default_response(Gtk.ResponseType.OK)
+        self.add_filter(SoundFileFilter())
+        self.add_filter(AllFileFilter())
+        
 #class ImageLoadDialog(Gtk.FileChooserDialog):
 #    def __init__(self, parent_window):
 #        Gtk.FileChooserDialog.__init__(self, "Bild auswählen ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -18,7 +26,7 @@ class FileLoadDialog(Gtk.FileChooserDialog):
 #        self.add_filter(AllFileFilter())
 
 class FileSaveDialog(Gtk.FileChooserDialog):
-    def __init__(self, parent_window):
+    def __init__(self, parent_window, filters=None):
         Gtk.FileChooserDialog.__init__(self, "Datei speichern ...", parent_window, Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_do_overwrite_confirmation(True)
