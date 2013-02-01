@@ -155,6 +155,7 @@ class SpeedGraphFrame(GraphFrame):
     def change_axes(self, widget, accept_changes):
         if accept_changes:
             new_max_speed = self.max_speed_spin_button.get_value()
+#            print "type:", type(new_max_speed), "unformatted (float):", new_max_speed, "int:", int(new_max_speed)
             if self.loco.max_speed != new_max_speed:
                 self.loco.max_speed = new_max_speed
                 if self.loco.engine != None:
@@ -957,8 +958,10 @@ class ControlPointGraph(Gtk.DrawingArea):
     border_right = 10
     coordinate_line_length = 7
     axis_distance = 2
-    radius_small = 3.2
-    radius_large = 7.2
+    radius_small = 3.6
+    radius_large = 7.3
+    control_point_border_width = 1.3
+    min_label_distance = 7
     drag = None
     line_color = (0.2, 0.2, 0.4)
     control_point_outer_color = (0.1686, 0.1686, 0.1686)
@@ -1022,14 +1025,14 @@ class ControlPointGraph(Gtk.DrawingArea):
                 cr.arc(x_abs_1, y_abs_1, self.radius_large, 0, 2 * pi)
                 cr.fill()
                 cr.set_source_rgb(*self.control_point_inner_color)
-                cr.arc(x_abs_1, y_abs_1, self.radius_large - 1, 0, 2 * pi)
+                cr.arc(x_abs_1, y_abs_1, self.radius_large - self.control_point_border_width, 0, 2 * pi)
                 cr.fill()
             
             cr.set_source_rgb(*self.control_point_outer_color)
             cr.arc(x_abs_2, y_abs_2, self.radius_large, 0, 2 * pi)
             cr.fill()
             cr.set_source_rgb(*self.control_point_inner_color)
-            cr.arc(x_abs_2, y_abs_2, self.radius_large - 1, 0, 2 * pi)
+            cr.arc(x_abs_2, y_abs_2, self.radius_large - self.control_point_border_width, 0, 2 * pi)
             cr.fill()
             cr.stroke()
     
@@ -1075,8 +1078,10 @@ class ControlPointGraph(Gtk.DrawingArea):
         Config.unsaved_changes(self.func, "func_segments", self.func.func_segments)
     
     def button_released(self, area, event):
-        self.drag = None
-        self.popup.hide()
+        if self.drag != None:
+            self.update_config_object()
+            self.popup.hide()
+            self.drag = None
     
     def motion(self, area, event):
         if self.drag != None:
@@ -1089,11 +1094,8 @@ class ControlPointGraph(Gtk.DrawingArea):
                 y = 0
             elif y > self.y_max:
                 y = self.y_max
-            old_point = self.func.control_points[self.drag]
             new_point = self.func.move_control_point(self.drag, x, y)
             self.queue_draw()
-            if old_point != new_point:
-                self.update_config_object()
             self.popup.label.set_text(str("%0.2f" % new_point[0]) + "\n" + str("%0.2f" % new_point[1]))
                 
     def create_coordinate_system(self):
@@ -1136,21 +1138,28 @@ class ControlPointGraph(Gtk.DrawingArea):
         c.set_source_rgb(*self.axes_color)
         
         pos = 0
+        used_width = 0
+#        abs_x_max = self.get_abs_coords(self.x_max, 0)[0]
         while pos <= self.x_max + x_res:
-            text, x, y, width, height = self.get_axis_data_at_pos(c, pos, x_res, self.x_max)            
-            c.move_to(x, x_axis_y_start)
-            c.line_to(x, x_axis_y_end - height - 3)
-            c.move_to(x - 0.5 * width, x_axis_y_end)
-            c.show_text(text)
+            text, x, y, width, height = self.get_axis_data_at_pos(c, pos, x_res, self.x_max)
+            if x > used_width + self.min_label_distance:
+                c.move_to(x, x_axis_y_start)
+                c.line_to(x, x_axis_y_end - height - 3)
+                c.move_to(x - 0.5 * width, x_axis_y_end)
+                c.show_text(text)
+                used_width = x + width
             pos += x_res
         
         pos = 0
+        used_height = self.height
         while pos <= self.y_max + y_res:
-            text, x, y, width, height = self.get_axis_data_at_pos(c, pos, y_res, self.y_max)            
-            c.move_to(y_axis_x_start + max_width + 3, y)
-            c.line_to(y_axis_x_end, y)
-            c.move_to(y_axis_x_start, y + 0.5 * height)
-            c.show_text(text)
+            text, x, y, width, height = self.get_axis_data_at_pos(c, pos, y_res, self.y_max)
+            if y < used_height - self.min_label_distance:
+                c.move_to(y_axis_x_start + max_width + 3, y)
+                c.line_to(y_axis_x_end, y)
+                c.move_to(y_axis_x_start, y + 0.5 * height)
+                c.show_text(text)
+                used_height = y - height
             pos += y_res
         c.stroke_preserve()
         
@@ -1161,12 +1170,12 @@ class ControlPointGraph(Gtk.DrawingArea):
                 return res
         
     def get_axis_data_at_pos(self, c, pos, res, max_value):
-        if pos > max_value and pos - res != max_value:
-            text = str(max_value)
-            x, y = self.get_abs_coords(max_value, max_value)
+        if pos >= max_value and pos - res != max_value:
+            value = int(max_value) # FIXME: if float returned by Gtk.SpinButton is converted to int, the int has the wrong value
         else:
-            text = str(pos)
-            x, y = self.get_abs_coords(pos, pos)
+            value = int(pos)
+        text = str(value)
+        x, y = self.get_abs_coords(value, value)
         width, height = c.text_extents(text)[2:4]
         return text, x, y, width, height
     
