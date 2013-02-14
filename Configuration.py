@@ -869,6 +869,7 @@ class EventSoundTreeView(TreeView):
             if response == Gtk.ResponseType.OK:
                 file_path = file_chooser_dialog.get_filename()
                 self.liststore.set_value(self.liststore.get_iter(path), column_nr, file_path)
+                self.save_changes(path, column_nr, file_path)
             file_chooser_dialog.destroy()
         
     def load(self, event_sounds):

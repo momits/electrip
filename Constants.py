@@ -5,7 +5,7 @@
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "4.2.20"
+ELECTRIP_VERSION = "4.2.23"
 
 ICON_PATH_LIST = [
 "Icons/logo_icon_128.png",
