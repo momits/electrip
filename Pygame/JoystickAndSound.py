@@ -24,7 +24,7 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
         threading.Thread.__init__(self)
         global Config
         Config = config_copy
-        pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=512)
+        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
         pygame.init()
         pygame.joystick.init() # Initialize joystick
         pygame.mixer.set_num_channels(255)

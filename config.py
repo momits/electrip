@@ -605,8 +605,12 @@ class Config:
                     for segment in loco.engine.sound_segments:
                         self.set_absolute_path(dir_path, segment, ["load_sound", "idle_sound", "accel_sound", "decel_sound"])
                     self.set_absolute_path(dir_path, loco.engine, ["start_sound", "idle_sound", "quit_sound"])
-                for sound in loco.function_sounds + loco.engine.event_sounds:
+                    
+                for sound in loco.engine.event_sounds:
                     self.set_absolute_path(dir_path, sound, ["file_path"])
+                    
+            for sound in loco.function_sounds:
+                self.set_absolute_path(dir_path, sound, ["file_path"])
                 
             self.set_absolute_path(dir_path, loco, ["img_path"])
             return loco
