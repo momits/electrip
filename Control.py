@@ -8,38 +8,30 @@ from LockedPrint import locked_print, SocketRecvThread
 from Pygame import JoystickAndSound
 from Constants import EngineType, ToggleMode
 from Pygame.JoystickAndSound import FunctionSoundController
-import time
 
 class MainBox(Gtk.Grid):    
-    def __init__(self, config_copy, main_window):
+    def __init__(self, config_copy):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         global Config
         Config = config_copy
         Config.notice_unsaved_changes = False
-        self.main_window = main_window
+        
+        self.socket_init()
+        self.event_thread = JoystickAndSound.EventHandlerThread(Config)
+        self.scrolled_window = ScrolledWindow(self.socket, self) # ScrolledWindow und darin HBox für Controller erzeugen
+        self.emergency_button = EmergencyButton(self.socket) # HBox für Notstop erzeugen
+        self.add(self.scrolled_window)
+        self.add(self.emergency_button)
         try:
-            self.socket_init()
-        except socket.error:
-            self.main_window.error("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\nÜberprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server aktiv?")
-            self.main_window.basic_vbox.top_grid.config_control_switch.config_button.set_active(True)
-        else:
-            self.event_thread = JoystickAndSound.EventHandlerThread(Config)
-            self.scrolled_window = ScrolledWindow(self.socket, self) # ScrolledWindow und darin HBox für Controller erzeugen
-            self.emergency_button = EmergencyButton(self.socket) # HBox für Notstop erzeugen
-            self.add(self.scrolled_window)
-            self.add(self.emergency_button)
-            
-            try:
-                self.event_thread.joystick_init(self.scrolled_window.center_hbox.controllers, self.emergency_button)
-                self.event_thread.start()
-            except NameError:
-                locked_print("Konnte pygame-PygameThreads nicht starten, Joysticks werden folglich nicht erkannt.")
-            self.show_all()
+            self.event_thread.joystick_init(self.scrolled_window.center_grid.controllers, self.emergency_button)
+            self.event_thread.start()
+        except NameError:
+            locked_print("Konnte pygame-Threads nicht starten, Joysticks werden nicht erkannt.")
+        self.show_all()
     
     def quit(self):
         self.event_thread.quit()
-#        del self.event_thread
         self.socket.send("TERM 1 POWER\n")
         self.socket.send("TERM 0 SESSION\n")
         self.socket_thread.quit()
@@ -87,8 +79,8 @@ class ScrolledWindow(Gtk.ScrolledWindow):
         Gtk.ScrolledWindow.__init__(self)
         self.set_vexpand(True)
         self.set_hexpand(True)
-        self.center_hbox = CenterGrid(socket, main_window, self)
-        self.add_with_viewport(self.center_hbox)
+        self.center_grid = CenterGrid(socket, main_window, self)
+        self.add_with_viewport(self.center_grid)
         
 class CenterGrid(Gtk.Grid):
     def __init__(self, socket, main_window, scrolled_window):
@@ -188,9 +180,7 @@ class SpeedScale(Gtk.Scale):
 
     def speed_changed(self, scale, loco, socket, sound_controller):
         loco.speed = self.get_value()
-        speed_step = loco.speed_to_step_func.get_y(loco.speed)
-        if speed_step != None:
-            loco.speed_step = speed_step
+        loco.speed_step = loco.speed_to_step_func.get_y(loco.speed)
         if int(loco.speed_step) != loco.last_speed_step:
             socket.send(loco.get_srcp_status(Config.server.bus))
             locked_print("Lok", loco.name, "fährt jetzt", loco.speed, "km/h, das entspricht", int(loco.speed_step), "Fahrstufen.")
@@ -225,8 +215,7 @@ class Reverser(Gtk.Button):
         self.loco.toggle_direction()
         if int(self.loco.speed_step) == 0: # if direction has changed but speed is already 0
             socket.send(self.loco.get_srcp_status(Config.server.bus))
-        else:
-            scale.set_value(0)
+        scale.set_value(0)
         self.set_arrow()
         locked_print("\nLok", self.loco.name, "hat die Richtung gewechselt und fährt nun", self.loco.direction)
     
@@ -245,7 +234,11 @@ def create_engine_switch(engine_type, *args):
 class EngineSwitch(Gtk.ToggleButton):
     def __init__(self, sound_controller, speed_scale):
         Gtk.ToggleButton.__init__(self)
-        self.label = Gtk.Label("Geräusch")
+        self.label = Gtk.Label()
+        if Config.joystick.show_function_nr and Config.joystick.sound_button >= 0:
+            self.label.set_markup("<b>" + str(Config.joystick.sound_button) + "</b> - Fahrgeräusch")
+        else:
+            self.label.set_text("Fahrgeräusch")
         self.label.set_ellipsize(Pango.EllipsizeMode.END)
         self.set_active(False)
         self.connect("notify::active", self.engine_toggled)
@@ -327,12 +320,12 @@ class SteamEngineSwitch(EngineSwitch):
 class FunctionButton(Gtk.ToggleButton):
     def __init__(self, function):
         Gtk.ToggleButton.__init__(self)
-        self.function = function
-        
+        self.function = function    # every kind of function-button has the attribute 'function'
+                                    # and a unique attribute (e.g. 'function_sound') -> both are the same, 2nd exists for readability
         self.child_label = Gtk.Label()
         self.child_label.set_ellipsize(Pango.EllipsizeMode.END)
         
-        if Config.joystick.show_function_nr:
+        if Config.joystick.show_function_nr and function.button >= 0: # values less than 0 mean there is no func-button
             self.child_label.set_markup("<b>" + str(function.button) + "</b> - " + function.name)
         else:
             self.child_label.set_text(function.name)
@@ -346,7 +339,6 @@ class FunctionButton(Gtk.ToggleButton):
 class LocoFunctionButton(FunctionButton):
     def __init__(self, loco, function, socket):
         FunctionButton.__init__(self, function)
-        self.function = function
         self.loco = loco
         self.socket = socket
         
@@ -356,23 +348,29 @@ class LocoFunctionButton(FunctionButton):
         locked_print("Funktion", self.function.name, "von Lok", self.loco.name, "hat nun den Status", self.function.state)
         
 class FunctionSoundButton(FunctionButton):
-    def __init__(self, function_sound, channel, mixer):
+    def __init__(self, function_sound, mixer, channel_id):
         FunctionButton.__init__(self, function_sound)
         self.function_sound = function_sound
-        self.channel = channel
+        self.mixer = mixer
+        self.channel_id = channel_id
         if self.function_sound.toggle_mode == ToggleMode.TAP:
             mixer.add_callback(function_sound.channel_id, self.clicked)
+        if self.function_sound.state:
+            self.check_queue_sound()
         
     def toggle_function(self, button):
         self.function_sound.toggle()
+        self.check_queue_sound()
+        
+    def check_queue_sound(self):
         if self.function_sound.state:
-            self.channel.play(self.function_sound.sound)
-            if self.function_sound.toggle_mode == ToggleMode.PUSH:
-                self.channel.queue(self.function_sound.sound)
+            self.mixer.queue_sound(self.channel_id, self.function_sound.sound)
+            if self.function_sound.toggle_mode in [ToggleMode.SWITCH, ToggleMode.PUSH]:
+                self.mixer.queue_sound(self.channel_id, self.function_sound.sound) # queue second time for gapless looping
             elif self.function_sound.toggle_mode == ToggleMode.TAP:
                 self.set_sensitive(False)
         else:
-            self.channel.stop()
+            self.mixer.channels[self.channel_id].stop()
             if self.function_sound.toggle_mode == ToggleMode.TAP:
                 self.set_sensitive(True)
         locked_print("Geräusch-Funktion", self.function_sound.name, "hat nun den Status", self.function_sound.state)
@@ -398,14 +396,14 @@ class FunctionBox(Gtk.Grid):
         self.boxes = []
         self.nr_rows = 0
         
-        if loco.engine != None:
-            self.sound_switch = create_engine_switch(loco.engine.type, loco.sound_controller, speed_scale)
-            
+        func_nr = 0 # we need func-nr in the whole method, therefore it must be declared here
+        if loco.function_sounds != None:
             FunctionSoundController(event_thread, loco.function_sounds, loco.sound_volume) # add the needed 'sound' and 'channel_id' attribs to the func-sound-objs
-            func_nr = 0 # we need func-nr in the whole method, therefore it must be declared here
             for func_nr, function_sound in enumerate(loco.function_sounds):
-                self.buttons.insert(func_nr, FunctionSoundButton(function_sound, event_thread.channels[function_sound.channel_id], event_thread))
-                
+                self.buttons.insert(func_nr, FunctionSoundButton(function_sound, event_thread, function_sound.channel_id))
+        
+        if loco.engine != None:
+            self.sound_switch = create_engine_switch(loco.engine.type, loco.sound_controller, speed_scale)                
             for ev_nr, event_sound in enumerate(loco.engine.event_sounds):
                 self.buttons.insert(ev_nr + func_nr + 1, EventSoundButton(event_sound, event_thread.channels[event_sound.channel_id]))
             self.buttons.insert(0, self.sound_switch)
@@ -446,8 +444,8 @@ class FunctionButtonBox(Gtk.ButtonBox):
         self.set_orientation(Gtk.Orientation.VERTICAL)
         self.set_layout(Gtk.ButtonBoxStyle.CENTER)
         self.set_valign(Gtk.Align.START)
-        #context = self.get_style_context()
-        #context.add_class(Gtk.STYLE_CLASS_LINKED) # TODO: uncomment when gtk can do that in future (make the boxes appear as one nice unit)
+#        context = self.get_style_context()
+#        context.add_class(Gtk.STYLE_CLASS_LINKED) # TODO: uncomment when gtk can do that in future (make the boxes appear as one nice unit)
         self.set_homogeneous(True)
 
 class EmergencyButton(Gtk.ToggleButton):

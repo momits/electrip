@@ -10,7 +10,6 @@ class FileLoadDialog(Gtk.FileChooserDialog):
         self.add_filter(ElectripFileFilter())
         self.add_filter(AllFileFilter())
 
-
 class SoundLoadDialog(Gtk.FileChooserDialog):
     def __init__(self, parent_window, filters=None):
         Gtk.FileChooserDialog.__init__(self, "Geräusch auswählen ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -18,12 +17,12 @@ class SoundLoadDialog(Gtk.FileChooserDialog):
         self.add_filter(SoundFileFilter())
         self.add_filter(AllFileFilter())
         
-#class ImageLoadDialog(Gtk.FileChooserDialog):
-#    def __init__(self, parent_window):
-#        Gtk.FileChooserDialog.__init__(self, "Bild auswählen ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-#        self.set_default_response(Gtk.ResponseType.OK)
-#        self.add_filter(ImageFileFilter())
-#        self.add_filter(AllFileFilter())
+class LocoLoadDialog(Gtk.FileChooserDialog): # TODO: add indication to user that using non-ascii-chars in loco-names might be problematic
+    def __init__(self, parent_window):
+        Gtk.FileChooserDialog.__init__(self, "Lok auswählen ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        self.set_default_response(Gtk.ResponseType.OK)
+        self.add_filter(LocoFileFilter())
+        self.add_filter(AllFileFilter())
 
 class FileSaveDialog(Gtk.FileChooserDialog):
     def __init__(self, parent_window, filters=None):
@@ -31,6 +30,14 @@ class FileSaveDialog(Gtk.FileChooserDialog):
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_do_overwrite_confirmation(True)
         self.add_filter(ElectripFileFilter())
+        self.add_filter(AllFileFilter())
+        
+class LocoSaveDialog(Gtk.FileChooserDialog): # FIXME: FileCooserDialog does not create folder when slash at the end of folder-name (possibly Gtk+-Bug)
+    def __init__(self, parent_window, filters=None):
+        Gtk.FileChooserDialog.__init__(self, "Lok speichern ...", parent_window, Gtk.FileChooserAction.SELECT_FOLDER, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        self.set_default_response(Gtk.ResponseType.OK)
+        self.set_do_overwrite_confirmation(True)
+        self.add_filter(LocoFileFilter())
         self.add_filter(AllFileFilter())
         
 class ElectripFileFilter(Gtk.FileFilter):
@@ -48,12 +55,19 @@ class ImageFileFilter(Gtk.FileFilter):
         self.add_pattern("*.bmp")
         self.add_pattern("*.gif")
         
+class LocoFileFilter(Gtk.FileFilter):
+    def __init__(self):
+        Gtk.FileFilter.__init__(self)
+        self.set_name("Lokomotiv-Dateien")
+        self.add_pattern("*.loco")
+        self.add_pattern("*.zip")
+        
 class SoundFileFilter(Gtk.FileFilter):
     def __init__(self):
         Gtk.FileFilter.__init__(self)
         self.set_name("Sound-Dateien")
         self.add_pattern("*.ogg")
-        self.add_pattern("*.wav") # TODO: check what pygame can play
+        self.add_pattern("*.wav")
 
 class AllFileFilter(Gtk.FileFilter):
     def __init__(self):

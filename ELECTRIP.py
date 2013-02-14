@@ -14,6 +14,7 @@ import Configuration
 import DialogUtilities
 import Control
 from LockedPrint import locked_print
+from socket import error as SocketError
 
 class MainWindow(Gtk.Window):
     def __init__(self):
@@ -63,7 +64,6 @@ class MainWindow(Gtk.Window):
             return True
     
     def error_dialog(self, warning):
-        self.show_all()
         error_dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE, warning)
         error_dialog.run()
         error_dialog.destroy()
@@ -74,7 +74,7 @@ class BasicVBox(Gtk.Grid):
         self.set_orientation(Gtk.Orientation.VERTICAL)
         
         self.config_box = Configuration.MainBox(Config, main_window)
-        self.top_grid = TopGrid(self.config_box.scrolled_window_loco_selection.treeview,
+        self.top_grid = TopGrid(self.config_box.loco_scrolled_window.treeview,
                                           self.config_box.loco_properties_frame.table,
                                           self.config_box.function_frame.treeview,
                                           self.config_box.server_table,
@@ -168,8 +168,6 @@ class SaveAsButton(StockImageButton):
                 path += ".json"
             Config.save(path)
             main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + path)
-        elif response == Gtk.ResponseType.CANCEL:
-            locked_print('Speichern abgebrochen.')
         file_chooser_dialog.destroy()
 
 class SaveButton(StockImageButton):
@@ -198,17 +196,23 @@ class ConfigControlSwitch(Gtk.ButtonBox):
         self.control_button = Gtk.RadioButton.new_with_label_from_widget(self.config_button, "Steuerung")
         self.control_button.connect("toggled", self.control_toggled, main_window)
         self.pack_start(self.control_button, True, True, 0)
-        main_window.control_window = None
     
     def control_toggled(self, button, main_window):
         if button.get_active():
             main_window.basic_vbox.remove(main_window.basic_vbox.config_box)
             del Config.new_unsaved_changes_method # delete any references to GObjects because they are non-copyable
-            main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by Control
-            main_window.basic_vbox.add(main_window.basic_vbox.control_box)
+            try:
+                main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config)) # deepcopy the Config so that it isn't messed up by Control
+            except SocketError:
+                main_window.error_dialog("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\n" + 
+                                         "Überprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server aktiv?")
+                self.config_button.set_active(True)
+            else:
+                main_window.basic_vbox.add(main_window.basic_vbox.control_box)
         else:
-            if hasattr(main_window.basic_vbox, "control_box"):
+            if hasattr(main_window.basic_vbox, "control_box"): 
                 main_window.basic_vbox.control_box.quit()
+                del main_window.basic_vbox.control_box # remove reference as this control box is no longer running
             main_window.basic_vbox.add(main_window.basic_vbox.config_box)
             Config.new_unsaved_changes_method = main_window.basic_vbox.top_grid.save_button.new_unsaved_changes # restore references to GObjects (save_button)
             
