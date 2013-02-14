@@ -147,7 +147,7 @@ class LoadButton(StockImageButton):
                 if hasattr(Config, "new_unsaved_changes_method"):
                     del Config.new_unsaved_changes_method
                 main_window.basic_vbox.control_box.quit()
-                main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config), main_window) # deepcopy the Config so that it isn't messed up by Control
+                main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config)) # deepcopy the Config so that it isn't messed up by Control
                 main_window.basic_vbox.add(main_window.basic_vbox.control_box)
 
             main_window.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + path)
