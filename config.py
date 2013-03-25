@@ -13,6 +13,7 @@ class UnsavedChangesHandler(object):
         self.save_status_method = save_status_method
     
     def __setattr__(self, name, value):
+#        if not hasattr(self, name) or getattr(self, name) != value:
         object.__setattr__(self, name, value)
         self.save_status_method(self, name, value)
 
@@ -414,7 +415,6 @@ class Config:
     notice_unsaved_changes = False
     has_unsaved_changes = False
     opened_file = None
-#    loco_loading_process = True # indicates if a new loco is loaded right now (used to ignore changed-events on gui-elements)
     
     loco_attributes = [("name", "Unbenannte Lok"),
                        ("speed_steps", 128),
@@ -425,8 +425,7 @@ class Config:
                        ("decel_duration", 8.5),
                        ("direction", True),
                        ("img_path", None),
-                       ("sound_volume", 0)
-                       ]
+                       ("sound_volume", 0)]
     
     engine_attributes = {"diesel":
                          [("type", "diesel"),
@@ -434,8 +433,7 @@ class Config:
                           ("idle_sound", None),
                           ("quit_sound", None)],
                          "steam":
-                         [
-                          ("type", "steam"),
+                         [("type", "steam"),
                           ("idle_sound", None),
                           ("cylinder_steam_sound", None),
                           ("nr_strokes", 4),
