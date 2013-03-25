@@ -9,7 +9,6 @@ try:
 except ImportError:
     locked_print("PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
 import threading
-import config
 from Constants import STOP_EVENT, END_EVENT_LOWER_BOUND, EngineType, ToggleMode
 import time
 from math import pi
@@ -24,7 +23,7 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
         threading.Thread.__init__(self)
         global Config
         Config = config_copy
-        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+        pygame.mixer.pre_init(frequency=Config.sound.sampling_rate, size=-16, channels=2, buffer=512)
         pygame.init()
         pygame.joystick.init() # Initialize joystick
         pygame.mixer.set_num_channels(255)
@@ -34,7 +33,7 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
         for joy_id in xrange(pygame.joystick.get_count()):
             if not len(self.joysticks) == len(controllers):
                 self.joysticks.append([pygame.joystick.Joystick(joy_id), joy_id, 0]) # Liste mit Joystickobjekten erstellen, Format:
-            else: # [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links)] -> start_scrolling = True wenn joyhat 500 ms gedrückt wird
+            else: # [joystick, zugehörige lok, start_scrolling (0 = Nein, 1 = Rechts, -1 = Links)] -> start_scrolling = 1/-1 wenn joyhat 500 ms gedrückt wird
                 locked_print("Joystick '" + pygame.joystick.Joystick(joy_id).get_name() + \
                              "' wurde ignoriert, da ", pygame.joystick.get_count(),
                              " Joysticks zuviel für ", len(controllers), " Loks sind.")
@@ -53,17 +52,13 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
         self.image_list = [GdkPixbuf.Pixbuf.new_from_file("Pygame/Pictures/" + str(img_nr) + ".png") for img_nr in range(1, 13)]
         self.emergency_button = emergency_button
         
-        if len(self.joysticks) == 1 and Config.joystick.use_auto_focus:
-            self.auto_focus = True
-        else:
-            self.auto_focus = False
+        self.auto_focus = len(self.joysticks) == 1 and Config.joystick.use_auto_focus
         locked_print("Auto-Fokus:", self.auto_focus)
         
         self.controllers = controllers
         
         for joystick in self.joysticks:
             nr = joystick[1]
-            self.controllers[nr].loco_label.set_bold(True)
             self.controllers[nr].gamepad_image.set_from_pixbuf(self.image_list[nr])
             self.controllers[nr].joystick = joystick[0]
         
@@ -128,10 +123,8 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
     
     def change_loco(self, loco_id, new_loco_id, joystick):
         GObject.idle_add(self.controllers[loco_id].gamepad_image.clear)
-        GObject.idle_add(self.controllers[loco_id].loco_label.set_bold, False)
         self.controllers[loco_id].joystick = None
         GObject.idle_add(self.controllers[new_loco_id].gamepad_image.set_from_pixbuf, self.image_list[joystick])
-        GObject.idle_add(self.controllers[new_loco_id].loco_label.set_bold, True)
         self.controllers[new_loco_id].joystick = self.joysticks[joystick][0]
         if self.auto_focus: # Wenn nur ein Joystick, dann diesen fokussieren
             GObject.idle_add(self.controllers[new_loco_id].set_focus) # Siehe oben
@@ -198,7 +191,8 @@ def create_sound_controller(engine_type, *args):
         return SteamSoundController(*args)
 
 class SoundController(GObject.GObject):
-    engine_is_running = False
+    engine_is_running = False # state of the whole sound-controller: if False, playback on every channel has stopped
+    old_speed = 0
     
     __gsignals__ = {
       "speed-changed": (GObject.SIGNAL_RUN_FIRST, None, (int, float,)),
@@ -228,7 +222,7 @@ class SoundController(GObject.GObject):
     def check_event_sounds(self):
         current_time = time.time()
         self.accel = (self.speed - self.old_speed) / (current_time - self.old_time)
-        locked_print("new accel", self.accel)
+#        locked_print("new accel", self.accel)
         for event_sound in self.engine.event_sounds:
             if self.check_event_sound(event_sound) and not self.mixer.channels[event_sound.channel_id].get_busy():
                 self.mixer.queue_sound(event_sound.channel_id, event_sound.sound)
@@ -271,6 +265,7 @@ class DieselSoundController(SoundController):
     engine_attributes = ["quit_sound", "start_sound", "idle_sound"]
     scheduled_speed = -1
     actual_speed = -1
+    next_sound_level = None
     on_load = False
     
     def __init__(self, handler_thread, loco_engine, volume):
@@ -301,12 +296,12 @@ class DieselSoundController(SoundController):
             self.mixer.queue_sound(self.engine_channel_id, self.engine.start_sound)
             self.mixer.queue_sound(self.engine_channel_id, self.engine.idle_sound)
             self.old_time = time.time()
-            self.old_speed = 0
         else:
             raise RuntimeError("Engine is already running!")
     
     def start_engine_with_speed(self, speed): # starts the sound at a specific speed, engine doesn't have to be started first
         self.actual_speed = self.scheduled_speed = self.engine.sound_function.get_segment_nr_from_x(speed)
+        self.old_time = time.time()
         self.engine_is_running = True
         self.on_load = True
         self.update_engine_queue() # Must be called two times, to fill the pygame-queue
@@ -340,6 +335,10 @@ class DieselSoundController(SoundController):
             return actual_segment.idle_sound
     
     def update_engine_queue(self):
+        if self.next_sound_level != None:
+            self.emit("speed-changed", *self.next_sound_level) # sound_length is needed in ms
+            self.next_sound_level = None
+            
         old_speed = self.actual_speed
         emit_idle = False
         if self.engine_is_running:
@@ -360,12 +359,12 @@ class DieselSoundController(SoundController):
             
             if sound != None: # it IS possible that the playback stream gets broken, if a sound is incorrect
                 self.mixer.queue_sound(self.engine_channel_id, sound)
-                sound_length = sound.get_length() * 1000
+                sound_length = sound.get_length() # * 1000
             else:
                 sound_length = 0.0
                 
             if old_speed != self.actual_speed:
-                self.emit("speed-changed", self.actual_speed, sound_length) # sound_length is needed in ms
+                self.next_sound_level = [self.actual_speed, sound_length]
             elif emit_idle:
                 self.emit("engine-idle")
         
@@ -373,7 +372,6 @@ class DieselSoundController(SoundController):
             self.emit("engine-stopped")
 
 class SteamSoundController(SoundController):
-    engine_is_running = False # state of the whole sound-controller: if False, playback on every channel has stopped
     timeout_id = None
     stroke_nr = 0
     speed = 0
@@ -476,7 +474,7 @@ class SteamSoundController(SoundController):
         elif hasattr(self, "stroke_thread"):
             self.stroke_thread.join()
 
-class FunctionSoundController:    
+class FunctionSoundController:
     def __init__(self, handler_thread, function_sounds, volume):
         self.mixer = handler_thread
         for function_sound in function_sounds:

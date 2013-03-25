@@ -3,6 +3,16 @@
 
 from gi.repository import Gtk
 
+class WarningDialog(Gtk.MessageDialog):
+    def __init__(self, parent_window, warning_text, buttons):
+        Gtk.MessageDialog.__init__(self,
+                                   parent_window,
+                                   0,
+                                   Gtk.MessageType.WARNING,
+                                   Gtk.ButtonsType.NONE,
+                                   warning_text)
+        self.add_buttons(*buttons)
+
 class FileLoadDialog(Gtk.FileChooserDialog):
     def __init__(self, parent_window, filters=None):
         Gtk.FileChooserDialog.__init__(self, "Datei laden ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -17,7 +27,7 @@ class SoundLoadDialog(Gtk.FileChooserDialog):
         self.add_filter(SoundFileFilter())
         self.add_filter(AllFileFilter())
         
-class LocoLoadDialog(Gtk.FileChooserDialog): # TODO: add indication to user that using non-ascii-chars in loco-names might be problematic
+class LocoLoadDialog(Gtk.FileChooserDialog):
     def __init__(self, parent_window):
         Gtk.FileChooserDialog.__init__(self, "Lok auswählen ...", parent_window, Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         self.set_default_response(Gtk.ResponseType.OK)
@@ -32,7 +42,7 @@ class FileSaveDialog(Gtk.FileChooserDialog):
         self.add_filter(ElectripFileFilter())
         self.add_filter(AllFileFilter())
         
-class LocoSaveDialog(Gtk.FileChooserDialog): # FIXME: FileCooserDialog does not create folder when slash at the end of folder-name (possibly Gtk+-Bug)
+class LocoSaveDialog(Gtk.FileChooserDialog):
     def __init__(self, parent_window, filters=None):
         Gtk.FileChooserDialog.__init__(self, "Lok speichern ...", parent_window, Gtk.FileChooserAction.SELECT_FOLDER, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         self.set_default_response(Gtk.ResponseType.OK)

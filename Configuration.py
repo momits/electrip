@@ -5,10 +5,11 @@ from gi.repository import GObject, Gtk, Pango, Gdk
 import cairo
 import config
 from math import pi
-from Constants import EntryTableType, SegmentPosition, EngineType, CellType,\
-    ELECTRIP_VERSION, ToggleMode
+from Constants import EntryType, SegmentPosition, EngineType, CellType, \
+    ELECTRIP_VERSION, ToggleMode, PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH
 from ELECTRIP import StockImageButton
-from DialogUtilities import ImageFileFilter, AllFileFilter, SoundFileFilter
+from DialogUtilities import ImageFileFilter, AllFileFilter, SoundFileFilter, \
+    WarningDialog
 from LockedPrint import locked_print
 import DialogUtilities
 from zipfile import BadZipfile
@@ -20,38 +21,47 @@ class MainBox(Gtk.Notebook):
         Config = config
         self.function_frame = FunctionFrame()
         self.speed_frame = SpeedGraphFrame(main_window)
-        self.loco_properties_frame = LocoPropertiesFrame(main_window)
+        self.loco_properties_frame = LocoPropertiesFrame(self.speed_frame, main_window)
+        self.decoder_frame = DecoderFrame(self.speed_frame, main_window)
 
         self.loco_scrolled_window = ScrolledTreeView(LocoTreeView(self.loco_properties_frame,
-                                                                                     self.function_frame,
-                                                                                     self.speed_frame))
+                                                                  self.decoder_frame,
+                                                                  self.function_frame,
+                                                                  self.speed_frame))
         self.buttonbox_loco = LocoActionBox(self.loco_scrolled_window.treeview,
-                                                   self.loco_properties_frame,
-                                                   self.function_frame,
-                                                   self.speed_frame)
+                                            self.loco_properties_frame,
+                                            self.decoder_frame,
+                                            self.function_frame,
+                                            self.speed_frame)
         
         self.loco_grid = Gtk.Grid()
         self.loco_grid.attach(self.loco_scrolled_window, 0, 0, 2, 1)
         self.loco_grid.attach(self.buttonbox_loco, 0, 1, 2, 1)
         self.loco_grid.attach(LoadLocoButton(main_window, self.loco_scrolled_window.treeview), 0, 2, 1, 1)
         self.loco_grid.attach(SaveLocoButton(main_window), 1, 2, 1, 1)
-        self.loco_grid.attach(Gtk.Separator.new(Gtk.Orientation.VERTICAL), 2, 0, 1, 3)
         
         self.scrolled_window_loco_properties = Gtk.ScrolledWindow()
         self.loco_properties_grid = Gtk.Grid()
         self.loco_properties_grid.attach(self.loco_properties_frame, 0, 0, 1, 1)
-        self.loco_properties_grid.attach(self.function_frame, 1, 0, 1, 1)
-        self.loco_properties_grid.attach(self.speed_frame, 0, 1, 2, 1)
+        self.loco_properties_grid.attach(self.decoder_frame, 0, 1, 1, 1)
+        self.loco_properties_grid.attach(self.function_frame, 1, 0, 1, 2)
+        self.loco_properties_grid.attach(self.speed_frame, 0, 2, 2, 1)
         self.scrolled_window_loco_properties.add_with_viewport(self.loco_properties_grid)
         
-        self.loco_grid.attach(self.scrolled_window_loco_properties, 4, 0, 1, 1)
-        self.append_page(self.loco_grid, Gtk.Label("Lokomotiven"))
+        horizontal_grid = Gtk.Grid()
+        horizontal_grid.add(self.loco_grid)
+        horizontal_grid.add(self.scrolled_window_loco_properties)
+        horizontal_grid.add(Gtk.Separator.new(Gtk.Orientation.VERTICAL))
+        self.append_page(horizontal_grid, Gtk.Label("Lokomotiven"))
         
         self.server_table = ServerTable()
         self.append_page(TopAlignment(self.server_table), Gtk.Label("SRCP-Server"))
         
         self.joystick_table = JoystickTable()
         self.append_page(TopAlignment(self.joystick_table), Gtk.Label("Gamepad"))
+        
+        self.sound_table = SoundTable()
+        self.append_page(TopAlignment(self.sound_table), Gtk.Label("Geräusch"))
         self.show_all()
 
 class BoldLabel(Gtk.Label):
@@ -68,7 +78,7 @@ class TopAlignment(Gtk.Alignment):
 class Frame(Gtk.Frame):
     def __init__(self, label=None):
         Gtk.Frame.__init__(self)
-        self.set_border_width(10)
+        self.set_border_width(6)
         if label != None:
             self.set_label_widget(BoldLabel(label))
 
@@ -98,89 +108,71 @@ class FunctionSoundFrame(TreeViewFrame):
         self.treeview = FunctionSoundTreeView(popup)
         self.action_box = FunctionSoundActionBox(self.treeview)
         TreeViewFrame.__init__(self, "Geräusch-Funktionen", self.treeview, self.action_box)
-        
-class GraphFrame(Frame):
-    def __init__(self, label, warn_message):
-        Frame.__init__(self, label)
-        self.set_valign(Gtk.Align.START)
-        self.cancel_button = StockImageButton("Abbrechen", Gtk.STOCK_CANCEL)
-        self.cancel_button.connect("clicked", self.change_axes, False)
-        self.accept_button = StockImageButton("Zurücksetzen", Gtk.STOCK_OK)
-        self.accept_button.connect("clicked", self.change_axes, True)
-        self.warn_image = Gtk.Image.new_from_stock(Gtk.STOCK_DIALOG_WARNING, Gtk.IconSize.BUTTON)
-        self.warn_label = Gtk.Label(warn_message)
-        self.warn_label.set_vexpand(True)
-        
-        self.warn_grid = Gtk.Grid()
-        self.warn_grid.set_column_spacing(5)
-        self.warn_grid.set_halign(Gtk.Align.CENTER)
-        self.warn_grid.set_valign(Gtk.Align.CENTER)
-        self.warn_grid.attach(self.warn_image, 0, 0, 1, 1)
-        self.warn_grid.attach(self.warn_label, 1, 0, 2, 1)
-        self.warn_grid.attach(self.cancel_button, 1, 1, 1, 1)
-        self.warn_grid.attach(self.accept_button, 2, 1, 1, 1)
 
-class SpeedGraphFrame(GraphFrame):
-    notice_combo_change = False
+class SpeedGraphFrame(Gtk.Overlay): # is in fact an overlay, but uses a frame as "background"
     loco_sound_bars = {}
+    warn_frame_active = False
     
     def __init__(self, main_window):
-        GraphFrame.__init__(self,"Geschwindigkeitsverlauf", "Durch Änderung der Achsen wird die Geschwindigkeitskennlinie zurückgesetzt")        
+        Gtk.Overlay.__init__(self)
+        frame = Frame("Geschwindigkeitsverlauf")
         self.graph = SpeedStepGraph()
-        self.speed_sound_grid = SpeedSoundFrame(self.graph, main_window)
-        liststore = Gtk.ListStore(GObject.TYPE_INT)
-        for value in [14, 27, 28, 128]:
-            liststore.append([value])
-        self.speed_steps_combo = EasyComboBox(liststore, [(14, 14), (27, 27), (28, 28), (128, 128)])
-        self.speed_steps_combo.connect("changed", self.changed)
-        self.speed_steps_combo.set_tooltip_text("Die Anzahl Fahrstufen des Lokdecoders")
-        self.max_speed_spin_button = Gtk.SpinButton.new_with_range(1, 999, 0.1) # lowest possible speed is 1 km/h, highest possible 999
-        self.max_speed_spin_button.connect("value-changed", self.changed)
-        self.max_speed_spin_button.set_tooltip_text("Die reale Höchstgeschwindigkeit der Lokomotive in km/h")
+        self.speed_sound_frame = SpeedSoundFrame(self.graph, main_window)
+        self.cancel_button = StockImageButton("Abbrechen", Gtk.STOCK_CANCEL)
+        self.cancel_button.connect("clicked", self.change_axis, False)
+        self.accept_button = StockImageButton("Zurücksetzen", Gtk.STOCK_OK)
+        self.accept_button.connect("clicked", self.change_axis, True)
+        self.warn_image = Gtk.Image.new_from_file(RELOAD_GRAPH_IMAGE_PATH)
+        self.warn_image.set_margin_right(7)
+        self.warn_label = Gtk.Label()
+        self.warn_label.set_vexpand(True)
+        
+        self.warn_frame = Frame("Kennlinie zurücksetzen?")
+        warn_grid = Gtk.Grid()
+        warn_grid.set_column_spacing(11)
+        warn_grid.set_row_spacing(11)
+        warn_grid.set_halign(Gtk.Align.CENTER)
+        warn_grid.set_valign(Gtk.Align.CENTER)
+        warn_grid.attach(self.warn_image, 0, 0, 1, 2)
+        warn_grid.attach(self.warn_label, 1, 0, 2, 1)
+        warn_grid.attach(self.cancel_button, 1, 1, 1, 1)
+        warn_grid.attach(self.accept_button, 2, 1, 1, 1)
+        self.warn_frame.add(warn_grid)
+        self.warn_frame.show_all()
         
         self.grid = Gtk.Grid()
+        self.grid.set_orientation(Gtk.Orientation.VERTICAL)
         self.grid.set_row_spacing(5)
-        self.grid.attach(self.speed_sound_grid, 0, 1, 3, 1)
-        self.grid.attach(self.graph, 0, 2, 3, 1)
-        self.grid.attach(Gtk.Label("Anzahl Fahrstufen"), 0, 3, 1, 1)
-        self.grid.attach(self.speed_steps_combo, 1, 3, 1, 1)
-        self.grid.attach(Gtk.Label("Höchstgeschwindigkeit"), 0, 4, 1, 1)
-        self.grid.attach(self.max_speed_spin_button, 1, 4, 1, 1)
-        self.grid.attach(self.warn_grid, 2, 3, 1, 2)
+        self.grid.add(self.speed_sound_frame)
+        self.grid.add(self.graph)
         
-        self.add(self.grid)
+        frame.add(self.grid)
+        self.add(frame)
         self.set_sensitive(False)
+        
+    def confirm_axis_change(self, message, accept_callback, undo_callback):
+        self.warn_label.set_text(message)
+        self.accept_callback = accept_callback
+        self.undo_callback = undo_callback
+        if not self.warn_frame_active:
+            self.add_overlay(self.warn_frame)
+            self.warn_frame_active = True
     
-    def changed(self, widget):
-        if self.notice_combo_change:
-            self.warn_grid.set_sensitive(True)
-    
-    def change_axes(self, widget, accept_changes):
+    def change_axis(self, button, accept_changes):
         if accept_changes:
-            new_max_speed = self.max_speed_spin_button.get_value()
-#            print "type:", type(new_max_speed), "unformatted (float):", new_max_speed, "int:", int(new_max_speed)
-            if self.loco.max_speed != new_max_speed:
-                self.loco.max_speed = new_max_speed
-                if self.loco.engine != None:
-                    self.speed_sound_grid.sound_bar.sounds_changed()
-            new_speed_steps = self.speed_steps_combo.retrieve_value()
-            if self.loco.speed_steps != new_speed_steps:
-                self.loco.speed_steps = new_speed_steps
             func = self.loco.speed_to_step_func
             func.load([(0.0, 0.0), (float(self.loco.max_speed), float(self.loco.speed_steps))])
             self.graph.load(self.loco)
+            self.accept_callback()
         else:
-            self.max_speed_spin_button.set_value(self.loco.max_speed)
-            self.speed_steps_combo.set_value(self.loco.speed_steps)
-        self.warn_grid.set_sensitive(False)
+            self.undo_callback()
+        self.remove(self.warn_frame)
+        self.warn_frame_active = False
     
     def load(self, loco):
         self.loco = loco
         self.graph.load(loco)
-        self.speed_sound_grid.load(loco)
-        self.max_speed_spin_button.set_value(self.loco.max_speed)
-        self.speed_steps_combo.set_value(self.loco.speed_steps)
-        self.warn_grid.set_sensitive(False)
+        self.speed_sound_frame.load(loco)
 
 class LoadLocoButton(Gtk.Button):
     def __init__(self, main_window, loco_treeview):
@@ -196,12 +188,14 @@ class LoadLocoButton(Gtk.Button):
             try:
                 Config.locos.append(Config.load_loco(file_path))
                 loco_treeview.load()
-            except IOError: # TODO: check which errors may occur
+            except IOError:
                 main_window.error_dialog("Der Dateipfad ist ungültig! Konnte Lok nicht importieren.")
             except KeyError:
                 main_window.error_dialog("Ein Parameter konnte nicht geladen werden! Konnte Lok nicht importieren.")
             except BadZipfile:
                 main_window.error_dialog("Die *.zip-Datei ist fehlerhaft! Konnte Lok nicht importieren.")
+#            except Exception as e:
+#                main_window.error_dialog("Ein unvorhergesehener Fehler trat auf:\n" + str(e))
         file_chooser_dialog.destroy()
 
 class SaveLocoButton(Gtk.Button):
@@ -220,45 +214,71 @@ class SaveLocoButton(Gtk.Button):
             file_chooser_dialog.destroy()
 
 class LocoPropertiesFrame(Frame):
-    loco_attributes = ["address", "protocol", "accel_duration", "direction", "img_path", None, "sound_volume"]
-    def __init__(self, main_window):
+    loco_attributes = ["max_speed", "accel_duration", "decel_duration", "direction", "img_path", None, "sound_volume"]
+    def __init__(self, speed_graph_frame, main_window):
         Frame.__init__(self, "Allgemeine Eigenschaften")
-        self.params_w_defs = [
-                              ("Adresse", "Adresse des Digital-Decoders der Lok", [EntryTableType.INT]),
-                              ("Protokoll",
-                               "Digitalprotokoll des Decoders",
-                               [EntryTableType.COMBO, GObject.TYPE_STRING, [("M 1", "Märklin Motorola Version 1"),
-                                                                            ("M 2", "Märklin Motorola Version 2"),
-                                                                            ("N 1", "DCC kurzes Adressformat"),
-                                                                            ("N 2", "DCC langes Adressformat")
-                                                                            ]]),
+        self.params_w_defs = [("Höchstgeschwindigkeit", "Die reale Höchstgeschwindigkeit der Lokomotive in km/h", EntryType.FLOAT,
+                               (1, 999, 0.1)),
                               ("Beschleunigungsdauer",
                                "Zeit in s für die Beschleunigung von 0 auf Höchstgeschw. bei voller Auslenkung des Gamepads",
-                               [EntryTableType.FLOAT]),
+                               EntryType.FLOAT),
+                              ("Bremsdauer",
+                               "Zeit in s für den Bremsvorgang von Höchstgeschw. auf 0 bei voller Auslenkung des Gamepads",
+                               EntryType.FLOAT),
                               ("Fahrtrichtung",
                                "Voreingestellte Fahrtrichtung der Lokomotive",
-                               [EntryTableType.COMBO, GObject.TYPE_STRING, [(True, "Vorwärts"), (False, "Rückwärts")]]),
+                               EntryType.COMBO,
+                               (GObject.TYPE_STRING, ((True, "Vorwärts"), (False, "Rückwärts")))),
                               ("Bild",
                                "Pfad an dem das passende Lokbild abgelegt ist",
-                               [EntryTableType.IMAGE_FILE]),
+                               EntryType.IMAGE_FILE),
                               ("Geräusch-Funktionen",
                                "Wiedergabe von Geräuschdateien als Lok-Funktionen konfigurieren",
-                               [EntryTableType.BUTTON, "Bearbeiten", self.edit_sounds]),
-                              ("Lautstärke", "Lautstärke der Lokomotive", [EntryTableType.VOLUME])
+                               EntryType.BUTTON, ("Bearbeiten", self.edit_sounds)),
+                              ("Lautstärke", "Lautstärke der Lokomotive", EntryType.VOLUME)
                               ]
+        self.speed_graph_frame = speed_graph_frame
+        
         self.table = EntryTable(self.params_w_defs, self.loco_attributes, True, False)
+        self.table.entry_fields[0].connect("value-changed", self.confirm_axis_change)
         self.add(self.table)
         self.set_sensitive(False)
-        self.popup = Popup(main_window, "Geräusch-Funktionen", Gdk.WindowTypeHint.DIALOG)
+        self.popup = Popup(main_window, "Geräusch-Funktionen", Gdk.WindowTypeHint.NORMAL)
         self.function_sound_frame = FunctionSoundFrame(self.popup)
         self.popup.set_content(self.function_sound_frame)
 
     def load(self, loco):
+        self.loading = True
         self.table.load(loco)
         self.function_sound_frame.treeview.load(loco.function_sounds)
+        self.loading = False
         
     def edit_sounds(self, button):
         self.popup.show_at_mouse()
+        
+    def confirm_axis_change(self, entry):
+        if not self.loading:
+            self.speed_graph_frame.confirm_axis_change("Durch die Änderung der Höchstgeschwindigkeit zu " + str(entry.retrieve_value()) + \
+                                                   "\nwird die Geschwindigkeitskennlinie zurückgesetzt!",
+                                                   self.confirm_max_speed, self.reset_max_speed)
+        else:
+            self.confirm_max_speed()
+        
+    def confirm_max_speed(self):
+        self.stored_max_speed = self.table.entry_fields[0].retrieve_value()
+    
+    def reset_max_speed(self):
+        self.table.entry_fields[0].set_value(self.stored_max_speed)
+
+class DecoderFrame(Frame):
+    def __init__(self, speed_graph_frame, main_window):
+        Frame.__init__(self, "Digitaldecoder")
+        self.table = DecoderTable(speed_graph_frame, main_window)
+        self.add(self.table)
+        self.set_sensitive(False)
+        
+    def load(self, loco):
+        self.table.load(loco)
 
 class ArrowButton(Gtk.Button):
     def __init__(self, direction): # direction: True = nach oben
@@ -306,13 +326,11 @@ class ActionBox(Gtk.ButtonBox):
                 self.move_row_up(row_nr)
                 prev_row = liststore.iter_nth_child(None, row_nr - 1)
                 liststore.move_before(row, prev_row)
-                treeview.set_cursor(liststore.get_path(row), None, False)
                 self.unsaved_changes()
             elif not direction and row_nr < len(liststore) - 1:
                 self.move_row_down(row_nr)
                 following_row = liststore.iter_nth_child(None, row_nr + 1)
                 liststore.move_after(row, following_row)
-                treeview.set_cursor(liststore.get_path(row), None, False)
                 self.unsaved_changes()
             else:
                 locked_print("Zeile befindet sich schon am Rand, kann nicht weiter verschoben werden.")
@@ -346,8 +364,9 @@ class ActionBox(Gtk.ButtonBox):
             locked_print("Keine Zeile ausgewählt, es kann nichts gelöscht werden.")
 
 class LocoActionBox(ActionBox):
-    def __init__(self, loco_treeview, loco_properties_frame, function_frame, speed_frame):
+    def __init__(self, loco_treeview, loco_properties_frame, decoder_frame, function_frame, speed_frame):
         self.loco_properties_frame = loco_properties_frame
+        self.decoder_frame = decoder_frame
         self.function_frame = function_frame
         self.speed_frame = speed_frame
         ActionBox.__init__(self, loco_treeview, "Neue Lok", "Lok löschen")
@@ -356,6 +375,7 @@ class LocoActionBox(ActionBox):
         new_loco = config.Loco(Config.unsaved_changes)
         Config.locos.append(new_loco)        
         self.loco_properties_frame.set_sensitive(True)
+        self.decoder_frame.set_sensitive(True)
         self.function_frame.set_sensitive(True)
         self.speed_frame.set_sensitive(True)
         return [new_loco.name]
@@ -370,6 +390,7 @@ class LocoActionBox(ActionBox):
         if len(Config.locos) == 0:
             self.speed_frame.graph.clear()
             self.loco_properties_frame.set_sensitive(False)
+            self.decoder_frame.set_sensitive(False)
             self.function_frame.set_sensitive(False)
             self.speed_frame.set_sensitive(False)
     
@@ -484,6 +505,9 @@ class EasyComboBox(Gtk.ComboBox): # subclassed combobox with methods allowing to
         for saved_val, disp_val in self.displayed_to_saved_vals:
             if displayed_value == disp_val:
                 return saved_val
+            
+    def retrieve_disp_value(self):
+        return self.get_model()[self.get_active()][0]
         
     def set_value(self, saved_value):
         saved_value_correct = False
@@ -497,7 +521,7 @@ class EasyComboBox(Gtk.ComboBox): # subclassed combobox with methods allowing to
                 break
         if not saved_value_correct:
             value = self.retrieve_value()
-            locked_print("Dateiformat inkorrekt: Unbekannter Wert '" + str(saved_value) + "', verwende Standardwert '" + value + "'")
+            locked_print("Dateiformat inkorrekt: Unbekannter Wert '" + str(saved_value) + "', verwende Standardwert '" + str(value) + "'")
             self.emit("changed")
 
 class EasyFileButton(Gtk.FileChooserButton):
@@ -531,6 +555,14 @@ class EasyVolumeButton(Gtk.VolumeButton):
         self.emit("volume-set")
         
 class EntryTable(Gtk.Grid):
+    signals = {EntryType.STRING: "changed",
+               EntryType.INT: "value-changed",
+               EntryType.FLOAT: "value-changed",
+               EntryType.COMBO: "changed",
+               EntryType.SOUND_FILE: "file-set",
+               EntryType.IMAGE_FILE: "file-set",
+               EntryType.BOOL: "toggled",
+               EntryType.VOLUME: "volume-set"}
     def __init__(self,
                  params_w_defs,
                  config_object_attributes,
@@ -549,46 +581,13 @@ class EntryTable(Gtk.Grid):
         y = 0
         x = 0
         nr = 0
-        for parameter, definition, input_type in self.params_w_defs:
-            if input_type[0] == EntryTableType.STRING:
-                entry_field = Gtk.Entry()
-                entry_field.retrieve_value = entry_field.get_text
-                entry_field.set_value = entry_field.set_text
-                entry_field.connect("changed", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.INT:
-                entry_field = Gtk.SpinButton.new_with_range(0, 9999, 1)
-                entry_field.retrieve_value = entry_field.get_value_as_int
-                entry_field.connect("value-changed", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.FLOAT:
-                if len(input_type) > 1:
-                    entry_field = Gtk.SpinButton.new_with_range(0, 9999, input_type[1])
-                else:
-                    entry_field = Gtk.SpinButton.new_with_range(0, 9999, 0.1)
-                entry_field.retrieve_value = entry_field.get_value
-                entry_field.connect("value-changed", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.COMBO:
-                liststore = Gtk.ListStore(input_type[1])
-                for saved_val, disp_val in input_type[2]:
-                    liststore.append([disp_val])
-                entry_field = EasyComboBox(liststore, input_type[2])
-                entry_field.connect("changed", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.SOUND_FILE:
-                entry_field = EasyFileButton([SoundFileFilter(), AllFileFilter()])
-                entry_field.connect("file-set", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.IMAGE_FILE:
-                entry_field = EasyFileButton([ImageFileFilter(), AllFileFilter()])
-                entry_field.connect("file-set", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.BOOL:
-                entry_field = Gtk.CheckButton.new()
-                entry_field.retrieve_value = entry_field.get_active
-                entry_field.set_value = entry_field.set_active
-                entry_field.connect("toggled", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.VOLUME:
-                entry_field = EasyVolumeButton()
-                entry_field.connect("volume-set", self.save_changes, config_object_attributes[nr])
-            elif input_type[0] == EntryTableType.BUTTON:
-                entry_field = Gtk.Button(input_type[1])
-                entry_field.connect("clicked", *input_type[2:])
+        for param_w_def in self.params_w_defs:
+            parameter, definition, entry_type, entry_args = (lambda a, b, c, d=None: (a, b, c, d))(*param_w_def)
+            entry_field = self.create_entry_field(entry_type, entry_args)
+            try:
+                entry_field.connect(self.signals[entry_type], self.save_changes, config_object_attributes[nr])
+            except KeyError: # key errors are allowed as some entry-widgets dont connect to anything
+                pass
             if use_bold_params:
                 parameter_label = BoldLabel(parameter)
             else:
@@ -623,7 +622,49 @@ class EntryTable(Gtk.Grid):
                         y += 1
                         x = 0
             nr += 1
-        
+            
+    @staticmethod
+    def create_entry_field(entry_type, args):
+        if entry_type == EntryType.STRING:
+            entry_field = Gtk.Entry()
+            entry_field.retrieve_value = entry_field.get_text
+            entry_field.set_value = entry_field.set_text
+        elif entry_type == EntryType.INT:
+            entry_field = Gtk.SpinButton.new_with_range(0, 9999, 1)
+            entry_field.retrieve_value = entry_field.get_value_as_int
+        elif entry_type == EntryType.FLOAT:
+            if args != None:
+                entry_field = Gtk.SpinButton.new_with_range(*args)
+            else:
+                entry_field = Gtk.SpinButton.new_with_range(0.1, 9999, 0.1)
+            entry_field.retrieve_value = entry_field.get_value
+        elif entry_type == EntryType.COMBO:
+            liststore = Gtk.ListStore(args[0])
+            for saved_val, disp_val in args[1]:
+                liststore.append([disp_val])
+            entry_field = EasyComboBox(liststore, args[1])
+        elif entry_type == EntryType.SOUND_FILE:
+            entry_field = EasyFileButton([SoundFileFilter(), AllFileFilter()])
+        elif entry_type == EntryType.IMAGE_FILE:
+            entry_field = EasyFileButton([ImageFileFilter(), AllFileFilter()])
+        elif entry_type == EntryType.BOOL:
+            entry_field = Gtk.CheckButton.new()
+            entry_field.retrieve_value = entry_field.get_active
+            entry_field.set_value = entry_field.set_active
+        elif entry_type == EntryType.VOLUME:
+            entry_field = EasyVolumeButton()
+        elif entry_type == EntryType.BUTTON:
+            entry_field = Gtk.Button(args[0])
+            entry_field.connect("clicked", *args[1:])
+        elif entry_type == EntryType.LABEL:
+            entry_field = Gtk.Label()
+            entry_field.set_markup(args[0])
+#        elif entry_type == EntryType.CUSTOM:
+#            entry_field = args
+        else:
+            return None
+        return entry_field
+            
     def load(self, config_object):
         self.config_object = config_object
         for nr, config_attrib in enumerate(self.config_object_attributes):
@@ -631,22 +672,126 @@ class EntryTable(Gtk.Grid):
                 try:
                     value = getattr(config_object, config_attrib)
                 except AttributeError:
-                    locked_print("Attribut", config_attrib, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete ELECTRIP-Datei.")
+                    locked_print("Attribut", config_attrib, "konnte nicht gefunden werden, es handelt sich evtl. um eine veraltete Electrip-Datei.")
                 else:
                     self.entry_fields[nr].set_value(value)
             
     def save_changes(self, widget, config_attrib):
-        value = widget.retrieve_value()
-        if getattr(self.config_object, config_attrib) != value: # only set attributes when they differ from what is already saved
-            setattr(self.config_object, config_attrib, value) # -> prevent signal-handler trouble on loading
+        if config_attrib != None:
+            value = widget.retrieve_value()
+            if getattr(self.config_object, config_attrib) != value: # only set attributes when they differ from what is already saved
+                setattr(self.config_object, config_attrib, value) # -> prevent signal-handler trouble on loading
+
+class DecoderTable(EntryTable):
+    params_w_defs = [("Protokoll", "Digitalprotokoll des Decoders", EntryType.COMBO,
+                     (GObject.TYPE_STRING, (("M 1", "Märklin Motorola Version 1"),
+                                            ("M 2", "Märklin Motorola Version 2"),
+                                            ("N 1", "DCC kurzes Adressformat"),
+                                            ("N 2", "DCC langes Adressformat")))),
+                      ("Adresse", "Adresse des Decoders", EntryType.INT),
+                      ("Fahrstufen", "Anzahl Fahrstufen die der Decoder unterstützt", EntryType.COMBO,
+                      (GObject.TYPE_INT, ((14, 14),))),
+                      ("Funktionen", "Maximale Anzahl Funktionen die das Protokoll unterstützt", EntryType.LABEL, "1")]
+    loco_attributes = ["protocol", "address", "speed_steps", None]
+    restoring_speed_steps = False
+    restoring_protocol = False
+    
+    def __init__(self, speed_graph_frame, main_window):
+        EntryTable.__init__(self, self.params_w_defs, self.loco_attributes, True, False)
+        self.speed_graph_frame = speed_graph_frame
+        self.main_window = main_window
+        self.protocol_combo, self.address_entry, self.speed_steps_combo, self.max_function_label = self.entry_fields
+        self.protocol_combo.connect("changed", self.protocol_changed)
+        self.speed_steps_combo.connect("changed", self.speed_steps_changed)
+        self.address_entry.connect("output", self.check_address) # the output-signal is emitted whenever a new value is set for entry
         
+    def load(self, loco):
+        self.loading = True
+        self.loco = loco
+        self.stored_protocol, self.stored_address, self.stored_speed_steps, self.stored_max_functions = \
+        loco.protocol, loco.address, loco.speed_steps, PROTOCOLS[loco.protocol][1]
+        EntryTable.load(self, loco)
+        self.loading = False
+        
+    def speed_steps_changed(self, combo):
+        if not self.loading and not self.restoring_speed_steps:
+            self.speed_graph_frame.confirm_axis_change("Durch Änderung der Anzahl Fahrstufen zu " + str(combo.retrieve_value()) + \
+                                                       "\nwird die Geschwindigkeitskennlinie zurückgesetzt!",
+                                                       self.confirm_speed_steps, self.reset_speed_steps)
+            self.set_sensitive(False)
+        else:
+            self.restoring_speed_steps = False
+            
+    def confirm_speed_steps(self):
+        self.stored_speed_steps = self.speed_steps_combo.retrieve_value()
+        self.set_sensitive(True)
+        
+    def reset_speed_steps(self):
+        self.restoring_speed_steps = True
+        self.speed_steps_combo.set_value(self.stored_speed_steps)
+        self.set_sensitive(True)
+        
+    def update_speed_steps_liststore(self, speed_step_options):
+        liststore = Gtk.ListStore(GObject.TYPE_INT)
+        disp_to_saved_vals = []
+        for speed_steps in speed_step_options:
+            liststore.append([speed_steps])
+            disp_to_saved_vals.append((speed_steps, speed_steps))
+        self.speed_steps_combo.displayed_to_saved_vals = disp_to_saved_vals
+        self.speed_steps_combo.set_model(liststore)
+        self.speed_steps_combo.set_value(speed_steps)
+            
+    def protocol_changed(self, combo):
+        if not self.restoring_protocol:
+            protocol = combo.retrieve_value()
+            max_address, max_functions, speed_step_options = PROTOCOLS[protocol]
+            # Restrict range for address-entry
+            self.address_entry.set_range(0, max_address)
+            # Restrict options for speed-steps-combo
+            self.restoring_speed_steps = True
+            self.update_speed_steps_liststore(speed_step_options)
+            # Set label text
+            self.max_function_label.set_text(str(max_functions))
+            
+            if not self.loading:
+                self.speed_graph_frame.confirm_axis_change("Durch die Änderung des Protokolls zu \"" + combo.retrieve_disp_value() + \
+                                                           "\" wird die Anzahl Fahrstufen auf " + str(speed_step_options[-1]) + " gesetzt.\n" + \
+                                                           "Dadurch wird die Geschwindigkeitskennlinie zurückgesetzt!",
+                                                       self.confirm_protocol, self.reset_protocol)
+                self.set_sensitive(False)
+        else:
+            self.restoring_protocol = False
+                
+    def confirm_protocol(self):
+        self.confirm_speed_steps()
+        self.stored_address = self.address_entry.retrieve_value()
+        self.stored_protocol = self.protocol_combo.retrieve_value()
+        self.stored_max_functions = self.max_function_label.get_text()
+        self.set_sensitive(True)
+        
+    def reset_protocol(self):
+        self.restoring_protocol = True
+        self.protocol_combo.set_value(self.stored_protocol)
+        self.restoring_speed_steps = True
+        self.speed_steps_combo.set_value(self.stored_speed_steps)
+        self.address_entry.set_value(self.stored_address)
+        self.max_function_label.set_text(str(self.stored_max_functions))
+        self.set_sensitive(True)
+        
+    def check_address(self, entry, *args): # mark the field red if the address is already used for another loco
+        address = entry.retrieve_value()
+        if address in [loco.address for loco in Config.locos if loco != self.loco]:
+            entry.override_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(1, 0, 0, 1))
+        else:
+            entry.override_color(Gtk.StateFlags.NORMAL, None)
+
 class ServerTable(EntryTable): # every class using EntryTable defines two list: params_w_defs and some_attributes
     server_attributes = ["host", "port", "bus", "power"]
     params_w_defs = [ # the list of attributes says which attribute of index a in the config_object maps to the Entry in EntryTable with index a
-                     ("Host", "IP-Adresse des Servers", [EntryTableType.STRING]),
-                     ("Port", "Port unter dem der Server erreichbar ist", [EntryTableType.INT]),
-                     ("Bus", "Bus auf dem Steuerungsbefehle gesendet werden sollen", [EntryTableType.INT]),
-                     ("Strom", "Schalte den Strom beim Starten der Steuerung ein", [EntryTableType.BOOL])
+                     ("Host", "IP-Adresse des Servers", EntryType.STRING),
+                     ("Port", "Port unter dem der Server erreichbar ist", EntryType.INT),
+                     ("Bus", "Bus auf dem Steuerungsbefehle gesendet werden sollen", EntryType.INT),
+                     ("Strom", "Schalte den Strom beim Starten der Steuerung ein", EntryType.BOOL)
                      ] # The list called params_w_defs works like this:
                         # (parameter as bold text, explanation of the parameter, entry-widget used to display the parameter)
     
@@ -656,21 +801,30 @@ class ServerTable(EntryTable): # every class using EntryTable defines two list: 
 
 class JoystickTable(EntryTable):
     joystick_attributes = ["emergency_button", "reverse_button", "accel_axis", "focus_button", "sound_button", "use_auto_focus", "show_function_nr"]
-    params_w_defs = [
-                     ("Nothalt", "Button am Gamepad über den die Gleisspannung ausgeschaltet werden kann", [EntryTableType.INT]),
-                     ("Richtungswender", "Button am Gamepad für Richtungswechsel", [EntryTableType.INT]),
-                     ("Beschleunigung", "Achse am Gamepad für Geschwindigkeitsregelung", [EntryTableType.INT]),
-                     ("Fokus", "Button am Gamepad der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", [EntryTableType.INT]),
-                     ("Geräusch", "Button am Gamepad zum Ein-/Ausschalten des Lok-Geräuschs", [EntryTableType.INT]),
-                     ("Auto-Fokus", "Ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist", [EntryTableType.BOOL]),
-                     ("Button-Nr", "Nummer des zugehörigen Gamepad-Buttons auf den Funktions-Buttons anzeigen", [EntryTableType.BOOL])
-                     ] # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
+    params_w_defs = [("Nothalt", "Button am Gamepad über den die Gleisspannung ausgeschaltet werden kann", EntryType.INT),
+                     ("Richtungswender", "Button am Gamepad für Richtungswechsel", EntryType.INT),
+                     ("Beschleunigung", "Achse am Gamepad für Geschwindigkeitsregelung", EntryType.INT),
+                     ("Fokus", "Button am Gamepad der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", EntryType.INT),
+                     ("Geräusch", "Button am Gamepad zum Ein-/Ausschalten des Lok-Geräuschs", EntryType.INT),
+                     ("Auto-Fokus", "Ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist", EntryType.BOOL),
+                     ("Button-Nr", "Nummer des zugehörigen Gamepad-Buttons auf den Funktions-Buttons anzeigen", EntryType.BOOL)]
+                    # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
     
     def __init__(self):
         EntryTable.__init__(self, self.params_w_defs, self.joystick_attributes, False, True)
         self.load(Config.joystick)
+        
+class SoundTable(EntryTable):
+    sound_attributes = ["sampling_rate", "show_level_bar"]
+    params_w_defs = [("Abtastrate", "Die Abtastrate (Sampling Rate) der verwendeten Geräuschdateien", EntryType.COMBO,
+                      (GObject.TYPE_INT, ((44800, 44800), (44100, 44100), (22050, 22050)))),
+                     ("Geräuschlevel", "Balken für das momentane Geräuschlevel im Geschwindigkeitsregler anzeigen", EntryType.BOOL)]
+    
+    def __init__(self):
+        EntryTable.__init__(self, self.params_w_defs, self.sound_attributes, False, True)
+        self.load(Config.sound)
 
-class TreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropertyTreeView und FunctionTreeView
+class TreeView(Gtk.TreeView): # Base-class for TreeViews
     def __init__(self, columns, column_types, name, save_method):
         self.column_types = column_types
         self.name = name
@@ -739,14 +893,13 @@ class TreeView(Gtk.TreeView): # Basisklasse für LokTreeView, LokPropertyTreeVie
             self.save_method(path, column_nr, new_value)
         
 class FunctionTreeView(TreeView):
-    columns = [ # list to set up the standard treeview: column-name, column-tooltip, renderer-id
-                         ("Bezeichnung", "Name der Funktion ('Licht', 'Hupe' ...)", [CellType.TEXT]),
-                         ("Funktion", "Die Nummer der Funktion im Lok-Decoder", [CellType.TEXT]),
-                         ("Wert", "Voreingestellter Zustand der Funktion: An oder Aus", [CellType.COMBO, GObject.TYPE_STRING, ["An", "Aus"]]),
-                         ("Gamepad-Button", "Button am Gamepad, dem die Lok-Funktion zugewiesen ist", [CellType.TEXT]),
-                         ("Schaltart", "Art, mit der eine Funktion durch einen Gamepad-Button geschaltet wird: Taster oder Umschalter",
-                          [CellType.COMBO, GObject.TYPE_STRING, ["Umschalter", "Taster"]])
-                         ]
+    # list to set up the standard treeview: column-name, column-tooltip, renderer-id
+    columns = [("Bezeichnung", "Name der Funktion ('Licht', 'Hupe' ...)", [CellType.TEXT]),
+               ("Funktion", "Die Nummer der Funktion im Lokdecoder", [CellType.TEXT]),
+               ("Wert", "Voreingestellter Zustand der Funktion: An oder Aus", [CellType.COMBO, GObject.TYPE_STRING, ["An", "Aus"]]),
+               ("Gamepad-Button", "Button am Gamepad zum Schalten der Funktion", [CellType.TEXT]),
+               ("Schaltart", "Schaltart: Taster oder Umschalter",
+                [CellType.COMBO, GObject.TYPE_STRING, ["Umschalter", "Taster"]])]
     column_types = [GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING]
     
     def __init__(self):
@@ -785,14 +938,13 @@ class FunctionTreeView(TreeView):
         setattr(Config.active_loco.functions[path.get_indices()[0]], Config.function_attributes[column_nr][0], new_value)
         
 class LocoTreeView(TreeView):
-    column_attributes = [
-                         ("Zu konfigurierende Lok wählen", "Lok auswählen", [CellType.TEXT])
-                         ]
+    column_attributes = [("Zu konfigurierende Lok wählen", "Lok auswählen", [CellType.TEXT])]
     column_types = [GObject.TYPE_STRING]
     
-    def __init__(self, loco_properties_frame, function_frame, speed_frame):
+    def __init__(self, loco_properties_frame, decoder_frame, function_frame, speed_frame):
         self.function_frame = function_frame
         self.loco_properties_frame = loco_properties_frame
+        self.decoder_frame = decoder_frame
         self.function_treeview = self.function_frame.treeview
         self.speed_frame = speed_frame
         
@@ -804,6 +956,7 @@ class LocoTreeView(TreeView):
             self.save_changes)
 
         self.connect("cursor-changed", self.loco_selected)
+        self.set_vexpand(True)
 
     def loco_selected(self, treeview):
         path = self.get_cursor()[0]
@@ -811,10 +964,9 @@ class LocoTreeView(TreeView):
             row = path.get_indices()[0]
             Config.active_loco = Config.locos[row]
             self.function_treeview.load(Config.active_loco.functions)
-            self.speed_frame.notice_combo_change = False
             self.loco_properties_frame.load(Config.active_loco)
+            self.decoder_frame.load(Config.active_loco)
             self.speed_frame.load(Config.active_loco)
-            self.speed_frame.notice_combo_change = True
         
     def append_loco(self, loco):
         return self.liststore.append([loco.name])
@@ -826,6 +978,7 @@ class LocoTreeView(TreeView):
                 self.append_loco(loco)
             self.set_cursor(Gtk.TreePath.new_from_string("0"))
             self.loco_properties_frame.set_sensitive(True)
+            self.decoder_frame.set_sensitive(True)
             self.function_frame.set_sensitive(True)
             self.speed_frame.set_sensitive(True)
             
@@ -840,8 +993,7 @@ class EventSoundTreeView(TreeView):
                          ("v<sub>max</sub>", "Maximalgeschwindigkeit", [CellType.TEXT]),
                          ("a<sub>min</sub>", "Mindestbeschleunigung (kann negativ sein)", [CellType.TEXT]),
                          ("a<sub>max</sub>", "Maximalbeschleunigung (kann negativ sein)", [CellType.TEXT]),
-                         ("Gamepad-Button", "Button am Gamepad mit dem das Geräusch aktiviert werden kann", [CellType.TEXT]),
-                         ]
+                         ("Gamepad-Button", "Button am Gamepad mit dem das Geräusch aktiviert werden kann", [CellType.TEXT])]
     column_types = [GObject.TYPE_STRING, #GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE,
                     GObject.TYPE_STRING,
                     GObject.TYPE_STRING, # we are using strings for those columns as we want to display numbers as well as text ("Egal")
@@ -922,11 +1074,8 @@ class FunctionSoundTreeView(TreeView):
                           [CellType.COMBO, GObject.TYPE_STRING, ["Umschalter",
                                                                  "Taster (Einmal abspielen)",
                                                                  "Taster (Mehrmals abspielen)",
-                                                                 "Anschalter (bis Geräuschende)"]]) #,
-#                         ("Wiederholen", "Das Geräusch so lange wiederholen bis die Bedingungen nicht mehr erfüllt sind",
-#                          [CellType.COMBO, GObject.TYPE_STRING, ["An", "Aus"]])
-                         ]
-    column_types = [GObject.TYPE_STRING, #GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE, GObject.TYPE_DOUBLE,
+                                                                 "Anschalter (bis Geräuschende)"]])]
+    column_types = [GObject.TYPE_STRING,
                     GObject.TYPE_STRING,
                     GObject.TYPE_STRING, # we are using strings for those columns as we want to display numbers as well as text ("Egal")
                     GObject.TYPE_INT,
@@ -1212,7 +1361,7 @@ class ControlPointGraph(Gtk.DrawingArea):
         
     def get_axis_data_at_pos(self, c, pos, res, max_value):
         if pos >= max_value and pos - res != max_value:
-            value = int(max_value) # FIXME: NOT REPRODUCABLE? if float returned by Gtk.SpinButton is converted to int, the int has the wrong value
+            value = int(max_value) # FIXME: if float returned by Gtk.SpinButton is converted to int, the int has the wrong value (test with 104.0)
         else:
             value = int(pos)
         text = str(value)
@@ -1254,26 +1403,22 @@ class SpeedStepGraph(ControlPointGraph):
         self.y_max = loco.speed_steps
         self.func = loco.speed_to_step_func
 
-class EngineDialog(Gtk.MessageDialog):
+class EngineDialog(WarningDialog):
     sound_labels = {EngineType.DIESEL: "Verbrennungsmotor",
                     EngineType.STEAM: "Dampf",
                     None: "Kein Geräusch"}
     def __init__(self, engine_type, main_window):
-        Gtk.MessageDialog.__init__(self,
-                                   main_window,
-                                   0,
-                                   Gtk.MessageType.WARNING,
-                                   Gtk.ButtonsType.NONE,
-                                   "Durch Änderung des Geräuschmodells zu \"" + self.sound_labels[engine_type] + "\" werden die momentan festgelegten" +
-                                   " Geräuschdateien zurückgesetzt!")
-        self.add_buttons("Abbrechen", 0, "Geräuschmodell ändern", 1)
+        WarningDialog.__init__(self,
+                               main_window,
+                               "Durch Änderung des Geräuschmodells zu \"" + self.sound_labels[engine_type] + "\" werden die momentan festgelegten" + 
+                               " Geräuschdateien zurückgesetzt!",
+                               ["Abbrechen", 0, "Geräuschmodell ändern", 1])
         
 class SpeedSoundFrame(Gtk.Frame):
     loco_sound_bars = {}
     engine_attributes = {"diesel": ["start_sound", "idle_sound", "quit_sound"],
                        "steam": ["idle_sound", "cylinder_steam_sound", "nr_strokes", "stroke_start_delay", "wheel_diameter", "min_freq"]}
     engine_types = [(None, "Kein Geräusch"), ("steam", "Dampf"), ("diesel", "Verbrennungsmotor")]
-    engine_type = "steam"
     loading = False
     inner_margin = 10
     
@@ -1284,21 +1429,21 @@ class SpeedSoundFrame(Gtk.Frame):
         self.grid = Gtk.Grid()
         
         self.engine_params_w_defs = {"diesel":
-                            [("Start-Geräusch", "Geräusch für das Starten der Lokomotive", [EntryTableType.SOUND_FILE]),
-                             ("Leerlaufgeräusch", "Geräusch im Leerlauf", [EntryTableType.SOUND_FILE]),
-                             ("Abstellgeräusch", "Geräusch für das Herunterfahren / Abstellen der Lokomotive", [EntryTableType.SOUND_FILE]),
+                            [("Start-Geräusch", "Geräusch für das Starten der Lokomotive", EntryType.SOUND_FILE),
+                             ("Leerlaufgeräusch", "Geräusch im Leerlauf", EntryType.SOUND_FILE),
+                             ("Abstellgeräusch", "Geräusch für das Herunterfahren / Abstellen der Lokomotive", EntryType.SOUND_FILE),
                              ("Geräusch-Ereignisse", "Wiedergabe von Geräuschdateien anhand bestimmter Ereignisse festlegen",
-                               [EntryTableType.BUTTON, "Bearbeiten", self.edit_sounds])],
+                               EntryType.BUTTON, ("Bearbeiten", self.edit_sounds))],
                             "steam":
-                            [("Leerlaufgeräusch", "Geräusch im Leerlauf", [EntryTableType.SOUND_FILE]),
-                             ("Dampfablass-Geräusch", "Geräusch beim Ausströmen von Dampf aus den Zylindern", [EntryTableType.SOUND_FILE]),
-                             ("Takte", "Anzahl der Zylinder-Takte der Dampflok", [EntryTableType.INT]),
-                             ("Dampfablass-Dauer", "Zeit in der Dampf aus den Zylindern strömt bevor die Lok anfährt in s", [EntryTableType.FLOAT]),
-                             ("Treibrad-Durchmesser", "Durchmesser eines Antriebsrades in m", [EntryTableType.FLOAT, 0.001]),
-                             ("Minimale Taktfrequenz", "Die kleinstmögliche Frequenz in Takten pro s", [EntryTableType.FLOAT, 0.01]),
+                            [("Leerlaufgeräusch", "Geräusch im Leerlauf", EntryType.SOUND_FILE),
+                             ("Dampfablass-Geräusch", "Geräusch beim Ausströmen von Dampf aus den Zylindern", EntryType.SOUND_FILE),
+                             ("Takte", "Anzahl der Zylinder-Takte der Dampflok", EntryType.INT),
+                             ("Dampfablass-Dauer", "Zeit in der Dampf aus den Zylindern strömt bevor die Lok anfährt in s", EntryType.FLOAT),
+                             ("Treibrad-Durchmesser", "Durchmesser eines Antriebsrades in m", EntryType.FLOAT, (0.1, 99, 0.001)),
+                             ("Minimale Taktfrequenz", "Die kleinstmögliche Frequenz in Takten pro s", EntryType.FLOAT, (0.01, 99, 0.01)),
                              ("Geräusch-Ereignisse",
                                "Wiedergabe von Geräuschdateien anhand bestimmter Ereignisse festlegen",
-                               [EntryTableType.BUTTON, "Bearbeiten", self.edit_sounds])]
+                               EntryType.BUTTON, ("Bearbeiten", self.edit_sounds))]
                             }
         
         liststore = Gtk.ListStore(GObject.TYPE_STRING)
@@ -1315,7 +1460,7 @@ class SpeedSoundFrame(Gtk.Frame):
         self.separator.set_margin_right(self.inner_margin)
         self.separator.show()
         
-        self.popup = Popup(main_window, "Geräusch-Ereignisse", Gdk.WindowTypeHint.DIALOG)
+        self.popup = Popup(main_window, "Geräusch-Ereignisse", Gdk.WindowTypeHint.NORMAL)
         self.event_sound_frame = EventSoundFrame(self.popup)
         self.popup.set_content(self.event_sound_frame)
         
@@ -1329,18 +1474,18 @@ class SpeedSoundFrame(Gtk.Frame):
         if loco.engine != None:
             self.type_combo.set_value(loco.engine.type)
             self.create_sound_options()
-            self.event_sound_frame.treeview.load(loco.engine.event_sounds)
+#            self.event_sound_frame.treeview.load(loco.engine.event_sounds)
         else:
             self.type_combo.set_value(None)
         self.loading = False
         
     def create_sound_options(self):
         self.table = EntryTable(self.engine_params_w_defs[self.loco.engine.type],
-                                       self.engine_attributes[self.loco.engine.type],
-                                       True,
-                                       False,
-                                       Gtk.Orientation.HORIZONTAL,
-                                       3)
+                               self.engine_attributes[self.loco.engine.type],
+                               True,
+                               False,
+                               Gtk.Orientation.HORIZONTAL,
+                               3)
         self.table.set_halign(Gtk.Align.END)
         self.table.load(self.loco.engine)            
         self.table.show_all()
@@ -1356,10 +1501,12 @@ class SpeedSoundFrame(Gtk.Frame):
             self.loco_sound_bars[self.loco] = self.sound_bar
         self.grid.attach_next_to(self.separator, self.type_combo, Gtk.PositionType.BOTTOM, 2, 1)
         self.grid.attach_next_to(self.sound_bar, self.separator, Gtk.PositionType.BOTTOM, 2, 1)
+        self.event_sound_frame.treeview.load(self.loco.engine.event_sounds)
         
         
     def remove_sound_options(self):
         if self.separator.get_parent() != None:
+            self.popup.hide()
             self.grid.remove(self.separator)
             self.grid.remove(self.sound_bar)
             self.grid.remove(self.table)
@@ -1422,10 +1569,10 @@ class CustomHandlePaned(Gtk.Paned):
 class SegmentedSoundBar(Gtk.Grid):
     handle_width = 6 # has to fit the width set in gtk_styles_and_transitions.css
     
-    def __init__(self, graph, speed_sound_grid, main_window):
+    def __init__(self, graph, speed_sound_frame, main_window):
         Gtk.Grid.__init__(self)
         self.graph = graph
-        self.speed_sound_grid = speed_sound_grid
+        self.speed_sound_frame = speed_sound_frame
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.left_handle = Gtk.Image.new_from_file("./Icons/sound-bar-pane-handle3.png")
         self.left_handle.set_halign(Gtk.Align.START)
@@ -1546,8 +1693,8 @@ class SoundSelectorButton(PopupButton):
             self.sound_bar.load(loco)
             Config.unsaved_changes(loco.engine, "sound_segments", loco.engine.sound_segments)
         else:
-            del self.sound_bar.speed_sound_grid.loco_sound_bars[loco]
-            self.sound_bar.speed_sound_grid.type_combo.set_value(None) # type_combo will take care of setting loco.engine = None
+            del self.sound_bar.speed_sound_frame.loco_sound_bars[loco]
+            self.sound_bar.speed_sound_frame.type_combo.set_value(None) # type_combo will take care of setting loco.engine = None
         self.popup.hide()
         
     def insert_sound(self, button):
@@ -1578,10 +1725,10 @@ class SoundSelectorButton(PopupButton):
         self.popup.hide()
         
 class DieselSoundSelectorButton(SoundSelectorButton):
-    params_w_defs = [("Unter Last:", "Geräusch das im gewählten Geschwindigkeitsbereich\nunter Last abgespielt wird", [EntryTableType.SOUND_FILE]),
-                     ("Im Leerlauf:", "Geräusch das im gewählten Geschwindigkeitsbereich\nim Leerlauf abgespielt wird", [EntryTableType.SOUND_FILE]),
-                     ("Beschleunigungsvorgang:", "Beschleunigungsvorgang zu dieser Geräusch-Stufe", [EntryTableType.SOUND_FILE]),
-                     ("Bremsvorgang:", "Bremsvorgang zur vorherigen Geräusch-Stufe", [EntryTableType.SOUND_FILE])]
+    params_w_defs = [("Unter Last:", "Geräusch das im gewählten Geschwindigkeitsbereich\nunter Last abgespielt wird", EntryType.SOUND_FILE),
+                     ("Im Leerlauf:", "Geräusch das im gewählten Geschwindigkeitsbereich\nim Leerlauf abgespielt wird", EntryType.SOUND_FILE),
+                     ("Beschleunigungsvorgang:", "Beschleunigungsvorgang zu dieser Geräusch-Stufe", EntryType.SOUND_FILE),
+                     ("Bremsvorgang:", "Bremsvorgang zur vorherigen Geräusch-Stufe", EntryType.SOUND_FILE)]
     segment_attributes = ["load_sound", "idle_sound", "accel_sound", "decel_sound"]
     
     def __init__(self, text, popup, segment, sound_bar): # sound_bar
@@ -1644,7 +1791,7 @@ class SteamSoundSelectorButton(SoundSelectorButton):
 class Popup(Gtk.Window):
     def __init__(self, main_window, title="", type_hint=Gdk.WindowTypeHint.TOOLTIP):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
-        self.set_title("ELECTRIP " + ELECTRIP_VERSION + " - " + title)
+        self.set_title("Electrip " + ELECTRIP_VERSION + " - " + title)
         self.connect("delete-event", self.delete_event)
         if type_hint != None:
             self.set_type_hint(type_hint)

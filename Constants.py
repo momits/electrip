@@ -5,18 +5,28 @@
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "4.3.24"
+ELECTRIP_VERSION = "4.14.32"
 
-ICON_PATH_LIST = [
-"Icons/logo_icon_128.png",
-"Icons/logo_icon_64.png",
-"Icons/logo_icon_32.png",
-"Icons/logo_icon_16.png"
-]
+ICON_PATHS = ["Icons/logo_icon_128.png",
+              "Icons/logo_icon_64.png",
+              "Icons/logo_icon_32.png",
+              "Icons/logo_icon_16.png"]
+
+CIRCLE_PATHS = {"loco_function": "Icons/loco_function_circle.svg",
+                "function_sound": "Icons/function_sound_circle.svg",
+                "event_sound": "Icons/event_sound_circle.svg",
+                "speed_sound": "Icons/speed_sound_circle.svg"}
+
+RELOAD_GRAPH_IMAGE_PATH = "Icons/reload_graph.png"
 
 # ----------- Configuration -----------
 
-class EntryTableType:
+PROTOCOLS = {"M 1": (80, 1, [14]),
+             "M 2": (255, 5, [14, 28]),
+             "N 1": (10239, 32, [14, 28, 128]),
+             "N 2": (10239, 32, [14, 28, 128])}
+
+class EntryType:
     STRING = 0 # Entry for text
     INT = 1 # Entry for Integer
     FLOAT = 2 # Entry for Float
@@ -26,11 +36,14 @@ class EntryTableType:
     IMAGE_FILE = 6 # Button that opens a file-selection-dialog for images
     VOLUME = 7 # Volume Slider
     BUTTON = 8 # Button which can be connected to a custom callback
+    LABEL = 9 # Label
+#    CUSTOM = 10 # custom widget
     
 class CellType:
     TEXT = 0
     COMBO = 1
     TEXT_NOT_EDITABLE = 2
+    
 # ----------- Control -----------
 
 class ToggleMode:
@@ -38,6 +51,8 @@ class ToggleMode:
     PUSH = 1 # button-pressed = On, button-released = Off
     PUSH_LIMITED = 2 # button-pressed = On, button-released = Off, program may turn Off earlier
     TAP = 3 # first click = On, program decides when Off
+    
+SOUND_LEVEL_ANIM_RES = 500.0 # the number of steps the sound-level-animation performs when traversing the whole speed-scale
 
 # ----------- Sound -----------
 
@@ -55,9 +70,9 @@ class SegmentPosition:
     MIDDLE = 1
     UPPER = 2
     
-class FunctionType:
-    MONOTONIC_INCREASE = 0
-    MONOTONIC_DECREASE = 1
+#class FunctionType:
+#    MONOTONIC_INCREASE = 0
+#    MONOTONIC_DECREASE = 1
 
 END_EVENT_LOWER_BOUND = 35
 STOP_EVENT = 25

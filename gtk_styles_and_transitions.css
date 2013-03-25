@@ -1,10 +1,27 @@
 
-GtkButton#emergency-button:active {
-	transition: 550ms ease;
-	background-color: #DA6559;
-	color: #FFF;
+/* ------------------
+EmergencyButton      |
+--------------------*/
+
+GtkButton#emergency-button {
+	background: rgb(230, 230, 230);
+	color: rgb(170, 170, 170);
 }
 
+GtkButton#emergency-button GtkLabel {
+	font-weight: bold;
+	font-size: 22;
+}
+
+GtkButton#emergency-button:active {
+	transition: 550ms ease;
+	background: rgb(205, 68, 68);
+	color: rgb(105, 0, 0);
+}
+
+/* ------------------
+CustomHandlePaned    |
+--------------------*/
 
 GtkPaned#custom-handle-paned {
 	-GtkPaned-handle-size: 6px;
@@ -13,3 +30,27 @@ GtkPaned#custom-handle-paned {
 GtkPaned#custom-handle-paned.pane-separator {
 	background-image: url("./Icons/sound-bar-pane-handle3.png");
 }
+
+/* ------------------
+Transparent Things   |
+--------------------*/
+
+.transparent {
+	background: rgba(0, 0, 0, 0);
+}
+
+/* ------------------
+FunctionButtons      |
+--------------------*/
+/*
+.engineSwitch {
+	background: shade(rgb(85, 183, 96), 1.4);
+}
+
+.functionSoundButton {
+	background: shade(rgba(42, 65, 205, 0.58), 1.4);
+}
+
+.eventSoundButton {
+	background: shade(rgba(42, 65, 205, 0.58), 1.4);
+}*/

@@ -3,7 +3,7 @@
 
 from LockedPrint import locked_print
 import json
-from Constants import SegmentPosition, EngineType, FunctionType, ToggleMode
+from Constants import SegmentPosition, EngineType, ToggleMode
 from os.path import basename, split, exists
 from copy import deepcopy
 import zipfile
@@ -17,8 +17,8 @@ class UnsavedChangesHandler(object):
         self.save_status_method(self, name, value)
 
 class LinearSegmentFunction:
-    def __init__(self, type=FunctionType.MONOTONIC_INCREASE):
-        self.type = type
+#    def __init__(self):
+#        self.type = type
         
     def load(self, control_points):
         self.control_points = [control_points[0], control_points[-1]]
@@ -29,10 +29,10 @@ class LinearSegmentFunction:
     def add_control_point(self, x, y):
         nr = self.get_segment_nr_from_x(x)
         if nr != None:
-            if self.type == FunctionType.MONOTONIC_INCREASE: # and self.control_points[nr][1] < y < self.control_points[nr + 1][1]) \
-                self.control_points.insert(nr + 1, (x, max(self.control_points[nr][1] , min(y, self.control_points[nr + 1][1]))))
-            elif self.type == FunctionType.MONOTONIC_DECREASE: # and self.control_points[nr][1] > y > self.control_points[nr + 1][1]):
-                self.control_points.insert(nr + 1, (x, min(self.control_points[nr][1] , max(y, self.control_points[nr + 1][1]))))
+#            if self.type == FunctionType.MONOTONIC_INCREASE:
+            self.control_points.insert(nr + 1, (x, max(self.control_points[nr][1] , min(y, self.control_points[nr + 1][1]))))
+#            elif self.type == FunctionType.MONOTONIC_DECREASE:
+#                self.control_points.insert(nr + 1, (x, min(self.control_points[nr][1] , max(y, self.control_points[nr + 1][1]))))
             self.func_segments[nr] = self.calc_func_segment(self.control_points[nr], self.control_points[nr + 1])
             self.func_segments.insert(nr + 1, self.calc_func_segment(self.control_points[nr + 1], self.control_points[nr + 2]))
                 
@@ -45,19 +45,27 @@ class LinearSegmentFunction:
     def move_control_point(self, nr, x, y):
         if nr == len(self.control_points) - 1:
             point_left = self.control_points[nr - 1]
-            if self.type == FunctionType.MONOTONIC_INCREASE: # and point_left[1] < y) \
-                self.control_points[nr] = (self.control_points[nr][0], max(y, point_left[1]))
-            elif self.type == FunctionType.MONOTONIC_DECREASE: # and point_left[1] > y):
-                self.control_points[nr] = (self.control_points[nr][0], min(y, point_left[1]))
+#            if self.type == FunctionType.MONOTONIC_INCREASE:
+            self.control_points[nr] = (self.control_points[nr][0], max(y, point_left[1]))
+#            elif self.type == FunctionType.MONOTONIC_DECREASE:
+#                self.control_points[nr] = (self.control_points[nr][0], min(y, point_left[1]))
             self.func_segments[nr - 1] = self.calc_func_segment(point_left, self.control_points[nr])
+        elif nr == 0:
+            point_right = self.control_points[nr + 1]
+#            if self.type == FunctionType.MONOTONIC_INCREASE:
+            self.control_points[nr] = (self.control_points[nr][0], min(y, point_right[1]))
+#            elif self.type == FunctionType.MONOTONIC_DECREASE:
+#                self.control_points[nr] = (self.control_points[nr][0], min(y, point_left[1]))
+            self.func_segments[nr] = self.calc_func_segment(self.control_points[nr], point_right)
+            
         else:
             point_left = self.control_points[nr - 1]
             point_right = self.control_points[nr + 1]
             if point_left[0] < x < point_right[0]:
-                if self.type == FunctionType.MONOTONIC_INCREASE:
-                    self.control_points[nr] = (x, min(point_right[1], max(y, point_left[1])))
-                elif self.type == FunctionType.MONOTONIC_DECREASE:
-                    self.control_points[nr] = (x, min(point_left[1], max(y, point_right[1])))
+#                if self.type == FunctionType.MONOTONIC_INCREASE:
+                self.control_points[nr] = (x, min(point_right[1], max(y, point_left[1])))
+#                elif self.type == FunctionType.MONOTONIC_DECREASE:
+#                    self.control_points[nr] = (x, min(point_left[1], max(y, point_right[1])))
                 self.func_segments[nr] = self.calc_func_segment(self.control_points[nr], point_right)
                 self.func_segments[nr - 1] = self.calc_func_segment(point_left, self.control_points[nr])
         return self.control_points[nr]
@@ -70,19 +78,25 @@ class LinearSegmentFunction:
         return a, b
             
     def get_y(self, x):
-        seg_nr = self.get_segment_nr_from_x(x)
-        if seg_nr != None:
-            a, b = self.func_segments[seg_nr]
-            y = a * x + b
-            return y
+        if x == 0:
+            return 0
+        else:
+            seg_nr = self.get_segment_nr_from_x(x)
+            if seg_nr != None:
+                a, b = self.func_segments[seg_nr]
+                y = a * x + b
+                return y
     
     def get_x(self, y):
-        seg_nr = self.get_segment_nr_from_y(y)
-        if seg_nr != None:
-            a, b = self.func_segments[seg_nr]
-            x = (y - b) / a
-            if x > self.control_points[seg_nr][0]:
-                return x
+        if y == 0:
+            return 0
+        else:
+            seg_nr = self.get_segment_nr_from_y(y)
+            if seg_nr != None:
+                a, b = self.func_segments[seg_nr]
+                x = (y - b) / a
+                if x > self.control_points[seg_nr][0]:
+                    return x
     
     def get_segment_nr_from_x(self, x):
         for nr in xrange(len(self.control_points) - 1):
@@ -104,13 +118,14 @@ class Loco(UnsavedChangesHandler):
                  function_sounds=None,
                  engine=None,
                  name="Unbenannte Lok",
-                 speed_steps=14,
+                 speed_steps=128,
                  max_speed=100.0,
                  address=1,
-                 protocol="M 1",
-                 accel_duration=4.5,
+                 protocol="N 1",
+                 accel_duration=11.5,
+                 decel_duration=8.5,
                  direction=True,
-                 img_path=None, #TODO: test if any errors due to the change from "Datei wählen"
+                 img_path=None,
                  sound_volume=0.8,):
         UnsavedChangesHandler.__init__(self, save_status_method)
         # it is not possible to set the default value for the "functions"-parameter above,
@@ -122,7 +137,7 @@ class Loco(UnsavedChangesHandler):
         self.speed_steps = speed_steps
         if speed_to_step_func == None:
             self.speed_to_step_func = LinearSegmentFunction()
-            self.speed_to_step_func.load([(0.0, 0.0), (100.0, 14.0)])
+            self.speed_to_step_func.load([(0.0, 0.0), (100.0, 128.0)])
         else:
             self.speed_to_step_func = speed_to_step_func
         if function_sounds == None:
@@ -134,6 +149,7 @@ class Loco(UnsavedChangesHandler):
         self.protocol = protocol
 
         self.accel_duration = accel_duration
+        self.decel_duration = decel_duration
         self.direction = direction
         self.img_path = img_path
         self.max_speed = max_speed
@@ -161,8 +177,11 @@ class Loco(UnsavedChangesHandler):
         locked_print(text)
         return text
     
-    def accelerate(self, value):
-        self.speed = min(self.max_speed, max(0, self.speed - value * (0.05 / self.accel_duration * self.max_speed)))
+    def accelerate(self, value): # value between -1 and 1, -1 means acceleration
+        if value < 0:
+            self.speed = min(self.max_speed, max(0, self.speed - value * (0.05 / self.accel_duration * self.max_speed)))
+        else:
+            self.speed = min(self.max_speed, max(0, self.speed - value * (0.05 / self.decel_duration * self.max_speed)))
         return self.speed
         
     def toggle_direction(self):
@@ -217,6 +236,15 @@ class Joystick(UnsavedChangesHandler):
         self.sound_button = sound_button
         self.use_auto_focus = use_auto_focus
         self.show_function_nr = show_function_nr
+        
+class Sound(UnsavedChangesHandler):
+    def __init__(self,
+                 save_status_method,
+                 sampling_rate=44100,
+                 show_level_bar=True):
+        UnsavedChangesHandler.__init__(self, save_status_method)
+        self.sampling_rate = sampling_rate
+        self.show_level_bar = show_level_bar
         
 class EventSound(GamepadFunction):
     def __init__(self,
@@ -381,18 +409,20 @@ class SteamEngine(Engine):
         self.wheel_diameter = wheel_diameter
         self.min_freq = min_freq
         self.sound_segments = sound_segments
-               
+
 class Config:
     notice_unsaved_changes = False
     has_unsaved_changes = False
     opened_file = None
+#    loco_loading_process = True # indicates if a new loco is loaded right now (used to ignore changed-events on gui-elements)
     
-    loco_attributes = [("name", "Neue Lok"),
-                       ("speed_steps", 14),
+    loco_attributes = [("name", "Unbenannte Lok"),
+                       ("speed_steps", 128),
                        ("max_speed", 100.0),
                        ("address", 1),
-                       ("protocol", "M 1"),
-                       ("accel_duration", 4.5),
+                       ("protocol", "N 1"),
+                       ("accel_duration", 11.5),
+                       ("decel_duration", 8.5),
                        ("direction", True),
                        ("img_path", None),
                        ("sound_volume", 0)
@@ -459,11 +489,15 @@ class Config:
                            ("use_auto_focus", True),
                            ("show_function_nr", False)]
     
+    sound_attributes = [("sampling_rate", 44100),
+                        ("show_level_bar", True)]
+    
     def __init__(self):
         self.locos = []
         self.active_loco = None # loco that is currently configured
         self.server = Server(self.unsaved_changes)
         self.joystick = Joystick(self.unsaved_changes)
+        self.sound = Sound(self.unsaved_changes)
         try:
             f = open("last_file.json")
             self.last_file = json.load(f)["last_file"]
@@ -674,7 +708,6 @@ class Config:
         
         self.notice_unsaved_changes = False
         self.locos = [self.create_loco(loco_dict) for loco_dict in Config["locos"]]
-        locked_print(self.locos[0])
         self.server = Server(self.unsaved_changes,
                              *self.get_param_list(Config["server"], self.server_attributes))
         self.joystick = Joystick(self.unsaved_changes,
