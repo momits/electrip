@@ -164,6 +164,8 @@ class SpeedGraphFrame(Gtk.Overlay): # is in fact an overlay, but uses a frame as
             func = self.loco.speed_to_step_func
             func.load([(0.0, 0.0), (float(self.loco.max_speed), float(self.loco.speed_steps))])
             self.graph.load(self.loco)
+            if self.loco.engine != None:
+                self.speed_sound_frame.sound_bar.sounds_changed()
         else:
             self.undo_callback()
         self.remove(self.warn_frame)
