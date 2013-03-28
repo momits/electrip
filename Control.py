@@ -225,12 +225,14 @@ class DieselSpeedScale(SpeedScale):
         self.loco.speed = self.get_value()
         self.loco.speed_step = self.loco.speed_to_step_func.get_y(self.loco.speed)
         real_speed_step = int(self.loco.speed_step)
-        if self.loco.speed_step == 0 and self.loco.last_speed_step != 0 and self.stop_handler_id == None and sound_controller.engine_is_running:
-            self.stop_handler_id = sound_controller.connect("engine-idle", self.stop_loco, socket)
-        elif real_speed_step != self.loco.last_speed_step: # if speed has changed and loco didnt stand still before
-            if self.loco.last_speed_step == 0 and self.start_handler_id == None and sound_controller.engine_is_running:
-                self.start_handler_id = self.connect("started-driving", self.start_loco, socket)
-            elif self.start_handler_id == None:
+        
+        if real_speed_step != self.loco.last_speed_step: # if speed has changed
+            if sound_controller.engine_is_running:
+                if real_speed_step == 0 and self.stop_handler_id == None:
+                    self.stop_handler_id = sound_controller.connect("engine-idle", self.stop_loco, socket)
+                elif self.loco.last_speed_step == 0 and self.start_handler_id == None:
+                    self.start_handler_id = self.connect("started-driving", self.start_loco, socket)
+            if self.start_handler_id == self.stop_handler_id == None:
                 self.send_srcp(socket)
         if sound_controller.engine_is_running:
             sound_controller.set_scheduled_speed(self.loco.speed)
