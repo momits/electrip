@@ -189,7 +189,7 @@ class LoadLocoButton(Gtk.Button):
                 Config.locos.append(Config.load_loco(file_path))
                 loco_treeview.load()
             except IOError:
-                main_window.error_dialog("Der Dateipfad ist ungültig! Konnte Lok nicht importieren.")
+                main_window.error_dialog("Ein Dateipfad ist ungültig! Konnte Lok nicht importieren.")
             except KeyError:
                 main_window.error_dialog("Ein Parameter konnte nicht geladen werden! Konnte Lok nicht importieren.")
             except BadZipfile:

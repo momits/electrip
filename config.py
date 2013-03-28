@@ -546,8 +546,8 @@ class Config:
                         self.add_files_to_zip(zip_file, segment, ["load_sound", "idle_sound", "accel_sound", "decel_sound"], "sound")
                     self.add_files_to_zip(zip_file, loco.engine, ["start_sound", "idle_sound", "quit_sound"], "sound")
                     
-                    for sound in loco.engine.event_sounds:
-                        sound.file_path = self.add_file_to_zip(zip_file, sound.file_path, "sound")
+                for sound in loco.engine.event_sounds:
+                    sound.file_path = self.add_file_to_zip(zip_file, sound.file_path, "sound")
                         
             for sound in loco.function_sounds:
                 sound.file_path = self.add_file_to_zip(zip_file, sound.file_path, "sound")
