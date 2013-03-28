@@ -460,14 +460,16 @@ class DieselEngineSwitch(EngineSwitch):
         self.grid.add(self.spinner)
         self.speed_scale.set_sensitive(False)
         self.set_sensitive(False)
-        self.circle_number.queue_draw() # needed for some themes, otherwise the "transparent"-property gets lost and it looks ugly
+        if hasattr(self, "circle_number"):
+            self.circle_number.queue_draw() # needed for some themes, otherwise the "transparent"-property gets lost and it looks ugly
         
     def stop_spinner(self):
         self.grid.remove(self.spinner)
         self.spinner.stop()
         self.speed_scale.set_sensitive(True)
         self.set_sensitive(True)
-        self.circle_number.queue_draw()
+        if hasattr(self, "circle_number"):
+            self.circle_number.queue_draw()
 
 class SteamEngineSwitch(EngineSwitch):
     def __init__(self, sound_controller, speed_scale, sound_circle):
@@ -564,12 +566,14 @@ class FunctionSoundButton(FunctionButton):
                 self.mixer.queue_sound(self.channel_id, self.function_sound.sound) # queue second time for gapless looping
             elif self.function_sound.toggle_mode == ToggleMode.TAP:
                 self.set_sensitive(False)
-                self.circle_number.queue_draw() # needed for some themes, otherwise the "transparent"-property gets lost and it looks ugly
+                if hasattr(self, "circle_number"):
+                    self.circle_number.queue_draw() # needed for some themes, otherwise the "transparent"-property gets lost and it looks ugly
         else:
             self.mixer.channels[self.channel_id].stop()
             if self.function_sound.toggle_mode == ToggleMode.TAP:
                 self.set_sensitive(True)
-                self.circle_number.queue_draw()
+                if hasattr(self, "circle_number"):
+                    self.circle_number.queue_draw()
         locked_print("Geräusch-Funktion", self.function_sound.name, "hat nun den Status", self.function_sound.state)
         
 class EventSoundButton(FunctionButton):
