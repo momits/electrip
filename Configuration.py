@@ -887,14 +887,14 @@ class TreeView(Gtk.TreeView): # Base-class for TreeViews
             column = Gtk.TreeViewColumn(None, cell_renderer, text=nr)
             column.set_widget(label)
             column.set_resizable(True) # Spalten vergrößerbar / verkleinerbar machen
-            column.set_data("colnr", nr) # Versehe jede Spalte mit einer Nummer, zur leichten Identifizierung
+            column.colnr = nr # Versehe jede Spalte mit einer Nummer, zur leichten Identifizierung
             self.append_column(column)
             nr += 1
             
     def new_value(self, cellrenderer, path, new_value):
         liststore = self.get_model()
         path, column = self.get_cursor()
-        column_nr = column.get_data("colnr") # Rufe zugewiesene Eigenschaft "colnr" auf (siehe oben -> 'set_data')
+        column_nr = column.col_nr
 
         if self.column_types[column_nr] == GObject.TYPE_INT:
             try:
@@ -1036,7 +1036,7 @@ class EventSoundTreeView(TreeView):
         self.set_vexpand(True)
         
     def choose_sound(self, treeview, path, column):
-        column_nr = column.get_data("colnr")
+        column_nr = column.colnr
         if column_nr == 1:
             file_chooser_dialog = DialogUtilities.SoundLoadDialog(self.popup)
             response = file_chooser_dialog.run()
@@ -1115,7 +1115,7 @@ class FunctionSoundTreeView(TreeView):
         self.set_vexpand(True)
         
     def choose_sound(self, treeview, path, column):
-        column_nr = column.get_data("colnr")
+        column_nr = column.colnr
         if column_nr == 1:
             file_chooser_dialog = DialogUtilities.SoundLoadDialog(self.popup)
             response = file_chooser_dialog.run()
