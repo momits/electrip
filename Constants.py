@@ -5,7 +5,7 @@
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "4.14.38"
+ELECTRIP_VERSION = "4.14.39"
 
 ICON_PATHS = ("Icons/logo_icon_128.png",
               "Icons/logo_icon_64.png",

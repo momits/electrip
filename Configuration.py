@@ -894,7 +894,7 @@ class TreeView(Gtk.TreeView): # Base-class for TreeViews
     def new_value(self, cellrenderer, path, new_value):
         liststore = self.get_model()
         path, column = self.get_cursor()
-        column_nr = column.col_nr
+        column_nr = column.colnr
 
         if self.column_types[column_nr] == GObject.TYPE_INT:
             try:
