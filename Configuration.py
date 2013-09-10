@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from gi.repository import GObject, Gtk, Pango, Gdk
+from os.path import normpath
 import cairo
 import config
 from math import pi
@@ -1596,9 +1597,9 @@ class SegmentedSoundBar(Gtk.Grid):
         self.graph = graph
         self.speed_sound_frame = speed_sound_frame
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.left_handle = Gtk.Image.new_from_file("./Icons/sound-bar-pane-handle3.png")
+        self.left_handle = Gtk.Image.new_from_file(normpath("Icons/sound-bar-pane-handle3.png"))
         self.left_handle.set_halign(Gtk.Align.START)
-        self.right_handle = Gtk.Image.new_from_file("./Icons/sound-bar-pane-handle3.png")
+        self.right_handle = Gtk.Image.new_from_file(normpath("Icons/sound-bar-pane-handle3.png"))
         self.right_handle.set_halign(Gtk.Align.END)
         self.add(self.left_handle)
         self.add(self.right_handle)

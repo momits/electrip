@@ -1,23 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from os.path import normpath as _
+
 # ELECTRIP-Constants
 
 # ----------- General -----------
 
 ELECTRIP_VERSION = "4.14.39"
 
-ICON_PATHS = ("Icons/logo_icon_128.png",
-              "Icons/logo_icon_64.png",
-              "Icons/logo_icon_32.png",
-              "Icons/logo_icon_16.png")
+ICON_PATHS = (_("Icons/logo_icon_128.png"),
+              _("Icons/logo_icon_64.png"),
+              _("Icons/logo_icon_32.png"),
+              _("Icons/logo_icon_16.png"))
 
-CIRCLE_PATHS = {"loco_function": "Icons/loco_function_circle.svg",
-                "function_sound": "Icons/function_sound_circle.svg",
-                "event_sound": "Icons/event_sound_circle.svg",
-                "speed_sound": "Icons/speed_sound_circle.svg"}
+CIRCLE_PATHS = {"loco_function": _("Icons/loco_function_circle.svg"),
+                "function_sound": _("Icons/function_sound_circle.svg"),
+                "event_sound": _("Icons/event_sound_circle.svg"),
+                "speed_sound": _("Icons/speed_sound_circle.svg")}
 
-RELOAD_GRAPH_IMAGE_PATH = "Icons/reload_graph.png"
+RELOAD_GRAPH_IMAGE_PATH = _("Icons/reload_graph.png")
 
 # ----------- Configuration -----------
 

@@ -4,7 +4,7 @@
 from LockedPrint import locked_print
 import json
 from Constants import SegmentPosition, EngineType, ToggleMode
-from os.path import basename, split, exists
+from os.path import basename, split, exists, sep as os_sep
 from copy import deepcopy
 import zipfile
 
@@ -513,7 +513,7 @@ class Config:
         try:
             file_name = basename(file_path)
             if dest != "":
-                file_name = dest + "/" + file_name
+                file_name = dest + os_sep + file_name
             zip_file.write(file_path, file_name)
         except (OSError, AttributeError): # attrib-error occurs if file_path is None
             locked_print("Ungültige Datei '" + str(file_path) + "' konnte nicht in Lok-Verzeichnis kopiert werden.")
@@ -529,7 +529,7 @@ class Config:
                 setattr(config_object, attrib, file_name)
         
     def save_loco(self, loco, dir_path):
-        file_path = dir_path + "/" + loco.name + ".zip"
+        file_path = dir_path + os_sep + loco.name + ".zip"
         with zipfile.ZipFile(file_path, "w", zipfile.ZIP_DEFLATED, True) as zip_file:
             save_status_method = self.new_unsaved_changes_method
             del self.new_unsaved_changes_method # remove any references to GObjects, as they are not copyable
@@ -618,11 +618,11 @@ class Config:
         dir_path, file_name = split(file_path)
         loco_name, ending = file_name.split(".")
         if ending == "zip":
-            dir_path += "/" + loco_name + "/"
+            dir_path += os_sep + loco_name + os_sep
             with zipfile.ZipFile(file_path, "r") as zip_file:
                 zip_file.extractall(dir_path)
         else:
-            dir_path += "/"
+            dir_path += os_sep
             
         with open(dir_path + loco_name + ".loco") as loco_file:
             loco_dict = json.load(loco_file)
@@ -630,7 +630,7 @@ class Config:
             if loco.engine != None:
                 if loco.engine.type == EngineType.STEAM:
                     for segment in loco.engine.sound_segments:
-                        segment.stroke_sounds = [dir_path + stroke_sound for stroke_sound in segment.stroke_sounds]
+                        segment.stroke_sounds = [dir_path + stroke_sound for stroke_sound in segment.stroke_sounds if stroke_sound != None]
                     self.set_absolute_path(dir_path, loco.engine, ["idle_sound", "cylinder_steam_sound"])
                     
                 elif loco.engine.type == EngineType.DIESEL:

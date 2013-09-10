@@ -12,6 +12,7 @@ import threading
 from Constants import STOP_EVENT, END_EVENT_LOWER_BOUND, EngineType, ToggleMode
 import time
 from math import pi
+from os.path import normpath
 
 class EventHandlerThread(threading.Thread): # class for mixed event handling: gamepads + sound
     running = False
@@ -49,7 +50,7 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
             locked_print("Anzahl Achsen:", joystick.get_numaxes())
             locked_print("Anzahl Knöpfe:", joystick.get_numbuttons())
         
-        self.image_list = [GdkPixbuf.Pixbuf.new_from_file("Pygame/Pictures/" + str(img_nr) + ".png") for img_nr in range(1, 13)]
+        self.image_list = [GdkPixbuf.Pixbuf.new_from_file(normpath("Pygame/Pictures/" + str(img_nr) + ".png")) for img_nr in range(1, 13)]
         self.emergency_button = emergency_button
         
         self.auto_focus = len(self.joysticks) == 1 and Config.joystick.use_auto_focus
