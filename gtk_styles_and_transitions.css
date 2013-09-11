@@ -28,7 +28,7 @@ GtkPaned#custom-handle-paned {
 }
 
 GtkPaned#custom-handle-paned.pane-separator {
-	background-image: url("./Icons/sound-bar-pane-handle3.png");
+	background-image: url("Icons/sound-bar-pane-handle3.png");
 }
 
 /* ------------------

@@ -291,6 +291,7 @@ class DieselSoundController(SoundController):
         self.check_event_sounds()
     
     def start_engine(self):
+        self.actual_speed = self.scheduled_speed = -1
         channel = self.mixer.channels[self.engine_channel_id]
         if not self.engine_is_running and not channel.get_busy():
             self.engine_is_running = True
