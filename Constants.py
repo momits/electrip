@@ -7,7 +7,7 @@ from os.path import normpath as _
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "4.14.44"
+ELECTRIP_VERSION = "4.15.0"
 
 ICON_PATHS = (_("Icons/logo_icon_128.png"),
               _("Icons/logo_icon_64.png"),

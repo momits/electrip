@@ -8,7 +8,6 @@ path.append(package_path) # add path to sys.path, to allow relative imports in s
 
 from gi.repository import GObject, Gtk, GdkPixbuf, Gdk
 import config
-from copy import deepcopy
 from Constants import ELECTRIP_VERSION, ICON_PATHS
 import Configuration
 import DialogUtilities
@@ -78,6 +77,7 @@ class BasicVBox(Gtk.Grid):
                                           self.config_box.function_frame.treeview,
                                           self.config_box.server_table,
                                           self.config_box.joystick_table,
+                                          self.config_box.sound_table,
                                           main_window)
         try:
             screen = Gdk.Screen.get_default()
@@ -107,13 +107,21 @@ class StockImageButton(Gtk.Button):
 
 class LoadButton(StockImageButton):
     loading = False
-    def __init__(self, loco_treeview, loco_property_table, function_treeview, server_tab, joystick_tab, main_window):
+    def __init__(self,
+                 loco_treeview,
+                 loco_property_table,
+                 function_treeview,
+                 server_table,
+                 joystick_table,
+                 sound_table,
+                 main_window):
         StockImageButton.__init__(self, "Laden", Gtk.STOCK_OPEN)
         self.loco_treeview = loco_treeview
         self.function_treeview = function_treeview
         self.loco_property_table = loco_property_table
-        self.server_table = server_tab
-        self.joystick_table = joystick_tab
+        self.server_table = server_table
+        self.joystick_table = joystick_table
+        self.sound_table = sound_table
         self.connect("clicked", self.load_dialog, main_window)
         
     def load_dialog(self, button, main_window):
@@ -147,11 +155,12 @@ class LoadButton(StockImageButton):
             self.loco_treeview.load()
             self.joystick_table.load(Config.joystick)
             self.server_table.load(Config.server)
+            self.sound_table.load(Config.sound)
             if main_window.basic_vbox.top_grid.config_control_switch.control_button.get_active(): # if control is active
                 if hasattr(Config, "new_unsaved_changes_method"):
                     del Config.new_unsaved_changes_method
                 main_window.basic_vbox.control_box.quit()
-                main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config)) # deepcopy the Config so that it isn't messed up by Control
+                main_window.basic_vbox.control_box = Control.MainBox(Config, main_window) # deepcopy the Config so that it isn't messed up by Control
                 main_window.basic_vbox.add(main_window.basic_vbox.control_box)
 
             main_window.set_title("Electrip " + ELECTRIP_VERSION + " - " + path)
@@ -204,9 +213,8 @@ class ConfigControlSwitch(Gtk.ButtonBox):
     def control_toggled(self, button, main_window):
         if button.get_active():
             main_window.basic_vbox.remove(main_window.basic_vbox.config_box)
-            del Config.new_unsaved_changes_method # delete any references to GObjects because they are non-copyable
             try:
-                main_window.basic_vbox.control_box = Control.MainBox(deepcopy(Config)) # deepcopy the Config so that it isn't messed up by Control
+                main_window.basic_vbox.control_box = Control.MainBox(Config, main_window)
             except SocketError:
                 main_window.error_dialog("Es konnte keine Verbindung zum SRCP-Server aufgebaut werden.\n" + 
                                          "Überprüfen Sie die Server-Einstellungen (Host, Port ...).\nIst der SRCP-Server aktiv?")
@@ -216,22 +224,11 @@ class ConfigControlSwitch(Gtk.ButtonBox):
         else:
             if hasattr(main_window.basic_vbox, "control_box"): 
                 main_window.basic_vbox.control_box.quit()
-                del main_window.basic_vbox.control_box # remove reference as this control box is no longer running
-                
-            main_window.basic_vbox.add(main_window.basic_vbox.config_box)
-            Config.new_unsaved_changes_method = main_window.basic_vbox.top_grid.save_button.new_unsaved_changes # restore references to GObjects (save_button)
-            # We need to break several reference cycles with EventHandlerThread: (otherwise memory will leak)
-            handler_list = [o for o in gc.get_objects() if type(o).__name__ == "EventHandlerThread"]
-            if len(handler_list) > 0:
-                handler_thread = handler_list[0]
-                del handler_thread.callbacks
-                del handler_thread.controllers
-                del handler_thread.quit_callbacks
-                del handler_thread.speed_thread
-            del Control.Config
-            del Control.JoystickAndSound.Config
-            # EventHandlerThread + Globals must now be garbage-collected
+                del main_window.basic_vbox.control_box
+            
+            # Collect the objects which have been freed in the "quit"-methods
             gc.collect()
+            main_window.basic_vbox.add(main_window.basic_vbox.config_box)
             
 class FullscreenButton(Gtk.ToggleButton):
     def __init__(self, main_window):
@@ -255,7 +252,14 @@ class FullscreenButton(Gtk.ToggleButton):
             main_window.unfullscreen()
 
 class TopGrid(Gtk.Grid):
-    def __init__(self, loco_treeview, loco_property_table, function_treeview, server_tab, joystick_table, main_window):
+    def __init__(self,
+                 loco_treeview,
+                 loco_property_table,
+                 function_treeview,
+                 server_table,
+                 joystick_table,
+                 sound_table,
+                 main_window):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         
@@ -266,7 +270,13 @@ class TopGrid(Gtk.Grid):
             button_box.get_style_context().add_class(Gtk.STYLE_CLASS_LINKED)
         except AttributeError:
             pass
-        self.load_button = LoadButton(loco_treeview, loco_property_table, function_treeview, server_tab, joystick_table, main_window)
+        self.load_button = LoadButton(loco_treeview,
+                                      loco_property_table,
+                                      function_treeview,
+                                      server_table,
+                                      joystick_table,
+                                      sound_table,
+                                      main_window)
         self.save_as_button = SaveAsButton(main_window)
         self.save_button = SaveButton(main_window)
         self.fullscreen_button = FullscreenButton(main_window)

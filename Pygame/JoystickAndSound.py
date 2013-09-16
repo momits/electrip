@@ -7,7 +7,10 @@ try:
     import pygame
     from pygame.locals import * # Importiere Konstanten (JOYBUTTTONDOWN, ...) für kurze Namen
 except ImportError:
-    locked_print("PyGame ist nicht installiert, Joysticks können nicht verwendet werden.")
+    locked_print("PyGame ist nicht installiert, Gamepads und die Geräuschsimulation können nicht verwendet werden.")
+    pygame_installed = False
+else:
+    pygame_installed = True
 import threading
 from Constants import STOP_EVENT, END_EVENT_LOWER_BOUND, EngineType, ToggleMode
 import time
@@ -184,6 +187,16 @@ class EventHandlerThread(threading.Thread): # class for mixed event handling: ga
             func()
         pygame.event.post(pygame.event.Event(STOP_EVENT))
         pygame.mixer.quit()
+        # remove globals and reference cycles
+        global Config
+        del Config
+        del self.channels
+        del self.callbacks
+        del self.quit_callbacks
+        del self.image_list
+        del self.emergency_button
+        del self.controllers
+        del self.speed_thread
 
 def create_sound_controller(engine_type, *args):
     if engine_type == EngineType.DIESEL:
@@ -250,7 +263,7 @@ class SoundController(GObject.GObject):
             return False
     
     def queue_event_sound(self, event_sound):
-        if self.check_event_sound(event_sound): # if the conditions for playing the event sound are still met, put it in queue again
+        if self.check_event_sound(event_sound) and self.engine_is_running: # if the conditions for playing the event sound are still met, put it in queue again
             self.mixer.queue_sound(event_sound.channel_id, event_sound.sound)
     
     def convert_to_sound(self, sound_file):
@@ -508,5 +521,7 @@ class SpeedThread:
         for joystick, loco_id, start_scrolling in self.joysticks:
             scale = self.controllers[loco_id].speed_scale
             if scale.get_sensitive():
-                scale.set_value(Config.locos[loco_id].accelerate(joystick.get_axis(Config.joystick.accel_axis)))
+                axis_value = joystick.get_axis(Config.joystick.accel_axis)
+                if abs(axis_value) > Config.joystick.axis_threshold:
+                    scale.set_value(Config.locos[loco_id].accelerate(axis_value))
         return True

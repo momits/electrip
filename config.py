@@ -5,17 +5,17 @@ from LockedPrint import locked_print
 import json
 from Constants import SegmentPosition, EngineType, ToggleMode
 from os.path import basename, split, exists, sep as os_sep
-from copy import deepcopy
 import zipfile
 
 class UnsavedChangesHandler(object):
     def __init__(self, save_status_method):
-        self.save_status_method = save_status_method
+        if save_status_method != None:
+            self.save_status_method = save_status_method
     
     def __setattr__(self, name, value):
-#        if not hasattr(self, name) or getattr(self, name) != value:
         object.__setattr__(self, name, value)
-        self.save_status_method(self, name, value)
+        if hasattr(self, "save_status_method"):
+            self.save_status_method(self, name, value)
 
 class LinearSegmentFunction:
 #    def __init__(self):
@@ -225,6 +225,7 @@ class Joystick(UnsavedChangesHandler):
                  emergency_button=0,
                  reverse_button=1,
                  accel_axis=2,
+                 axis_threshold=0.06,
                  focus_button=3,
                  sound_button=4,
                  use_auto_focus=True,
@@ -233,6 +234,7 @@ class Joystick(UnsavedChangesHandler):
         self.emergency_button = emergency_button
         self.reverse_button = reverse_button
         self.accel_axis = accel_axis
+        self.axis_threshold = axis_threshold
         self.focus_button = focus_button
         self.sound_button = sound_button
         self.use_auto_focus = use_auto_focus
@@ -411,6 +413,32 @@ class SteamEngine(Engine):
         self.min_freq = min_freq
         self.sound_segments = sound_segments
 
+class DictWrapper:
+    @staticmethod
+    def get(d, k):
+        return d[k]
+    
+    @staticmethod
+    def has_key(d, k):
+        return k in d
+    
+    @staticmethod
+    def set(d, k, v):
+        d[k] = v
+        
+class ObjectWrapper:
+    @staticmethod
+    def get(o, a):
+        return getattr(o, a)
+    
+    @staticmethod
+    def has_key(o, a):
+        return hasattr(o, a)
+    
+    @staticmethod
+    def set(o, a, v):
+        setattr(o, a, v)
+
 class Config:
     notice_unsaved_changes = False
     has_unsaved_changes = False
@@ -482,6 +510,7 @@ class Config:
     joystick_attributes = [("emergency_button", 0),
                            ("reverse_button", 1),
                            ("accel_axis", 2),
+                           ("axis_threshold", 0.06),
                            ("focus_button", 3),
                            ("sound_button", 4),
                            ("use_auto_focus", True),
@@ -490,12 +519,25 @@ class Config:
     sound_attributes = [("sampling_rate", 44100),
                         ("show_level_bar", True)]
     
-    def __init__(self):
-        self.locos = []
+    def __init__(self, locos=None, server=None, joystick=None, sound=None):
+        if locos == None:
+            self.locos = []
+        else:
+            self.locos = locos
+        if server == None:
+            self.server = Server(self.unsaved_changes)
+        else:
+            self.server = server
+        if joystick == None:
+            self.joystick = Joystick(self.unsaved_changes)
+        else:
+            self.joystick = joystick
+        if sound == None:
+            self.sound = Sound(self.unsaved_changes)
+        else:
+            self.sound = sound
         self.active_loco = None # loco that is currently configured
-        self.server = Server(self.unsaved_changes)
-        self.joystick = Joystick(self.unsaved_changes)
-        self.sound = Sound(self.unsaved_changes)
+        
         try:
             f = open("last_file.json")
             self.last_file = json.load(f)["last_file"]
@@ -534,7 +576,10 @@ class Config:
             save_status_method = self.new_unsaved_changes_method
             del self.new_unsaved_changes_method # remove any references to GObjects, as they are not copyable
             self.notice_unsaved_changes = False
-            loco = deepcopy(loco) # we dont want to mess our existing config, but create a new object instead
+            loco = self.create_loco(loco,
+                                    ObjectWrapper,
+                                    self.get_param_list_from_object,
+                                    None) # we dont want to mess our existing config, but create a new object instead
             if loco.engine != None:
                 if loco.engine.type == EngineType.STEAM:
                     for segment in loco.engine.sound_segments:
@@ -584,11 +629,11 @@ class Config:
         return loco_dict
         
     def save(self, file_path):
-        loco_list = [self.create_loco_dict(loco) for loco in self.locos]            
-        server_dict = self.get_param_dict(self.server, self.server_attributes)
-        joystick_dict = self.get_param_dict(self.joystick, self.joystick_attributes)
-        Config = {"locos": loco_list, "server": server_dict, "joystick": joystick_dict}
-            
+        Config = {"locos": [self.create_loco_dict(loco) for loco in self.locos],
+                  "server": self.get_param_dict(self.server, self.server_attributes),
+                  "joystick": self.get_param_dict(self.joystick, self.joystick_attributes),
+                  "sound": self.get_param_dict(self.sound, self.sound_attributes)}
+        
         f = open(file_path, "w")
         json.dump(Config, f, indent=2)
         f.close()
@@ -626,7 +671,10 @@ class Config:
             
         with open(dir_path + loco_name + ".loco") as loco_file:
             loco_dict = json.load(loco_file)
-            loco = self.create_loco(loco_dict)
+            loco = self.create_loco(loco_dict,
+                                    DictWrapper,
+                                    self.get_param_list_from_dict,
+                                    self.unsaved_changes)
             if loco.engine != None:
                 if loco.engine.type == EngineType.STEAM:
                     for segment in loco.engine.sound_segments:
@@ -646,77 +694,90 @@ class Config:
                 
             self.set_absolute_path(dir_path, loco, ["img_path"])
             return loco
-        
-    def create_loco(self, loco_dict):
+
+    def create_loco(self, loco_obj, wrapper, get_param_list, unsaved_changes_method):
         functions = []
-        for function_dict in loco_dict["functions"]:
-            if not "toggle_mode" in function_dict: # old file format has no attrib 'toggle_mode', but bool 'use_push_to_make'
-                if function_dict["use_push_to_make"]:
-                    function_dict["toggle_mode"] = ToggleMode.PUSH
+        for function_obj in wrapper.get(loco_obj, "functions"):
+            if not wrapper.has_key(function_obj, "toggle_mode"): # old file format has no attrib 'toggle_mode', but bool 'use_push_to_make'
+                if wrapper.get(function_obj, "use_push_to_make"):
+                    wrapper.set(function_obj, "toggle_mode", ToggleMode.PUSH)
                 else:
-                    function_dict["toggle_mode"] = ToggleMode.SWITCH
-            functions.append(Function(self.unsaved_changes,
-                                  *self.get_param_list(function_dict, self.function_attributes)))
+                    wrapper.set(function_obj, "toggle_mode", ToggleMode.SWITCH)
+            functions.append(Function(unsaved_changes_method,
+                                      *get_param_list(function_obj, self.function_attributes)))
         speed_func = LinearSegmentFunction()
-        speed_func.load(map(tuple, loco_dict["speed_control_points"]))
-        if "function_sounds" in loco_dict:
-            function_sounds = [FunctionSound(self.unsaved_changes,
-                              *self.get_param_list(function_sound_dict, self.function_sound_attributes))
-                     for function_sound_dict in loco_dict["function_sounds"]]
+        if wrapper == DictWrapper:
+            speed_func.load(map(tuple, wrapper.get(loco_obj, "speed_control_points")))
+        else:
+            speed_func.load(wrapper.get(wrapper.get(loco_obj, "speed_to_step_func"), "control_points"))
+        if wrapper.has_key(loco_obj, "function_sounds"):
+            function_sounds = [FunctionSound(unsaved_changes_method,
+                                             *get_param_list(function_sound_obj, self.function_sound_attributes))
+                               for function_sound_obj in wrapper.get(loco_obj, "function_sounds")]
         else:
             function_sounds = None
-        if "engine" in loco_dict and loco_dict["engine"] != None:
-            engine_dict = loco_dict["engine"]
-            param_list = self.get_param_list(engine_dict, self.engine_attributes[engine_dict["type"]])
-            param_list.insert(1, self.unsaved_changes)
-            if engine_dict["sound_segments"] != None:
+        if  wrapper.has_key(loco_obj, "engine") and wrapper.get(loco_obj, "engine") != None:
+            engine_obj = wrapper.get(loco_obj, "engine")
+            param_list = get_param_list(engine_obj, self.engine_attributes[wrapper.get(engine_obj, "type")])
+            param_list.insert(1, unsaved_changes_method)
+            if wrapper.get(engine_obj, "sound_segments") != None:
                 try:
-                    sound_segments = [create_sound_segment(engine_dict["type"],
-                                                           self.unsaved_changes,
-                                                           *self.get_param_list(segment_dict,
-                                                                                self.segment_attributes[engine_dict["type"]],
-                                                                                True))
-                                      for segment_dict in engine_dict["sound_segments"]]
+                    sound_segments = [create_sound_segment(wrapper.get(engine_obj, "type"),
+                                                           unsaved_changes_method,
+                                                           *get_param_list(segment_obj,
+                                                                           self.segment_attributes[wrapper.get(engine_obj, "type")],
+                                                                           True))
+                                      for segment_obj in wrapper.get(engine_obj, "sound_segments")]
                 except KeyError:
                     locked_print("Die Datei besitzt noch keine Geräusch-Informationen.")
                     sound_segments = None
             else:
                 sound_segments = None
             param_list.append(sound_segments)
-            if "event_sounds" in engine_dict:
-                if engine_dict["event_sounds"] != None:
-                    param_list.append([EventSound(self.unsaved_changes,
-                                                  *self.get_param_list(event_sound_dict, self.event_sound_attributes))
-                                       for event_sound_dict in engine_dict["event_sounds"]])
+            if wrapper.has_key(engine_obj, "event_sounds"):
+                if wrapper.get(engine_obj, "event_sounds") != None:
+                    param_list.append([EventSound(unsaved_changes_method,
+                                                  *get_param_list(event_sound_obj, self.event_sound_attributes))
+                                       for event_sound_obj in wrapper.get(engine_obj, "event_sounds")])
             engine = create_engine(*param_list)
         else:
             engine = None
-            
-        return Loco(self.unsaved_changes,
+             
+        return Loco(unsaved_changes_method,
                     functions,
                     speed_func,
                     function_sounds,
                     engine,
-                    *self.get_param_list(loco_dict, self.loco_attributes))
-        
+                    *get_param_list(loco_obj, self.loco_attributes))
+
     def load(self, file_path):
         f = open(file_path)
         Config = json.load(f)
         f.close()
         
         self.notice_unsaved_changes = False
-        self.locos = [self.create_loco(loco_dict) for loco_dict in Config["locos"]]
+        self.locos = [self.create_loco(loco_dict,
+                                       DictWrapper,
+                                       self.get_param_list_from_dict,
+                                       self.unsaved_changes)
+                      for loco_dict in Config["locos"]]
         self.server = Server(self.unsaved_changes,
-                             *self.get_param_list(Config["server"], self.server_attributes))
+                             *self.get_param_list_from_dict(Config["server"], self.server_attributes))
         self.joystick = Joystick(self.unsaved_changes,
-                                 *self.get_param_list(Config["joystick"], self.joystick_attributes))
+                                 *self.get_param_list_from_dict(Config["joystick"], self.joystick_attributes))
+        try: # due to a bug in previous 4.x.x-versions, the sound was not saved in the config file -> KeyError
+            self.sound = Sound(self.unsaved_changes,
+                               *self.get_param_list_from_dict(Config["sound"], self.sound_attributes))
+        except KeyError:
+            self.sound = Sound(self.unsaved_changes)
+        self.active_loco = None
         
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
         locked_print("Einstellungen wurden geladen aus " + file_path)
         self.notice_unsaved_changes = True
     
-    def get_param_list(self, config_dict, attribute_list, ignore=False):
+    def get_param_list_from_dict(self, config_dict, attribute_list, ignore=False):
         param_list = []
         for attrib, standard_value in attribute_list:
             try:
@@ -739,7 +800,28 @@ class Config:
             f.close()
             self.last_file = file_path
         self.opened_file = file_path
-
+    
+    def create_copy(self):
+        server = Server(None, *self.get_param_list_from_object(self.server, self.server_attributes))
+        joystick = Joystick(None, *self.get_param_list_from_object(self.joystick, self.joystick_attributes))
+        sound = Sound(None, *self.get_param_list_from_object(self.sound, self.sound_attributes))
+         
+        locos = [self.create_loco(loco,
+                                  ObjectWrapper,
+                                  self.get_param_list_from_object,
+                                  None)
+                 for loco in self.locos]
+        return Config(locos, server, joystick, sound)
+        
+    def get_param_list_from_object(self, obj, attribs, unused_ignore=False):
+        param_list = []
+        for attrib, standard_value in attribs:
+            try:
+                param_list.append(getattr(obj, attrib))
+            except:
+                pass
+        return param_list
+    
     def unsaved_changes(self, obj, name, value):
         if self.notice_unsaved_changes:
             locked_print("Attribute '" + name + "' of object '" + str(obj) + "' has new value:", value)

@@ -823,13 +823,14 @@ class ServerTable(EntryTable): # every class using EntryTable defines two list: 
         self.load(Config.server)
 
 class JoystickTable(EntryTable):
-    joystick_attributes = ("emergency_button", "reverse_button", "accel_axis", "focus_button", "sound_button", "use_auto_focus", "show_function_nr")
+    joystick_attributes = ("emergency_button", "reverse_button", "accel_axis", "axis_threshold","focus_button", "sound_button", "use_auto_focus", "show_function_nr")
     params_w_defs = (("Nothalt", "Button am Gamepad über den die Gleisspannung ausgeschaltet werden kann", EntryType.INT),
                      ("Richtungswender", "Button am Gamepad für Richtungswechsel", EntryType.INT),
                      ("Beschleunigung", "Achse am Gamepad für Geschwindigkeitsregelung", EntryType.INT),
-                     ("Fokus", "Button am Gamepad der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", EntryType.INT),
+                     ("Achsen-Schwellwert", "Alle Achsen-Auslenkungswerte unter diesem Toleranzwert werden ignoriert", EntryType.FLOAT, (0, 0.75, 0.01)),
+                     ("Fokus", "Button am Gamepad, der die zurzeit ausgewählte Lok in den im Fenster sichtbaren Bereich holt", EntryType.INT),
                      ("Geräusch", "Button am Gamepad zum Ein-/Ausschalten des Lok-Geräuschs", EntryType.INT),
-                     ("Auto-Fokus", "Ausgewählte Lok immer fokussieren, wenn nur ein Gamepad angeschlossen ist", EntryType.BOOL),
+                     ("Auto-Fokus", "Ausgewählte Lok immer fokussieren wenn nur ein Gamepad angeschlossen ist", EntryType.BOOL),
                      ("Button-Nr", "Nummer des zugehörigen Gamepad-Buttons auf den Funktions-Buttons anzeigen", EntryType.BOOL))
                     # Liste mit verständlicheren Namen für die Parameter (wird in der GUI angezeigt)
     

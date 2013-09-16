@@ -13,28 +13,42 @@ import threading
 import time
 
 class MainBox(Gtk.Grid):    
-    def __init__(self, config_copy):
+    def __init__(self, config, main_window):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         global Config
-        Config = config_copy
-        Config.notice_unsaved_changes = False
-        
+        Config = config.create_copy()
+         
         self.socket_init()
-        self.event_thread = JoystickAndSound.EventHandlerThread(Config)
-        self.scrolled_window = ScrolledWindow(self.socket, self) # ScrolledWindow und darin HBox für Controller erzeugen
-        self.emergency_button = EmergencyButton(self.socket) # HBox für Notstop erzeugen
+         
+        if JoystickAndSound.pygame_installed:
+            self.event_thread = JoystickAndSound.EventHandlerThread(Config)
+        else:
+            self.event_thread = None
+            dialog = Gtk.MessageDialog(main_window,
+                                       0,
+                                       Gtk.MessageType.WARNING,
+                                       Gtk.ButtonsType.OK,
+                                       "Die Bibliothek PyGame ist nicht installiert.\n"
+                                       "Gamepads und die Geräuschsimulation können daher nicht verwendet werden.")
+            response = dialog.run()
+            dialog.destroy()
+             
+        self.scrolled_window = ScrolledWindow(self.socket, self.event_thread) # ScrolledWindow und darin HBox für Controller erzeugen
+        self.emergency_button = EmergencyButton(self.socket) # HBox für Notstop erzeugen        
         self.add(self.scrolled_window)
         self.add(self.emergency_button)
-        try:
+         
+        if self.event_thread != None:
             self.event_thread.joystick_init(self.scrolled_window.center_grid.controllers, self.emergency_button)
             self.event_thread.start()
-        except NameError:
-            locked_print("Konnte pygame-Threads nicht starten, Joysticks werden nicht erkannt.")
         self.show_all()
     
     def quit(self):
-        self.event_thread.quit()
+        if self.event_thread != None:
+            self.event_thread.quit()
+        global Config
+        del Config
         self.socket.send("TERM 1 POWER\n")
         self.socket.send("TERM 0 SESSION\n")
         self.socket_thread.quit()
@@ -74,19 +88,20 @@ class MainBox(Gtk.Grid):
             self.socket.send(loco.get_srcp_status(Config.server.bus))
             locked_print(self.socket.recv(4096))
 
-        self.socket_thread = SocketRecvThread(self.socket) # Nach dem Handshake und Loco-Init wird der Receive in einen separaten Thread verlegt -> keine MainWindow-Blockierungen möglich
+        self.socket_thread = SocketRecvThread(self.socket) # Nach dem Handshake und Loco-Init wird der Receive in einen separaten Thread verlegt
+        #                                                    -> keine MainWindow-Blockierungen möglich
         self.socket_thread.start()
         
 class ScrolledWindow(Gtk.ScrolledWindow):
-    def __init__(self, socket, main_window):
+    def __init__(self, socket, event_thread):
         Gtk.ScrolledWindow.__init__(self)
         self.set_vexpand(True)
         self.set_hexpand(True)
-        self.center_grid = CenterGrid(socket, main_window, self)
+        self.center_grid = CenterGrid(socket, event_thread, self.get_hadjustment())
         self.add_with_viewport(self.center_grid)
         
 class CenterGrid(Gtk.Grid):
-    def __init__(self, socket, main_window, scrolled_window):
+    def __init__(self, socket, event_thread, h_adjustment):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_column_spacing(8)
@@ -94,9 +109,9 @@ class CenterGrid(Gtk.Grid):
         self.controllers = []
         self.socket = socket
         for i, loco in enumerate(Config.locos): # Alle Controller hinzufügen
-            self.controllers.append(Controller(socket, loco, scrolled_window, main_window.event_thread))
+            self.controllers.append(Controller(socket, loco, h_adjustment, event_thread))
             self.add(self.controllers[i])
-        self.connect("realize", self.realized, main_window.event_thread)
+        self.connect("realize", self.realized, event_thread)
                 
     def realized(self, hbox, event_thread):
         max_height = 0
@@ -127,27 +142,27 @@ class Controller(Gtk.Grid):
     joystick = None
     sound_controller = None
     
-    def __init__(self, socket, loco, scrolled_window, event_thread):
+    def __init__(self, socket, loco, h_adjustment, event_thread=None):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         self.set_halign(Gtk.Align.CENTER)
         self.set_hexpand(True)
         self.loco = loco
         self.loco_image = LocoImage(loco.img_path)
-        if loco.engine != None:
+        
+        if loco.engine != None and event_thread != None:
             loco.sound_controller = JoystickAndSound.create_sound_controller(loco.engine.type, event_thread, loco.engine, loco.sound_volume)
+            engine_type = loco.engine.type
         else:
             loco.sound_controller = None
-        if loco.engine == None:
             engine_type = None
-        else:
-            engine_type = loco.engine.type
+        
         self.speed_scale = create_speed_scale(engine_type, loco, socket, loco.sound_controller)
         self.loco_label = LocoLabel(loco)
         self.reverser = Reverser(loco, socket, self.speed_scale)
         self.gamepad_image = Gtk.Image()
         self.gamepad_image.set_size_request(100, 76) # TODO: find alternative! (5px bigger than image, some themes (e.g. Elementary) need this)
-        self.scrolled_window = scrolled_window
+        self.h_adjustment = h_adjustment
         
         self.add(self.loco_image)
         self.add(self.speed_scale)
@@ -157,9 +172,8 @@ class Controller(Gtk.Grid):
         self.add(self.reverser)
         
     def set_focus(self): # Put the Controller in the visible area of ScrolledWindow
-        adjust = self.scrolled_window.get_hadjustment()
         allocation = self.get_allocation()
-        adjust.clamp_page(allocation.x, allocation.x + allocation.width)
+        self.h_adjustment.clamp_page(allocation.x, allocation.x + allocation.width)
     
 class LocoImage(Gtk.Image):
     def __init__(self, path):
@@ -599,25 +613,26 @@ class FunctionBox(Gtk.Grid):
         self.boxes = []
         self.nr_rows = 0
         
-        func_nr = 0 # we need func-nr in the whole method, therefore it must be declared here
-        if loco.function_sounds != None:
-            FunctionSoundController(event_thread,
-                                    loco.function_sounds,
-                                    loco.sound_volume) # add the needed 'sound' and 'channel_id' attribs to the func-sound-objs
-            for func_nr, function_sound in enumerate(loco.function_sounds):
-                self.buttons.insert(func_nr, FunctionSoundButton(function_sound,
-                                                                 circle_pixbufs["function_sound"],
-                                                                 event_thread,
-                                                                 function_sound.channel_id))
-        
-        if loco.engine != None:
-            self.sound_switch = create_engine_switch(loco.engine.type, loco.sound_controller, speed_scale, circle_pixbufs["speed_sound"])
-            for ev_nr, event_sound in enumerate(loco.engine.event_sounds):
-                self.buttons.insert(ev_nr + func_nr + 1, EventSoundButton(event_sound,
-                                                                          circle_pixbufs["event_sound"],
-                                                                          event_thread.channels[event_sound.channel_id]))
-            self.buttons.insert(0, self.sound_switch)
+        if event_thread != None:
+            func_nr = 0 # we need func-nr in the whole method, therefore it must be declared here
+            if loco.function_sounds != None:
+                FunctionSoundController(event_thread,
+                                        loco.function_sounds,
+                                        loco.sound_volume) # add the needed 'sound' and 'channel_id' attribs to the func-sound-objs
+                for func_nr, function_sound in enumerate(loco.function_sounds):
+                    self.buttons.insert(func_nr, FunctionSoundButton(function_sound,
+                                                                     circle_pixbufs["function_sound"],
+                                                                     event_thread,
+                                                                     function_sound.channel_id))
             
+            if loco.engine != None:
+                self.sound_switch = create_engine_switch(loco.engine.type, loco.sound_controller, speed_scale, circle_pixbufs["speed_sound"])
+                for ev_nr, event_sound in enumerate(loco.engine.event_sounds):
+                    self.buttons.insert(ev_nr + func_nr + 1, EventSoundButton(event_sound,
+                                                                              circle_pixbufs["event_sound"],
+                                                                              event_thread.channels[event_sound.channel_id]))
+                self.buttons.insert(0, self.sound_switch)
+        
         nr_buttons = len(self.buttons)
 
         if nr_buttons > 0:            
