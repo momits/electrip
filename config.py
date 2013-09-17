@@ -557,7 +557,7 @@ class Config:
             if dest != "":
                 file_name = dest + os_sep + file_name
             zip_file.write(file_path, file_name)
-        except (OSError, AttributeError): # attrib-error occurs if file_path is None
+        except: # error occurs if file_path is None (type of error varies on different platforms)
             locked_print("Ungültige Datei '" + str(file_path) + "' konnte nicht in Lok-Verzeichnis kopiert werden.")
             return None
         else:
