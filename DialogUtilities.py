@@ -47,8 +47,6 @@ class LocoSaveDialog(Gtk.FileChooserDialog):
         Gtk.FileChooserDialog.__init__(self, "Lok speichern ...", parent_window, Gtk.FileChooserAction.SELECT_FOLDER, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_do_overwrite_confirmation(True)
-        self.add_filter(LocoFileFilter())
-        self.add_filter(AllFileFilter())
         
 class ElectripFileFilter(Gtk.FileFilter):
     def __init__(self):
