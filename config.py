@@ -556,7 +556,8 @@ class Config:
             file_name = basename(file_path)
             if dest != "":
                 file_name = dest + os_sep + file_name
-            zip_file.write(file_path, file_name)
+            if file_name not in zip_file.namelist():
+                zip_file.write(file_path, file_name)
         except: # error occurs if file_path is None (type of error varies on different platforms)
             locked_print("Ungültige Datei '" + str(file_path) + "' konnte nicht in Lok-Verzeichnis kopiert werden.")
             return None
@@ -570,13 +571,13 @@ class Config:
                 file_name = self.add_file_to_zip(zip_file, file_path, dest)
                 setattr(config_object, attrib, file_name)
         
-    def save_loco(self, loco, dir_path):
+    def save_loco(self, loco, dir_path):        
         file_path = dir_path + os_sep + loco.name + ".zip"
         with zipfile.ZipFile(file_path, "w", zipfile.ZIP_DEFLATED, True) as zip_file:
             save_status_method = self.new_unsaved_changes_method
             del self.new_unsaved_changes_method # remove any references to GObjects, as they are not copyable
             self.notice_unsaved_changes = False
-            loco = self.create_loco(loco,
+            loco = self.create_loco(loco, # FIXME: sound_segments are messed up
                                     ObjectWrapper,
                                     self.get_param_list_from_object,
                                     None) # we dont want to mess our existing config, but create a new object instead
@@ -596,7 +597,7 @@ class Config:
                         
             for sound in loco.function_sounds:
                 sound.file_path = self.add_file_to_zip(zip_file, sound.file_path, "sound")
-                    
+            
             loco.img_path = self.add_file_to_zip(zip_file, loco.img_path, "image")
             zip_file.writestr(loco.name + ".loco", json.dumps(self.create_loco_dict(loco), indent=2)) # write config file
             locked_print("Lok wurde gespeichert in", file_path)
@@ -819,7 +820,7 @@ class Config:
             try:
                 param_list.append(getattr(obj, attrib))
             except:
-                pass
+                param_list.append(standard_value)
         return param_list
     
     def unsaved_changes(self, obj, name, value):
