@@ -1,0 +1,1092 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>electrip.widgets &mdash; Electrip 4.16.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '4.16.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Electrip 4.16.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Electrip 4.16.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for electrip.widgets</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: UTF 8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">gi.repository</span> <span class="kn">import</span> <span class="n">GObject</span><span class="p">,</span> <span class="n">Gtk</span><span class="p">,</span> <span class="n">Pango</span><span class="p">,</span> <span class="n">Gdk</span>
+<span class="kn">from</span> <span class="nn">locked_print</span> <span class="kn">import</span> <span class="n">locked_print</span>
+<span class="kn">import</span> <span class="nn">cairo</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span>
+
+<span class="kn">from</span> <span class="nn">constants</span> <span class="kn">import</span> <span class="n">ELECTRIP_VERSION</span>
+<span class="kn">from</span> <span class="nn">dialog_templates</span> <span class="kn">import</span> <span class="n">ImageFileFilter</span><span class="p">,</span> <span class="n">AllFileFilter</span><span class="p">,</span> \
+    <span class="n">SoundFileFilter</span>
+
+<div class="viewcode-block" id="StockImageButton"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.StockImageButton">[docs]</a><span class="k">class</span> <span class="nc">StockImageButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    DEPRECATED - will be removed any time soon</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">stock</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">icon</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="p">()</span>
+        <span class="n">icon</span><span class="o">.</span><span class="n">set_from_stock</span><span class="p">(</span><span class="n">stock</span><span class="p">,</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">IconSize</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">()</span>
+        <span class="n">grid</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="n">grid</span><span class="o">.</span><span class="n">set_column_spacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+            <span class="n">label</span><span class="o">.</span><span class="n">set_hexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">icon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="ArrowButton"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ArrowButton">[docs]</a><span class="k">class</span> <span class="nc">ArrowButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">direction</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_image</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Arrow</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ArrowType</span><span class="o">.</span><span class="n">UP</span><span class="p">,</span>
+                                         <span class="n">Gtk</span><span class="o">.</span><span class="n">ShadowType</span><span class="o">.</span><span class="n">NONE</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_image</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Arrow</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ArrowType</span><span class="o">.</span><span class="n">DOWN</span><span class="p">,</span>
+                                         <span class="n">Gtk</span><span class="o">.</span><span class="n">ShadowType</span><span class="o">.</span><span class="n">NONE</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="BoldLabel"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.BoldLabel">[docs]</a><span class="k">class</span> <span class="nc">BoldLabel</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_markup</span><span class="p">(</span><span class="s">&quot;&lt;b&gt;&quot;</span> <span class="o">+</span> <span class="n">text</span> <span class="o">+</span> <span class="s">&quot;&lt;/b&gt;&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TopAlignment"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TopAlignment">[docs]</a><span class="k">class</span> <span class="nc">TopAlignment</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Alignment</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Alignment</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Frame"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.Frame">[docs]</a><span class="k">class</span> <span class="nc">Frame</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Frame</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Frame</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_border_width</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_label_widget</span><span class="p">(</span><span class="n">BoldLabel</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="ActionBox"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ActionBox">[docs]</a><span class="k">class</span> <span class="nc">ActionBox</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonBox</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treeview</span><span class="p">,</span> <span class="n">add_row_label</span><span class="p">,</span> <span class="n">remove_row_label</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonBox</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_layout</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonBoxStyle</span><span class="o">.</span><span class="n">START</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_row_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">add_row_label</span><span class="p">)</span>
+        
+        <span class="c"># method add_row must be implemented in subclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_row_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">add_row</span><span class="p">,</span> <span class="n">treeview</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_row_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">remove_row_label</span><span class="p">)</span>
+        
+        <span class="c"># method remove_row must be implemented in subclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_row_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">remove_row</span><span class="p">,</span> <span class="n">treeview</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_up_button</span> <span class="o">=</span> <span class="n">ArrowButton</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_up_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">move_row</span><span class="p">,</span>
+                                    <span class="n">treeview</span><span class="p">,</span>
+                                    <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_down_button</span> <span class="o">=</span> <span class="n">ArrowButton</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_down_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">move_row</span><span class="p">,</span>
+                                      <span class="n">treeview</span><span class="p">,</span>
+                                      <span class="bp">False</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">add_row_button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remove_row_button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">move_up_button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">move_down_button</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="ActionBox.move_row"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ActionBox.move_row">[docs]</a>    <span class="k">def</span> <span class="nf">move_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">treeview</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_cursor</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">liststore</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">liststore</span><span class="o">.</span><span class="n">get_iter</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">row_nr</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">direction</span> <span class="ow">and</span> <span class="n">row_nr</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">move_row_up</span><span class="p">(</span><span class="n">row_nr</span><span class="p">)</span>
+                <span class="n">prev_row</span> <span class="o">=</span> <span class="n">liststore</span><span class="o">.</span><span class="n">iter_nth_child</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">row_nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">liststore</span><span class="o">.</span><span class="n">move_before</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">prev_row</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">direction</span> <span class="ow">and</span> <span class="n">row_nr</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">liststore</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">move_row_down</span><span class="p">(</span><span class="n">row_nr</span><span class="p">)</span>
+                <span class="n">following_row</span> <span class="o">=</span> <span class="n">liststore</span><span class="o">.</span><span class="n">iter_nth_child</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">row_nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">liststore</span><span class="o">.</span><span class="n">move_after</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">following_row</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Zeile befindet sich schon am Rand, &quot;</span>
+                             <span class="s">&quot;kann nicht weiter verschoben werden.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Es ist keine Zeile ausgewählt, &quot;</span>
+                         <span class="s">&quot;es kann nichts verschoben werden.&quot;</span><span class="p">)</span>
+                </div>
+<div class="viewcode-block" id="ActionBox.add_row"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ActionBox.add_row">[docs]</a>    <span class="k">def</span> <span class="nf">add_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">treeview</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_cursor</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">liststore</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">liststore</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">path</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">new_row</span> <span class="o">=</span> <span class="n">liststore</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">add_row_at_start</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">liststore</span><span class="o">.</span><span class="n">get_iter</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="n">row_nr</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">new_row</span> <span class="o">=</span> <span class="n">liststore</span><span class="o">.</span><span class="n">insert_after</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_row_beneath</span><span class="p">(</span><span class="n">row_nr</span><span class="p">))</span>
+            <span class="n">liststore</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+            <span class="n">treeview</span><span class="o">.</span><span class="n">set_cursor</span><span class="p">(</span><span class="n">liststore</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="n">new_row</span><span class="p">),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;TreeView ist leer, es kann &quot;</span>
+                         <span class="s">&quot;nichts hinzugefügt werden.&quot;</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="ActionBox.remove_row"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ActionBox.remove_row">[docs]</a>    <span class="k">def</span> <span class="nf">remove_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">treeview</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_cursor</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">liststore</span> <span class="o">=</span> <span class="n">treeview</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_row_at</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">liststore</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">liststore</span><span class="o">.</span><span class="n">get_iter</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Keine Zeile ausgewählt, &quot;</span>
+                         <span class="s">&quot;es kann nichts gelöscht werden.&quot;</span><span class="p">)</span>
+
+
+<span class="c"># subclassed combobox with methods allowing to</span>
+<span class="c"># easily acces the displayed value</span></div></div>
+<div class="viewcode-block" id="EasyComboBox"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyComboBox">[docs]</a><span class="k">class</span> <span class="nc">EasyComboBox</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ComboBox</span><span class="p">):</span>
+    <span class="c"># displayed_to_saved_vals: the names of the parameters</span>
+    <span class="c"># of config_object (often shorter than the displayed ones)</span>
+    <span class="c"># howto use: displayed_to_saved_vals =  [(parameter_name1,</span>
+    <span class="c">#                                         displayed_value1),</span>
+    <span class="c">#                                        (parameter_name2 ...</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">liststore</span><span class="p">,</span> <span class="n">displayed_to_saved_vals</span><span class="p">):</span> 
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ComboBox</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displayed_to_saved_vals</span> <span class="o">=</span> <span class="n">displayed_to_saved_vals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model</span><span class="p">(</span><span class="n">liststore</span><span class="p">)</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">CellRendererText</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pack_start</span><span class="p">(</span><span class="n">renderer</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_attribute</span><span class="p">(</span><span class="n">renderer</span><span class="p">,</span> <span class="s">&quot;text&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EasyComboBox.retrieve_value"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyComboBox.retrieve_value">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">displayed_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_active</span><span class="p">()][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">saved_val</span><span class="p">,</span> <span class="n">disp_val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayed_to_saved_vals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">displayed_value</span> <span class="o">==</span> <span class="n">disp_val</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">saved_val</span>
+            </div>
+<div class="viewcode-block" id="EasyComboBox.retrieve_disp_value"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyComboBox.retrieve_disp_value">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_disp_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_active</span><span class="p">()][</span><span class="mi">0</span><span class="p">]</span>
+        </div>
+<div class="viewcode-block" id="EasyComboBox.set_value"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyComboBox.set_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">saved_value</span><span class="p">):</span>
+        <span class="n">saved_value_correct</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">saved_val</span><span class="p">,</span> <span class="n">disp_val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">displayed_to_saved_vals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">saved_value</span> <span class="o">==</span> <span class="n">saved_val</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">row_nr</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_model</span><span class="p">()):</span>
+                    <span class="k">if</span> <span class="n">disp_val</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="n">row_nr</span><span class="p">)</span>
+                        <span class="n">saved_value_correct</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="k">break</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">saved_value_correct</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_value</span><span class="p">()</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Dateiformat inkorrekt: Unbekannter Wert &#39;&quot;</span> <span class="o">+</span>
+                         <span class="nb">str</span><span class="p">(</span><span class="n">saved_value</span><span class="p">)</span> <span class="o">+</span>
+                         <span class="s">&quot;&#39;, verwende Standardwert &#39;&quot;</span> <span class="o">+</span>
+                         <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;&#39;&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;changed&quot;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="EasyFileButton"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyFileButton">[docs]</a><span class="k">class</span> <span class="nc">EasyFileButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">FileChooserButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_filters</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">FileChooserButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">FileChooserAction</span><span class="o">.</span><span class="n">OPEN</span><span class="p">)</span>
+        <span class="c"># the first file_filter is the active one</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_filters</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">file_filter</span> <span class="ow">in</span> <span class="n">file_filters</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_filter</span><span class="p">(</span><span class="n">file_filter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_filter</span><span class="p">(</span><span class="n">file_filters</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        
+<div class="viewcode-block" id="EasyFileButton.retrieve_value"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyFileButton.retrieve_value">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="EasyFileButton.set_value"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyFileButton.set_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_filename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># TODO: find out how to reset the filename to &quot;None&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_filename</span><span class="p">(</span><span class="s">&quot;(keine)&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;file-set&quot;</span><span class="p">)</span>
+            </div></div>
+<div class="viewcode-block" id="EasyVolumeButton"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyVolumeButton">[docs]</a><span class="k">class</span> <span class="nc">EasyVolumeButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">VolumeButton</span><span class="p">):</span>
+    <span class="n">__gsignals__</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s">&quot;volume-set&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">SIGNAL_RUN_FIRST</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">())</span>
+    <span class="p">}</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_filters</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">VolumeButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;value-changed&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume_set</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="EasyVolumeButton.volume_set"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EasyVolumeButton.volume_set">[docs]</a>    <span class="k">def</span> <span class="nf">volume_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;volume-set&quot;</span><span class="p">)</span>
+        </div></div>
+<div class="viewcode-block" id="EntryTable"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable">[docs]</a><span class="k">class</span> <span class="nc">EntryTable</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">use_tooltips</span><span class="p">,</span>
+                 <span class="n">use_bold_params</span><span class="p">,</span>
+                 <span class="n">orientation</span><span class="o">=</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">,</span>
+                 <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_column_spacing</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_row_spacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_border_width</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_tooltips</span> <span class="o">=</span> <span class="n">use_tooltips</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_bold_params</span> <span class="o">=</span> <span class="n">use_bold_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="n">orientation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">end</span>
+        
+        <span class="c"># coordinates representing the position where</span>
+        <span class="c"># the next widget will be placed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">entry_widgets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_attributes</span> <span class="o">=</span> <span class="p">[]</span>
+        
+<div class="viewcode-block" id="EntryTable.attach_entry_widget"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.attach_entry_widget">[docs]</a>    <span class="k">def</span> <span class="nf">attach_entry_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">entry_widget</span><span class="p">,</span>
+                            <span class="n">label</span><span class="p">,</span>
+                            <span class="n">description</span><span class="p">,</span>
+                            <span class="n">config_attribute</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_bold_params</span><span class="p">:</span>
+            <span class="n">parameter_label</span> <span class="o">=</span> <span class="n">BoldLabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parameter_label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">parameter_label</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_tooltips</span><span class="p">:</span>
+            <span class="n">entry_widget</span><span class="o">.</span><span class="n">set_tooltip_text</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">definition_label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+            <span class="n">definition_label</span><span class="o">.</span><span class="n">set_alignment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">definition_label</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">entry_widget</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entry_widgets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry_widget</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_attribute</span><span class="p">)</span>
+        
+        <span class="c"># calculate the position for the next widget</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span> <span class="o">==</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="mi">2</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+                    </div>
+<div class="viewcode-block" id="EntryTable.add_string_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_string_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_string_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Gtk.Entry to the EntryTable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Entry</span><span class="p">()</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">retrieve_value</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get_text</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">set_value</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">set_text</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;changed&quot;</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                      <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_int_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_int_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_int_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                      <span class="n">label</span><span class="p">,</span>
+                      <span class="n">description</span><span class="p">,</span>
+                      <span class="n">config_attribute</span><span class="p">,</span>
+                      <span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">max_value</span><span class="o">=</span><span class="mi">9999</span><span class="p">,</span>
+                      <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Gtk.SpinButton for integers to the EntryTable.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            min_value: the minimal value of the int</span>
+<span class="sd">            max_value: the maximal value of the int</span>
+<span class="sd">            step: precision of the number as step</span>
+<span class="sd">                between two possible values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">spin_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">SpinButton</span><span class="o">.</span><span class="n">new_with_range</span><span class="p">(</span><span class="n">min_value</span><span class="p">,</span>
+                                                    <span class="n">max_value</span><span class="p">,</span>
+                                                    <span class="n">step</span><span class="p">)</span>
+        <span class="n">spin_button</span><span class="o">.</span><span class="n">retrieve_value</span> <span class="o">=</span> <span class="n">spin_button</span><span class="o">.</span><span class="n">get_value_as_int</span>
+        <span class="n">spin_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;value-changed&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                            <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">spin_button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_float_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_float_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_float_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">label</span><span class="p">,</span>
+                        <span class="n">description</span><span class="p">,</span>
+                        <span class="n">config_attribute</span><span class="p">,</span>
+                        <span class="n">min_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                        <span class="n">max_value</span><span class="o">=</span><span class="mf">9999.0</span><span class="p">,</span>
+                        <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Gtk.SpinButton for floats to the EntryTable.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            min_value: the minimal value of the float</span>
+<span class="sd">            max_value: the maximal value of the float</span>
+<span class="sd">            step: precision of the float as step</span>
+<span class="sd">                between two possible values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">spin_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">SpinButton</span><span class="o">.</span><span class="n">new_with_range</span><span class="p">(</span><span class="n">min_value</span><span class="p">,</span>
+                                                    <span class="n">max_value</span><span class="p">,</span>
+                                                    <span class="n">step</span><span class="p">)</span>
+        <span class="n">spin_button</span><span class="o">.</span><span class="n">retrieve_value</span> <span class="o">=</span> <span class="n">spin_button</span><span class="o">.</span><span class="n">get_value</span>
+        <span class="n">spin_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;value-changed&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                            <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">spin_button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        
+    </div>
+<div class="viewcode-block" id="EntryTable.add_combo_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_combo_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_combo_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">label</span><span class="p">,</span>
+                        <span class="n">description</span><span class="p">,</span>
+                        <span class="n">config_attribute</span><span class="p">,</span>
+                        <span class="n">content_type</span><span class="p">,</span>
+                        <span class="n">mapping</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Gtk.ComboBox to the EntryTable.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            content_type: the type of the values</span>
+<span class="sd">                to be stored in the combobox</span>
+<span class="sd">                (e.g. str, float ...)</span>
+<span class="sd">            mapping: list of 2-tuples, mapping values stored</span>
+<span class="sd">                in the  model to the displayed values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">liststore</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">ListStore</span><span class="p">(</span><span class="n">content_type</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">unused_saved_val</span><span class="p">,</span> <span class="n">disp_val</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+            <span class="n">liststore</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">disp_val</span><span class="p">])</span>
+        <span class="n">combo</span> <span class="o">=</span> <span class="n">EasyComboBox</span><span class="p">(</span><span class="n">liststore</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+        <span class="n">combo</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;changed&quot;</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                      <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">combo</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_sound_file_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_sound_file_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_sound_file_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Button for sound-file selection </span>
+<span class="sd">        to the EntryTable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_button</span> <span class="o">=</span> <span class="n">EasyFileButton</span><span class="p">([</span><span class="n">SoundFileFilter</span><span class="p">(),</span> <span class="n">AllFileFilter</span><span class="p">()])</span>
+        <span class="n">file_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;file-set&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                            <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">file_button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_image_file_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_image_file_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_image_file_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Button for image-file selection </span>
+<span class="sd">        to the EntryTable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_button</span> <span class="o">=</span> <span class="n">EasyFileButton</span><span class="p">([</span><span class="n">ImageFileFilter</span><span class="p">(),</span>
+                                      <span class="n">AllFileFilter</span><span class="p">()])</span>
+        <span class="n">file_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;file-set&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                            <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">file_button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_bool_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_bool_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_bool_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Gtk.CheckButton for boolean values</span>
+<span class="sd">        to the EntryTable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">CheckButton</span><span class="p">()</span>
+        <span class="n">check_button</span><span class="o">.</span><span class="n">retrieve_value</span> <span class="o">=</span> <span class="n">check_button</span><span class="o">.</span><span class="n">get_active</span>
+        <span class="n">check_button</span><span class="o">.</span><span class="n">set_value</span> <span class="o">=</span> <span class="n">check_button</span><span class="o">.</span><span class="n">set_active</span>
+        <span class="n">check_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;toggled&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                            <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">check_button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_volume_entry"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_volume_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_volume_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a VolumeButton to the EntryTable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">volume_button</span> <span class="o">=</span> <span class="n">EasyVolumeButton</span><span class="p">()</span>
+        <span class="n">volume_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;volume-set&quot;</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">,</span>
+                              <span class="n">config_attribute</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">volume_button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_action_button"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_action_button">[docs]</a>    <span class="k">def</span> <span class="nf">add_action_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                          <span class="n">label</span><span class="p">,</span>
+                          <span class="n">description</span><span class="p">,</span>
+                          <span class="n">button_label</span><span class="p">,</span>
+                          <span class="n">callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Button with &#39;button_label&#39; to the</span>
+<span class="sd">        EntryTable which calls &#39;callback&#39; when clicked.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">button_label</span><span class="p">)</span>
+        <span class="n">button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">button</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EntryTable.add_label"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.add_label">[docs]</a>    <span class="k">def</span> <span class="nf">add_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">markup</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a Label with a text according to &#39;markup&#39; to the</span>
+<span class="sd">        EntryTable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">label_widget</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">()</span>
+        <span class="n">label_widget</span><span class="o">.</span><span class="n">set_markup</span><span class="p">(</span><span class="n">markup</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attach_entry_widget</span><span class="p">(</span><span class="n">label_widget</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="EntryTable.load"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_object</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_object</span> <span class="o">=</span> <span class="n">config_object</span>
+        <span class="k">for</span> <span class="n">nr</span><span class="p">,</span> <span class="n">config_attribute</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_attributes</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">config_attribute</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">config_attribute</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Attribut&quot;</span><span class="p">,</span>
+                                 <span class="n">config_attribute</span><span class="p">,</span>
+                                 <span class="s">&quot;konnte nicht gefunden werden, &quot;</span>
+                                 <span class="s">&quot;es handelt sich evtl. um eine &quot;</span>
+                                 <span class="s">&quot;veraltete Electrip-Datei.&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">entry_widgets</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="EntryTable.save_changes"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.EntryTable.save_changes">[docs]</a>    <span class="k">def</span> <span class="nf">save_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">widget</span><span class="p">,</span> <span class="n">config_attrib</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">config_attrib</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">widget</span><span class="o">.</span><span class="n">retrieve_value</span><span class="p">()</span>
+            <span class="c"># only set attributes when they differ from what is already saved</span>
+            <span class="c"># -&gt; prevent signal-handler trouble on loading</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_object</span><span class="p">,</span> <span class="n">config_attrib</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_object</span><span class="p">,</span> <span class="n">config_attrib</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="ScrolledTreeView"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ScrolledTreeView">[docs]</a><span class="k">class</span> <span class="nc">ScrolledTreeView</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treeview</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_policy</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">PolicyType</span><span class="o">.</span><span class="n">AUTOMATIC</span><span class="p">,</span>
+                        <span class="n">Gtk</span><span class="o">.</span><span class="n">PolicyType</span><span class="o">.</span><span class="n">AUTOMATIC</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treeview</span> <span class="o">=</span> <span class="n">treeview</span>
+        <span class="n">natural_req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">treeview</span><span class="o">.</span><span class="n">get_preferred_size</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="n">natural_req</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+                              <span class="n">natural_req</span><span class="o">.</span><span class="n">height</span> <span class="o">+</span> <span class="mi">40</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">treeview</span><span class="p">)</span>
+        
+
+<span class="c"># Base-class for TreeViews</span></div>
+<div class="viewcode-block" id="TreeView"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView">[docs]</a><span class="k">class</span> <span class="nc">TreeView</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">TreeView</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A simplified TreeView, allowing to easily add columns</span>
+<span class="sd">    and keep them in sync with the &#39;config_object&#39;,</span>
+<span class="sd">    which stores the configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name: The name of the TreeView, used for the</span>
+<span class="sd">                &#39;unsaved-changes&#39;-messages</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">TreeView</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        
+        <span class="c"># specifies the nr of columns the treeview currently has</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_columns</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># lists the content-types for the columns </span>
+        <span class="c"># (GObject.TYPE_xxx), according to their</span>
+        <span class="c"># &#39;colnr&#39;-attribute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">column_types</span> <span class="o">=</span> <span class="p">[]</span>
+    
+<div class="viewcode-block" id="TreeView.add_column"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.add_column">[docs]</a>    <span class="k">def</span> <span class="nf">add_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                   <span class="n">column_name</span><span class="p">,</span>
+                   <span class="n">column_tooltip</span><span class="p">,</span>
+                   <span class="n">cell_renderer</span><span class="p">,</span>
+                   <span class="n">content_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a new column using &#39;cell_renderer&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Create a label with markup</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">()</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_markup</span><span class="p">(</span><span class="n">column_name</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_tooltip_text</span><span class="p">(</span><span class="n">column_tooltip</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c"># Create the column</span>
+        <span class="n">column</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">TreeViewColumn</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">cell_renderer</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_columns</span><span class="p">)</span>
+        <span class="n">column</span><span class="o">.</span><span class="n">set_widget</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">column</span><span class="o">.</span><span class="n">set_resizable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="c"># Add a column-nr for easy identification</span>
+        <span class="n">column</span><span class="o">.</span><span class="n">colnr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_columns</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append_column</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_columns</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">column_types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content_type</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TreeView.update_model"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.update_model">[docs]</a>    <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrites the old liststore (if there is any) with the current</span>
+<span class="sd">        column-setup. Must be called after all columns have been added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">liststore</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">ListStore</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">column_types</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">liststore</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="TreeView.add_text_colum"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.add_text_colum">[docs]</a>    <span class="k">def</span> <span class="nf">add_text_colum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">column_name</span><span class="p">,</span>
+                       <span class="n">column_tooltip</span><span class="p">,</span>
+                       <span class="n">content_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a column with editable text to the TreeView.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            column_name: the column name (displayed above</span>
+<span class="sd">                the column)</span>
+<span class="sd">            column_tooltip: the tooltip for the column when</span>
+<span class="sd">                the mouse hovers over it</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_renderer</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">CellRendererText</span><span class="p">()</span>
+        <span class="n">text_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;editable&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="n">text_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;ellipsize&quot;</span><span class="p">,</span> <span class="n">Pango</span><span class="o">.</span><span class="n">EllipsizeMode</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="n">text_renderer</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;edited&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span>
+                        <span class="n">column_tooltip</span><span class="p">,</span>
+                        <span class="n">text_renderer</span><span class="p">,</span>
+                        <span class="n">content_type</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TreeView.add_non_editable_text_colum"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.add_non_editable_text_colum">[docs]</a>    <span class="k">def</span> <span class="nf">add_non_editable_text_colum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">column_name</span><span class="p">,</span>
+                                    <span class="n">column_tooltip</span><span class="p">,</span>
+                                    <span class="n">content_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a column with non-editable text to the TreeView.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            column_name: s. add_text_column</span>
+<span class="sd">            column_tooltip: s. add_text_column</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_renderer</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">CellRendererText</span><span class="p">()</span>
+        <span class="n">text_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;ellipsize&quot;</span><span class="p">,</span> <span class="n">Pango</span><span class="o">.</span><span class="n">EllipsizeMode</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span>
+                        <span class="n">column_tooltip</span><span class="p">,</span>
+                        <span class="n">text_renderer</span><span class="p">,</span>
+                        <span class="n">content_type</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TreeView.add_combo_colum"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.add_combo_colum">[docs]</a>    <span class="k">def</span> <span class="nf">add_combo_colum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">column_name</span><span class="p">,</span>
+                        <span class="n">column_tooltip</span><span class="p">,</span>
+                        <span class="n">content_type</span><span class="p">,</span>
+                        <span class="n">values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a column with &#39;ComboBox&#39;es to the TreeView.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            column_name: s. add_text_column</span>
+<span class="sd">            column_tooltip: s. add_text_column</span>
+<span class="sd">            content_type: the type of the values</span>
+<span class="sd">                to be stored in the combobox</span>
+<span class="sd">                (e.g. str, float ...)</span>
+<span class="sd">            values: list of the values the user can</span>
+<span class="sd">                choose from</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">combo_renderer</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">CellRendererCombo</span><span class="p">()</span>
+        <span class="n">combo_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;editable&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="n">combo_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;has-entry&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="n">combo_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;text-column&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">combo_renderer</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;edited&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_value</span><span class="p">)</span>
+        <span class="n">combostore</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">ListStore</span><span class="p">(</span><span class="n">content_type</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">combostore</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">value</span><span class="p">])</span>
+        <span class="n">combo_renderer</span><span class="o">.</span><span class="n">set_property</span><span class="p">(</span><span class="s">&quot;model&quot;</span><span class="p">,</span> <span class="n">combostore</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span>
+                        <span class="n">column_tooltip</span><span class="p">,</span>
+                        <span class="n">combo_renderer</span><span class="p">,</span>
+                        <span class="n">content_type</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TreeView.new_value"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.new_value">[docs]</a>    <span class="k">def</span> <span class="nf">new_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cellrenderer</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>
+        <span class="n">liststore</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cursor</span><span class="p">()</span>
+        <span class="n">column_nr</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="n">colnr</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">column_types</span><span class="p">[</span><span class="n">column_nr</span><span class="p">]</span> <span class="o">==</span> <span class="n">GObject</span><span class="o">.</span><span class="n">TYPE_INT</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Falsche Eingabe, &quot;</span>
+                             <span class="s">&quot;Sie haben keinen Wert eingegeben, &quot;</span>
+                             <span class="s">&quot;der in den Typ Integer umgewandelt werden kann.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">liststore</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">column_nr</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">column_nr</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">column_types</span><span class="p">[</span><span class="n">column_nr</span><span class="p">]</span> <span class="o">==</span> <span class="n">GObject</span><span class="o">.</span><span class="n">TYPE_DOUBLE</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># dot needed for float-conversion (instead of comma)</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">,</span> <span class="s">&quot;.&quot;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Falsche Eingabe: &quot;</span>
+                             <span class="s">&quot;Sie haben keinen Wert eingegeben, &quot;</span>
+                             <span class="s">&quot;der in den Typ Float umgewandelt werden kann.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">liststore</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">column_nr</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">column_nr</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">liststore</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">column_nr</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_changes</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">column_nr</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="TreeView.save_changes"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.TreeView.save_changes">[docs]</a>    <span class="k">def</span> <span class="nf">save_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;The method &#39;save_changes&#39; must be implemented in &quot;</span>
+                           <span class="s">&quot;the child classes.&quot;</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="CustomHandlePaned"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.CustomHandlePaned">[docs]</a><span class="k">class</span> <span class="nc">CustomHandlePaned</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Paned</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Paned</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s">&quot;custom-handle-paned&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_hexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="c"># Attention: these values only fit to the shipped handle-icon!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+
+        </div>
+<div class="viewcode-block" id="PopupButton"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.PopupButton">[docs]</a><span class="k">class</span> <span class="nc">PopupButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">use_bold</span><span class="p">,</span> <span class="n">popup</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_bold</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">BoldLabel</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_ellipsize</span><span class="p">(</span><span class="n">Pango</span><span class="o">.</span><span class="n">EllipsizeMode</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span> <span class="o">=</span> <span class="n">popup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_popup</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="PopupButton.show_popup"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.PopupButton.show_popup">[docs]</a>    <span class="k">def</span> <span class="nf">show_popup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">show_at_mouse</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="Popup"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.Popup">[docs]</a><span class="k">class</span> <span class="nc">Popup</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Window</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">main_window</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">type_hint</span><span class="o">=</span><span class="n">Gdk</span><span class="o">.</span><span class="n">WindowTypeHint</span><span class="o">.</span><span class="n">TOOLTIP</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Window</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">TOPLEVEL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s">&quot;Electrip &quot;</span> <span class="o">+</span> <span class="n">ELECTRIP_VERSION</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span> <span class="o">+</span> <span class="n">title</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;delete-event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_event</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">type_hint</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_type_hint</span><span class="p">(</span><span class="n">type_hint</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">main_window</span> <span class="o">=</span> <span class="n">main_window</span>
+        
+<div class="viewcode-block" id="Popup.show_at_mouse"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.Popup.show_at_mouse">[docs]</a>    <span class="k">def</span> <span class="nf">show_at_mouse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_position</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">WindowPosition</span><span class="o">.</span><span class="n">MOUSE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_transient_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">main_window</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="Popup.show_at_center"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.Popup.show_at_center">[docs]</a>    <span class="k">def</span> <span class="nf">show_at_center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_position</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">WindowPosition</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_transient_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">main_window</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+    
+    <span class="c"># can be called multiple times</span></div>
+<div class="viewcode-block" id="Popup.set_content"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.Popup.set_content">[docs]</a>    <span class="k">def</span> <span class="nf">set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">widget</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;content&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize_to_geometry</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">widget</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Popup.delete_event"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.Popup.delete_event">[docs]</a>    <span class="k">def</span> <span class="nf">delete_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div></div>
+<div class="viewcode-block" id="ControlPointGraph"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph">[docs]</a><span class="k">class</span> <span class="nc">ControlPointGraph</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">DrawingArea</span><span class="p">):</span>
+    <span class="c"># minimum width + height</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="mi">550</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="mi">340</span>
+    <span class="c"># important: border_left_bottom must be larger than</span>
+    <span class="c"># radius_large + the width/height of the axes!</span>
+    <span class="n">border_left_bottom</span> <span class="o">=</span> <span class="mf">60.0</span>
+    <span class="n">border_right</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">coordinate_line_length</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">axis_distance</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">radius_small</span> <span class="o">=</span> <span class="mf">3.6</span>
+    <span class="n">radius_large</span> <span class="o">=</span> <span class="mf">7.3</span>
+    <span class="n">control_point_border_width</span> <span class="o">=</span> <span class="mf">1.3</span>
+    <span class="n">min_label_distance</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">drag</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">line_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">control_point_outer_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.1686</span><span class="p">,</span> <span class="mf">0.1686</span><span class="p">,</span> <span class="mf">0.1686</span><span class="p">)</span>
+    <span class="n">control_point_inner_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.804</span><span class="p">,</span> <span class="mf">0.804</span><span class="p">,</span> <span class="mf">0.757</span><span class="p">)</span>
+    <span class="n">point_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.7216</span><span class="p">)</span>
+    <span class="n">axes_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">legend_color</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_digits_number</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">DrawingArea</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;draw&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_events</span><span class="p">(</span><span class="n">Gdk</span><span class="o">.</span><span class="n">EventMask</span><span class="o">.</span><span class="n">BUTTON_PRESS_MASK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_events</span><span class="p">(</span><span class="n">Gdk</span><span class="o">.</span><span class="n">EventMask</span><span class="o">.</span><span class="n">BUTTON_RELEASE_MASK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_events</span><span class="p">(</span><span class="n">Gdk</span><span class="o">.</span><span class="n">EventMask</span><span class="o">.</span><span class="n">BUTTON1_MOTION_MASK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;motion-notify-event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">motion</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;button-press-event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">button_pressed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;button-release-event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">button_released</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_valign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">FILL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_hexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_vexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_digits_number</span> <span class="o">=</span> <span class="n">max_digits_number</span>
+        <span class="c"># we dont use the special popup class since we dont</span>
+        <span class="c"># need the replace-content-functionality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">TOPLEVEL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">set_type_hint</span><span class="p">(</span><span class="n">Gdk</span><span class="o">.</span><span class="n">WindowTypeHint</span><span class="o">.</span><span class="n">TOOLTIP</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">set_opacity</span><span class="p">(</span><span class="mf">0.65</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="ControlPointGraph.draw"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">cr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;func&quot;</span><span class="p">):</span>
+            <span class="n">new_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_allocated_width</span><span class="p">()</span>
+            <span class="n">new_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_allocated_height</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">new_width</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="ow">or</span> <span class="n">new_height</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">new_width</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">new_height</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calc_size_factors</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_coordinate_system</span><span class="p">()</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">set_source_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinate_system</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>        
+            <span class="n">cr</span><span class="o">.</span><span class="n">paint</span><span class="p">()</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">set_line_width</span><span class="p">(</span><span class="mf">2.2</span><span class="p">)</span>
+            
+            <span class="n">cr</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">point_color</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">)):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">get_x</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">x_abs</span><span class="p">,</span> <span class="n">y_abs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_abs_coords</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                    <span class="n">cr</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">x_abs</span><span class="p">,</span>
+                           <span class="n">y_abs</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">radius_small</span><span class="p">,</span>
+                           <span class="mi">0</span><span class="p">,</span>
+                           <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+                    <span class="n">cr</span><span class="o">.</span><span class="n">fill</span><span class="p">()</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">stroke</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">nr</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">control_points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">x_abs_1</span><span class="p">,</span> <span class="n">y_abs_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_abs_coords</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">])</span>
+                <span class="n">x_abs_2</span><span class="p">,</span> <span class="n">y_abs_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_abs_coords</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                
+                <span class="n">cr</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">x_abs_1</span><span class="p">,</span> <span class="n">y_abs_1</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">line_color</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">x_abs_2</span><span class="p">,</span> <span class="n">y_abs_2</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">stroke</span><span class="p">()</span>
+                
+                <span class="n">cr</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">control_point_outer_color</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">x_abs_1</span><span class="p">,</span> <span class="n">y_abs_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">fill</span><span class="p">()</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">control_point_inner_color</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">x_abs_1</span><span class="p">,</span>
+                       <span class="n">y_abs_1</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_point_border_width</span><span class="p">,</span>
+                       <span class="mi">0</span><span class="p">,</span>
+                       <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+                <span class="n">cr</span><span class="o">.</span><span class="n">fill</span><span class="p">()</span>
+            
+            <span class="n">cr</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">control_point_outer_color</span><span class="p">)</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">x_abs_2</span><span class="p">,</span> <span class="n">y_abs_2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">fill</span><span class="p">()</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">control_point_inner_color</span><span class="p">)</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">x_abs_2</span><span class="p">,</span>
+                   <span class="n">y_abs_2</span><span class="p">,</span>
+                   <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_point_border_width</span><span class="p">,</span>
+                   <span class="mi">0</span><span class="p">,</span>
+                   <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">fill</span><span class="p">()</span>
+            <span class="n">cr</span><span class="o">.</span><span class="n">stroke</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.get_touched_point"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.get_touched_point">[docs]</a>    <span class="k">def</span> <span class="nf">get_touched_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">nr</span><span class="p">,</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">control_points</span><span class="p">):</span>
+            <span class="n">x_abs</span><span class="p">,</span> <span class="n">y_abs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_abs_coords</span><span class="p">(</span><span class="o">*</span><span class="n">point</span><span class="p">)</span>
+            <span class="n">circle_left_end</span> <span class="o">=</span> <span class="n">x_abs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span>
+            <span class="n">circle_right_end</span> <span class="o">=</span> <span class="n">x_abs</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span>
+            <span class="n">circle_upper_end</span> <span class="o">=</span> <span class="n">y_abs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span>
+            <span class="n">circle_lower_end</span> <span class="o">=</span> <span class="n">y_abs</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span>
+            <span class="k">if</span> <span class="n">circle_left_end</span> <span class="o">&lt;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">circle_right_end</span> \
+            <span class="ow">and</span> <span class="n">circle_upper_end</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">circle_lower_end</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">nr</span><span class="p">,</span> <span class="n">point</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">result</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.get_abs_coords"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.get_abs_coords">[docs]</a>    <span class="k">def</span> <span class="nf">get_abs_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">+</span> <span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_factor</span><span class="p">,</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_factor</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.get_speed_coords"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.get_speed_coords">[docs]</a>    <span class="k">def</span> <span class="nf">get_speed_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_factor</span><span class="p">,</span> \
+               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_factor</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.button_pressed"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.button_pressed">[docs]</a>    <span class="k">def</span> <span class="nf">button_pressed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">nr</span><span class="p">,</span> <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_touched_point</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nr</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">remove_control_point</span><span class="p">(</span><span class="n">nr</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_config_object</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">drag</span> <span class="o">=</span> <span class="n">nr</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">set_position</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">WindowPosition</span><span class="o">.</span><span class="n">MOUSE</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%0.2f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span>
+                                          <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%0.2f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_speed_coords</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">add_control_point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_config_object</span><span class="p">()</span>
+            </div>
+<div class="viewcode-block" id="ControlPointGraph.update_config_object"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.update_config_object">[docs]</a>    <span class="k">def</span> <span class="nf">update_config_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;the method &#39;update_config_object&#39; must be implemented&quot;</span>
+                           <span class="s">&quot;in a child class of &#39;ControlPointGraph&#39;&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.button_released"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.button_released">[docs]</a>    <span class="k">def</span> <span class="nf">button_released</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">drag</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_config_object</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">drag</span> <span class="o">=</span> <span class="bp">None</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.motion"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.motion">[docs]</a>    <span class="k">def</span> <span class="nf">motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">drag</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_speed_coords</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span>
+            <span class="n">new_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">move_control_point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drag</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">popup</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%0.2f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">new_point</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span>
+                                      <span class="nb">str</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%0.2f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">new_point</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                </div>
+<div class="viewcode-block" id="ControlPointGraph.create_coordinate_system"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.create_coordinate_system">[docs]</a>    <span class="k">def</span> <span class="nf">create_coordinate_system</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_system</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">ImageSurface</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">FORMAT_ARGB32</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinate_system</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_line_width</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">select_font_face</span><span class="p">(</span><span class="s">&quot;sans-serif&quot;</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_font_size</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">legend_color</span><span class="p">)</span>
+        
+        <span class="n">x_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_resolution</span><span class="p">(</span><span class="mf">20.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_res_list</span><span class="p">)</span> 
+        <span class="n">y_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_resolution</span><span class="p">(</span><span class="mf">20.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_res_list</span><span class="p">)</span>
+        
+        <span class="n">decimal_places_y_res</span> <span class="o">=</span> <span class="n">y_res</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">y_res</span><span class="p">)</span>
+        <span class="n">decimal_places_y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">)</span>
+        <span class="c"># calculate number with most digits</span>
+        <span class="n">max_digits</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">decimal_places_y_res</span><span class="p">,</span>
+                               <span class="n">decimal_places_y_max</span><span class="p">,</span>
+                               <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">dec</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dec</span><span class="p">))))</span>
+        <span class="k">if</span> <span class="n">max_digits</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">max_digits_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">)</span> <span class="o">+</span> <span class="n">max_digits</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">max_digits_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">)</span>
+        
+        <span class="c"># calculate highest possible width of a number-label at y-axis</span>
+        <span class="n">max_width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">text_extents</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">max_digits_number</span><span class="p">))[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        
+        <span class="n">x_axis_y_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">+</span> \
+                         <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis_distance</span>
+        <span class="n">x_axis_y_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">+</span> \
+                       <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis_distance</span> <span class="o">+</span> \
+                       <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_line_length</span> <span class="o">+</span> <span class="n">height</span>
+        
+        <span class="n">y_axis_x_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">-</span> \
+                         <span class="bp">self</span><span class="o">.</span><span class="n">axis_distance</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_line_length</span> <span class="o">-</span> \
+                         <span class="n">max_width</span>
+        <span class="n">y_axis_x_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">-</span> \
+                       <span class="bp">self</span><span class="o">.</span><span class="n">axis_distance</span>
+        
+        <span class="n">x_legend_width</span><span class="p">,</span> <span class="n">x_legend_height</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">text_extents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_legend_text</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">y_legend_width</span><span class="p">,</span> <span class="n">y_legend_height</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">text_extents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_legend_text</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        
+        <span class="n">c</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span> <span class="n">x_legend_width</span><span class="p">),</span>
+                  <span class="n">x_axis_y_end</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">x_axis_y_end</span> <span class="o">+</span> <span class="n">x_legend_height</span><span class="p">))</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">show_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_legend_text</span><span class="p">)</span>
+
+        <span class="n">c</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_axis_x_start</span> <span class="o">+</span> <span class="n">y_legend_height</span><span class="p">),</span>
+                  <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">+</span> <span class="n">y_legend_width</span><span class="p">))</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">pi</span> <span class="o">/</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">show_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_legend_text</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_font_size</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">axes_color</span><span class="p">)</span>
+        
+        <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">used_width</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="c">#        abs_x_max = self.get_abs_coords(self.x_max, 0)[0]</span>
+        <span class="k">while</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span> <span class="o">+</span> <span class="n">x_res</span><span class="p">:</span>
+            <span class="n">text</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_axis_data_at_pos</span><span class="p">(</span><span class="n">c</span><span class="p">,</span>
+                                                                  <span class="n">pos</span><span class="p">,</span>
+                                                                  <span class="n">x_res</span><span class="p">,</span>
+                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">used_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_label_distance</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_axis_y_start</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_axis_y_end</span> <span class="o">-</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="n">x_axis_y_end</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">show_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">used_width</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">width</span>
+            <span class="n">pos</span> <span class="o">+=</span> <span class="n">x_res</span>
+        
+        <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">used_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span>
+        <span class="k">while</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span> <span class="o">+</span> <span class="n">y_res</span><span class="p">:</span>
+            <span class="n">text</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_axis_data_at_pos</span><span class="p">(</span><span class="n">c</span><span class="p">,</span>
+                                                                  <span class="n">pos</span><span class="p">,</span>
+                                                                  <span class="n">y_res</span><span class="p">,</span>
+                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">used_height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_label_distance</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">y_axis_x_start</span> <span class="o">+</span> <span class="n">max_width</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">y_axis_x_end</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="n">y_axis_x_start</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">height</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">show_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">used_height</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">height</span>
+            <span class="n">pos</span> <span class="o">+=</span> <span class="n">y_res</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">stroke_preserve</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="ControlPointGraph.get_resolution"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.get_resolution">[docs]</a>    <span class="k">def</span> <span class="nf">get_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nr_labels</span><span class="p">,</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">res_list</span><span class="p">):</span>
+        <span class="n">estimated_res</span> <span class="o">=</span> <span class="n">max_value</span> <span class="o">/</span> <span class="n">nr_labels</span>
+        <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">res_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="o">&gt;=</span> <span class="n">estimated_res</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">res</span>
+        </div>
+<div class="viewcode-block" id="ControlPointGraph.get_axis_data_at_pos"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.get_axis_data_at_pos">[docs]</a>    <span class="k">def</span> <span class="nf">get_axis_data_at_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">max_value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="n">max_value</span> <span class="ow">and</span> <span class="n">pos</span> <span class="o">-</span> <span class="n">res</span> <span class="o">!=</span> <span class="n">max_value</span><span class="p">:</span>
+            <span class="c"># FIXME: if float returned by Gtk.SpinButton is converted to int,</span>
+            <span class="c"># the int has the wrong value (test with 104.0)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_abs_coords</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">text_extents</span><span class="p">(</span><span class="n">text</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">text</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.calc_size_factors"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.calc_size_factors">[docs]</a>    <span class="k">def</span> <span class="nf">calc_size_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_factor</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_right</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_factor</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span> <span class="o">-</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="ControlPointGraph.get_needed_space"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.get_needed_space">[docs]</a>    <span class="k">def</span> <span class="nf">get_needed_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_left_bottom</span><span class="p">,</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">border_right</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_large</span>
+    </div>
+<div class="viewcode-block" id="ControlPointGraph.clear"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># all attribs must be set at once in get_func_data,</span>
+        <span class="c"># so we only need to check if one of them exists</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;func&quot;</span><span class="p">):</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="ControlPointGraph.load"><a class="viewcode-back" href="../../electrip.html#electrip.widgets.ControlPointGraph.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_object</span><span class="p">):</span>
+        <span class="c"># every child-class must implement this method to set up axes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_func_data</span><span class="p">(</span><span class="n">config_object</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calc_size_factors</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_coordinate_system</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/small_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Electrip 4.16.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Moritz Renftle.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
