@@ -4,8 +4,8 @@
 class UnsavedChangesHandler(object):
     """
     An object which reports changes on any of its
-    attributes to a 'save_status_method' (usually
-    'Config.unsaved_changes').
+    attributes to a *save_status_method* (usually
+    :func:`JsonModel.unsaved_changes`).
     """
     def __init__(self, save_status_method):
         if save_status_method != None:

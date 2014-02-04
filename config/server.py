@@ -6,7 +6,7 @@ from unsaved_changes import UnsavedChangesHandler
 class Server(UnsavedChangesHandler):
     """
     SRCP-compatible Server.
-    Representation for all settings concerning
+    Used for all settings concerning
     TCP/IP connectivity.
     """
     def __init__(self,

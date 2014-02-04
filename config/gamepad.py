@@ -7,8 +7,7 @@ class Joystick(UnsavedChangesHandler):
     """
     Input device with knobs and axes, used to
     control the model railway.
-    Representation for all settings concerning
-    Josyticks/Gamepads.
+    Used for general Gamepad-settings.
     """
     def __init__(self,
                  save_status_method,

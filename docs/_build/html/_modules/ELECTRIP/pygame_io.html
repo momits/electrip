@@ -1,0 +1,680 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ELECTRIP.pygame_io &mdash; Electrip 4.16.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '4.16.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Electrip 4.16.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Electrip 4.16.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for ELECTRIP.pygame_io</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: UTF-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">gi.repository</span> <span class="kn">import</span> <span class="n">GdkPixbuf</span><span class="p">,</span> <span class="n">GObject</span>
+<span class="kn">from</span> <span class="nn">locked_print</span> <span class="kn">import</span> <span class="n">locked_print</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pygame</span>
+    <span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;PyGame ist nicht installiert, Gamepads &quot;</span>
+                 <span class="s">&quot;und die Geräuschsimulation können nicht &quot;</span>
+                 <span class="s">&quot;verwendet werden.&quot;</span><span class="p">)</span>
+    <span class="n">pygame_installed</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">pygame_installed</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">constants</span> <span class="kn">import</span> <span class="n">STOP_EVENT</span><span class="p">,</span> <span class="n">END_EVENT_LOWER_BOUND</span><span class="p">,</span> \
+                      <span class="n">EngineType</span><span class="p">,</span> <span class="n">ToggleMode</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">normpath</span>
+
+ <span class="c"># class for mixed event handling: gamepads + sound</span>
+<div class="viewcode-block" id="EventHandlerThread"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread">[docs]</a><span class="k">class</span> <span class="nc">EventHandlerThread</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
+    <span class="n">running</span> <span class="o">=</span> <span class="bp">False</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_copy</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quit_callbacks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">global</span> <span class="n">Config</span>
+        <span class="n">Config</span> <span class="o">=</span> <span class="n">config_copy</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">pre_init</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="n">Config</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span>
+                              <span class="n">size</span><span class="o">=-</span><span class="mi">16</span><span class="p">,</span>
+                              <span class="n">channels</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                              <span class="nb">buffer</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">set_num_channels</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="EventHandlerThread.joystick_init"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.joystick_init">[docs]</a>    <span class="k">def</span> <span class="nf">joystick_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controllers</span><span class="p">,</span> <span class="n">emergency_button</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">GdkPixbuf</span><span class="o">.</span><span class="n">Pixbuf</span><span class="o">.</span><span class="n">new_from_file</span><span class="p">(</span><span class="n">normpath</span><span class="p">(</span><span class="s">&quot;icons/gamepads/&quot;</span> <span class="o">+</span> 
+                                                                   <span class="nb">str</span><span class="p">(</span><span class="n">img_nr</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;.png&quot;</span><span class="p">))</span>
+                           <span class="k">for</span> <span class="n">img_nr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Initialisiere Joysticks / Gamepads:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">joy_id</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">get_count</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">controllers</span><span class="p">):</span>
+                <span class="c"># appends joystick-triples of the format:</span>
+                <span class="c"># [pygame.joystick.Joystick-instance, loco_id, start_scrolling]</span>
+                <span class="c"># where start_scrolling may have the values</span>
+                <span class="c"># 0 = No, 1 = scroll to right, -1 = scroll to left</span>
+                <span class="n">joystick</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">Joystick</span><span class="p">(</span><span class="n">joy_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">joystick</span><span class="p">,</span> <span class="n">joy_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+                
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;-------- &quot;</span> <span class="p">,</span> <span class="n">joystick</span><span class="o">.</span><span class="n">get_id</span><span class="p">()</span> <span class="p">,</span> <span class="s">&quot; --------&quot;</span><span class="p">)</span>
+                <span class="n">joystick</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="n">joystick</span><span class="o">.</span><span class="n">get_name</span><span class="p">())</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Anzahl Achsen:&quot;</span><span class="p">,</span> <span class="n">joystick</span><span class="o">.</span><span class="n">get_numaxes</span><span class="p">())</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Anzahl Knöpfe:&quot;</span><span class="p">,</span> <span class="n">joystick</span><span class="o">.</span><span class="n">get_numbuttons</span><span class="p">())</span>
+                
+                <span class="n">controllers</span><span class="p">[</span><span class="n">joy_id</span><span class="p">]</span><span class="o">.</span><span class="n">gamepad_image</span><span class="o">.</span><span class="n">set_from_pixbuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_list</span><span class="p">[</span><span class="n">joy_id</span><span class="p">])</span>
+                <span class="n">controllers</span><span class="p">[</span><span class="n">joy_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">=</span> <span class="n">joystick</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Joystick &#39;&quot;</span> <span class="o">+</span> <span class="n">pygame</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">Joystick</span><span class="p">(</span><span class="n">joy_id</span><span class="p">)</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="o">+</span> \
+                             <span class="s">&quot;&#39; wurde ignoriert, da &quot;</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">get_count</span><span class="p">(),</span>
+                             <span class="s">&quot; Joysticks zuviel für &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">controllers</span><span class="p">),</span> <span class="s">&quot; Loks sind.&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_button</span> <span class="o">=</span> <span class="n">emergency_button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_focus</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">use_auto_focus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span> <span class="o">=</span> <span class="n">controllers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_thread</span> <span class="o">=</span> <span class="n">SpeedThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.run"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">&gt;=</span> <span class="n">END_EVENT_LOWER_BOUND</span><span class="p">:</span>
+                <span class="n">channel_id</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">-</span> <span class="n">END_EVENT_LOWER_BOUND</span>
+                <span class="k">if</span> <span class="n">channel_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">:</span>
+                    <span class="n">func</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">[</span><span class="n">channel_id</span><span class="p">]</span>
+                    <span class="c"># safe calling from a separate thread:</span>
+                    <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">JOYBUTTONDOWN</span><span class="p">:</span>
+                <span class="n">loco_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">configured</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">for</span> <span class="n">function_button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">function_button</span><span class="p">,</span> <span class="s">&quot;function&quot;</span><span class="p">)</span> \
+                    <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="n">function_button</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">button</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">function_button</span><span class="o">.</span><span class="n">get_sensitive</span><span class="p">():</span>
+                            <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="n">function_button</span><span class="o">.</span><span class="n">clicked</span><span class="p">)</span>
+                        <span class="n">configured</span> <span class="o">=</span> <span class="bp">True</span>
+                
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">reverse_button</span><span class="p">:</span>
+                    <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">reverser</span><span class="o">.</span><span class="n">clicked</span><span class="p">)</span>
+                
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">emergency_button</span><span class="p">:</span>
+                    <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emergency_button</span><span class="o">.</span><span class="n">clicked</span><span class="p">)</span>
+                
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">focus_button</span><span class="p">:</span>
+                    <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">set_focus</span><span class="p">)</span>
+                
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">sound_button</span> \
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">sound_switch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">sound_switch</span>
+                    <span class="k">if</span> <span class="n">sound_switch</span><span class="o">.</span><span class="n">get_sensitive</span><span class="p">():</span>
+                        <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="n">sound_switch</span><span class="o">.</span><span class="n">clicked</span><span class="p">)</span>
+                
+                <span class="k">elif</span> <span class="ow">not</span> <span class="n">configured</span><span class="p">:</span>
+                    <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Nicht konfigurierter Button wurde gedrückt.&quot;</span><span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">JOYBUTTONUP</span><span class="p">:</span>
+                <span class="n">loco_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">function_button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">function_button</span><span class="p">,</span> <span class="s">&quot;function&quot;</span><span class="p">)</span> \
+                    <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="n">function_button</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">button</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">function_button</span><span class="o">.</span><span class="n">function</span><span class="p">,</span> <span class="s">&quot;toggle_mode&quot;</span><span class="p">)</span> \
+                        <span class="ow">and</span> <span class="p">(</span><span class="n">function_button</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="o">==</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">PUSH</span> <span class="ow">or</span> \
+                             <span class="n">function_button</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="o">==</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">PUSH_LIMITED</span><span class="p">):</span>
+                            <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="n">function_button</span><span class="o">.</span><span class="n">clicked</span><span class="p">)</span>
+              
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">JOYHATMOTION</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="c"># set scroll-direction to the right</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="c"># scroll one position to the right</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">scroll</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">)</span>
+                    <span class="c"># after 500 ms, check if auto-scrolling should be enabled</span>
+                    <span class="n">GObject</span><span class="o">.</span><span class="n">timeout_add</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_auto_scroll</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="c"># set scroll-direction to the right</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="c"># scroll one position to the left</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">scroll</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">)</span>
+                    <span class="c"># after 500 ms, check if auto-scrolling should be enabled</span>
+                    <span class="n">GObject</span><span class="o">.</span><span class="n">timeout_add</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_auto_scroll</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">)</span>
+                <span class="c"># if joyhat is not pressed anymore but we are still scrolling</span>
+                <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="c"># set scroll-direction to 0 (no scrolling)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">joy</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">STOP_EVENT</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;EventHandlerThread beendet.&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.change_loco"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.change_loco">[docs]</a>    <span class="k">def</span> <span class="nf">change_loco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco_id</span><span class="p">,</span> <span class="n">new_loco_id</span><span class="p">,</span> <span class="n">joystick</span><span class="p">):</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">gamepad_image</span><span class="o">.</span><span class="n">clear</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">gamepad_image</span><span class="o">.</span><span class="n">set_from_pixbuf</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">image_list</span><span class="p">[</span><span class="n">joystick</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">joystick</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c"># if auto-focus is active, make the controller focus itself in the window</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_focus</span><span class="p">:</span>
+            <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">set_focus</span><span class="p">)</span>
+        <span class="n">loco_id</span> <span class="o">=</span> <span class="n">new_loco_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">joystick</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">loco_id</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.scroll"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.scroll">[docs]</a>    <span class="k">def</span> <span class="nf">scroll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">joystick</span><span class="p">):</span>
+        <span class="n">loco_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">joystick</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">joystick</span><span class="p">][</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="c"># no possibility to change if loco is at the right end</span>
+            <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">loco_id</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">new_loco_id</span> <span class="o">=</span> <span class="n">loco_id</span>
+                <span class="c"># find next free loco_id</span>
+                <span class="k">while</span> <span class="n">new_loco_id</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">locos</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> \
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">new_loco_id</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c"># check if loco is free (in case all locos are occupied by joysticks)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">change_loco</span><span class="p">(</span><span class="n">loco_id</span><span class="p">,</span> <span class="n">new_loco_id</span><span class="p">,</span> <span class="n">joystick</span><span class="p">)</span>
+            
+            <span class="c"># no posiibility to change if loco is at the left end</span>
+            <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">loco_id</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_loco_id</span> <span class="o">=</span> <span class="n">loco_id</span>
+                <span class="k">while</span> <span class="n">new_loco_id</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">new_loco_id</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">new_loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">joystick</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">change_loco</span><span class="p">(</span><span class="n">loco_id</span><span class="p">,</span> <span class="n">new_loco_id</span><span class="p">,</span> <span class="n">joystick</span><span class="p">)</span>
+            <span class="c"># return True to keep the Timeout alive</span>
+            <span class="k">return</span> <span class="bp">True</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.set_auto_scroll"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.set_auto_scroll">[docs]</a>    <span class="k">def</span> <span class="nf">set_auto_scroll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">joystick</span><span class="p">):</span>
+        <span class="c"># if the joyhat is still pushed in the same direction</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">[</span><span class="n">joystick</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">direction</span><span class="p">:</span>
+            <span class="n">GObject</span><span class="o">.</span><span class="n">timeout_add</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">joystick</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">False</span>
+      </div>
+<div class="viewcode-block" id="EventHandlerThread.add_callback"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.add_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_id</span><span class="p">,</span> <span class="n">callback_func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">[</span><span class="n">channel_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">callback_func</span><span class="p">,</span> <span class="n">args</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.add_quit_callback"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.add_quit_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_quit_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback_func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quit_callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">callback_func</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.queue_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.queue_sound">[docs]</a>    <span class="k">def</span> <span class="nf">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_id</span><span class="p">,</span> <span class="n">sound</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sound</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># sounds are None when not configured</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">sound</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.double_queue_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.double_queue_sound">[docs]</a>    <span class="k">def</span> <span class="nf">double_queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_id</span><span class="p">,</span> <span class="n">sound</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sound</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">sound</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">sound</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.acquire_channel_id"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.acquire_channel_id">[docs]</a>    <span class="k">def</span> <span class="nf">acquire_channel_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">nr</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nr</span> <span class="o">&lt;</span> <span class="mi">255</span><span class="p">:</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">nr</span><span class="p">)</span>
+            <span class="n">channel</span><span class="o">.</span><span class="n">set_endevent</span><span class="p">(</span><span class="n">END_EVENT_LOWER_BOUND</span> <span class="o">+</span> <span class="n">nr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nr</span>
+    </div>
+<div class="viewcode-block" id="EventHandlerThread.quit"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.EventHandlerThread.quit">[docs]</a>    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit_callbacks</span><span class="p">:</span>
+            <span class="n">func</span><span class="p">()</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">STOP_EVENT</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="c"># remove globals and reference cycles</span>
+        <span class="k">global</span> <span class="n">Config</span>
+        <span class="k">del</span> <span class="n">Config</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit_callbacks</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_list</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_button</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_thread</span>
+</div></div>
+<div class="viewcode-block" id="create_sound_controller"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.create_sound_controller">[docs]</a><span class="k">def</span> <span class="nf">create_sound_controller</span><span class="p">(</span><span class="n">engine_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DieselSoundController</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SteamSoundController</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SoundController"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SoundController">[docs]</a><span class="k">class</span> <span class="nc">SoundController</span><span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">GObject</span><span class="p">):</span>
+    <span class="c"># state of the whole sound-controller:</span>
+    <span class="c"># if False, playback on every channel has stopped</span>
+    <span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">old_speed</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="n">__gsignals__</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s">&quot;speed-changed&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">SIGNAL_RUN_FIRST</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,)),</span>
+      <span class="s">&quot;engine-idle&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">SIGNAL_RUN_FIRST</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">()),</span>
+      <span class="s">&quot;engine-stopped&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">SIGNAL_RUN_FIRST</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">())</span>
+    <span class="p">}</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_thread</span><span class="p">,</span> <span class="n">loco_engine</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">GObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span> <span class="o">=</span> <span class="n">handler_thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="n">volume</span>
+        
+        <span class="k">if</span> <span class="n">loco_engine</span><span class="o">.</span><span class="n">event_sounds</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">event_sound</span> <span class="ow">in</span> <span class="n">loco_engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">:</span>
+                <span class="n">event_sound</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_sound</span><span class="p">(</span><span class="n">event_sound</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">acquire_channel_id</span><span class="p">()</span>
+<span class="c">#                if event_sound.repeat:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">queue_event_sound</span><span class="p">,</span> <span class="n">event_sound</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">loco_engine</span>
+<span class="c">#        self.empty_sound = pygame.mixer.Sound(&quot;&quot;)</span>
+    
+<div class="viewcode-block" id="SoundController.stop_event_sounds"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SoundController.stop_event_sounds">[docs]</a>    <span class="k">def</span> <span class="nf">stop_event_sounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">event_sound</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="SoundController.check_event_sounds"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SoundController.check_event_sounds">[docs]</a>    <span class="k">def</span> <span class="nf">check_event_sounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accel</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_speed</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_time</span><span class="p">)</span>
+<span class="c">#        locked_print(&quot;new accel&quot;, self.accel)</span>
+        <span class="k">for</span> <span class="n">event_sound</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_event_sound</span><span class="p">(</span><span class="n">event_sound</span><span class="p">)</span> \
+            <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">get_busy</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">sound</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_time</span> <span class="o">=</span> <span class="n">current_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span>
+    </div>
+<div class="viewcode-block" id="SoundController.check_event_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SoundController.check_event_sound">[docs]</a>    <span class="k">def</span> <span class="nf">check_event_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_sound</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+            <span class="n">fulfilled</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">min_accel</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accel</span> <span class="o">&lt;</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">min_accel</span><span class="p">:</span>
+                    <span class="n">fulfilled</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">max_accel</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accel</span> <span class="o">&gt;</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">max_accel</span><span class="p">:</span>
+                    <span class="n">fulfilled</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">min_speed</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">&lt;</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">min_speed</span><span class="p">:</span>
+                    <span class="n">fulfilled</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">max_speed</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">&gt;</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">max_speed</span><span class="p">:</span>
+                    <span class="n">fulfilled</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="n">fulfilled</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="SoundController.queue_event_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SoundController.queue_event_sound">[docs]</a>    <span class="k">def</span> <span class="nf">queue_event_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_sound</span><span class="p">):</span>
+        <span class="c"># if the conditions for playing the event sound are still met,</span>
+        <span class="c"># put it in queue again</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_event_sound</span><span class="p">(</span><span class="n">event_sound</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span> <span class="n">event_sound</span><span class="o">.</span><span class="n">sound</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="SoundController.convert_to_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SoundController.convert_to_sound">[docs]</a>    <span class="k">def</span> <span class="nf">convert_to_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_file</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sound</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="n">sound_file</span><span class="p">)</span>
+            <span class="n">sound</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">volume</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">sound</span>
+        <span class="k">except</span> <span class="n">pygame</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Not a valid sound_file:&quot;</span><span class="p">,</span> <span class="n">sound_file</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="DieselSoundController"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController">[docs]</a><span class="k">class</span> <span class="nc">DieselSoundController</span><span class="p">(</span><span class="n">SoundController</span><span class="p">):</span>
+    <span class="n">segment_attributes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;load_sound&quot;</span><span class="p">,</span> <span class="s">&quot;idle_sound&quot;</span><span class="p">,</span> <span class="s">&quot;accel_sound&quot;</span><span class="p">,</span> <span class="s">&quot;decel_sound&quot;</span><span class="p">]</span>
+    <span class="n">engine_attributes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;quit_sound&quot;</span><span class="p">,</span> <span class="s">&quot;start_sound&quot;</span><span class="p">,</span> <span class="s">&quot;idle_sound&quot;</span><span class="p">]</span>
+    <span class="n">scheduled_speed</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">actual_speed</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">next_sound_level</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">on_load</span> <span class="o">=</span> <span class="bp">False</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_thread</span><span class="p">,</span> <span class="n">loco_engine</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="n">SoundController</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_thread</span><span class="p">,</span> <span class="n">loco_engine</span><span class="p">,</span> <span class="n">volume</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">acquire_channel_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_engine_queue</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">attrib</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">segment_attributes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="n">attrib</span><span class="p">):</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="n">attrib</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_sound</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">attrib</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_attributes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">attrib</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">attrib</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_sound</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)))</span>
+    
+    <span class="c"># new speed may be a float!</span>
+<div class="viewcode-block" id="DieselSoundController.set_scheduled_speed"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.set_scheduled_speed">[docs]</a>    <span class="k">def</span> <span class="nf">set_scheduled_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">speed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_function</span><span class="o">.</span><span class="n">get_segment_nr_from_x</span><span class="p">(</span><span class="n">speed</span><span class="p">)</span>
+        <span class="c"># if nothings played on engine_channel at the moment</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">get_busy</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_engine_queue</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_engine_queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_event_sounds</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.start_engine"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.start_engine">[docs]</a>    <span class="k">def</span> <span class="nf">start_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_speed</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">channel</span><span class="o">.</span><span class="n">get_busy</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">start_sound</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">idle_sound</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">old_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Engine is already running!&quot;</span><span class="p">)</span>
+    
+    <span class="c"># starts the engine, then plays the sound at a specific speed</span></div>
+<div class="viewcode-block" id="DieselSoundController.start_engine_with_speed"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.start_engine_with_speed">[docs]</a>    <span class="k">def</span> <span class="nf">start_engine_with_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">speed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_function</span><span class="o">.</span><span class="n">get_segment_nr_from_x</span><span class="p">(</span><span class="n">speed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_load</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c"># Must be called two times, to fill the pygame-queue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_engine_queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_engine_queue</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.quit_engine"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.quit_engine">[docs]</a>    <span class="k">def</span> <span class="nf">quit_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">quit_sound</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You didn&#39;t start the engine or it is still running at a speed &gt; 0!&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.pause_engine"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.pause_engine">[docs]</a>    <span class="k">def</span> <span class="nf">pause_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c"># stops the engine-sound </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_event_sounds</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.get_sound_for_acceleration"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.get_sound_for_acceleration">[docs]</a>    <span class="k">def</span> <span class="nf">get_sound_for_acceleration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">accel_sound</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.get_sound_for_deceleration"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.get_sound_for_deceleration">[docs]</a>    <span class="k">def</span> <span class="nf">get_sound_for_deceleration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span><span class="p">]</span><span class="o">.</span><span class="n">decel_sound</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.get_sound_for_same_speed"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.get_sound_for_same_speed">[docs]</a>    <span class="k">def</span> <span class="nf">get_sound_for_same_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">actual_segment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">idle_sound</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_load</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">actual_segment</span><span class="o">.</span><span class="n">load_sound</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">actual_segment</span><span class="o">.</span><span class="n">idle_sound</span>
+    </div>
+<div class="viewcode-block" id="DieselSoundController.update_engine_queue"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.DieselSoundController.update_engine_queue">[docs]</a>    <span class="k">def</span> <span class="nf">update_engine_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_sound_level</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;speed-changed&quot;</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">next_sound_level</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_sound_level</span> <span class="o">=</span> <span class="bp">None</span>
+            
+        <span class="n">old_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span>
+        <span class="n">emit_idle</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_speed</span><span class="p">:</span>
+                <span class="n">sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sound_for_acceleration</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_load</span> <span class="o">=</span> <span class="bp">True</span>
+            
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_speed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">emit_idle</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sound_for_same_speed</span><span class="p">()</span>
+            
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_speed</span><span class="p">:</span>
+                <span class="n">sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sound_for_deceleration</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_load</span> <span class="o">=</span> <span class="bp">False</span>
+            
+            <span class="c"># it IS possible (by design) that the playback stream gets broken,</span>
+            <span class="c"># if a sound-engine is not configured correctly</span>
+            <span class="k">if</span> <span class="n">sound</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">,</span> <span class="n">sound</span><span class="p">)</span>
+                <span class="n">sound_length</span> <span class="o">=</span> <span class="n">sound</span><span class="o">.</span><span class="n">get_length</span><span class="p">()</span> <span class="c"># * 1000</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sound_length</span> <span class="o">=</span> <span class="mf">0.0</span>
+                
+            <span class="k">if</span> <span class="n">old_speed</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">next_sound_level</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">actual_speed</span><span class="p">,</span> <span class="n">sound_length</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">emit_idle</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;engine-idle&quot;</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">get_busy</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;engine-stopped&quot;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="SteamSoundController"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController">[docs]</a><span class="k">class</span> <span class="nc">SteamSoundController</span><span class="p">(</span><span class="n">SoundController</span><span class="p">):</span>
+    <span class="n">timeout_id</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">stroke_nr</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">speed</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_thread</span><span class="p">,</span> <span class="n">loco_engine</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="n">SoundController</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_thread</span><span class="p">,</span> <span class="n">loco_engine</span><span class="p">,</span> <span class="n">volume</span><span class="p">)</span>
+        <span class="n">loco_engine</span><span class="o">.</span><span class="n">idle_sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_sound</span><span class="p">(</span><span class="n">loco_engine</span><span class="o">.</span><span class="n">idle_sound</span><span class="p">)</span>
+        <span class="n">loco_engine</span><span class="o">.</span><span class="n">cylinder_steam_sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_sound</span><span class="p">(</span><span class="n">loco_engine</span><span class="o">.</span><span class="n">cylinder_steam_sound</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steam_channel_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">acquire_channel_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idle_channel_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">acquire_channel_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_channel_ids</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">acquire_channel_id</span><span class="p">()</span>
+                                   <span class="k">for</span> <span class="n">unused_stroke</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">loco_engine</span><span class="o">.</span><span class="n">nr_strokes</span><span class="p">)]</span>
+        
+        <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">nr</span><span class="p">,</span> <span class="n">sound_path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">segment</span><span class="o">.</span><span class="n">stroke_sounds</span><span class="p">):</span>
+                <span class="n">segment</span><span class="o">.</span><span class="n">stroke_sounds</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_sound</span><span class="p">(</span><span class="n">sound_path</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idle_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue_idle_sound</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">add_quit_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="SteamSoundController.start_engine"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.start_engine">[docs]</a>    <span class="k">def</span> <span class="nf">start_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">double_queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idle_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">idle_sound</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">old_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">old_speed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Engine is already running!&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.quit_engine"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.quit_engine">[docs]</a>    <span class="k">def</span> <span class="nf">quit_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pause_engine</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.pause_engine"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.pause_engine">[docs]</a>    <span class="k">def</span> <span class="nf">pause_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;stroke_stop_event&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idle_channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">steam_channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_event_sounds</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.set_scheduled_speed"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.set_scheduled_speed">[docs]</a>    <span class="k">def</span> <span class="nf">set_scheduled_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">speed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">speed</span>
+        <span class="k">if</span> <span class="n">speed</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pause_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pause_time</span><span class="p">(</span><span class="n">speed</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;stroke_stop_event&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout_id</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">GObject</span><span class="o">.</span><span class="n">source_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_event_sounds</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_start_thread</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.check_start_thread"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.check_start_thread">[docs]</a>    <span class="k">def</span> <span class="nf">check_start_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">&gt;</span> <span class="mi">0</span> \
+        <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">steam_channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">get_busy</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steam_channel_id</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">cylinder_steam_sound</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">timeout_id</span> <span class="o">=</span> <span class="n">GObject</span><span class="o">.</span><span class="n">timeout_add</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">stroke_start_delay</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">),</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">start_stroke_thread</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_stroke_thread</span><span class="p">()</span>
+    
+    <span class="c"># starts the engine, then plays the sound at a specific speed</span></div>
+<div class="viewcode-block" id="SteamSoundController.start_engine_with_speed"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.start_engine_with_speed">[docs]</a>    <span class="k">def</span> <span class="nf">start_engine_with_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">speed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_engine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pause_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pause_time</span><span class="p">(</span><span class="n">speed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_stroke_thread</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.get_pause_time"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.get_pause_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_pause_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">speed</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">((</span><span class="mf">3.6</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">wheel_diameter</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">speed</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">nr_strokes</span><span class="p">)),</span>
+                   <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">min_freq</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.start_stroke_thread"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.start_stroke_thread">[docs]</a>    <span class="k">def</span> <span class="nf">start_stroke_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">play_next_stroke</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout_id</span> <span class="o">=</span> <span class="bp">None</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.play_next_stroke"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.play_next_stroke">[docs]</a>    <span class="k">def</span> <span class="nf">play_next_stroke</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="c">#            locked_print(&quot;Playing next stroke&quot;, self.stroke_nr, &quot;after&quot;, start_time - old_time)</span>
+            <span class="n">stroke_sound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_function</span><span class="o">.</span><span class="n">get_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speed</span><span class="p">,</span>
+                                                                <span class="s">&quot;stroke_sounds&quot;</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_nr</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_channel_ids</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_nr</span><span class="p">],</span>
+                                   <span class="n">stroke_sound</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_nr</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">nr_strokes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stroke_nr</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stroke_nr</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">needed_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="k">if</span> <span class="n">needed_time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">pause_time</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pause_time</span> <span class="o">-</span> <span class="n">needed_time</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_start_thread</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.queue_idle_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.queue_idle_sound">[docs]</a>    <span class="k">def</span> <span class="nf">queue_idle_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idle_channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">idle_sound</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="SteamSoundController.quit"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SteamSoundController.quit">[docs]</a>    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_is_running</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout_id</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">GObject</span><span class="o">.</span><span class="n">source_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout_id</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;stroke_thread&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stroke_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="FunctionSoundController"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.FunctionSoundController">[docs]</a><span class="k">class</span> <span class="nc">FunctionSoundController</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler_thread</span><span class="p">,</span> <span class="n">function_sounds</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span> <span class="o">=</span> <span class="n">handler_thread</span>
+        <span class="k">for</span> <span class="n">function_sound</span> <span class="ow">in</span> <span class="n">function_sounds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">function_sound</span><span class="o">.</span><span class="n">file_path</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">function_sound</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="n">function_sound</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="n">function_sound</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">function_sound</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">function_sound</span><span class="o">.</span><span class="n">channel_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">acquire_channel_id</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">function_sound</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ToggleMode</span><span class="o">.</span><span class="n">SWITCH</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">PUSH</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">function_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">queue_function_sound</span><span class="p">,</span>
+                                        <span class="n">function_sound</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="FunctionSoundController.queue_function_sound"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.FunctionSoundController.queue_function_sound">[docs]</a>    <span class="k">def</span> <span class="nf">queue_function_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function_sound</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">function_sound</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="n">function_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span>
+                                   <span class="n">function_sound</span><span class="o">.</span><span class="n">sound</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="SpeedThread"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SpeedThread">[docs]</a><span class="k">class</span> <span class="nc">SpeedThread</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">joysticks</span><span class="p">,</span> <span class="n">controllers</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span> <span class="o">=</span> <span class="n">joysticks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span> <span class="o">=</span> <span class="n">controllers</span>
+    
+<div class="viewcode-block" id="SpeedThread.start"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SpeedThread.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">GObject</span><span class="o">.</span><span class="n">timeout_add</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">go</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="SpeedThread.quit"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SpeedThread.quit">[docs]</a>    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">source_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="SpeedThread.go"><a class="viewcode-back" href="../../ELECTRIP.html#ELECTRIP.pygame_io.SpeedThread.go">[docs]</a>    <span class="k">def</span> <span class="nf">go</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">joystick</span><span class="p">,</span> <span class="n">loco_id</span><span class="p">,</span> <span class="n">start_scrolling</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">joysticks</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">speed_scale</span>
+            <span class="k">if</span> <span class="n">scale</span><span class="o">.</span><span class="n">get_sensitive</span><span class="p">():</span>
+                <span class="n">axis_value</span> <span class="o">=</span> <span class="n">joystick</span><span class="o">.</span><span class="n">get_axis</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">accel_axis</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">axis_value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">axis_threshold</span><span class="p">:</span>
+                    <span class="n">scale</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">locos</span><span class="p">[</span><span class="n">loco_id</span><span class="p">]</span><span class="o">.</span><span class="n">accelerate</span><span class="p">(</span><span class="n">axis_value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">True</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/small_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Electrip 4.16.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Moritz Renftle.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

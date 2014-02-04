@@ -4,13 +4,19 @@
 from unsaved_changes import UnsavedChangesHandler
 
 class ToggleMode:
-    # first click = On, second click = Off
+    """
+    Class used to specify different ways
+    to toggle a button:
+    
+        * *SWITCH*: first click = on, second click = off
+        * *PUSH*: button pressed = on, button released = off
+        * *PUSH_LIMITED*: button pressed = on, button released = off,
+          program may turn off earlier
+        * *TAP*: first click = on, program decides when off
+    """
     SWITCH = 0
-    # button-pressed = On, button-released = Off
     PUSH = 1
-    # button-pressed = On, button-released = Off, program may turn Off earlier
     PUSH_LIMITED = 2
-    # first click = On, program decides when Off
     TAP = 3
 
 class LocoFunction(UnsavedChangesHandler):
@@ -25,6 +31,9 @@ class LocoFunction(UnsavedChangesHandler):
         self.button = button
         
     def toggle(self):
+        """
+        Toggles the state of the funtion.
+        """
         self.state = not self.state
         
 class DecoderFunction(LocoFunction):
@@ -45,10 +54,15 @@ class DecoderFunction(LocoFunction):
                               button)
         self.nr = function
         self.toggle_mode = toggle_mode
+
 class EventSound(LocoFunction):
     """
-    A 'LocoFunction' which plays a sound-file
-    if certain conditions are met ('min_speed' ...)
+    A :class:`LocoFunction` which defines conditions
+    for the sound-file at *file_path* to be played.
+    The sound should be played if
+    
+        * *min_speed* <= ``loco.speed`` <=  *max_speed*
+        * *min_accel* <= ``derivation of loco.speed`` <=  *max_accel*
     """
     def __init__(self,
                  save_status_method,
@@ -73,7 +87,7 @@ class EventSound(LocoFunction):
         
 class FunctionSound(LocoFunction):
     """
-    A 'LocoFunction' which plays a sound-file
+    A :class:`LocoFunction` which plays a sound-file
     if triggered via Gamepad.
     """
     def __init__(self,

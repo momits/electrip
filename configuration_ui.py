@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from gi.repository import GObject, Gtk, Pango, Gdk
+from gi.repository import GObject, Gtk, Gdk
 from os.path import normpath
-import cairo
+
+from constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH
+from widgets import StockImageButton
+from dialog_templates import SoundFileFilter, WarningDialog
 import config
-from math import pi
-from constants import ELECTRIP_VERSION, PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH
-from electrip import StockImageButton
-from dialog_templates import ImageFileFilter, AllFileFilter, SoundFileFilter, \
-    WarningDialog
-from locked_print import locked_print
 import dialog_templates
+import widgets
 from zipfile import BadZipfile
 
 class MainBox(Gtk.Notebook):
@@ -26,10 +24,10 @@ class MainBox(Gtk.Notebook):
         self.decoder_frame = DecoderFrame(self.speed_frame,
                                           main_window)
 
-        self.loco_scrolled_window = ScrolledTreeView(LocoTreeView(self.loco_properties_frame,
-                                                                  self.decoder_frame,
-                                                                  self.function_frame,
-                                                                  self.speed_frame))
+        self.loco_scrolled_window = widgets.ScrolledTreeView(LocoTreeView(self.loco_properties_frame,
+                                                                          self.decoder_frame,
+                                                                          self.function_frame,
+                                                                          self.speed_frame))
         self.buttonbox_loco = LocoActionBox(self.loco_scrolled_window.treeview,
                                             self.loco_properties_frame,
                                             self.decoder_frame,
@@ -66,71 +64,45 @@ class MainBox(Gtk.Notebook):
         self.append_page(horizontal_grid, Gtk.Label("Lokomotiven"))
         
         self.server_table = ServerTable()
-        self.append_page(TopAlignment(self.server_table),
+        self.append_page(widgets.TopAlignment(self.server_table),
                          Gtk.Label("SRCP-Server"))
         
         self.joystick_table = JoystickTable()
-        self.append_page(TopAlignment(self.joystick_table),
+        self.append_page(widgets.TopAlignment(self.joystick_table),
                          Gtk.Label("Gamepad"))
         
         self.sound_table = SoundTable()
-        self.append_page(TopAlignment(self.sound_table),
+        self.append_page(widgets.TopAlignment(self.sound_table),
                          Gtk.Label("Geräusch"))
         self.show_all()
 
-class BoldLabel(Gtk.Label):
-    def __init__(self, text):
-        Gtk.Label.__init__(self)
-        self.set_markup("<b>" + text + "</b>")
-
-class TopAlignment(Gtk.Alignment):
-    def __init__(self, child):
-        Gtk.Alignment.__init__(self)
-        self.set(0.0, 0.0, 0.0, 0.0)
-        self.add(child)
-
-class Frame(Gtk.Frame):
-    def __init__(self, label=None):
-        Gtk.Frame.__init__(self)
-        self.set_border_width(6)
-        if label != None:
-            self.set_label_widget(BoldLabel(label))
-
-class TreeViewFrame(Frame):
-    def __init__(self, frame_label, treeview, button_box):
-        Frame.__init__(self, frame_label)
-        grid = Gtk.Grid()
-        grid.attach(ScrolledTreeView(treeview), 0, 0, 1, 1)
-        grid.attach(button_box, 0, 1, 1, 1)
-        self.add(grid)
-        
-class FunctionFrame(TreeViewFrame):
+class FunctionFrame(widgets.TreeViewFrame):
     def __init__(self):
         self.treeview = FunctionTreeView()
         self.action_box = FunctionActionBox(self.treeview)
-        TreeViewFrame.__init__(self,
-                               "Funktionen",
-                               self.treeview,
-                               self.action_box)
+        widgets.TreeViewFrame.__init__(self,
+                                       "Funktionen",
+                                       self.treeview,
+                                       self.action_box)
         self.set_sensitive(False)
         
-class EventSoundFrame(TreeViewFrame):
+class EventSoundFrame(widgets.TreeViewFrame):
     def __init__(self, popup):
         self.treeview = EventSoundTreeView(popup)
         self.action_box = EventSoundActionBox(self.treeview)
-        TreeViewFrame.__init__(self,
-                               "Geräusch-Ereignisse",
-                               self.treeview,
-                               self.action_box)
+        widgets.TreeViewFrame.__init__(self,
+                                       "Geräusch-Ereignisse",
+                                       self.treeview,
+                                       self.action_box)
         
-class FunctionSoundFrame(TreeViewFrame):
+class FunctionSoundFrame(widgets.TreeViewFrame):
     def __init__(self, popup):
         self.treeview = FunctionSoundTreeView(popup)
         self.action_box = FunctionSoundActionBox(self.treeview)
-        TreeViewFrame.__init__(self,
-                               "Geräusch-Funktionen",
-                               self.treeview,
-                               self.action_box)
+        widgets.TreeViewFrame.__init__(self,
+                                       "Geräusch-Funktionen",
+                                       self.treeview,
+                                       self.action_box)
 
 # is in fact an overlay, but uses a frame as "background"
 class SpeedGraphFrame(Gtk.Overlay):
@@ -139,7 +111,7 @@ class SpeedGraphFrame(Gtk.Overlay):
     
     def __init__(self, main_window):
         Gtk.Overlay.__init__(self)
-        frame = Frame("Geschwindigkeitsverlauf")
+        frame = widgets.Frame("Geschwindigkeitsverlauf")
         self.graph = SpeedStepGraph()
         self.speed_sound_frame = SpeedSoundFrame(self.graph, main_window)
         self.cancel_button = StockImageButton("Abbrechen", Gtk.STOCK_CANCEL)
@@ -151,7 +123,7 @@ class SpeedGraphFrame(Gtk.Overlay):
         self.warn_label = Gtk.Label()
         self.warn_label.set_vexpand(True)
         
-        self.warn_frame = Frame("Kennlinie zurücksetzen?")
+        self.warn_frame = widgets.Frame("Kennlinie zurücksetzen?")
         warn_grid = Gtk.Grid()
         warn_grid.set_column_spacing(11)
         warn_grid.set_row_spacing(11)
@@ -251,12 +223,12 @@ class SaveLocoButton(Gtk.Button):
                 Config.save_loco(Config.active_loco, file_path)
             file_chooser_dialog.destroy()
 
-class LocoPropertiesFrame(Frame):
+class LocoPropertiesFrame(widgets.Frame):
     def __init__(self, speed_graph_frame, main_window):
-        Frame.__init__(self, "Allgemeine Eigenschaften")
+        widgets.Frame.__init__(self, "Allgemeine Eigenschaften")
         self.speed_graph_frame = speed_graph_frame
         
-        self.table = EntryTable(True, False)
+        self.table = widgets.EntryTable(True, False)
         self.table.add_float_entry("Höchstgeschwindigkeit",
                                    "Die reale Höchstgeschwindigkeit der Lokomotive in km/h",
                                    "max_speed",
@@ -292,7 +264,7 @@ class LocoPropertiesFrame(Frame):
         self.table.entry_widgets[0].connect("value-changed", self.confirm_axis_change)
         self.add(self.table)
         self.set_sensitive(False)
-        self.popup = Popup(main_window, "Geräusch-Funktionen", Gdk.WindowTypeHint.NORMAL)
+        self.popup = widgets.Popup(main_window, "Geräusch-Funktionen", Gdk.WindowTypeHint.NORMAL)
         self.function_sound_frame = FunctionSoundFrame(self.popup)
         self.popup.set_content(self.function_sound_frame)
 
@@ -323,9 +295,9 @@ class LocoPropertiesFrame(Frame):
     def reset_max_speed(self):
         self.table.entry_widgets[0].set_value(self.stored_max_speed)
 
-class DecoderFrame(Frame):
+class DecoderFrame(widgets.Frame):
     def __init__(self, speed_graph_frame, main_window):
-        Frame.__init__(self, "Digitaldecoder")
+        widgets.Frame.__init__(self, "Digitaldecoder")
         self.table = DecoderTable(speed_graph_frame, main_window)
         self.add(self.table)
         self.set_sensitive(False)
@@ -333,111 +305,7 @@ class DecoderFrame(Frame):
     def load(self, loco):
         self.table.load(loco)
 
-class ArrowButton(Gtk.Button):
-    def __init__(self, direction): # direction: True = nach oben
-        Gtk.Button.__init__(self)
-        if direction:
-            self.set_image(Gtk.Arrow.new(Gtk.ArrowType.UP,
-                                         Gtk.ShadowType.NONE))
-        else:
-            self.set_image(Gtk.Arrow.new(Gtk.ArrowType.DOWN,
-                                         Gtk.ShadowType.NONE))
-
-class ScrolledTreeView(Gtk.ScrolledWindow):
-    def __init__(self, treeview):
-        Gtk.ScrolledWindow.__init__(self)
-        self.set_policy(Gtk.PolicyType.AUTOMATIC,
-                        Gtk.PolicyType.AUTOMATIC)
-        self.treeview = treeview
-        natural_req = self.treeview.get_preferred_size()[1]
-        self.set_size_request(natural_req.width,
-                              natural_req.height + 40)
-        self.add(self.treeview)
-
-class ActionBox(Gtk.ButtonBox):
-    def __init__(self, treeview, add_row_label, remove_row_label):
-        Gtk.ButtonBox.__init__(self)
-        self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.set_layout(Gtk.ButtonBoxStyle.START)
-        self.add_row_button = Gtk.Button(add_row_label)
-        
-        # method add_row must be implemented in subclass
-        self.add_row_button.connect("clicked",
-                                    self.add_row, treeview)
-        self.remove_row_button = Gtk.Button(remove_row_label)
-        
-        # method remove_row must be implemented in subclass
-        self.remove_row_button.connect("clicked",
-                                       self.remove_row, treeview)
-        
-        self.move_up_button = ArrowButton(True)
-        self.move_up_button.connect("clicked",
-                                    self.move_row,
-                                    treeview,
-                                    True)
-        self.move_down_button = ArrowButton(False)
-        self.move_down_button.connect("clicked",
-                                      self.move_row,
-                                      treeview,
-                                      False)
-        
-        self.add(self.add_row_button)
-        self.add(self.remove_row_button)
-        self.add(self.move_up_button)
-        self.add(self.move_down_button)
-        
-    def move_row(self, button, treeview, direction):
-        path = treeview.get_cursor()[0]
-        liststore = treeview.get_model()
-        if path != None:
-            row = liststore.get_iter(path)
-            row_nr = path.get_indices()[0]
-            if direction and row_nr > 0:
-                self.move_row_up(row_nr)
-                prev_row = liststore.iter_nth_child(None, row_nr - 1)
-                liststore.move_before(row, prev_row)
-                self.unsaved_changes()
-            elif not direction and row_nr < len(liststore) - 1:
-                self.move_row_down(row_nr)
-                following_row = liststore.iter_nth_child(None, row_nr + 1)
-                liststore.move_after(row, following_row)
-                self.unsaved_changes()
-            else:
-                locked_print("Zeile befindet sich schon am Rand, "
-                             "kann nicht weiter verschoben werden.")
-        else:
-            locked_print("Es ist keine Zeile ausgewählt, "
-                         "es kann nichts verschoben werden.")
-                
-    def add_row(self, button, treeview):
-        path = treeview.get_cursor()[0]
-        liststore = treeview.get_model()
-        if liststore != None:
-            if path == None:
-                new_row = liststore.append(self.add_row_at_start())
-            else:
-                row = liststore.get_iter(path)
-                row_nr = path.get_indices()[0]
-                new_row = liststore.insert_after(row, self.add_row_beneath(row_nr))
-            liststore = treeview.get_model()
-            treeview.set_cursor(liststore.get_path(new_row), None, False)
-            self.unsaved_changes()
-        else:
-            locked_print("TreeView ist leer, es kann "
-                         "nichts hinzugefügt werden.")
-            
-    def remove_row(self, button, treeview):
-        path = treeview.get_cursor()[0]
-        liststore = treeview.get_model()
-        if path != None:
-            self.remove_row_at(path.get_indices()[0])
-            liststore.remove(liststore.get_iter(path))
-            self.unsaved_changes()
-        else:
-            locked_print("Keine Zeile ausgewählt, "
-                         "es kann nichts gelöscht werden.")
-
-class LocoActionBox(ActionBox):
+class LocoActionBox(widgets.TreeViewActionBox):
     def __init__(self,
                  loco_treeview,
                  loco_properties_frame,
@@ -448,10 +316,10 @@ class LocoActionBox(ActionBox):
         self.decoder_frame = decoder_frame
         self.function_frame = function_frame
         self.speed_frame = speed_frame
-        ActionBox.__init__(self,
-                           loco_treeview,
-                           "Neue Lok",
-                           "Lok löschen")
+        widgets.TreeViewActionBox.__init__(self,
+                                           loco_treeview,
+                                           "Neue Lok",
+                                           "Lok löschen")
         
     def add_row_at_start(self):
         new_loco = config.Loco(Config.unsaved_changes)
@@ -488,12 +356,12 @@ class LocoActionBox(ActionBox):
     def unsaved_changes(self):
         Config.unsaved_changes(Config, "locos", Config.locos)
 
-class FunctionActionBox(ActionBox):
+class FunctionActionBox(widgets.TreeViewActionBox):
     def __init__(self, function_treeview):
-        ActionBox.__init__(self,
-                           function_treeview,
-                           "Neue Funktion",
-                           "Funktion löschen")
+        widgets.TreeViewActionBox.__init__(self,
+                                           function_treeview,
+                                           "Neue Funktion",
+                                           "Funktion löschen")
         
     def get_liststore_row(self, function):
         return [function.name,
@@ -528,12 +396,12 @@ class FunctionActionBox(ActionBox):
                                "functions",
                                Config.active_loco.functions)
         
-class EventSoundActionBox(ActionBox):    
+class EventSoundActionBox(widgets.TreeViewActionBox):    
     def __init__(self, event_sound_treeview):
-        ActionBox.__init__(self,
-                           event_sound_treeview,
-                           "Neues Geräusch",
-                           "Geräusch löschen")
+        widgets.TreeViewActionBox.__init__(self,
+                                           event_sound_treeview,
+                                           "Neues Geräusch",
+                                           "Geräusch löschen")
         
     def get_liststore_row(self, event_sound):
         return [event_sound.name,
@@ -569,12 +437,12 @@ class EventSoundActionBox(ActionBox):
                                "event_sounds",
                                Config.active_loco.engine.event_sounds)
         
-class FunctionSoundActionBox(ActionBox):    
+class FunctionSoundActionBox(widgets.TreeViewActionBox):    
     def __init__(self, event_sound_treeview):
-        ActionBox.__init__(self,
-                           event_sound_treeview,
-                           "Neues Geräusch",
-                           "Geräusch löschen")
+        widgets.TreeViewActionBox.__init__(self,
+                                           event_sound_treeview,
+                                           "Neues Geräusch",
+                                           "Geräusch löschen")
         
     def get_liststore_row(self, func_sound):
         return [func_sound.name,
@@ -609,335 +477,12 @@ class FunctionSoundActionBox(ActionBox):
                                "function_sounds",
                                Config.active_loco.function_sounds)
 
-# subclassed combobox with methods allowing to
-# easily acces the displayed value
-class EasyComboBox(Gtk.ComboBox):
-    # displayed_to_saved_vals: the names of the parameters
-    # of config_object (often shorter than the displayed ones)
-    # howto use: displayed_to_saved_vals =  [(parameter_name1,
-    #                                         displayed_value1),
-    #                                        (parameter_name2 ...
-    def __init__(self, liststore, displayed_to_saved_vals): 
-        Gtk.ComboBox.__init__(self)
-        self.displayed_to_saved_vals = displayed_to_saved_vals
-        self.set_model(liststore)
-        renderer = Gtk.CellRendererText()
-        self.pack_start(renderer, True)
-        self.add_attribute(renderer, "text", 0)
-        self.set_active(0)
-
-    def retrieve_value(self):
-        displayed_value = self.get_model()[self.get_active()][0]
-        for saved_val, disp_val in self.displayed_to_saved_vals:
-            if displayed_value == disp_val:
-                return saved_val
-            
-    def retrieve_disp_value(self):
-        return self.get_model()[self.get_active()][0]
-        
-    def set_value(self, saved_value):
-        saved_value_correct = False
-        for saved_val, disp_val in self.displayed_to_saved_vals:
-            if saved_value == saved_val:
-                for row_nr, row in enumerate(self.get_model()):
-                    if disp_val in row:
-                        self.set_active(row_nr)
-                        saved_value_correct = True
-                        break
-                break
-        if not saved_value_correct:
-            self.set_active(0)
-            value = self.retrieve_value()
-            locked_print("Dateiformat inkorrekt: Unbekannter Wert '" +
-                         str(saved_value) +
-                         "', verwende Standardwert '" +
-                         str(value) + "'")
-            self.emit("changed")
-
-class EasyFileButton(Gtk.FileChooserButton):
-    def __init__(self, file_filters=[]):
-        Gtk.FileChooserButton.__init__(self, Gtk.FileChooserAction.OPEN)
-        # the first file_filter is the active one
-        if len(file_filters) > 0:
-            for file_filter in file_filters:
-                self.add_filter(file_filter)
-            self.set_filter(file_filters[0])
-        
-    def retrieve_value(self):
-        return self.get_filename()
-    
-    def set_value(self, path):
-        if path != None:
-            self.set_filename(path)
-        else:
-            # TODO: find out how to reset the filename to "None"
-            self.set_filename("(keine)")
-            self.emit("file-set")
-            
-class EasyVolumeButton(Gtk.VolumeButton):
-    __gsignals__ = {
-      "volume-set": (GObject.SIGNAL_RUN_FIRST, None, ())
-    }
-    def __init__(self, file_filters=[]):
-        Gtk.VolumeButton.__init__(self)
-        self.retrieve_value = self.get_value
-        self.connect("value-changed", self.volume_set)
-        
-    def volume_set(self, button, new_value):
-        self.emit("volume-set")
-        
-class EntryTable(Gtk.Grid):
-    def __init__(self,
-                 use_tooltips,
-                 use_bold_params,
-                 orientation=Gtk.Orientation.VERTICAL,
-                 end=None):
-        Gtk.Grid.__init__(self)
-        
-        self.set_column_spacing(10)
-        self.set_row_spacing(5)
-        self.set_border_width(6)
-        
-        self.use_tooltips = use_tooltips
-        self.use_bold_params = use_bold_params
-        self.orientation = orientation
-        self.end = end
-        
-        # coordinates representing the position where
-        # the next widget will be placed
-        self.x = 0
-        self.y = 0
-        
-        self.entry_widgets = []
-        self.config_attributes = []
-        
-    def attach_entry_widget(self,
-                            entry_widget,
-                            label,
-                            description,
-                            config_attribute=None):
-        if self.use_bold_params:
-            parameter_label = BoldLabel(label)
-        else:
-            parameter_label = Gtk.Label(label)
-        self.attach(parameter_label, self.x, self.y, 1, 1)
-            
-        if self.use_tooltips:
-            entry_widget.set_tooltip_text(description)
-        else:
-            definition_label = Gtk.Label(label=description)
-            definition_label.set_alignment(0, 0.5)
-            self.attach(definition_label, self.x + 2, self.y, 1, 1)
-        
-        self.attach(entry_widget, self.x + 1, self.y, 1, 1)
-        self.entry_widgets.append(entry_widget)
-        self.config_attributes.append(config_attribute)
-        
-        # calculate the position for the next widget
-        if self.orientation == Gtk.Orientation.VERTICAL:
-            if self.end == None:
-                self.y += 1
-            else:
-                if self.y < self.end - 1:
-                    self.y += 1
-                else:
-                    self.x += 2
-                    self.y = 0
-        else:
-            if self.end == None:
-                self.x += 2
-            else:
-                if self.x < 2 * self.end - 2:
-                    self.x += 2
-                else:
-                    self.y += 1
-                    self.x = 0
-                    
-    def add_string_entry(self, label, description, config_attribute):
-        """
-        Adds a Gtk.Entry to the EntryTable.
-        """
-        entry = Gtk.Entry()
-        entry.retrieve_value = entry.get_text
-        entry.set_value = entry.set_text
-        entry.connect("changed",
-                      self.save_changes,
-                      config_attribute)
-        self.attach_entry_widget(entry, label, description, config_attribute)
-        
-    def add_int_entry(self,
-                      label,
-                      description,
-                      config_attribute,
-                      min_value=0,
-                      max_value=9999,
-                      step=1):
-        """
-        Adds a Gtk.SpinButton for integers to the EntryTable.
-        
-        Args:
-            min_value: the minimal value of the int
-            max_value: the maximal value of the int
-            step: precision of the number as step
-                between two possible values
-        """
-        spin_button = Gtk.SpinButton.new_with_range(min_value,
-                                                    max_value,
-                                                    step)
-        spin_button.retrieve_value = spin_button.get_value_as_int
-        spin_button.connect("value-changed",
-                            self.save_changes,
-                            config_attribute)
-        self.attach_entry_widget(spin_button, label, description, config_attribute)
-        
-    def add_float_entry(self,
-                        label,
-                        description,
-                        config_attribute,
-                        min_value=0.0,
-                        max_value=9999.0,
-                        step=0.1):
-        """
-        Adds a Gtk.SpinButton for integers to the EntryTable.
-        
-        Args:
-            min_value: the minimal value of the float
-            max_value: the maximal value of the float
-            step: precision of the float as step
-                between two possible values
-        """
-        spin_button = Gtk.SpinButton.new_with_range(min_value,
-                                                    max_value,
-                                                    step)
-        spin_button.retrieve_value = spin_button.get_value
-        spin_button.connect("value-changed",
-                            self.save_changes,
-                            config_attribute)
-        self.attach_entry_widget(spin_button, label, description, config_attribute)
-        
-    
-    def add_combo_entry(self,
-                        label,
-                        description,
-                        config_attribute,
-                        content_type,
-                        mapping):
-        """
-        Adds a Gtk.ComboBox to the EntryTable.
-        
-        Args:
-            content_type: the type of the values
-                to be stored in the combobox
-                (e.g. str, float ...)
-            mapping: list of 2-tuples, mapping values stored
-                in the  model to the displayed values
-        """
-        liststore = Gtk.ListStore(content_type)
-        for unused_saved_val, disp_val in mapping:
-            liststore.append([disp_val])
-        combo = EasyComboBox(liststore, mapping)
-        combo.connect("changed",
-                      self.save_changes,
-                      config_attribute)
-        self.attach_entry_widget(combo, label, description, config_attribute)
-        
-    def add_sound_file_entry(self, label, description, config_attribute):
-        """
-        Adds a Button for sound-file selection 
-        to the EntryTable.
-        """
-        file_button = EasyFileButton([SoundFileFilter(), AllFileFilter()])
-        file_button.connect("file-set",
-                            self.save_changes,
-                            config_attribute)
-        self.attach_entry_widget(file_button, label, description, config_attribute)
-        
-    def add_image_file_entry(self, label, description, config_attribute):
-        """
-        Adds a Button for image-file selection 
-        to the EntryTable.
-        """
-        file_button = EasyFileButton([ImageFileFilter(),
-                                      AllFileFilter()])
-        file_button.connect("file-set",
-                            self.save_changes,
-                            config_attribute)
-        self.attach_entry_widget(file_button, label, description, config_attribute)
-        
-    def add_bool_entry(self, label, description, config_attribute):
-        """
-        Adds a Gtk.CheckButton for boolean values
-        to the EntryTable.
-        """
-        check_button = Gtk.CheckButton()
-        check_button.retrieve_value = check_button.get_active
-        check_button.set_value = check_button.set_active
-        check_button.connect("toggled",
-                            self.save_changes,
-                            config_attribute)
-        self.attach_entry_widget(check_button, label, description, config_attribute)
-        
-    def add_volume_entry(self, label, description, config_attribute):
-        """
-        Adds a VolumeButton to the EntryTable.
-        """
-        volume_button = EasyVolumeButton()
-        volume_button.connect("volume-set",
-                              self.save_changes,
-                              config_attribute)
-        self.attach_entry_widget(volume_button, label, description, config_attribute)
-        
-    def add_action_button(self,
-                          label,
-                          description,
-                          button_label,
-                          callback):
-        """
-        Adds a Button with 'button_label' to the
-        EntryTable which calls 'callback' when clicked.
-        """
-        button = Gtk.Button(button_label)
-        button.connect("clicked", callback)
-        self.attach_entry_widget(button, label, description)
-        
-    def add_label(self, label, description, markup):
-        """
-        Adds a Label with a text according to 'markup' to the
-        EntryTable.
-        """
-        label_widget = Gtk.Label()
-        label_widget.set_markup(markup)
-        self.attach_entry_widget(label_widget, label, description)
-            
-    def load(self, config_object):
-        self.config_object = config_object
-        for nr, config_attribute in enumerate(self.config_attributes):
-            if config_attribute != None:
-                try:
-                    value = getattr(config_object, config_attribute)
-                except AttributeError:
-                    locked_print("Attribut",
-                                 config_attribute,
-                                 "konnte nicht gefunden werden, "
-                                 "es handelt sich evtl. um eine "
-                                 "veraltete Electrip-Datei.")
-                else:
-                    self.entry_widgets[nr].set_value(value)
-            
-    def save_changes(self, widget, config_attrib):
-        if config_attrib != None:
-            value = widget.retrieve_value()
-            # only set attributes when they differ from what is already saved
-            # -> prevent signal-handler trouble on loading
-            if getattr(self.config_object, config_attrib) != value:
-                setattr(self.config_object, config_attrib, value)
-
-class DecoderTable(EntryTable):
+class DecoderTable(widgets.EntryTable):
     restoring_speed_steps = False
     restoring_protocol = False
     
     def __init__(self, speed_graph_frame, main_window):
-        EntryTable.__init__(self, True, False)
+        widgets.EntryTable.__init__(self, True, False)
         self.add_combo_entry("Protokoll",
                              "Digitalprotokoll des Decoders",
                              "protocol",
@@ -1000,7 +545,7 @@ class DecoderTable(EntryTable):
         
         # setup restrictions for the gui, eliminating wrong choices for the user
         self.restrict_to_protocol(loco.protocol)
-        EntryTable.load(self, loco)
+        widgets.EntryTable.load(self, loco)
         self.loading = False
         
     def address_changed(self, entry):
@@ -1091,9 +636,9 @@ class DecoderTable(EntryTable):
         else:
             entry.override_color(Gtk.StateFlags.NORMAL, None)
 
-class ServerTable(EntryTable):
+class ServerTable(widgets.EntryTable):
     def __init__(self):
-        EntryTable.__init__(self, False, True)
+        widgets.EntryTable.__init__(self, False, True)
         self.add_string_entry("Host", "IP-Adresse des Servers", "host")
         self.add_int_entry("Port",
                            "Port unter dem der Server erreichbar ist",
@@ -1106,9 +651,9 @@ class ServerTable(EntryTable):
                             "power")
         self.load(Config.server)
 
-class JoystickTable(EntryTable):
+class JoystickTable(widgets.EntryTable):
     def __init__(self):
-        EntryTable.__init__(self, False, True)
+        widgets.EntryTable.__init__(self, False, True)
         self.add_int_entry("Nothalt",
                            "Button am Gamepad über den die "
                            "Gleisspannung ausgeschaltet werden kann",
@@ -1143,9 +688,9 @@ class JoystickTable(EntryTable):
                             "show_function_nr")
         self.load(Config.joystick)
         
-class SoundTable(EntryTable):
+class SoundTable(widgets.EntryTable):
     def __init__(self):
-        EntryTable.__init__(self, False, True)
+        widgets.EntryTable.__init__(self, False, True)
         self.add_combo_entry("Abtastrate",
                              "Die Abtastrate (Sampling Rate) der "
                              "verwendeten Geräuschdateien",
@@ -1160,169 +705,9 @@ class SoundTable(EntryTable):
                             "show_level_bar")
         self.load(Config.sound)
 
-# Base-class for TreeViews
-class TreeView(Gtk.TreeView):
-    """
-    A simplified TreeView, allowing to easily add columns
-    and keep them in sync with the 'config_object',
-    which stores the configuration.
-    """
-    def __init__(self, name):
-        """
-        Args:
-            name: The name of the TreeView, used for the
-                'unsaved-changes'-messages
-        """
-        Gtk.TreeView.__init__(self)
-        self.name = name
-        
-        # specifies the nr of columns the treeview currently has
-        self.nr_columns = 0
-        # lists the content-types for the columns 
-        # (GObject.TYPE_xxx), according to their
-        # 'colnr'-attribute
-        self.column_types = []
-    
-    def add_column(self,
-                   column_name,
-                   column_tooltip,
-                   cell_renderer,
-                   content_type):
-        """
-        Adds a new column using 'cell_renderer'.
-        """
-        # Create a label with markup
-        label = Gtk.Label()
-        label.set_markup(column_name)
-        label.set_tooltip_text(column_tooltip)
-        label.show()
-        # Create the column
-        column = Gtk.TreeViewColumn(None, cell_renderer, text=self.nr_columns)
-        column.set_widget(label)
-        column.set_resizable(True)
-        # Add a column-nr for easy identification
-        column.colnr = self.nr_columns
-        self.append_column(column)
-        self.nr_columns += 1
-        self.column_types.append(content_type)
-        
-    def update_model(self):
-        """
-        Overwrites the old liststore (if there is any) with the current
-        column-setup. Must be called after all columns have been added.
-        """
-        self.liststore = Gtk.ListStore(*self.column_types)
-        self.set_model(self.liststore)
-    
-    def add_text_colum(self,
-                       column_name,
-                       column_tooltip,
-                       content_type):
-        """
-        Adds a column with editable text to the TreeView.
-        
-        Args:
-            column_name: the column name (displayed above
-                the column)
-            column_tooltip: the tooltip for the column when
-                the mouse hovers over it
-        """
-        text_renderer = Gtk.CellRendererText()
-        text_renderer.set_property("editable", True)
-        text_renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
-        text_renderer.connect("edited", self.new_value)
-        self.add_column(column_name,
-                        column_tooltip,
-                        text_renderer,
-                        content_type)
-        
-    def add_non_editable_text_colum(self,
-                                    column_name,
-                                    column_tooltip,
-                                    content_type):
-        """
-        Adds a column with non-editable text to the TreeView.
-        
-        Args:
-            column_name: s. add_text_column
-            column_tooltip: s. add_text_column
-        """
-        text_renderer = Gtk.CellRendererText()
-        text_renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
-        self.add_column(column_name,
-                        column_tooltip,
-                        text_renderer,
-                        content_type)
-        
-    def add_combo_colum(self,
-                        column_name,
-                        column_tooltip,
-                        content_type,
-                        values):
-        """
-        Adds a column with 'ComboBox'es to the TreeView.
-        
-        Args:
-            column_name: s. add_text_column
-            column_tooltip: s. add_text_column
-            content_type: the type of the values
-                to be stored in the combobox
-                (e.g. str, float ...)
-            values: list of the values the user can
-                choose from
-        """
-        combo_renderer = Gtk.CellRendererCombo()
-        combo_renderer.set_property("editable", True)
-        combo_renderer.set_property("has-entry", False)
-        combo_renderer.set_property("text-column", 0)
-        combo_renderer.connect("edited", self.new_value)
-        combostore = Gtk.ListStore(content_type)
-        for value in values:
-            combostore.append([value])
-        combo_renderer.set_property("model", combostore)
-        self.add_column(column_name,
-                        column_tooltip,
-                        combo_renderer,
-                        content_type)
-        
-    def new_value(self, cellrenderer, path, new_value):
-        liststore = self.get_model()
-        path, column = self.get_cursor()
-        column_nr = column.colnr
-        
-        if self.column_types[column_nr] == GObject.TYPE_INT:
-            try:
-                new_value = int(new_value)
-            except ValueError:
-                locked_print("Falsche Eingabe, "
-                             "Sie haben keinen Wert eingegeben, "
-                             "der in den Typ Integer umgewandelt werden kann.")
-            else:
-                liststore[path][column_nr] = new_value
-                self.save_changes(path, column_nr, new_value)
-        
-        elif self.column_types[column_nr] == GObject.TYPE_DOUBLE:
-            try:
-                # dot needed for float-conversion (instead of comma)
-                new_value = float(new_value.replace(",", "."))
-            except ValueError:
-                locked_print("Falsche Eingabe: "
-                             "Sie haben keinen Wert eingegeben, "
-                             "der in den Typ Float umgewandelt werden kann.")
-            else:
-                liststore[path][column_nr] = new_value
-                self.save_changes(path, column_nr, new_value)
-        else:
-            liststore[path][column_nr] = new_value
-            self.save_changes(path, column_nr, new_value)
-            
-    def save_changes(self):
-        raise RuntimeError("The method 'save_changes' must be implemented in "
-                           "the child classes.")
-        
-class FunctionTreeView(TreeView):    
+class FunctionTreeView(widgets.TreeView):    
     def __init__(self):
-        TreeView.__init__(self, "FunctionTreeView")
+        widgets.TreeView.__init__(self, "FunctionTreeView")
         self.add_text_colum("Bezeichnung",
                             "Name der Funktion ('Licht', 'Hupe' ...)",
                             GObject.TYPE_STRING)
@@ -1376,7 +761,7 @@ class FunctionTreeView(TreeView):
                 Config.function_attributes[column_nr][0],
                 new_value)
         
-class LocoTreeView(TreeView):
+class LocoTreeView(widgets.TreeView):
     def __init__(self,
                  loco_properties_frame,
                  decoder_frame,
@@ -1388,7 +773,7 @@ class LocoTreeView(TreeView):
         self.function_treeview = self.function_frame.treeview
         self.speed_frame = speed_frame
         
-        TreeView.__init__(self, "LocoTreeView")
+        widgets.TreeView.__init__(self, "LocoTreeView")
         self.add_text_colum("Zu konfigurierende Lok wählen",
                             "Lok auswählen",
                             GObject.TYPE_STRING)
@@ -1424,10 +809,10 @@ class LocoTreeView(TreeView):
     def save_changes(self, path, column_nr, new_value):
         Config.locos[path.get_indices()[0]].name = new_value
 
-class EventSoundTreeView(TreeView):
+class EventSoundTreeView(widgets.TreeView):
     def __init__(self, popup):
         self.popup = popup
-        TreeView.__init__(self, "EventSoundTreeView")
+        widgets.TreeView.__init__(self, "EventSoundTreeView")
         self.add_text_colum("Bezeichnung",
                             "Name des Geräusches "
                             "(Bremsenquietschen ...)",
@@ -1524,10 +909,10 @@ class EventSoundTreeView(TreeView):
                 Config.event_sound_attributes[column_nr][0],
                 new_value)
         
-class FunctionSoundTreeView(TreeView):
+class FunctionSoundTreeView(widgets.TreeView):
     def __init__(self, popup):
         self.popup = popup
-        TreeView.__init__(self, "FunctionSoundTreeView")
+        widgets.TreeView.__init__(self, "FunctionSoundTreeView")
         
         self.add_text_colum("Bezeichnung",
                             "Name des Geräusches "
@@ -1615,325 +1000,25 @@ class FunctionSoundTreeView(TreeView):
                 Config.function_sound_attributes[column_nr][0],
                 new_value)
 
-class ControlPointGraph(Gtk.DrawingArea):
-    # minimum width + height
-    width = 550
-    height = 340
-    # important: border_left_bottom must be larger than
-    # radius_large + the width/height of the axes!
-    border_left_bottom = 60.0
-    border_right = 10
-    coordinate_line_length = 7
-    axis_distance = 2
-    radius_small = 3.6
-    radius_large = 7.3
-    control_point_border_width = 1.3
-    min_label_distance = 7
-    drag = None
-    line_color = (0.2, 0.2, 0.4)
-    control_point_outer_color = (0.1686, 0.1686, 0.1686)
-    control_point_inner_color = (0.804, 0.804, 0.757)
-    point_color = (0.35, 0.35, 0.7216)
-    axes_color = (0, 0, 0)
-    legend_color = (0.1, 0.1, 0.1)
-    
-    def __init__(self, max_digits_number=100):
-        Gtk.DrawingArea.__init__(self)
-        self.connect("draw", self.draw)
-        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
-        self.add_events(Gdk.EventMask.BUTTON1_MOTION_MASK)
-        self.connect("motion-notify-event", self.motion)
-        self.connect("button-press-event", self.button_pressed)
-        self.connect("button-release-event", self.button_released)
-        self.set_valign(Gtk.Align.FILL)
-        self.set_hexpand(True)
-        self.set_vexpand(True)
-        self.set_size_request(self.width, self.height)
-        
-        self.max_digits_number = max_digits_number
-        # we dont use the special popup class since we dont
-        # need the replace-content-functionality
-        self.popup = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
-        self.popup.set_type_hint(Gdk.WindowTypeHint.TOOLTIP)
-        self.popup.set_opacity(0.65)
-        self.popup.label = Gtk.Label.new("")
-        self.popup.add(self.popup.label)
-    
-    def draw(self, area, cr):
-        if hasattr(self, "func"):
-            new_width = self.get_allocated_width()
-            new_height = self.get_allocated_height()
-            if new_width != self.width or new_height != self.height:
-                self.width = new_width
-                self.height = new_height
-                self.calc_size_factors()
-                self.create_coordinate_system()
-            cr.set_source_surface(self.coordinate_system, 0, 0)        
-            cr.paint()
-            cr.set_line_width(2.2)
-            
-            cr.set_source_rgb(*self.point_color)
-            for y in xrange(1, int(self.y_max)):
-                x = self.func.get_x(y)
-                if x != None:
-                    x_abs, y_abs = self.get_abs_coords(x, y)
-                    cr.arc(x_abs,
-                           y_abs,
-                           self.radius_small,
-                           0,
-                           2 * pi)
-                    cr.fill()
-            cr.stroke()
-            for nr in xrange(len(self.func.control_points) - 1):
-                x_abs_1, y_abs_1 = self.get_abs_coords(*self.func.control_points[nr])
-                x_abs_2, y_abs_2 = self.get_abs_coords(*self.func.control_points[nr + 1])
-                
-                cr.move_to(x_abs_1, y_abs_1)
-                cr.set_source_rgb(*self.line_color)
-                cr.line_to(x_abs_2, y_abs_2)
-                cr.stroke()
-                
-                cr.set_source_rgb(*self.control_point_outer_color)
-                cr.arc(x_abs_1, y_abs_1, self.radius_large, 0, 2 * pi)
-                cr.fill()
-                cr.set_source_rgb(*self.control_point_inner_color)
-                cr.arc(x_abs_1,
-                       y_abs_1,
-                       self.radius_large - self.control_point_border_width,
-                       0,
-                       2 * pi)
-                cr.fill()
-            
-            cr.set_source_rgb(*self.control_point_outer_color)
-            cr.arc(x_abs_2, y_abs_2, self.radius_large, 0, 2 * pi)
-            cr.fill()
-            cr.set_source_rgb(*self.control_point_inner_color)
-            cr.arc(x_abs_2,
-                   y_abs_2,
-                   self.radius_large - self.control_point_border_width,
-                   0,
-                   2 * pi)
-            cr.fill()
-            cr.stroke()
-    
-    def get_touched_point(self, x, y):
-        result = None, None
-        for nr, point in enumerate(self.func.control_points):
-            x_abs, y_abs = self.get_abs_coords(*point)
-            circle_left_end = x_abs - self.radius_large
-            circle_right_end = x_abs + self.radius_large
-            circle_upper_end = y_abs - self.radius_large
-            circle_lower_end = y_abs + self.radius_large
-            if circle_left_end < x < circle_right_end \
-            and circle_upper_end < y < circle_lower_end:
-                result = nr, point
-                break
-        return result
-    
-    def get_abs_coords(self, x, y):
-        return self.border_left_bottom + x * self.x_factor, \
-               self.height - self.border_left_bottom - y * self.y_factor
-    
-    def get_speed_coords(self, x, y):
-        return (x - self.border_left_bottom) / self.x_factor, \
-               (self.height - self.border_left_bottom - y) / self.y_factor
-    
-    def button_pressed(self, area, event):
-        nr, point = self.get_touched_point(event.x, event.y)
-        if nr != None:
-            if event.button == 3:
-                self.func.remove_control_point(nr)
-                self.queue_draw()
-                self.update_config_object()
-            else:
-                self.drag = nr
-                self.popup.set_position(Gtk.WindowPosition.MOUSE)
-                self.popup.label.set_text(str("%0.2f" % point[0]) +
-                                          "\n" + str("%0.2f" % point[1]))
-                self.popup.show_all()
-        else:
-            x, y = self.get_speed_coords(event.x, event.y)
-            self.func.add_control_point(x, y)
-            self.queue_draw()
-            self.update_config_object()
-            
-    def update_config_object(self):
-        Config.unsaved_changes(self.func,
-                               "control_points",
-                               self.func.control_points)
-        Config.unsaved_changes(self.func,
-                               "func_segments",
-                               self.func.func_segments)
-    
-    def button_released(self, area, event):
-        if self.drag != None:
-            self.update_config_object()
-            self.popup.hide()
-            self.drag = None
-    
-    def motion(self, area, event):
-        if self.drag != None:
-            x, y = self.get_speed_coords(event.x, event.y)
-            if x < 0:
-                x = 0
-            elif x > self.x_max:
-                x = self.x_max
-            if y < 0:
-                y = 0
-            elif y > self.y_max:
-                y = self.y_max
-            new_point = self.func.move_control_point(self.drag, x, y)
-            self.queue_draw()
-            self.popup.label.set_text(str("%0.2f" % new_point[0]) + "\n" +
-                                      str("%0.2f" % new_point[1]))
-                
-    def create_coordinate_system(self):
-        self.coordinate_system = cairo.ImageSurface(cairo.FORMAT_ARGB32,
-                                                    self.width,
-                                                    self.height)
-        c = cairo.Context(self.coordinate_system)
-        c.set_line_width(2)
-        c.select_font_face("sans-serif")
-        c.set_font_size(14)
-        c.set_source_rgb(*self.legend_color)
-        
-        x_res = self.get_resolution(20.0, self.x_max, self.x_res_list) 
-        y_res = self.get_resolution(20.0, self.y_max, self.y_res_list)
-        
-        decimal_places_y_res = y_res - int(y_res)
-        decimal_places_y_max = self.y_max - int(self.y_max)
-        # calculate number with most digits
-        max_digits = float(max(decimal_places_y_res,
-                               decimal_places_y_max,
-                               key=lambda dec: len(str(dec))))
-        if max_digits != 0:
-            max_digits_number = int(self.y_max) + max_digits
-        else:
-            max_digits_number = int(self.y_max)
-        
-        # calculate highest possible width of a number-label at y-axis
-        max_width, height = c.text_extents(str(max_digits_number))[2:4]
-        
-        x_axis_y_start = self.height - self.border_left_bottom + \
-                         self.radius_large + self.axis_distance
-        x_axis_y_end = self.height - self.border_left_bottom + \
-                       self.radius_large + self.axis_distance + \
-                       self.coordinate_line_length + height
-        
-        y_axis_x_start = self.border_left_bottom - self.radius_large - \
-                         self.axis_distance - self.coordinate_line_length - \
-                         max_width
-        y_axis_x_end = self.border_left_bottom - self.radius_large - \
-                       self.axis_distance
-        
-        x_legend_width, x_legend_height = c.text_extents(self.x_legend_text)[2:4]
-        y_legend_width, y_legend_height = c.text_extents(self.y_legend_text)[2:4]
-        
-        c.move_to(0.5 * (self.width - self.border_left_bottom - x_legend_width),
-                  x_axis_y_end + 0.5 * (self.height - x_axis_y_end + x_legend_height))
-        c.show_text(self.x_legend_text)
-
-        c.move_to(0.5 * (y_axis_x_start + y_legend_height),
-                  0.5 * (self.height - self.border_left_bottom + y_legend_width))
-        c.rotate(pi / -2.0)
-        c.show_text(self.y_legend_text)
-        c.rotate(pi / 2.0)
-        c.set_font_size(12)
-        c.set_source_rgb(*self.axes_color)
-        
-        pos = 0
-        used_width = 0
-#        abs_x_max = self.get_abs_coords(self.x_max, 0)[0]
-        while pos <= self.x_max + x_res:
-            text, x, y, width, height = self.get_axis_data_at_pos(c,
-                                                                  pos,
-                                                                  x_res,
-                                                                  self.x_max)
-            if x > used_width + self.min_label_distance:
-                c.move_to(x, x_axis_y_start)
-                c.line_to(x, x_axis_y_end - height - 3)
-                c.move_to(x - 0.5 * width, x_axis_y_end)
-                c.show_text(text)
-                used_width = x + width
-            pos += x_res
-        
-        pos = 0
-        used_height = self.height
-        while pos <= self.y_max + y_res:
-            text, x, y, width, height = self.get_axis_data_at_pos(c,
-                                                                  pos,
-                                                                  y_res,
-                                                                  self.y_max)
-            if y < used_height - self.min_label_distance:
-                c.move_to(y_axis_x_start + max_width + 3, y)
-                c.line_to(y_axis_x_end, y)
-                c.move_to(y_axis_x_start, y + 0.5 * height)
-                c.show_text(text)
-                used_height = y - height
-            pos += y_res
-        c.stroke_preserve()
-        
-    def get_resolution(self, nr_labels, max_value, res_list):
-        estimated_res = max_value / nr_labels
-        for res in res_list:
-            if res >= estimated_res:
-                return res
-        
-    def get_axis_data_at_pos(self, c, pos, res, max_value):
-        if pos >= max_value and pos - res != max_value:
-            # FIXME: if float returned by Gtk.SpinButton is converted to int,
-            # the int has the wrong value (test with 104.0)
-            value = int(max_value)
-        else:
-            value = int(pos)
-        text = str(value)
-        x, y = self.get_abs_coords(value, value)
-        width, height = c.text_extents(text)[2:4]
-        return text, x, y, width, height
-    
-    def calc_size_factors(self):
-        self.x_factor = (self.width - self.border_left_bottom -
-                         self.radius_large - self.border_right) / float(self.x_max)
-        self.y_factor = (self.height - self.border_left_bottom -
-                         self.radius_large) / float(self.y_max)
-        
-    def get_needed_space(self):
-        return self.border_left_bottom, \
-               self.border_right + self.radius_large
-    
-    def clear(self):
-        # all attribs must be set at once in get_func_data,
-        # so we only need to check if one of them exists
-        if hasattr(self, "func"):
-            del self.func
-            del self.x_max
-            del self.y_max
-        self.queue_draw()
-        
-    def load(self, config_object):
-        # every child-class must implement this method to set up axes
-        self.get_func_data(config_object)
-        self.calc_size_factors()
-        self.create_coordinate_system()
-        self.queue_draw()
-
-class SpeedStepGraph(ControlPointGraph):
-    x_legend_text = "Geschwindigkeit in km/h"
-    y_legend_text = "Fahrstufe"
-    
-    # list of acceptable x-resolutions
-    x_res_list = (0.05, 0.1, 0.2, 0.25, 0.5,
-                  1, 2.5, 5, 10, 20, 50)
-    y_res_list = (1, 2, 10)
-    
+class SpeedStepGraph(widgets.ControlPointGraph):    
     def __init__(self):
-        ControlPointGraph.__init__(self, 128)
+        widgets.ControlPointGraph.__init__(self,
+                                           "Geschwindigkeit in km/h",
+                                           "Fahrstufe",
+                                           (0.05, 0.1, 0.2, 0.25, 0.5,
+                                            1, 2.5, 5, 10, 20, 50),
+                                           (1, 2, 10))
     
     def get_func_data(self, loco):
-        self.x_max = loco.max_speed
-        self.y_max = loco.speed_steps
-        self.func = loco.speed_to_step_func
+        return loco.max_speed, loco.speed_steps, loco.speed_to_step_func
+        
+    def update_config_object(self, func):
+        Config.unsaved_changes(func,
+                               "control_points",
+                               func.control_points)
+        Config.unsaved_changes(func,
+                               "func_segments",
+                               func.func_segments)
 
 class EngineDialog(WarningDialog):
     sound_labels = {config.EngineType.DIESEL: "Verbrennungsmotor",
@@ -1965,7 +1050,7 @@ class SpeedSoundFrame(Gtk.Frame):
         liststore = Gtk.ListStore(GObject.TYPE_STRING)
         for unused_engine_type, type_def in self.engine_types:
             liststore.append([type_def])
-        self.type_combo = EasyComboBox(liststore, self.engine_types)
+        self.type_combo = widgets.EasyComboBox(liststore, self.engine_types)
         self.type_combo.set_valign(Gtk.Align.START)
         self.type_combo.set_halign(Gtk.Align.START)
         self.type_combo.connect("changed", self.engine_type_changed)
@@ -1976,9 +1061,9 @@ class SpeedSoundFrame(Gtk.Frame):
         self.separator.set_margin_right(self.inner_margin)
         self.separator.show()
         
-        self.popup = Popup(main_window,
-                           "Geräusch-Ereignisse",
-                           Gdk.WindowTypeHint.NORMAL)
+        self.popup = widgets.Popup(main_window,
+                                   "Geräusch-Ereignisse",
+                                   Gdk.WindowTypeHint.NORMAL)
         self.event_sound_frame = EventSoundFrame(self.popup)
         self.popup.set_content(self.event_sound_frame)
         
@@ -2001,10 +1086,10 @@ class SpeedSoundFrame(Gtk.Frame):
         self.loading = False
         
     def create_sound_options(self):
-        self.table = EntryTable(True,
-                                False,
-                                Gtk.Orientation.HORIZONTAL,
-                                3)
+        self.table = widgets.EntryTable(True,
+                                        False,
+                                        Gtk.Orientation.HORIZONTAL,
+                                        3)
         if self.loco.engine.type == config.EngineType.DIESEL:
             self.table.add_sound_file_entry("Start-Geräusch",
                                             "Geräusch für das Starten der Lokomotive",
@@ -2130,15 +1215,6 @@ class SpeedSoundFrame(Gtk.Frame):
     def edit_sounds(self, button):
         self.popup.show_at_mouse()
 
-class CustomHandlePaned(Gtk.Paned):
-    def __init__(self):
-        Gtk.Paned.__init__(self)
-        self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.set_name("custom-handle-paned")
-        self.set_hexpand(True)
-        # Attention: these values only fit to the shipped handle-icon!
-        self.set_size_request(-1, 30)
-
 class SegmentedSoundBar(Gtk.Grid):
     # has to fit the width set in gtk_styles_and_transitions.css
     handle_width = 6
@@ -2155,7 +1231,7 @@ class SegmentedSoundBar(Gtk.Grid):
         self.add(self.left_handle)
         self.add(self.right_handle)
         self.set_margin_top(5)
-        self.popup = Popup(main_window)
+        self.popup = widgets.Popup(main_window)
         
         
     def load(self, loco):
@@ -2167,7 +1243,7 @@ class SegmentedSoundBar(Gtk.Grid):
         if hasattr(self, "paned"):
             self.remove(self.parent_paned)
             self.parent_paned.destroy()
-        self.paned = CustomHandlePaned()
+        self.paned = widgets.CustomHandlePaned()
         self.parent_paned = self.paned
         self.insert_column(1)
         self.attach(self.paned, 1, 0, 1, 1)
@@ -2192,7 +1268,7 @@ class SegmentedSoundBar(Gtk.Grid):
                                self.sounds_changed)
             
             if nr < len(loco.engine.sound_segments) - 1:
-                new_paned = CustomHandlePaned()
+                new_paned = widgets.CustomHandlePaned()
                 self.paned.pack2(new_paned, False, False)
                 self.paned = new_paned
         self.show_all()
@@ -2214,21 +1290,6 @@ class SegmentedSoundBar(Gtk.Grid):
     def set_horizontal_margins(self, margin):
         self.set_margin_left(margin)
         self.set_margin_right(margin)
-        
-class PopupButton(Gtk.Button):
-    def __init__(self, text, use_bold, popup):
-        Gtk.Button.__init__(self)
-        if use_bold:
-            label = BoldLabel(text)
-        else:
-            label = Gtk.Label.new(text)
-        label.set_ellipsize(Pango.EllipsizeMode.END)
-        self.add(label)
-        self.popup = popup
-        self.connect("clicked", self.show_popup)
-        
-    def show_popup(self, button):
-        self.popup.show_at_mouse()
 
 def create_sound_selector_button(engine_type, *args):
     if engine_type == config.EngineType.DIESEL:
@@ -2236,9 +1297,9 @@ def create_sound_selector_button(engine_type, *args):
     elif engine_type == config.EngineType.STEAM:
         return SteamSoundSelectorButton(*args)
 
-class SoundSelectorButton(PopupButton):    
+class SoundSelectorButton(widgets.PopupButton):    
     def __init__(self, text, popup, segment, sound_bar):
-        PopupButton.__init__(self, text, True, popup)
+        widgets.PopupButton.__init__(self, text, True, popup)
         
         self.grid = Gtk.Grid()
         
@@ -2326,7 +1387,7 @@ class SoundSelectorButton(PopupButton):
 class DieselSoundSelectorButton(SoundSelectorButton):    
     def __init__(self, text, popup, segment, sound_bar):
         SoundSelectorButton.__init__(self, text, popup, segment, sound_bar)
-        self.table = EntryTable(True, False)
+        self.table = widgets.EntryTable(True, False)
         self.table.add_sound_file_entry("Unter Last:",
                                         "Geräusch das im gewählten "
                                         "Geschwindigkeitsbereich \nunter "
@@ -2368,7 +1429,7 @@ class SteamSoundSelectorButton(SoundSelectorButton):
         self.buttons = []
         self.update_stroke_sounds()
         for stroke_nr in xrange(self.sound_bar.loco.engine.nr_strokes):
-            button = EasyFileButton([SoundFileFilter()])
+            button = widgets.EasyFileButton([SoundFileFilter()])
             button.set_tooltip_text("Geräusch für Zylindertakt " + str(stroke_nr + 1))
             path = self.segment.stroke_sounds[stroke_nr]
             if path != None:
@@ -2397,35 +1458,3 @@ class SteamSoundSelectorButton(SoundSelectorButton):
         Config.unsaved_changes(self.segment,
                                "stroke_sounds",
                                self.segment.stroke_sounds)
-
-class Popup(Gtk.Window):
-    def __init__(self, main_window, title="",
-                 type_hint=Gdk.WindowTypeHint.TOOLTIP):
-        Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
-        self.set_title("Electrip " + ELECTRIP_VERSION + " - " + title)
-        self.connect("delete-event", self.delete_event)
-        if type_hint != None:
-            self.set_type_hint(type_hint)
-        self.main_window = main_window
-        
-    def show_at_mouse(self):
-        self.set_position(Gtk.WindowPosition.MOUSE)
-        self.set_transient_for(self.main_window)
-        self.show_all()
-        
-    def show_at_center(self):
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_transient_for(self.main_window)
-        self.show_all()
-    
-    # can be called multiple times
-    def set_content(self, widget):
-        if hasattr(self, "content"):
-            self.remove(self.content)
-        self.resize_to_geometry(1, 1)
-        self.content = widget
-        self.add(self.content)
-        
-    def delete_event(self, window, event):
-        self.hide()
-        return True

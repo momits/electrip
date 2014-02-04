@@ -5,17 +5,21 @@ from unsaved_changes import UnsavedChangesHandler
 from sound_engines import EngineType
 
 """
-Different types of sound
+Classes providing abstractions for different types of sounds.
 """
 
 class SegmentPosition:
+    """
+    Defines two types of Segments: upper and middle
+    ones. Used e.g. in :func:`SoundSegment.set_position`.
+    """
     MIDDLE = 1
     UPPER = 2
 
 def create_sound_segment(engine_type, *args):
     """
-    Returns a newly created 'SoundSegment'
-    according to 'engine_type'.
+    Returns a newly created :class:`SoundSegment`
+    according to *engine_type*.
     """
     if engine_type == EngineType.STEAM:
         return SteamSoundSegment(*args)
@@ -24,39 +28,37 @@ def create_sound_segment(engine_type, *args):
 
 class SoundSegment(UnsavedChangesHandler):
     """
-    Segment reaching from 'start' to 'end' where
-    (start, end] represents the speed-range this
-    segment covers.
+    Defines sounds for a certain speed-range
+    reaching from speeds greater than *start* to
+    speeds smaller or equal to *end*.
     """
-    position = SegmentPosition.MIDDLE
     def __init__(self, save_status_method, start, end):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.start = start
         self.end = end
+        self.position = SegmentPosition.MIDDLE
+        
+    def set_position(self):
+        """
+        Allows segment-implementations to react to
+        position-changes. Should be called whenever the position
+        of a segment changes.
+        """
+        raise RuntimeError("Method 'set_position' must be"
+                           "implemented in a child class.")
     
 class DieselSoundSegment(SoundSegment):
     """
-    A segment for Diesel-sound, specifying the sound to
-    be played for different conditions.
-    Case 1: engine is running at constant speed
-        a) engine is under load -> 'load_sound'
-        b) else -> 'idle_sound'
-    Case 2: engine is accelerating -> 'accel_sound'
-    Case 3: engine is decelerating -> 'decel_sound'
+    A segment for Diesel-sound.
+    Provides different sounds for different conditions:
+    
+        * *load_sound*: engine is running under load at
+          constant speed
+        * *idle_sound*: engine is running idle at
+          constant speed
+        * *accel_sound*: engine is accelerating
+        * *accel_sound*: engine is decelerating
     """
-    type = "diesel"
-    attributes = {SegmentPosition.UPPER: ["start",
-                                          "end",
-                                          "load_sound",
-                                          "accel_sound",
-                                          "decel_sound"],
-                  SegmentPosition.MIDDLE: ["start",
-                                           "end",
-                                           "load_sound",
-                                           "idle_sound",
-                                           "accel_sound",
-                                           "decel_sound"]}
-    position = SegmentPosition.MIDDLE
     
     def __init__(self,
                  save_status_method,
@@ -67,17 +69,31 @@ class DieselSoundSegment(SoundSegment):
                  accel_sound=None,
                  decel_sound=None):
         SoundSegment.__init__(self, save_status_method, start, end)
+        
         self.load_sound = load_sound
         self.idle_sound = idle_sound
         self.accel_sound = accel_sound
         self.decel_sound = decel_sound
+        
+        self.type = "diesel"
+        self.attributes = {SegmentPosition.UPPER: ["start",
+                                                   "end",
+                                                   "load_sound",
+                                                   "accel_sound",
+                                                   "decel_sound"],
+                           SegmentPosition.MIDDLE: ["start",
+                                                    "end",
+                                                    "load_sound",
+                                                    "idle_sound",
+                                                    "accel_sound",
+                                                    "decel_sound"]}
                 
     def set_position(self, position):
         """
-        Creates the 'idle_sound'-attribute if position
-        is 'SegmentPosition.MIDDLE', erases it if position
-        is 'SegmentPosition.UPPER' (upper DieselSegments
-        can't have an 'idle_sound').
+        Creates the *idle_sound*-attribute if position
+        is *SegmentPosition.MIDDLE*, erases it if position
+        is *SegmentPosition.UPPER* (in the upper
+        *DieselSoundSegment* the loco is always under load).
         """
         if position != self.position:
             if position == SegmentPosition.MIDDLE:
@@ -89,11 +105,25 @@ class DieselSoundSegment(SoundSegment):
 
 class SteamSoundSegment(SoundSegment):
     """
-    A segment for Steam-sound, specifying the sound
-    of the cylinder-strokes of the steam loco during
-    the speed-range (start, end}.
+    A segment for steam-sound. Provides the attribute
+    *stroke_sounds*, which is a list of strings specifying the
+    sound-filepaths for the cylinder-strokes.
+    E.g.::
+    
+        segment = SteamSoundSegment(some_method,
+                                    12.0,
+                                    31.2,
+                                    ["/home/user/tchoo.wav",
+                                     "/home/user/piff.wav",
+                                     "/home/user/paff.wav"])
+        # if active, tchoo-piff-paff-tchoo-piff-paff-tchoo...
+        # should be played
+    
+    will create a new :class:`SteamSoundSegment` reaching from
+    any speed greater than 12.0 km/h to 31.2 km/h. If active,
+    :file:`tchoo.wav`, :file:`piff.wav` and :file:`paff.wav`.
+    should be used as cylinder-stroke-sounds.
     """
-    type = "steam"
     def __init__(self,
                  save_status_method,
                  start,
@@ -102,8 +132,10 @@ class SteamSoundSegment(SoundSegment):
         SoundSegment.__init__(self, save_status_method, start, end)
         self.stroke_sounds = stroke_sounds
         
+        self.type = "steam"
+        
     def set_position(self, position):
         """
         Does nothing at all, position doesn't matter for
-        'SteamSoundSegment's.
+        :class:`SteamSoundSegment`.
         """

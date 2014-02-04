@@ -63,7 +63,7 @@ class Loco(UnsavedChangesHandler):
     def get_srcp_status(self, bus):
         self.last_speed_step = int(self.speed_step)
         if len(self.functions) > 0:
-            toggled = [False for i in range(max([function.nr + 1 for function in self.functions]))]
+            toggled = [False for unused_i in range(max([function.nr + 1 for function in self.functions]))]
             for function in self.functions:
                 if function.state:
                     toggled[function.nr] = True

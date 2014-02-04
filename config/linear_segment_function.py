@@ -11,10 +11,8 @@ class LinearSegmentFunction:
         """
         Loads the function from the control points, building
         the linear function segments between the control-points.
-        
-        Args:
-            control_points: A list of (x, y)-point-tuples
-                defining the control-points of the function
+        *control_points* are a list of ``(x, y)``-point-tuples
+        defining the control-points of the function.
         """
         self.control_points = [control_points[0], control_points[-1]]
         self.func_segments = [self.calc_func_segment(self.control_points[0],
@@ -24,8 +22,8 @@ class LinearSegmentFunction:
     
     def add_control_point(self, x, y):
         """
-        Adds a control point at (x, y), updating the function.
-        If the resulting function after inserting (x, y) would
+        Adds a control point at ``(x, y)``, updating the function.
+        If the resulting function after inserting ``(x, y)`` would
         not be monotonically increasing, nothing will happen.
         """
         nr = self.get_segment_nr_from_x(x)
@@ -42,7 +40,7 @@ class LinearSegmentFunction:
                 
     def remove_control_point(self, nr):
         """
-        Removes the 'nr'-th control point from the function.
+        Removes the *nr*-th control point from the function.
         Attempting to delete the first or last control point
         will result in nothing happening, because they are
         necessary for the function to exist.
@@ -56,9 +54,9 @@ class LinearSegmentFunction:
         
     def move_control_point(self, nr, x, y):
         """
-        Moves the 'nr'-th control point to the point (x, y).
-        If "x > x of the next point", nothing will happen, to ensure
-        a monotonic increase (Same for "y > y of next point).
+        Moves the *nr*-th control point to the point ``(x, y)``.
+        If ``x > x of the next point``, nothing will happen, to ensure
+        a monotonic increase (Same for ``y > y of next point``).
         """
         if nr == len(self.control_points) - 1:
             point_left = self.control_points[nr - 1]
@@ -90,8 +88,8 @@ class LinearSegmentFunction:
     def calc_func_segment(self, point1, point2):
         """
         Solves the equation y=a*x+b using the
-        two points (x1, y1) and (x2, y2) returns
-        (a, b).
+        two points ``(x1, y1)`` and ``(x2, y2)``.
+        Returns ``(a, b)``.
         """
         x1, y1 = point1
         x2, y2 = point2
@@ -101,7 +99,7 @@ class LinearSegmentFunction:
             
     def get_y(self, x):
         """
-        Calculates the functions y-value from x.
+        Returns the functions y-value at *x*.
         """
         if x == 0:
             return 0
@@ -114,7 +112,8 @@ class LinearSegmentFunction:
     
     def get_x(self, y):
         """
-        Calculates the functions x-value from y.
+        Returns the functions x-value matching *y*.
+        (Possible due to the functions injectivity).
         """
         if y == 0:
             return 0
@@ -128,8 +127,8 @@ class LinearSegmentFunction:
     
     def get_segment_nr_from_x(self, x):
         """
-        Calculates the number of the function segment belonging
-        to the x-coordinate 'x'.
+        Returns the number of the function segment belonging
+        to the x-coordinate *x*.
         """
         for nr in xrange(len(self.control_points) - 1):
             if self.control_points[nr][0] <= x <= self.control_points[nr + 1][0]:
@@ -138,8 +137,8 @@ class LinearSegmentFunction:
             
     def get_segment_nr_from_y(self, y):
         """
-        Calculates the number of the function segment belonging
-        to the y-coordinate 'y'.
+        Returns the number of the function segment belonging
+        to the y-coordinate *y*.
         """
         for nr in xrange(len(self.control_points) - 1):
             if self.control_points[nr][1] <= y <= self.control_points[nr + 1][1]:

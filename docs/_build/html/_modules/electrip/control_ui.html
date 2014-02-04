@@ -1,0 +1,929 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>electrip.control_ui &mdash; Electrip 4.16.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '4.16.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Electrip 4.16.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Electrip 4.16.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for electrip.control_ui</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">gi.repository.GLib</span> <span class="kn">import</span> <span class="n">GError</span>
+<span class="kn">from</span> <span class="nn">gi.repository</span> <span class="kn">import</span> <span class="n">GObject</span><span class="p">,</span> <span class="n">Gtk</span><span class="p">,</span> <span class="n">Pango</span><span class="p">,</span> <span class="n">GdkPixbuf</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">from</span> <span class="nn">locked_print</span> <span class="kn">import</span> <span class="n">locked_print</span><span class="p">,</span> <span class="n">SocketRecvThread</span>
+<span class="kn">import</span> <span class="nn">pygame_io</span>
+<span class="kn">from</span> <span class="nn">pygame_io</span> <span class="kn">import</span> <span class="n">FunctionSoundController</span>
+<span class="kn">from</span> <span class="nn">constants</span> <span class="kn">import</span> <span class="n">EngineType</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="p">,</span> <span class="n">CIRCLE_PATHS</span><span class="p">,</span> \
+    <span class="n">SOUND_LEVEL_ANIM_RES</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<div class="viewcode-block" id="MainBox"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.MainBox">[docs]</a><span class="k">class</span> <span class="nc">MainBox</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">main_window</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="k">global</span> <span class="n">Config</span>
+        <span class="n">Config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">create_copy</span><span class="p">()</span>
+         
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket_init</span><span class="p">()</span>
+         
+        <span class="k">if</span> <span class="n">pygame_io</span><span class="o">.</span><span class="n">pygame_installed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span> <span class="o">=</span> <span class="n">pygame_io</span><span class="o">.</span><span class="n">EventHandlerThread</span><span class="p">(</span><span class="n">Config</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">dialog</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">MessageDialog</span><span class="p">(</span><span class="n">main_window</span><span class="p">,</span>
+                                       <span class="mi">0</span><span class="p">,</span>
+                                       <span class="n">Gtk</span><span class="o">.</span><span class="n">MessageType</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+                                       <span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonsType</span><span class="o">.</span><span class="n">OK</span><span class="p">,</span>
+                                       <span class="s">&quot;Die Bibliothek PyGame ist nicht &quot;</span>
+                                       <span class="s">&quot;installiert.</span><span class="se">\n</span><span class="s">Gamepads und die &quot;</span>
+                                       <span class="s">&quot;Geräuschsimulation können daher &quot;</span>
+                                       <span class="s">&quot;nicht verwendet werden.&quot;</span><span class="p">)</span>
+            <span class="n">dialog</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+            <span class="n">dialog</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+             
+        <span class="bp">self</span><span class="o">.</span><span class="n">scrolled_window</span> <span class="o">=</span> <span class="n">ScrolledWindow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_button</span> <span class="o">=</span> <span class="n">EmergencyButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">)</span>  
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scrolled_window</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emergency_button</span><span class="p">)</span>
+         
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span><span class="o">.</span><span class="n">joystick_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scrolled_window</span><span class="o">.</span><span class="n">center_grid</span><span class="o">.</span><span class="n">controllers</span><span class="p">,</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">emergency_button</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="MainBox.quit"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.MainBox.quit">[docs]</a>    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="k">global</span> <span class="n">Config</span>
+        <span class="k">del</span> <span class="n">Config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;TERM 1 POWER</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;TERM 0 SESSION</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket_thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Steuerung geschlossen.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="MainBox.socket_init"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.MainBox.socket_init">[docs]</a>    <span class="k">def</span> <span class="nf">socket_init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">bus</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="p">)</span>
+        <span class="c"># Create Socket-Connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">create_connection</span><span class="p">((</span><span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+                                                <span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">port</span><span class="p">))</span>
+        <span class="c">#-------- Handshake ----------</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Socketverbindung aktiv mit:&quot;</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;SET CONNECTIONMODE SRCP COMMAND</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Connectionmode &#39;Command&#39; wird angefordert:&quot;</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;GO</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Es kann losgehen, was sagt der Server?&quot;</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
+        
+        <span class="c"># -------- Initialize Power on Server-Bus ---------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;INIT &quot;</span> <span class="o">+</span> <span class="n">bus</span> <span class="o">+</span> <span class="s">&quot; POWER</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
+        
+        <span class="c"># ---------- Initialize Locos -------------</span>
+        <span class="k">for</span> <span class="n">loco</span> <span class="ow">in</span> <span class="n">Config</span><span class="o">.</span><span class="n">locos</span><span class="p">:</span>
+            <span class="c"># nr_functions_to_send is NOT the same as len(loco.functions),</span>
+            <span class="c"># but the highest decoder-function-nr</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">functions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">nr_functions_to_send</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span>
+                                           <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">functions</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nr_functions_to_send</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s">&quot;INIT &quot;</span> <span class="o">+</span> <span class="n">bus</span> <span class="o">+</span> <span class="s">&quot; GL &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">address</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; &quot;</span> <span class="o">+</span> \
+                   <span class="nb">str</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">protocol</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_steps</span><span class="p">))</span> <span class="o">+</span> \
+                   <span class="s">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nr_functions_to_send</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">get_srcp_status</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="p">))</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
+        <span class="c"># After the handshake receiving is done in a separate thread</span>
+        <span class="c"># -&gt; avoid blocking of main-program</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket_thread</span> <span class="o">=</span> <span class="n">SocketRecvThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        </div></div>
+<div class="viewcode-block" id="ScrolledWindow"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.ScrolledWindow">[docs]</a><span class="k">class</span> <span class="nc">ScrolledWindow</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">event_thread</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_vexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_hexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center_grid</span> <span class="o">=</span> <span class="n">CenterGrid</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span>
+                                      <span class="n">event_thread</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">get_hadjustment</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_with_viewport</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center_grid</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="CenterGrid"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.CenterGrid">[docs]</a><span class="k">class</span> <span class="nc">CenterGrid</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">event_thread</span><span class="p">,</span> <span class="n">h_adjustment</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_column_spacing</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_margin_bottom</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="n">socket</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">loco</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">locos</span><span class="p">):</span> <span class="c"># Alle Controller hinzufügen</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Controller</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span>
+                                               <span class="n">loco</span><span class="p">,</span>
+                                               <span class="n">h_adjustment</span><span class="p">,</span>
+                                               <span class="n">event_thread</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;realize&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">realized</span><span class="p">,</span> <span class="n">event_thread</span><span class="p">)</span>
+                
+<div class="viewcode-block" id="CenterGrid.realized"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.CenterGrid.realized">[docs]</a>    <span class="k">def</span> <span class="nf">realized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hbox</span><span class="p">,</span> <span class="n">event_thread</span><span class="p">):</span>
+        <span class="n">max_height</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">max_label_width</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">config_has_functions</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">circle_pixbufs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">GdkPixbuf</span><span class="o">.</span><span class="n">Pixbuf</span><span class="o">.</span><span class="n">new_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+                               <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">CIRCLE_PATHS</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        
+        <span class="k">for</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
+            <span class="n">controller</span><span class="o">.</span><span class="n">function_box</span> <span class="o">=</span> <span class="n">FunctionBox</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">loco</span><span class="p">,</span>
+                                                  <span class="n">controller</span><span class="o">.</span><span class="n">speed_scale</span><span class="p">,</span>
+                                                  <span class="n">event_thread</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span>
+                                                  <span class="n">circle_pixbufs</span><span class="p">)</span>
+            <span class="n">controller</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+            <span class="n">controller</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">function_box</span><span class="p">)</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">controller</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">get_preferred_height</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="n">max_height</span><span class="p">:</span>
+                <span class="n">max_height</span> <span class="o">=</span> <span class="n">height</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">config_has_functions</span> \
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">buttons</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">config_has_functions</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">controller</span><span class="o">.</span><span class="n">loco_label</span><span class="o">.</span><span class="n">get_preferred_width</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="n">max_label_width</span><span class="p">:</span>
+                <span class="n">max_label_width</span> <span class="o">=</span> <span class="n">width</span>
+        
+        <span class="c"># if there are no functions, we dont need to do special size-requests</span>
+        <span class="k">if</span> <span class="n">config_has_functions</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
+                <span class="n">controller</span><span class="o">.</span><span class="n">function_box</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_height</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">controller</span><span class="o">.</span><span class="n">get_preferred_width</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_label_width</span><span class="p">:</span>
+                    <span class="c"># if the label-width of another controller is bigger than</span>
+                    <span class="c"># controllers width, request size -&gt; nicer layout</span>
+                    <span class="n">controller</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="n">max_label_width</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Controller"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Controller">[docs]</a><span class="k">class</span> <span class="nc">Controller</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>
+    <span class="n">joystick</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">sound_controller</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">h_adjustment</span><span class="p">,</span> <span class="n">event_thread</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_hexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span> <span class="o">=</span> <span class="n">loco</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco_image</span> <span class="o">=</span> <span class="n">LocoImage</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">img_path</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span> <span class="o">!=</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">event_thread</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">loco</span><span class="o">.</span><span class="n">sound_controller</span> <span class="o">=</span> <span class="n">pygame_io</span><span class="o">.</span><span class="n">create_sound_controller</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+                                                                      <span class="n">event_thread</span><span class="p">,</span>
+                                                                      <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+                                                                      <span class="n">loco</span><span class="o">.</span><span class="n">sound_volume</span><span class="p">)</span>
+            <span class="n">engine_type</span> <span class="o">=</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loco</span><span class="o">.</span><span class="n">sound_controller</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">engine_type</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span> <span class="o">=</span> <span class="n">create_speed_scale</span><span class="p">(</span><span class="n">engine_type</span><span class="p">,</span>
+                                              <span class="n">loco</span><span class="p">,</span>
+                                              <span class="n">socket</span><span class="p">,</span>
+                                              <span class="n">loco</span><span class="o">.</span><span class="n">sound_controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco_label</span> <span class="o">=</span> <span class="n">LocoLabel</span><span class="p">(</span><span class="n">loco</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reverser</span> <span class="o">=</span> <span class="n">Reverser</span><span class="p">(</span><span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamepad_image</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="p">()</span>
+        <span class="c"># TODO: find alternative! (5px bigger than image, some themes</span>
+        <span class="c"># (e.g. Elementary) need this)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamepad_image</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">76</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_adjustment</span> <span class="o">=</span> <span class="n">h_adjustment</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco_image</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s">&quot;km/h&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco_label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gamepad_image</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reverser</span><span class="p">)</span>
+    
+    <span class="c"># Put the Controller in the visible area of ScrolledWindow</span>
+<div class="viewcode-block" id="Controller.set_focus"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Controller.set_focus">[docs]</a>    <span class="k">def</span> <span class="nf">set_focus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">allocation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_allocation</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_adjustment</span><span class="o">.</span><span class="n">clamp_page</span><span class="p">(</span><span class="n">allocation</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                                     <span class="n">allocation</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">allocation</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+    </div></div>
+<div class="viewcode-block" id="LocoImage"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.LocoImage">[docs]</a><span class="k">class</span> <span class="nc">LocoImage</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="mi">110</span><span class="p">,</span> <span class="mi">85</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_from_stock</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">STOCK_MISSING_IMAGE</span><span class="p">,</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">IconSize</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pixbuf</span> <span class="o">=</span> <span class="n">GdkPixbuf</span><span class="o">.</span><span class="n">Pixbuf</span><span class="o">.</span><span class="n">new_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="n">small_pixbuf</span> <span class="o">=</span> <span class="n">pixbuf</span><span class="o">.</span><span class="n">scale_simple</span><span class="p">(</span><span class="mi">110</span><span class="p">,</span>
+                                                   <span class="mi">85</span><span class="p">,</span>
+                                                   <span class="n">GdkPixbuf</span><span class="o">.</span><span class="n">InterpType</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_from_pixbuf</span><span class="p">(</span><span class="n">small_pixbuf</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">GError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_from_stock</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">STOCK_MISSING_IMAGE</span><span class="p">,</span>
+                                    <span class="n">Gtk</span><span class="o">.</span><span class="n">IconSize</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span>
+                <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Dateipfad &#39;&quot;</span> <span class="o">+</span> <span class="n">path</span> <span class="o">+</span> <span class="s">&quot;&#39; für Lokbild ist ungültig.&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="create_speed_scale"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.create_speed_scale">[docs]</a><span class="k">def</span> <span class="nf">create_speed_scale</span><span class="p">(</span><span class="n">engine_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SpeedScale</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DieselSpeedScale</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SteamSpeedScale</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SpeedScale"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SpeedScale">[docs]</a><span class="k">class</span> <span class="nc">SpeedScale</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Scale</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Scale</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span> <span class="o">=</span> <span class="n">loco</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_restrict_to_fill_level</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_vexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_adjustment</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Adjustment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">loco</span><span class="o">.</span><span class="n">max_speed</span><span class="p">,</span>
+                                           <span class="mf">0.01</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;value-changed&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">speed_changed</span><span class="p">,</span>
+                     <span class="n">socket</span><span class="p">,</span>
+                     <span class="n">sound_controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_inverted</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_digits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_value_pos</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">PositionType</span><span class="o">.</span><span class="n">BOTTOM</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="SpeedScale.send_srcp"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SpeedScale.send_srcp">[docs]</a>    <span class="k">def</span> <span class="nf">send_srcp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">socket</span><span class="p">):</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">get_srcp_status</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="p">))</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Lok&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;fährt jetzt&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">,</span> <span class="s">&quot;km/h, das entspricht&quot;</span><span class="p">,</span>
+                     <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">),</span> <span class="s">&quot;Fahrstufen.&quot;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="SpeedScale.speed_changed"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SpeedScale.speed_changed">[docs]</a>    <span class="k">def</span> <span class="nf">speed_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_to_step_func</span><span class="o">.</span><span class="n">get_y</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">last_speed_step</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_srcp</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="DieselSpeedScale"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselSpeedScale">[docs]</a><span class="k">class</span> <span class="nc">DieselSpeedScale</span><span class="p">(</span><span class="n">SpeedScale</span><span class="p">):</span>
+    <span class="n">stop_handler_id</span> <span class="o">=</span> <span class="n">start_handler_id</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">ignore_sound_changes</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">__gsignals__</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s">&quot;started-driving&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">SIGNAL_RUN_FIRST</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">())</span>
+    <span class="p">}</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">SpeedScale</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">)</span>
+        <span class="n">sound_controller</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;speed-changed&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">animate_fill_level</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">show_level_bar</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_show_fill_level</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">max_speed</span> <span class="o">/</span> <span class="n">SOUND_LEVEL_ANIM_RES</span>
+    
+<div class="viewcode-block" id="DieselSpeedScale.speed_changed"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselSpeedScale.speed_changed">[docs]</a>    <span class="k">def</span> <span class="nf">speed_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_to_step_func</span><span class="o">.</span><span class="n">get_y</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+        <span class="n">real_speed_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">)</span>
+        
+        <span class="c"># if speed has changed</span>
+        <span class="k">if</span> <span class="n">real_speed_step</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">last_speed_step</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sound_controller</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">real_speed_step</span> <span class="o">==</span> <span class="mi">0</span> \
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_handler_id</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stop_handler_id</span> <span class="o">=</span> <span class="n">sound_controller</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;engine-idle&quot;</span><span class="p">,</span>
+                                                                    <span class="bp">self</span><span class="o">.</span><span class="n">stop_loco</span><span class="p">,</span>
+                                                                    <span class="n">socket</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">last_speed_step</span> <span class="o">==</span> <span class="mi">0</span> \
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_handler_id</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">start_handler_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;started-driving&quot;</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">start_loco</span><span class="p">,</span>
+                                                         <span class="n">socket</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_handler_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_handler_id</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send_srcp</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sound_controller</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="n">sound_controller</span><span class="o">.</span><span class="n">set_scheduled_speed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+    
+    <span class="c"># synchronize loco-speed with sound (loco does stop/start when sound is ready)</span></div>
+<div class="viewcode-block" id="DieselSpeedScale.stop_loco"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselSpeedScale.stop_loco">[docs]</a>    <span class="k">def</span> <span class="nf">stop_loco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">,</span> <span class="n">socket</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="c">#            locked_print(&quot;--------- Stopping loco together with sound!! ---------&quot;)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_srcp</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+        <span class="n">sound_controller</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_handler_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_handler_id</span> <span class="o">=</span> <span class="bp">None</span>
+        </div>
+<div class="viewcode-block" id="DieselSpeedScale.start_loco"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselSpeedScale.start_loco">[docs]</a>    <span class="k">def</span> <span class="nf">start_loco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">diesel_speed_scale</span><span class="p">,</span> <span class="n">socket</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+<span class="c">#            locked_print(&quot;--------- Starting loco together with sound!! ---------&quot;)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_srcp</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_handler_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_handler_id</span> <span class="o">=</span> <span class="bp">None</span>
+    </div>
+<div class="viewcode-block" id="DieselSpeedScale.animate_fill_level"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselSpeedScale.animate_fill_level">[docs]</a>    <span class="k">def</span> <span class="nf">animate_fill_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">animator</span><span class="p">,</span> <span class="n">sound_level</span><span class="p">,</span> <span class="n">sound_length</span><span class="p">,</span> <span class="n">last_time</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_sound_changes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">last_time</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+<span class="c">#                locked_print(&quot;Sound of diesel-loco changed to nr&quot;,sound_level, &quot;with length&quot;, sound_length)</span>
+                <span class="k">if</span> <span class="n">sound_level</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">last_speed_step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">&quot;started-driving&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+<span class="c">#                locked_print(&quot;signal received: old animator has finished&quot;)</span>
+                <span class="c"># speed up animation to make it finish in the real left time</span>
+                <span class="n">sound_length</span> <span class="o">-=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">last_time</span>
+            <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">show_level_bar</span><span class="p">:</span>
+                <span class="c"># if animator lags behind played sound</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;animator&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">animator</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+                    <span class="c"># transmit time to allow speed up in next cycle</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">animator</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;animation-finished&quot;</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">animate_fill_level</span><span class="p">,</span>
+                                          <span class="n">sound_level</span><span class="p">,</span>
+                                          <span class="n">sound_length</span><span class="p">,</span>
+                                          <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">sound_level</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+    <span class="c">#                    locked_print(&quot;animating to 0&quot;)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">animate_with_args</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sound_length</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+    <span class="c">#                    locked_print(&quot;animating to&quot;, self.loco.engine.sound_function.segments[sound_level].end)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">animate_with_args</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_function</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">sound_level</span><span class="p">]</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+                                               <span class="n">sound_length</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="DieselSpeedScale.animate_with_args"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselSpeedScale.animate_with_args">[docs]</a>    <span class="k">def</span> <span class="nf">animate_with_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_level</span><span class="p">,</span> <span class="n">sound_length</span><span class="p">):</span>
+        <span class="n">start_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_fill_level</span><span class="p">()</span>
+        <span class="n">end_val</span> <span class="o">=</span> <span class="n">sound_level</span>
+        <span class="k">if</span> <span class="n">start_val</span> <span class="o">!=</span> <span class="n">end_val</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animator</span> <span class="o">=</span> <span class="n">Animator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">,</span>
+                                     <span class="n">start_val</span><span class="p">,</span>
+                                     <span class="n">end_val</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span>
+                                     <span class="n">sound_length</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animator</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="SteamSpeedScale"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamSpeedScale">[docs]</a><span class="k">class</span> <span class="nc">SteamSpeedScale</span><span class="p">(</span><span class="n">SpeedScale</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">SpeedScale</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">show_level_bar</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_show_fill_level</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="SteamSpeedScale.speed_changed"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamSpeedScale.speed_changed">[docs]</a>    <span class="k">def</span> <span class="nf">speed_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_to_step_func</span><span class="o">.</span><span class="n">get_y</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">last_speed_step</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_srcp</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sound_controller</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="n">sound_controller</span><span class="o">.</span><span class="n">set_scheduled_speed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+        </div></div>
+<div class="viewcode-block" id="Animator"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Animator">[docs]</a><span class="k">class</span> <span class="nc">Animator</span><span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">GObject</span><span class="p">,</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
+    <span class="n">__gsignals__</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s">&quot;animation-finished&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">GObject</span><span class="o">.</span><span class="n">SIGNAL_RUN_LAST</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="p">()),</span>
+    <span class="p">}</span>
+    <span class="n">animating</span> <span class="o">=</span> <span class="bp">False</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">GObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_val</span> <span class="o">=</span> <span class="n">start_val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span> <span class="o">=</span> <span class="n">end_val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_val</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Fehler bei Animation: Start- und End-Werte identisch.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># calculate sleep time for the animation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sleep_time</span> <span class="o">=</span> <span class="n">duration</span> <span class="o">/</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">start_val</span> <span class="o">-</span> <span class="n">end_val</span><span class="p">)</span> <span class="o">/</span> <span class="n">step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_event</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+ 
+<div class="viewcode-block" id="Animator.run"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Animator.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animating</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_val</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_val</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_val</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">time_left</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sleep_time</span>
+            <span class="k">if</span> <span class="n">time_left</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">time_left</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animating</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">,</span> <span class="s">&quot;animation-finished&quot;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="LocoLabel"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.LocoLabel">[docs]</a><span class="k">class</span> <span class="nc">LocoLabel</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">loco</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_ellipsize</span><span class="p">(</span><span class="n">Pango</span><span class="o">.</span><span class="n">EllipsizeMode</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_max_width_chars</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_margin_top</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Reverser"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Reverser">[docs]</a><span class="k">class</span> <span class="nc">Reverser</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrow_up</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">new_from_stock</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">STOCK_GO_UP</span><span class="p">,</span>
+                                                 <span class="n">Gtk</span><span class="o">.</span><span class="n">IconSize</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrow_down</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">new_from_stock</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">STOCK_GO_DOWN</span><span class="p">,</span>
+                                                   <span class="n">Gtk</span><span class="o">.</span><span class="n">IconSize</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span> <span class="o">=</span> <span class="n">loco</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_arrow</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_direction</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_hexpand</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Reverser.toggle_direction"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Reverser.toggle_direction">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_direction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">toggle_direction</span><span class="p">()</span>
+        <span class="c"># if direction has changed but speed is already 0</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">speed_step</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">get_srcp_status</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="p">))</span>
+        <span class="n">scale</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_arrow</span><span class="p">()</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Lok&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                     <span class="s">&quot;hat die Richtung gewechselt und fährt nun&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">direction</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Reverser.set_arrow"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.Reverser.set_arrow">[docs]</a>    <span class="k">def</span> <span class="nf">set_arrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">direction</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrow_up</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrow_down</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="create_engine_switch"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.create_engine_switch">[docs]</a><span class="k">def</span> <span class="nf">create_engine_switch</span><span class="p">(</span><span class="n">engine_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SteamEngineSwitch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DieselEngineSwitch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="EngineSwitch"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EngineSwitch">[docs]</a><span class="k">class</span> <span class="nc">EngineSwitch</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ToggleButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">,</span> <span class="n">speed_scale</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ToggleButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">name_label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="s">&quot;Fahrgeräusch&quot;</span><span class="p">)</span>
+        <span class="n">name_label</span><span class="o">.</span><span class="n">set_ellipsize</span><span class="p">(</span><span class="n">Pango</span><span class="o">.</span><span class="n">EllipsizeMode</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">show_function_nr</span> \
+        <span class="ow">and</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">sound_button</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">()</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">set_column_spacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span> <span class="o">=</span> <span class="n">CircleNumber</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">sound_button</span><span class="p">,</span>
+                                              <span class="n">circle_pixbuf</span><span class="p">)</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span><span class="p">)</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name_label</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">grid</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">name_label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;notify::active&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_toggled</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span> <span class="o">=</span> <span class="n">sound_controller</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span> <span class="o">=</span> <span class="n">speed_scale</span>
+        
+<div class="viewcode-block" id="EngineSwitch.engine_toggled"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EngineSwitch.engine_toggled">[docs]</a>    <span class="k">def</span> <span class="nf">engine_toggled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">switch</span><span class="p">,</span> <span class="n">is_active</span><span class="p">):</span>
+        <span class="n">loco_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_active</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">loco_speed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">perform_engine_startup</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">start_engine_with_speed</span><span class="p">(</span><span class="n">loco_speed</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="n">loco_speed</span><span class="p">)</span>
+                    
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_active</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">engine_is_running</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">loco_speed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">perform_engine_shutdown</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">pause_engine</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reset_fill_level</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="DieselEngineSwitch"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch">[docs]</a><span class="k">class</span> <span class="nc">DieselEngineSwitch</span><span class="p">(</span><span class="n">EngineSwitch</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">,</span> <span class="n">speed_scale</span><span class="p">,</span> <span class="n">sound_circle</span><span class="p">):</span>
+        <span class="n">EngineSwitch</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                              <span class="n">sound_controller</span><span class="p">,</span>
+                              <span class="n">speed_scale</span><span class="p">,</span>
+                              <span class="n">sound_circle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">set_column_spacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinner</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Spinner</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinner</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="DieselEngineSwitch.set_fill_level"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.set_fill_level">[docs]</a>    <span class="k">def</span> <span class="nf">set_fill_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco_speed</span><span class="p">):</span>
+        <span class="c"># allow animations to start again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">ignore_sound_changes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">loco_speed</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">sound_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_function</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="n">sound_func</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">sound_func</span><span class="o">.</span><span class="n">get_segment_nr_from_x</span><span class="p">(</span><span class="n">loco_speed</span><span class="p">)]</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.reset_fill_level"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.reset_fill_level">[docs]</a>    <span class="k">def</span> <span class="nf">reset_fill_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># prevent further animations from starting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">ignore_sound_changes</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="p">,</span> <span class="s">&quot;animator&quot;</span><span class="p">)</span> \
+        <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">animator</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;speed-scale is animating, stopping it&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">animator</span><span class="o">.</span><span class="n">stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.perform_engine_startup"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.perform_engine_startup">[docs]</a>    <span class="k">def</span> <span class="nf">perform_engine_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_spinner</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idle_handler_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;engine-idle&quot;</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">finished_starting_engine</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">start_engine</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.perform_engine_shutdown"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.perform_engine_shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">perform_engine_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># quit engine when it is idle!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idle_handler_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;engine-idle&quot;</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">quit_engine</span><span class="p">)</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">idle_add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_spinner</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.quit_engine"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.quit_engine">[docs]</a>    <span class="k">def</span> <span class="nf">quit_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">):</span>
+        <span class="n">sound_controller</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idle_handler_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopped_handler_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;engine-stopped&quot;</span><span class="p">,</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">finished_stopping_engine</span><span class="p">)</span>
+        <span class="n">sound_controller</span><span class="o">.</span><span class="n">quit_engine</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.finished_stopping_engine"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.finished_stopping_engine">[docs]</a>    <span class="k">def</span> <span class="nf">finished_stopping_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">):</span>
+        <span class="n">sound_controller</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopped_handler_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_spinner</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.finished_starting_engine"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.finished_starting_engine">[docs]</a>    <span class="k">def</span> <span class="nf">finished_starting_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">):</span>
+        <span class="n">sound_controller</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idle_handler_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_spinner</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.start_spinner"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.start_spinner">[docs]</a>    <span class="k">def</span> <span class="nf">start_spinner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinner</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spinner</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;circle_number&quot;</span><span class="p">):</span>
+            <span class="c"># needed for some themes, otherwise the</span>
+            <span class="c"># &quot;transparent&quot;-property gets lost and it looks ugly</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="DieselEngineSwitch.stop_spinner"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.DieselEngineSwitch.stop_spinner">[docs]</a>    <span class="k">def</span> <span class="nf">stop_spinner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spinner</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spinner</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;circle_number&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="SteamEngineSwitch"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamEngineSwitch">[docs]</a><span class="k">class</span> <span class="nc">SteamEngineSwitch</span><span class="p">(</span><span class="n">EngineSwitch</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sound_controller</span><span class="p">,</span> <span class="n">speed_scale</span><span class="p">,</span> <span class="n">sound_circle</span><span class="p">):</span>
+        <span class="n">EngineSwitch</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                              <span class="n">sound_controller</span><span class="p">,</span>
+                              <span class="n">speed_scale</span><span class="p">,</span>
+                              <span class="n">sound_circle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="SteamEngineSwitch.set_fill_level"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamEngineSwitch.set_fill_level">[docs]</a>    <span class="k">def</span> <span class="nf">set_fill_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco_speed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="n">loco_speed</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="SteamEngineSwitch.reset_fill_level"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamEngineSwitch.reset_fill_level">[docs]</a>    <span class="k">def</span> <span class="nf">reset_fill_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_scale</span><span class="o">.</span><span class="n">set_fill_level</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="SteamEngineSwitch.perform_engine_startup"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamEngineSwitch.perform_engine_startup">[docs]</a>    <span class="k">def</span> <span class="nf">perform_engine_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">start_engine</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="SteamEngineSwitch.perform_engine_shutdown"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.SteamEngineSwitch.perform_engine_shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">perform_engine_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_controller</span><span class="o">.</span><span class="n">quit_engine</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="CircleNumber"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.CircleNumber">[docs]</a><span class="k">class</span> <span class="nc">CircleNumber</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Overlay</span><span class="p">):</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="mi">22</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nr</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Overlay</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_transparent</span><span class="p">()</span>
+        <span class="n">circle</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Image</span><span class="p">()</span>
+        <span class="n">circle</span><span class="o">.</span><span class="n">set_from_pixbuf</span><span class="p">(</span><span class="n">circle_pixbuf</span><span class="o">.</span><span class="n">scale_simple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                                                          <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                                                          <span class="n">GdkPixbuf</span><span class="o">.</span><span class="n">InterpType</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">circle</span><span class="p">)</span>
+        <span class="n">nr_label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">()</span>
+        <span class="n">nr_label</span><span class="o">.</span><span class="n">set_markup</span><span class="p">(</span><span class="s">&quot;&lt;b&gt;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nr</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;&lt;/b&gt;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_overlay</span><span class="p">(</span><span class="n">nr_label</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="CircleNumber.set_transparent"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.CircleNumber.set_transparent">[docs]</a>    <span class="k">def</span> <span class="nf">set_transparent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_style_context</span><span class="p">()</span><span class="o">.</span><span class="n">add_class</span><span class="p">(</span><span class="s">&quot;transparent&quot;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+</div></div>
+<div class="viewcode-block" id="FunctionButton"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.FunctionButton">[docs]</a><span class="k">class</span> <span class="nc">FunctionButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ToggleButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ToggleButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c"># every kind of function-button has the attribute &#39;function&#39;</span>
+        <span class="c"># and a unique attribute (e.g. &#39;function_sound&#39;)</span>
+        <span class="c"># -&gt; both are the same, 2nd exists for readability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function</span> <span class="o">=</span> <span class="n">function</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+        
+        <span class="n">label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_ellipsize</span><span class="p">(</span><span class="n">Pango</span><span class="o">.</span><span class="n">EllipsizeMode</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        
+        <span class="c"># values less than 0 mean there is no func-button</span>
+        <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">joystick</span><span class="o">.</span><span class="n">show_function_nr</span> <span class="ow">and</span> <span class="n">function</span><span class="o">.</span><span class="n">button</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">()</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">set_column_spacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span> <span class="o">=</span> <span class="n">CircleNumber</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="n">button</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">)</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span><span class="p">)</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+               
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_tooltip_text</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">function</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_function</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="LocoFunctionButton"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.LocoFunctionButton">[docs]</a><span class="k">class</span> <span class="nc">LocoFunctionButton</span><span class="p">(</span><span class="n">FunctionButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">,</span> <span class="n">socket</span><span class="p">):</span>
+        <span class="n">FunctionButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco</span> <span class="o">=</span> <span class="n">loco</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="n">socket</span>
+        
+<div class="viewcode-block" id="LocoFunctionButton.toggle_function"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.LocoFunctionButton.toggle_function">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">get_srcp_status</span><span class="p">(</span><span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="p">))</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Funktion&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                     <span class="s">&quot;von Lok&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">loco</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                     <span class="s">&quot;hat nun den Status&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="FunctionSoundButton"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.FunctionSoundButton">[docs]</a><span class="k">class</span> <span class="nc">FunctionSoundButton</span><span class="p">(</span><span class="n">FunctionButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function_sound</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">,</span> <span class="n">mixer</span><span class="p">,</span> <span class="n">channel_id</span><span class="p">):</span>
+        <span class="n">FunctionButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function_sound</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span> <span class="o">=</span> <span class="n">function_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span> <span class="o">=</span> <span class="n">mixer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_id</span> <span class="o">=</span> <span class="n">channel_id</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="o">==</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">TAP</span><span class="p">:</span>
+            <span class="n">mixer</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">function_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_queue_sound</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="FunctionSoundButton.toggle_function"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.FunctionSoundButton.toggle_function">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_queue_sound</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="FunctionSoundButton.check_queue_sound"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.FunctionSoundButton.check_queue_sound">[docs]</a>    <span class="k">def</span> <span class="nf">check_queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">sound</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ToggleMode</span><span class="o">.</span><span class="n">SWITCH</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">PUSH</span><span class="p">]:</span>
+                <span class="c"># queue second time for gapless looping</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">queue_sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">sound</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="o">==</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">TAP</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;circle_number&quot;</span><span class="p">):</span>
+                    <span class="c"># needed for some themes, otherwise the &quot;transparent&quot;-property</span>
+                    <span class="c"># gets lost and it looks ugly</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_id</span><span class="p">]</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">toggle_mode</span> <span class="o">==</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">TAP</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;circle_number&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">circle_number</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Geräusch-Funktion&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                     <span class="s">&quot;hat nun den Status&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">function_sound</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        </div></div>
+<div class="viewcode-block" id="EventSoundButton"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EventSoundButton">[docs]</a><span class="k">class</span> <span class="nc">EventSoundButton</span><span class="p">(</span><span class="n">FunctionButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_sound</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="n">FunctionButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_sound</span><span class="p">,</span> <span class="n">circle_pixbuf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_sound</span> <span class="o">=</span> <span class="n">event_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">channel</span>
+        
+<div class="viewcode-block" id="EventSoundButton.toggle_function"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EventSoundButton.toggle_function">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_sound</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_sound</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Geräusch-Ereignis&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                     <span class="s">&quot;hat nun den Status&quot;</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+            </div></div>
+<div class="viewcode-block" id="FunctionBox"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.FunctionBox">[docs]</a><span class="k">class</span> <span class="nc">FunctionBox</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">loco</span><span class="p">,</span>
+                 <span class="n">speed_scale</span><span class="p">,</span>
+                 <span class="n">event_thread</span><span class="p">,</span>
+                 <span class="n">socket</span><span class="p">,</span>
+                 <span class="n">circle_pixbufs</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span><span class="n">LocoFunctionButton</span><span class="p">(</span><span class="n">loco</span><span class="p">,</span>
+                                           <span class="n">function</span><span class="p">,</span>
+                                           <span class="n">circle_pixbufs</span><span class="p">[</span><span class="s">&quot;loco_function&quot;</span><span class="p">],</span>
+                                           <span class="n">socket</span><span class="p">)</span> <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">functions</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boxes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_rows</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">if</span> <span class="n">event_thread</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># we need func-nr in the whole method,</span>
+            <span class="c"># therefore it must be declared here</span>
+            <span class="n">func_nr</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">function_sounds</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># add the needed &#39;sound&#39; and &#39;channel_id&#39;</span>
+                <span class="c"># attribs to the func-sound-objs</span>
+                <span class="n">FunctionSoundController</span><span class="p">(</span><span class="n">event_thread</span><span class="p">,</span>
+                                        <span class="n">loco</span><span class="o">.</span><span class="n">function_sounds</span><span class="p">,</span>
+                                        <span class="n">loco</span><span class="o">.</span><span class="n">sound_volume</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">func_nr</span><span class="p">,</span> <span class="n">function_sound</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">function_sounds</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">func_nr</span><span class="p">,</span> 
+                                        <span class="n">FunctionSoundButton</span><span class="p">(</span><span class="n">function_sound</span><span class="p">,</span>
+                                                            <span class="n">circle_pixbufs</span><span class="p">[</span><span class="s">&quot;function_sound&quot;</span><span class="p">],</span>
+                                                            <span class="n">event_thread</span><span class="p">,</span>
+                                                            <span class="n">function_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sound_switch</span> <span class="o">=</span> <span class="n">create_engine_switch</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+                                                         <span class="n">loco</span><span class="o">.</span><span class="n">sound_controller</span><span class="p">,</span>
+                                                         <span class="n">speed_scale</span><span class="p">,</span>
+                                                         <span class="n">circle_pixbufs</span><span class="p">[</span><span class="s">&quot;speed_sound&quot;</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">ev_nr</span><span class="p">,</span> <span class="n">event_sound</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">ev_nr</span> <span class="o">+</span> <span class="n">func_nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="n">EventSoundButton</span><span class="p">(</span><span class="n">event_sound</span><span class="p">,</span>
+                                                         <span class="n">circle_pixbufs</span><span class="p">[</span><span class="s">&quot;event_sound&quot;</span><span class="p">],</span>
+                                                         <span class="n">event_thread</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">event_sound</span><span class="o">.</span><span class="n">channel_id</span><span class="p">]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_switch</span><span class="p">)</span>
+        
+        <span class="n">nr_buttons</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">nr_buttons</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>            
+            <span class="c"># estimate the number of columns needed</span>
+            <span class="n">nr_columns</span><span class="p">,</span> <span class="n">rest_columns</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">nr_buttons</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rest_columns</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">nr_columns</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="c"># estimate the nr of buttons per box if the buttons are equally spread</span>
+            <span class="n">buttons_per_column</span><span class="p">,</span> <span class="n">rest_buttons</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">nr_buttons</span><span class="p">,</span> <span class="n">nr_columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rest_buttons</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">buttons_per_column</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+            <span class="n">nr_buttons_left</span> <span class="o">=</span> <span class="n">nr_buttons</span>
+            <span class="k">for</span> <span class="n">unused_col_nr</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nr_columns</span><span class="p">):</span>
+                <span class="n">box</span> <span class="o">=</span> <span class="n">FunctionButtonBox</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">nr_buttons_left</span> <span class="o">&gt;</span> <span class="n">buttons_per_column</span><span class="p">:</span>
+                    <span class="n">nr_buttons_to_pack</span> <span class="o">=</span> <span class="n">buttons_per_column</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nr_buttons_to_pack</span> <span class="o">=</span> <span class="n">nr_buttons_left</span>
+                
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nr_buttons_to_pack</span><span class="p">):</span>
+                    <span class="n">box</span><span class="o">.</span><span class="n">pack_start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">[</span><span class="n">nr_buttons</span> <span class="o">-</span> <span class="n">nr_buttons_left</span> <span class="o">+</span> <span class="n">row</span><span class="p">],</span>
+                                   <span class="bp">True</span><span class="p">,</span>
+                                   <span class="bp">True</span><span class="p">,</span>
+                                   <span class="mi">0</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">nr_buttons_to_pack</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_rows</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">nr_rows</span> <span class="o">=</span> <span class="n">nr_buttons_to_pack</span>
+                
+                <span class="n">nr_buttons_left</span> <span class="o">-=</span> <span class="n">nr_buttons_to_pack</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">boxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+          </div>
+<div class="viewcode-block" id="FunctionButtonBox"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.FunctionButtonBox">[docs]</a><span class="k">class</span> <span class="nc">FunctionButtonBox</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonBox</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonBox</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_layout</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ButtonBoxStyle</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_valign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">START</span><span class="p">)</span>
+        <span class="c"># TODO: uncomment when gtk-themes can do that in future</span>
+        <span class="c"># (make the boxes appear as one nice unit)</span>
+<span class="c">#        context = self.get_style_context()</span>
+<span class="c">#        context.add_class(Gtk.STYLE_CLASS_LINKED)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_homogeneous</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="EmergencyButton"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EmergencyButton">[docs]</a><span class="k">class</span> <span class="nc">EmergencyButton</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">ToggleButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">socket</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">ToggleButton</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s">&quot;emergency-button&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s">&quot;Nothalt&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="n">socket</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">power</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_power</span><span class="p">()</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_power</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="EmergencyButton.toggle_power"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EmergencyButton.toggle_power">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_power</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">toggle_power</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_power</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="EmergencyButton.send_power"><a class="viewcode-back" href="../../electrip.html#electrip.control_ui.EmergencyButton.send_power">[docs]</a>    <span class="k">def</span> <span class="nf">send_power</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">Config</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">power</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;SET 1 POWER ON</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Strom angeschaltet&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;SET 1 POWER OFF</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Notstop eingeleitet&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/small_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Electrip 4.16.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Moritz Renftle.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -23,7 +23,7 @@ else:
 from constants import STOP_EVENT, END_EVENT_LOWER_BOUND
 import config
 
- # class for mixed event handling: gamepads + sound
+# class for mixed event handling: gamepads + sound
 class EventHandlerThread(threading.Thread):
     running = False
     
@@ -578,7 +578,7 @@ class SpeedThread:
         GObject.source_remove(self.id)
     
     def go(self):
-        for joystick, loco_id, start_scrolling in self.joysticks:
+        for joystick, loco_id, unused_start_scrolling in self.joysticks:
             scale = self.controllers[loco_id].speed_scale
             if scale.get_sensitive():
                 axis_value = joystick.get_axis(Config.joystick.accel_axis)

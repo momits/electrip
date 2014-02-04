@@ -5,6 +5,7 @@ from locked_print import locked_print
 import json
 from os.path import basename, split, exists, sep as os_sep
 import zipfile
+from copy import deepcopy
 
 from loco import Loco
 from loco_functions import ToggleMode, DecoderFunction, \
@@ -17,33 +18,124 @@ from sound_engines import create_engine, EngineType
 from linear_segment_function import LinearSegmentFunction
 
 class DictWrapper:
+    """
+    Wrapper used to retrieve values from
+    a dictionary.
+    """
     @staticmethod
     def get(d, k):
+        """
+        Returns the element from *d*
+        with key *k*.
+        """
         return d[k]
     
     @staticmethod
     def has_key(d, k):
+        """
+        Checks if *d* has a key named *k*.
+        """
         return k in d
     
     @staticmethod
     def set(d, k, v):
+        """
+        Sets the element in *d*
+        with key *k* to *v*.
+        """
         d[k] = v
         
+    @staticmethod
+    def get_param_list(config_dict,
+                       attribute_list,
+                       ignore=False):
+        return JsonModel.get_param_list_from_dict(config_dict,
+                                                  attribute_list,
+                                                  ignore)
+        
 class ObjectWrapper:
+    """
+    Wrapper used to retrieve values from
+    an object.
+    """
     @staticmethod
     def get(o, a):
+        """
+        Returns the attribute of *o*
+        named *a*.
+        """
         return getattr(o, a)
     
     @staticmethod
     def has_key(o, a):
+        """
+        Checks if *o* has an attribute
+        named *a*.
+        """
         return hasattr(o, a)
     
     @staticmethod
     def set(o, a, v):
+        """
+        Sets the attribute of *o*
+        named *a* to *v*.
+        """
         setattr(o, a, v)
+    
+    @staticmethod
+    def get_param_list(obj, attribs, unused_ignore=False):
+        return JsonModel.get_param_list_from_object(obj, attribs)
 
-class Config:
+class JsonModel:
+    """
+    | Object-tree representing all the data needed by Electrip.
+    | Able to load and save itself from/to Json-files.
+    
+    Stores several attribute-lists, which are lists of tuples
+    of the form ``[("attribute_name", default_value), ...]``.
+    Each attribute-list maps to an object in the configuration:
+    
+        * self.loco_attributes -> :class:`Loco`
+        * self.engine_attributes -> :class:`Engine`
+        * self.event_sound_attributes  -> :class:`EventSound`
+        * self.function_sound_attributes -> :class:`FunctionSound`
+        * self.segment_attributes -> :class:`SoundSegment`
+        * self.function_attributes -> :class:`Function`
+        * self.server_attributes -> :class:`Server`
+        * self.joystick_attributes -> :class:`Joystick`
+        * self.sound_attributes -> :class:`Sound`
+    
+    The Object-tree looks similar to this::
+    
+        JsonModel
+            |
+            |- locos
+            |     |- Loco
+            |     |    |- name = "V 200"
+            |     |    |- image = "/home/user/V200.png"
+            |     |    |- engine = ...
+            |     |    |- ...
+            |     |
+            |     |- Loco
+            |     |    |- ...
+            |     |- ...
+            |
+            |- server
+            |     |- host = "localhost"
+            |     |- port = 4303
+            |     |- ...
+            |
+            |- joystick
+            |     |- emergency_button = 0
+            |     |- accel_axis = 2
+            |     |- ...
+            |- ...   
+    """
     def __init__(self, locos=None, server=None, joystick=None, sound=None):
+        """
+        Creates an empty object tree, or uses the passed arguments *loco*,
+        *server*, *joystick* and *sound*.
+        """
         self.notice_unsaved_changes = False
         self.has_unsaved_changes = False
         self.opened_file = None
@@ -150,19 +242,42 @@ class Config:
             self.last_file = ""
             locked_print("Noch kein letzter Dateipfad gespeichert.")
             
-    def get_utf8_bytestring(self, value):
+    @staticmethod
+    def get_utf8_bytestring(value):
+        """
+        Returns a utf8-bytestring made from
+        a unicode-object *value*. If *value* is not
+        a unicode-object, *value* is returned.
+        """
         if isinstance(value, unicode):
             value = value.encode("utf-8")
         return value
             
     def add_file_to_zip(self, zip_file, file_path, dest=""):
+        """
+        Adds a file located at *file_path* to *zip-file*,
+        placing it at the subdirectory *dest*.
+        Example::
+        
+            self.add_file_to_zip(self,
+                                 zip_file,
+                                 "/home/user/image.gif")
+            self.add_file_to_zip(self,
+                                 zip_file,
+                                 "/home/user/test.wav",
+                                 "sound")
+            # Will place 'image.gif' in the root
+            # directory of zip_file and 'test.wav' in the
+            # subdirectory '/sound'
+        """
         try:
             file_name = basename(file_path)
             if dest != "":
                 file_name = dest + os_sep + file_name
             if file_name not in zip_file.namelist():
                 zip_file.write(file_path, file_name)
-        # error occurs if file_path is None (type of error varies on different platforms)
+        # error occurs if file_path is None (type of error
+        # varies on different platforms)
         except:
             locked_print("Ungültige Datei '" + str(file_path) + 
                          "' konnte nicht in Lok-Verzeichnis kopiert werden.")
@@ -175,6 +290,24 @@ class Config:
                          config_object,
                          attribs,
                          dest=""):
+        """
+        Adds multiple files to *zip_file*, where *attribs*
+        is a list of attributes of *config_object* which
+        should be used for the file locations.
+        See :func:`add_file_to_zip`.
+        Example::
+        
+            self.add_files_to_zip(self,
+                                  zip_file,
+                                  segment,
+                                  ["load_sound",
+                                   "accel_sound",
+                                   "decel_sound",
+                                   "idle_sound"])
+            # Will add the files located at
+            # segment.load_sound, segment.accel_sound, ...
+            # to 'zip_file'
+        """
         for attrib in attribs:
             if hasattr(config_object, attrib):
                 file_path = getattr(config_object, attrib)
@@ -183,7 +316,12 @@ class Config:
                                                  dest)
                 setattr(config_object, attrib, file_name)
         
-    def save_loco(self, loco, dir_path):        
+    def save_loco(self, loco, dir_path):
+        """
+        Exports *loco* to a zip-file, including all sound-
+        and image-files needed. This standalone package is
+        placed in *dir_path*, named like ``loco.name``.
+        """
         file_path = dir_path + os_sep + loco.name + ".zip"
         with zipfile.ZipFile(file_path,
                              "w",
@@ -195,7 +333,6 @@ class Config:
             self.notice_unsaved_changes = False
             loco = self.create_loco(loco,
                                     ObjectWrapper,
-                                    self.get_param_list_from_object,
                                     None)
             if loco.engine != None:
                 if loco.engine.type == EngineType.STEAM:
@@ -246,44 +383,53 @@ class Config:
             self.notice_unsaved_changes = True
         
     def create_loco_dict(self, loco):
-        loco_dict = self.get_param_dict(loco,
-                                        self.loco_attributes)
+        """
+        Returns a dictionary-representation of the
+        object-tree in *loco*. This is needed save the
+        loco in the Json-format.
+        """
+        loco_dict = self.create_dict(loco,
+                                     self.loco_attributes)
         loco_dict["speed_control_points"] = loco.speed_to_step_func.control_points
-        loco_dict["function_sounds"] = [self.get_param_dict(function_sound,
-                                                            self.function_sound_attributes)
+        loco_dict["function_sounds"] = [self.create_dict(function_sound,
+                                                         self.function_sound_attributes)
                                         for function_sound in loco.function_sounds]
         if loco.engine != None:
-            engine_dict = self.get_param_dict(loco.engine,
-                                              self.engine_attributes[loco.engine.type])
+            engine_dict = self.create_dict(loco.engine,
+                                           self.engine_attributes[loco.engine.type])
             if loco.engine.sound_segments != None:
-                engine_dict["sound_segments"] = [self.get_param_dict(segment,
-                                                                     self.segment_attributes[segment.type])
+                engine_dict["sound_segments"] = [self.create_dict(segment,
+                                                                  self.segment_attributes[segment.type])
                                                  for segment in loco.engine.sound_segments]
             else:
                 engine_dict["sound_segments"] = None
             if loco.engine.event_sounds != None:
-                engine_dict["event_sounds"] = [self.get_param_dict(event_sound,
-                                                                   self.event_sound_attributes)
+                engine_dict["event_sounds"] = [self.create_dict(event_sound,
+                                                                self.event_sound_attributes)
                                                  for event_sound in loco.engine.event_sounds]
             else:
                 engine_dict["event_sounds"] = None
             loco_dict["engine"] = engine_dict
         else:
             loco_dict["engine"] = None
-        function_list = [self.get_param_dict(function,
-                                             self.function_attributes)
+        function_list = [self.create_dict(function,
+                                          self.function_attributes)
                          for function in loco.functions]
         loco_dict["functions"] = function_list
         return loco_dict
         
     def save(self, file_path):
+        """
+        Saves the current object-tree to the Json-file
+        specified by *file_path*.
+        """
         Config = {"locos": [self.create_loco_dict(loco) for loco in self.locos],
-                  "server": self.get_param_dict(self.server,
-                                                self.server_attributes),
-                  "joystick": self.get_param_dict(self.joystick,
-                                                  self.joystick_attributes),
-                  "sound": self.get_param_dict(self.sound,
-                                               self.sound_attributes)}
+                  "server": self.create_dict(self.server,
+                                             self.server_attributes),
+                  "joystick": self.create_dict(self.joystick,
+                                               self.joystick_attributes),
+                  "sound": self.create_dict(self.sound,
+                                            self.sound_attributes)}
         
         f = open(file_path, "w")
         json.dump(Config, f, indent=2)
@@ -293,19 +439,30 @@ class Config:
         self.save_opened_file(file_path)
         locked_print("Einstellungen wurden gespeichert in " + file_path)
         
-    def get_param_dict(self, config_object, attribute_list):
-        param_dict = {}
+    def create_dict(self, config_object, attribute_list):
+        """
+        Returns a dictionary-representation of *config_object*,
+        using the attributes from *attribute_list*. *attribute_list*
+        is a list of tuples of the form
+        ``[("attribute_name", default_value), ...]``.
+        The default values are not used in this method.
+        """
+        obj_dict = {}
         for attrib in attribute_list:
             try:
-                param_dict[attrib[0]] = getattr(config_object, attrib[0])
+                obj_dict[attrib[0]] = getattr(config_object, attrib[0])
             # needed for objects where we don't know if they have a
             # certain attribute (e.g. sound_segments)
             except AttributeError:
                 pass
-        return param_dict
+        return obj_dict
     
-    # appends path_prefix to all attribs of config_object
     def set_absolute_path(self, path_prefix, config_object, attribs):
+        """
+        Appends *path_prefix* to all attributes in the list *attribs* 
+        of *config_object*. Used to change a relative path to
+        an absolute path.
+        """
         for attrib in attribs:
             file_name = getattr(config_object, attrib)
             if file_name != None and exists(path_prefix + file_name):
@@ -314,6 +471,11 @@ class Config:
                 setattr(config_object, attrib, file_name)
     
     def load_loco(self, file_path):
+        """
+        Returns a :class:`Loco`-object which is
+        unpacked from a zip-file-package.
+        See :func:`save_loco`.
+        """
         dir_path, file_name = split(file_path)
         loco_name, ending = file_name.split(".")
         if ending == "zip":
@@ -327,7 +489,6 @@ class Config:
             loco_dict = json.load(loco_file)
             loco = self.create_loco(loco_dict,
                                     DictWrapper,
-                                    self.get_param_list_from_dict,
                                     self.unsaved_changes)
             if loco.engine != None:
                 if loco.engine.type == EngineType.STEAM:
@@ -369,7 +530,25 @@ class Config:
                                    ["img_path"])
             return loco
 
-    def create_loco(self, loco_obj, wrapper, get_param_list, unsaved_changes_method):
+    def create_loco(self, loco_obj, wrapper, unsaved_changes_method):
+        """
+        This method covers the logic to create a new :class:`Loco`-object.
+        Depending on the situation, one may want to use different data-types
+        for this operation. This is specified by *wrapper*, which must be
+        one of :class:`DictWrapper` or :class:`ObjectWrapper`.
+        E.g. if you want to create a new Loco using an existing Loco,
+        you could do this::
+        
+            new_loco = self.create_loco(existing_loco,
+                                        ObjectWrapper,
+                                        self.unsaved_changes)
+        
+        *unsaved_changes_method* defines the method to be called if
+        an attribute on the new loco changes, usually this is
+        ``Config.unsaved_changes``.
+        
+        Returns: The new :class:`Loco`
+        """
         functions = []
         for function_obj in wrapper.get(loco_obj, "functions"):
             # old file format has no attrib 'toggle_mode', but bool 'use_push_to_make'
@@ -379,7 +558,7 @@ class Config:
                 else:
                     wrapper.set(function_obj, "toggle_mode", ToggleMode.SWITCH)
             functions.append(DecoderFunction(unsaved_changes_method,
-                                      *get_param_list(function_obj, self.function_attributes)))
+                                      *wrapper.get_param_list(function_obj, self.function_attributes)))
         speed_func = LinearSegmentFunction()
         if wrapper == DictWrapper:
             speed_func.load(map(tuple,
@@ -391,7 +570,7 @@ class Config:
                                         "control_points"))
         if wrapper.has_key(loco_obj, "function_sounds"):
             function_sounds = [FunctionSound(unsaved_changes_method,
-                                             *get_param_list(function_sound_obj,
+                                             *wrapper.get_param_list(function_sound_obj,
                                                              self.function_sound_attributes))
                                for function_sound_obj in wrapper.get(loco_obj,
                                                                      "function_sounds")]
@@ -400,19 +579,22 @@ class Config:
         if  wrapper.has_key(loco_obj, "engine") \
         and wrapper.get(loco_obj, "engine") != None:
             engine_obj = wrapper.get(loco_obj, "engine")
-            param_list = get_param_list(engine_obj,
+            param_list = wrapper.get_param_list(engine_obj,
                                         self.engine_attributes[wrapper.get(engine_obj,
                                                                            "type")])
             param_list.insert(1, unsaved_changes_method)
             if wrapper.get(engine_obj, "sound_segments") != None:
                 try:
-                    sound_segments = [create_sound_segment(wrapper.get(engine_obj,
-                                                                       "type"),
+                    # deepcopy(param) copies the attributes of the sound-segments
+                    # to make sure the 'nr_strokes'-list of SteamSoundSegment
+                    # is not passed by reference (causes pygame.Sound-objects lying
+                    # in memory after switching back from control to configuration)
+                    sound_segments = [create_sound_segment(wrapper.get(engine_obj, "type"),
                                                            unsaved_changes_method,
-                                                           *get_param_list(segment_obj,
-                                                                           self.segment_attributes[wrapper.get(engine_obj,
-                                                                                                               "type")],
-                                                                           True))
+                                                           *[deepcopy(param)
+                                                             for param in wrapper.get_param_list(segment_obj,
+                                                                self.segment_attributes[wrapper.get(engine_obj, "type")],
+                                                                True)])
                                       for segment_obj in wrapper.get(engine_obj,
                                                                      "sound_segments")]
                 except KeyError:
@@ -425,7 +607,7 @@ class Config:
             if wrapper.has_key(engine_obj, "event_sounds"):
                 if wrapper.get(engine_obj, "event_sounds") != None:
                     param_list.append([EventSound(unsaved_changes_method,
-                                                  *get_param_list(event_sound_obj,
+                                                  *wrapper.get_param_list(event_sound_obj,
                                                                   self.event_sound_attributes))
                                        for event_sound_obj in wrapper.get(engine_obj,
                                                                           "event_sounds")])
@@ -438,9 +620,12 @@ class Config:
                     speed_func,
                     function_sounds,
                     engine,
-                    *get_param_list(loco_obj, self.loco_attributes))
+                    *wrapper.get_param_list(loco_obj, self.loco_attributes))
 
     def load(self, file_path):
+        """
+        Loads the object-tree from a Json-file specified by *file_path*. 
+        """
         f = open(file_path)
         Config = json.load(f)
         f.close()
@@ -448,7 +633,6 @@ class Config:
         self.notice_unsaved_changes = False
         self.locos = [self.create_loco(loco_dict,
                                        DictWrapper,
-                                       self.get_param_list_from_dict,
                                        self.unsaved_changes)
                       for loco_dict in Config["locos"]]
         self.server = Server(self.unsaved_changes,
@@ -472,7 +656,29 @@ class Config:
         locked_print("Einstellungen wurden geladen aus " + file_path)
         self.notice_unsaved_changes = True
     
-    def get_param_list_from_dict(self, config_dict, attribute_list, ignore=False):
+    @staticmethod
+    def get_param_list_from_dict(config_dict, attribute_list, ignore=False):
+        """
+        Uses a dictionary *config_dict* and *attribute_list*
+        to create a parameter-list which can be fed into a constructor of
+        an object.
+        *attribute_list* is a list of tuples of the form
+        ``[("attribute_name", default_value), ...]``. The default values
+        are used, if *config_dict* has no key for the respective
+        *attribute_name*. If the *ignore* flag is set to ``false`` (default)
+        a warning is printed if a fallback to default values happens.
+        
+        Example: You could create a new :class:`Server`-object like this::
+        
+            server_dict = {"host": "localhost",
+                           "port": 4303}
+            server = Server(self.unsaved_changes,
+                            *self.get_param_list_from_dict(server_dict,
+                                                           self.server_attributes),
+                            True)
+            # 'server_dict' doesn't contain all needed keys, so the
+            # default-values in self.server_attributes will be used
+        """
         param_list = []
         for attrib, standard_value in attribute_list:
             try:
@@ -488,10 +694,15 @@ class Config:
             else:
                 # convert all unicode-objects into
                 # utf-8-bytestrings to avoid ascii-related problems
-                param_list.append(self.get_utf8_bytestring(value))
+                param_list.append(JsonModel.get_utf8_bytestring(value))
         return param_list
     
     def save_opened_file(self, file_path):
+        """
+        Stores the *file_path* of the currently opened
+        file in :file:`last_file.json` which will be placed
+        in the current working directory.
+        """
         if self.last_file != file_path:
             f = open("last_file.json", "w")
             json.dump({"last_file": file_path}, f, indent=2)
@@ -500,6 +711,15 @@ class Config:
         self.opened_file = file_path
     
     def create_copy(self):
+        """
+        Returns a new :class:`JsonModel`-instance, whose object-tree is
+        identical, except that is a recursive copy of the existing one.
+        This means, that the new instance and the original one don't share
+        any objects, only the tree-structure and the values of the objects
+        attributes.
+        This allows the :mod:`control_ui` module to modify its own copy of
+        the configuration without destroying the original one.
+        """
         server = Server(None,
                         *self.get_param_list_from_object(self.server,
                                                          self.server_attributes))
@@ -512,17 +732,21 @@ class Config:
          
         locos = [self.create_loco(loco,
                                   ObjectWrapper,
-                                  self.get_param_list_from_object,
                                   None)
                  for loco in self.locos]
-        return Config(locos, server, joystick, sound)
+        return JsonModel(locos, server, joystick, sound)
         
-    def get_param_list_from_object(self,
-                                   obj,
-                                   attribs,
+    @staticmethod
+    def get_param_list_from_object(obj,
+                                   attribute_list,
                                    unused_ignore=False):
+        """
+        Uses an object *obj* and *attribute_list*
+        to create a parameter-list which can be fed into a constructor of
+        a new object. Works similar to :func:`get_param_list_from_dict`
+        """
         param_list = []
-        for attrib, standard_value in attribs:
+        for attrib, standard_value in attribute_list:
             try:
                 param_list.append(getattr(obj, attrib))
             except:
@@ -531,8 +755,8 @@ class Config:
     
     def unsaved_changes(self, obj, name, value):
         """
-        To be called whenever an action changes the Config-object.
-        Normally this is done by using 'UnsavedChangesHandler'.
+        To be called whenever an action changes the JsonModel-object.
+        Normally this is done using :class:`UnsavedChangesHandler`.
         """
         if self.notice_unsaved_changes:
             locked_print("Attribute '" + name + "' of object '" +

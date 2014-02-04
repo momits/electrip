@@ -1,0 +1,1285 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>electrip Package &mdash; Electrip 4.16.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.16.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Electrip 4.16.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Electrip 4.16.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="electrip-package">
+<h1>electrip Package<a class="headerlink" href="#electrip-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="configuration-ui-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">configuration_ui</span></tt> Module<a class="headerlink" href="#configuration-ui-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-electrip.constants">
+<span id="constants-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">constants</span></tt> Module<a class="headerlink" href="#module-electrip.constants" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.constants.SoundType">
+<em class="property">class </em><tt class="descclassname">electrip.constants.</tt><tt class="descname">SoundType</tt><a class="reference internal" href="_modules/electrip/constants.html#SoundType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.constants.SoundType" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="electrip.constants.SoundType.ACCEL">
+<tt class="descname">ACCEL</tt><em class="property"> = 'accel'</em><a class="headerlink" href="#electrip.constants.SoundType.ACCEL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.constants.SoundType.DECEL">
+<tt class="descname">DECEL</tt><em class="property"> = 'decel'</em><a class="headerlink" href="#electrip.constants.SoundType.DECEL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.constants.SoundType.IDLE">
+<tt class="descname">IDLE</tt><em class="property"> = 'idle'</em><a class="headerlink" href="#electrip.constants.SoundType.IDLE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.constants.SoundType.LOAD">
+<tt class="descname">LOAD</tt><em class="property"> = 'load'</em><a class="headerlink" href="#electrip.constants.SoundType.LOAD" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="control-ui-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">control_ui</span></tt> Module<a class="headerlink" href="#control-ui-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-electrip.dialog_templates">
+<span id="dialog-templates-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">dialog_templates</span></tt> Module<a class="headerlink" href="#module-electrip.dialog_templates" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.dialog_templates.AllFileFilter">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">AllFileFilter</tt><a class="reference internal" href="_modules/electrip/dialog_templates.html#AllFileFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.AllFileFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.FileFilter</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.ElectripFileFilter">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">ElectripFileFilter</tt><a class="reference internal" href="_modules/electrip/dialog_templates.html#ElectripFileFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.ElectripFileFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.FileFilter</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.FileLoadDialog">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">FileLoadDialog</tt><big>(</big><em>parent_window</em>, <em>filters=None</em><big>)</big><a class="reference internal" href="_modules/electrip/dialog_templates.html#FileLoadDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.FileLoadDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.FileChooserDialog</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.FileSaveDialog">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">FileSaveDialog</tt><big>(</big><em>parent_window</em>, <em>filters=None</em><big>)</big><a class="reference internal" href="_modules/electrip/dialog_templates.html#FileSaveDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.FileSaveDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.FileChooserDialog</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.ImageFileFilter">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">ImageFileFilter</tt><a class="reference internal" href="_modules/electrip/dialog_templates.html#ImageFileFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.ImageFileFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.FileFilter</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.LocoFileFilter">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">LocoFileFilter</tt><a class="reference internal" href="_modules/electrip/dialog_templates.html#LocoFileFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.LocoFileFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.FileFilter</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.LocoLoadDialog">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">LocoLoadDialog</tt><big>(</big><em>parent_window</em><big>)</big><a class="reference internal" href="_modules/electrip/dialog_templates.html#LocoLoadDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.LocoLoadDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.FileChooserDialog</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.LocoSaveDialog">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">LocoSaveDialog</tt><big>(</big><em>parent_window</em>, <em>filters=None</em><big>)</big><a class="reference internal" href="_modules/electrip/dialog_templates.html#LocoSaveDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.LocoSaveDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.FileChooserDialog</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.SoundFileFilter">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">SoundFileFilter</tt><a class="reference internal" href="_modules/electrip/dialog_templates.html#SoundFileFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.SoundFileFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.FileFilter</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.SoundLoadDialog">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">SoundLoadDialog</tt><big>(</big><em>parent_window</em>, <em>filters=None</em><big>)</big><a class="reference internal" href="_modules/electrip/dialog_templates.html#SoundLoadDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.SoundLoadDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.FileChooserDialog</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.dialog_templates.WarningDialog">
+<em class="property">class </em><tt class="descclassname">electrip.dialog_templates.</tt><tt class="descname">WarningDialog</tt><big>(</big><em>parent_window</em>, <em>warning_text</em>, <em>buttons</em><big>)</big><a class="reference internal" href="_modules/electrip/dialog_templates.html#WarningDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.dialog_templates.WarningDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.MessageDialog</span></tt></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.electrip">
+<span id="electrip-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">electrip</span></tt> Module<a class="headerlink" href="#module-electrip.electrip" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.electrip.BasicVBox">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">BasicVBox</tt><big>(</big><em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#BasicVBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.BasicVBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Grid</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.ConfigControlSwitch">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">ConfigControlSwitch</tt><big>(</big><em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#ConfigControlSwitch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.ConfigControlSwitch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.ButtonBox</span></tt></p>
+<dl class="method">
+<dt id="electrip.electrip.ConfigControlSwitch.control_toggled">
+<tt class="descname">control_toggled</tt><big>(</big><em>button</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#ConfigControlSwitch.control_toggled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.ConfigControlSwitch.control_toggled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.FullscreenButton">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">FullscreenButton</tt><big>(</big><em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#FullscreenButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.FullscreenButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.ToggleButton</span></tt></p>
+<dl class="method">
+<dt id="electrip.electrip.FullscreenButton.toggled">
+<tt class="descname">toggled</tt><big>(</big><em>button</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#FullscreenButton.toggled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.FullscreenButton.toggled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.LoadButton">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">LoadButton</tt><big>(</big><em>loco_treeview</em>, <em>loco_property_table</em>, <em>function_treeview</em>, <em>server_table</em>, <em>joystick_table</em>, <em>sound_table</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#LoadButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.LoadButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.widgets.StockImageButton" title="electrip.widgets.StockImageButton"><tt class="xref py py-class docutils literal"><span class="pre">electrip.widgets.StockImageButton</span></tt></a></p>
+<dl class="method">
+<dt id="electrip.electrip.LoadButton.load">
+<tt class="descname">load</tt><big>(</big><em>path</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#LoadButton.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.LoadButton.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.electrip.LoadButton.load_dialog">
+<tt class="descname">load_dialog</tt><big>(</big><em>button</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#LoadButton.load_dialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.LoadButton.load_dialog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.electrip.LoadButton.loading">
+<tt class="descname">loading</tt><em class="property"> = False</em><a class="headerlink" href="#electrip.electrip.LoadButton.loading" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.MainWindow">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">MainWindow</tt><a class="reference internal" href="_modules/electrip/electrip.html#MainWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.MainWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Window</span></tt></p>
+<dl class="method">
+<dt id="electrip.electrip.MainWindow.error_dialog">
+<tt class="descname">error_dialog</tt><big>(</big><em>warning</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#MainWindow.error_dialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.MainWindow.error_dialog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.electrip.MainWindow.quit">
+<tt class="descname">quit</tt><big>(</big><em>window</em>, <em>event</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#MainWindow.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.MainWindow.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.SaveAsButton">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">SaveAsButton</tt><big>(</big><em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#SaveAsButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.SaveAsButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.widgets.StockImageButton" title="electrip.widgets.StockImageButton"><tt class="xref py py-class docutils literal"><span class="pre">electrip.widgets.StockImageButton</span></tt></a></p>
+<dl class="method">
+<dt id="electrip.electrip.SaveAsButton.save">
+<tt class="descname">save</tt><big>(</big><em>button</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#SaveAsButton.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.SaveAsButton.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.SaveButton">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">SaveButton</tt><big>(</big><em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#SaveButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.SaveButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.widgets.StockImageButton" title="electrip.widgets.StockImageButton"><tt class="xref py py-class docutils literal"><span class="pre">electrip.widgets.StockImageButton</span></tt></a></p>
+<dl class="method">
+<dt id="electrip.electrip.SaveButton.new_unsaved_changes">
+<tt class="descname">new_unsaved_changes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#SaveButton.new_unsaved_changes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.SaveButton.new_unsaved_changes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.electrip.SaveButton.save">
+<tt class="descname">save</tt><big>(</big><em>button</em>, <em>config_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#SaveButton.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.SaveButton.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.electrip.TopGrid">
+<em class="property">class </em><tt class="descclassname">electrip.electrip.</tt><tt class="descname">TopGrid</tt><big>(</big><em>loco_treeview</em>, <em>loco_property_table</em>, <em>function_treeview</em>, <em>server_table</em>, <em>joystick_table</em>, <em>sound_table</em>, <em>main_window</em><big>)</big><a class="reference internal" href="_modules/electrip/electrip.html#TopGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.electrip.TopGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Grid</span></tt></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.locked_print">
+<span id="locked-print-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">locked_print</span></tt> Module<a class="headerlink" href="#module-electrip.locked_print" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.locked_print.SocketRecvThread">
+<em class="property">class </em><tt class="descclassname">electrip.locked_print.</tt><tt class="descname">SocketRecvThread</tt><big>(</big><em>socket</em><big>)</big><a class="reference internal" href="_modules/electrip/locked_print.html#SocketRecvThread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.locked_print.SocketRecvThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/threading.html#threading.Thread" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">threading.Thread</span></tt></a></p>
+<dl class="method">
+<dt id="electrip.locked_print.SocketRecvThread.quit">
+<tt class="descname">quit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/locked_print.html#SocketRecvThread.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.locked_print.SocketRecvThread.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.locked_print.SocketRecvThread.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/locked_print.html#SocketRecvThread.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.locked_print.SocketRecvThread.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="electrip.locked_print.locked_print">
+<tt class="descclassname">electrip.locked_print.</tt><tt class="descname">locked_print</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="_modules/electrip/locked_print.html#locked_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.locked_print.locked_print" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-electrip.pygame_io">
+<span id="pygame-io-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">pygame_io</span></tt> Module<a class="headerlink" href="#module-electrip.pygame_io" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.pygame_io.DieselSoundController">
+<em class="property">class </em><tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">DieselSoundController</tt><big>(</big><em>handler_thread</em>, <em>loco_engine</em>, <em>volume</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.pygame_io.SoundController" title="electrip.pygame_io.SoundController"><tt class="xref py py-class docutils literal"><span class="pre">electrip.pygame_io.SoundController</span></tt></a></p>
+<dl class="attribute">
+<dt id="electrip.pygame_io.DieselSoundController.actual_speed">
+<tt class="descname">actual_speed</tt><em class="property"> = -1</em><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.actual_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.DieselSoundController.engine_attributes">
+<tt class="descname">engine_attributes</tt><em class="property"> = ['quit_sound', 'start_sound', 'idle_sound']</em><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.engine_attributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.get_sound_for_acceleration">
+<tt class="descname">get_sound_for_acceleration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.get_sound_for_acceleration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.get_sound_for_acceleration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.get_sound_for_deceleration">
+<tt class="descname">get_sound_for_deceleration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.get_sound_for_deceleration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.get_sound_for_deceleration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.get_sound_for_same_speed">
+<tt class="descname">get_sound_for_same_speed</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.get_sound_for_same_speed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.get_sound_for_same_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.DieselSoundController.next_sound_level">
+<tt class="descname">next_sound_level</tt><em class="property"> = None</em><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.next_sound_level" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.DieselSoundController.on_load">
+<tt class="descname">on_load</tt><em class="property"> = False</em><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.on_load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.pause_engine">
+<tt class="descname">pause_engine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.pause_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.pause_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.quit_engine">
+<tt class="descname">quit_engine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.quit_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.quit_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.DieselSoundController.scheduled_speed">
+<tt class="descname">scheduled_speed</tt><em class="property"> = -1</em><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.scheduled_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.DieselSoundController.segment_attributes">
+<tt class="descname">segment_attributes</tt><em class="property"> = ['load_sound', 'idle_sound', 'accel_sound', 'decel_sound']</em><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.segment_attributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.set_scheduled_speed">
+<tt class="descname">set_scheduled_speed</tt><big>(</big><em>speed</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.set_scheduled_speed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.set_scheduled_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.start_engine">
+<tt class="descname">start_engine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.start_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.start_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.start_engine_with_speed">
+<tt class="descname">start_engine_with_speed</tt><big>(</big><em>speed</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.start_engine_with_speed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.start_engine_with_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.DieselSoundController.update_engine_queue">
+<tt class="descname">update_engine_queue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#DieselSoundController.update_engine_queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.DieselSoundController.update_engine_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.pygame_io.EventHandlerThread">
+<em class="property">class </em><tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">EventHandlerThread</tt><big>(</big><em>config_copy</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/threading.html#threading.Thread" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">threading.Thread</span></tt></a></p>
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.acquire_channel_id">
+<tt class="descname">acquire_channel_id</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.acquire_channel_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.acquire_channel_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.add_callback">
+<tt class="descname">add_callback</tt><big>(</big><em>channel_id</em>, <em>callback_func</em>, <em>*args</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.add_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.add_callback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.add_quit_callback">
+<tt class="descname">add_quit_callback</tt><big>(</big><em>callback_func</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.add_quit_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.add_quit_callback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.change_loco">
+<tt class="descname">change_loco</tt><big>(</big><em>loco_id</em>, <em>new_loco_id</em>, <em>joystick</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.change_loco"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.change_loco" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.double_queue_sound">
+<tt class="descname">double_queue_sound</tt><big>(</big><em>channel_id</em>, <em>sound</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.double_queue_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.double_queue_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.joystick_init">
+<tt class="descname">joystick_init</tt><big>(</big><em>controllers</em>, <em>emergency_button</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.joystick_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.joystick_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.queue_sound">
+<tt class="descname">queue_sound</tt><big>(</big><em>channel_id</em>, <em>sound</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.queue_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.queue_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.quit">
+<tt class="descname">quit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.EventHandlerThread.running">
+<tt class="descname">running</tt><em class="property"> = False</em><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.running" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.scroll">
+<tt class="descname">scroll</tt><big>(</big><em>direction</em>, <em>joystick</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.scroll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.scroll" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.EventHandlerThread.set_auto_scroll">
+<tt class="descname">set_auto_scroll</tt><big>(</big><em>direction</em>, <em>joystick</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#EventHandlerThread.set_auto_scroll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.EventHandlerThread.set_auto_scroll" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.pygame_io.FunctionSoundController">
+<em class="property">class </em><tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">FunctionSoundController</tt><big>(</big><em>handler_thread</em>, <em>function_sounds</em>, <em>volume</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#FunctionSoundController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.FunctionSoundController" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="electrip.pygame_io.FunctionSoundController.queue_function_sound">
+<tt class="descname">queue_function_sound</tt><big>(</big><em>function_sound</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#FunctionSoundController.queue_function_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.FunctionSoundController.queue_function_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.pygame_io.SoundController">
+<em class="property">class </em><tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">SoundController</tt><big>(</big><em>handler_thread</em>, <em>loco_engine</em>, <em>volume</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SoundController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SoundController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.GObject.Object</span></tt></p>
+<dl class="method">
+<dt id="electrip.pygame_io.SoundController.check_event_sound">
+<tt class="descname">check_event_sound</tt><big>(</big><em>event_sound</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SoundController.check_event_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SoundController.check_event_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SoundController.check_event_sounds">
+<tt class="descname">check_event_sounds</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SoundController.check_event_sounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SoundController.check_event_sounds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SoundController.convert_to_sound">
+<tt class="descname">convert_to_sound</tt><big>(</big><em>sound_file</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SoundController.convert_to_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SoundController.convert_to_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.SoundController.engine_is_running">
+<tt class="descname">engine_is_running</tt><em class="property"> = False</em><a class="headerlink" href="#electrip.pygame_io.SoundController.engine_is_running" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.SoundController.old_speed">
+<tt class="descname">old_speed</tt><em class="property"> = 0</em><a class="headerlink" href="#electrip.pygame_io.SoundController.old_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SoundController.queue_event_sound">
+<tt class="descname">queue_event_sound</tt><big>(</big><em>event_sound</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SoundController.queue_event_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SoundController.queue_event_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SoundController.stop_event_sounds">
+<tt class="descname">stop_event_sounds</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SoundController.stop_event_sounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SoundController.stop_event_sounds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.pygame_io.SpeedThread">
+<em class="property">class </em><tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">SpeedThread</tt><big>(</big><em>joysticks</em>, <em>controllers</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SpeedThread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SpeedThread" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="electrip.pygame_io.SpeedThread.go">
+<tt class="descname">go</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SpeedThread.go"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SpeedThread.go" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SpeedThread.quit">
+<tt class="descname">quit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SpeedThread.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SpeedThread.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SpeedThread.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SpeedThread.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SpeedThread.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.pygame_io.SteamSoundController">
+<em class="property">class </em><tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">SteamSoundController</tt><big>(</big><em>handler_thread</em>, <em>loco_engine</em>, <em>volume</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.pygame_io.SoundController" title="electrip.pygame_io.SoundController"><tt class="xref py py-class docutils literal"><span class="pre">electrip.pygame_io.SoundController</span></tt></a></p>
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.check_start_thread">
+<tt class="descname">check_start_thread</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.check_start_thread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.check_start_thread" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.get_pause_time">
+<tt class="descname">get_pause_time</tt><big>(</big><em>speed</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.get_pause_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.get_pause_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.pause_engine">
+<tt class="descname">pause_engine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.pause_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.pause_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.play_next_stroke">
+<tt class="descname">play_next_stroke</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.play_next_stroke"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.play_next_stroke" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.queue_idle_sound">
+<tt class="descname">queue_idle_sound</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.queue_idle_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.queue_idle_sound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.quit">
+<tt class="descname">quit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.quit_engine">
+<tt class="descname">quit_engine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.quit_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.quit_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.set_scheduled_speed">
+<tt class="descname">set_scheduled_speed</tt><big>(</big><em>speed</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.set_scheduled_speed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.set_scheduled_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.SteamSoundController.speed">
+<tt class="descname">speed</tt><em class="property"> = 0</em><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.start_engine">
+<tt class="descname">start_engine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.start_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.start_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.start_engine_with_speed">
+<tt class="descname">start_engine_with_speed</tt><big>(</big><em>speed</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.start_engine_with_speed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.start_engine_with_speed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.pygame_io.SteamSoundController.start_stroke_thread">
+<tt class="descname">start_stroke_thread</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#SteamSoundController.start_stroke_thread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.start_stroke_thread" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.SteamSoundController.stroke_nr">
+<tt class="descname">stroke_nr</tt><em class="property"> = 0</em><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.stroke_nr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.pygame_io.SteamSoundController.timeout_id">
+<tt class="descname">timeout_id</tt><em class="property"> = None</em><a class="headerlink" href="#electrip.pygame_io.SteamSoundController.timeout_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="electrip.pygame_io.create_sound_controller">
+<tt class="descclassname">electrip.pygame_io.</tt><tt class="descname">create_sound_controller</tt><big>(</big><em>engine_type</em>, <em>*args</em><big>)</big><a class="reference internal" href="_modules/electrip/pygame_io.html#create_sound_controller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.pygame_io.create_sound_controller" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-electrip.srcpd_setup_assistant">
+<span id="srcpd-setup-assistant-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module<a class="headerlink" href="#module-electrip.srcpd_setup_assistant" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.srcpd_setup_assistant.MarkupLabel">
+<em class="property">class </em><tt class="descclassname">electrip.srcpd_setup_assistant.</tt><tt class="descname">MarkupLabel</tt><big>(</big><em>markup</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#MarkupLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.MarkupLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Label</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.srcpd_setup_assistant.RealtimePage">
+<em class="property">class </em><tt class="descclassname">electrip.srcpd_setup_assistant.</tt><tt class="descname">RealtimePage</tt><big>(</big><em>assistant</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#RealtimePage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.RealtimePage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Grid</span></tt></p>
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.RealtimePage.append_line_to_mapped_file">
+<tt class="descname">append_line_to_mapped_file</tt><big>(</big><em>mapped_file</em>, <em>new_line</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#RealtimePage.append_line_to_mapped_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.RealtimePage.append_line_to_mapped_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.RealtimePage.count_bytes">
+<tt class="descname">count_bytes</tt><big>(</big><em>iterable</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#RealtimePage.count_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.RealtimePage.count_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.RealtimePage.create_mapped_file">
+<tt class="descname">create_mapped_file</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#RealtimePage.create_mapped_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.RealtimePage.create_mapped_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.RealtimePage.remove_from_mapped_file">
+<tt class="descname">remove_from_mapped_file</tt><big>(</big><em>mapped_file</em>, <em>start</em>, <em>end</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#RealtimePage.remove_from_mapped_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.RealtimePage.remove_from_mapped_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.RealtimePage.set_realtime_privileges">
+<tt class="descname">set_realtime_privileges</tt><big>(</big><em>button</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#RealtimePage.set_realtime_privileges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.RealtimePage.set_realtime_privileges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.srcpd_setup_assistant.SrcpdAssistant">
+<em class="property">class </em><tt class="descclassname">electrip.srcpd_setup_assistant.</tt><tt class="descname">SrcpdAssistant</tt><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#SrcpdAssistant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.SrcpdAssistant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Assistant</span></tt></p>
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.SrcpdAssistant.quit">
+<tt class="descname">quit</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#SrcpdAssistant.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.SrcpdAssistant.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.srcpd_setup_assistant.SummaryPage">
+<em class="property">class </em><tt class="descclassname">electrip.srcpd_setup_assistant.</tt><tt class="descname">SummaryPage</tt><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#SummaryPage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.SummaryPage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.srcpd_setup_assistant.MarkupLabel" title="electrip.srcpd_setup_assistant.MarkupLabel"><tt class="xref py py-class docutils literal"><span class="pre">electrip.srcpd_setup_assistant.MarkupLabel</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.srcpd_setup_assistant.WebConfigEditorPage">
+<em class="property">class </em><tt class="descclassname">electrip.srcpd_setup_assistant.</tt><tt class="descname">WebConfigEditorPage</tt><big>(</big><em>assistant</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#WebConfigEditorPage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.WebConfigEditorPage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Grid</span></tt></p>
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.WebConfigEditorPage.copy_file_to_etc">
+<tt class="descname">copy_file_to_etc</tt><big>(</big><em>button</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#WebConfigEditorPage.copy_file_to_etc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.WebConfigEditorPage.copy_file_to_etc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.srcpd_setup_assistant.WebConfigEditorPage.show_copy_confirmation">
+<tt class="descname">show_copy_confirmation</tt><big>(</big><em>file_button</em><big>)</big><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#WebConfigEditorPage.show_copy_confirmation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.WebConfigEditorPage.show_copy_confirmation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.srcpd_setup_assistant.WelcomePage">
+<em class="property">class </em><tt class="descclassname">electrip.srcpd_setup_assistant.</tt><tt class="descname">WelcomePage</tt><a class="reference internal" href="_modules/electrip/srcpd_setup_assistant.html#WelcomePage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.srcpd_setup_assistant.WelcomePage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.srcpd_setup_assistant.MarkupLabel" title="electrip.srcpd_setup_assistant.MarkupLabel"><tt class="xref py py-class docutils literal"><span class="pre">electrip.srcpd_setup_assistant.MarkupLabel</span></tt></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.widgets">
+<span id="widgets-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">widgets</span></tt> Module<a class="headerlink" href="#module-electrip.widgets" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.widgets.ArrowButton">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">ArrowButton</tt><big>(</big><em>direction</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ArrowButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ArrowButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Button</span></tt></p>
+<p><tt class="xref py py-class docutils literal"><span class="pre">Gtk.Button</span></tt> which displays an arrow.
+If <em>direction</em> is <tt class="docutils literal"><span class="pre">True</span></tt>, the arrow points
+upwards, otherwise downwards.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.BoldLabel">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">BoldLabel</tt><big>(</big><em>text</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#BoldLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.BoldLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Label</span></tt></p>
+<p><tt class="xref py py-class docutils literal"><span class="pre">Gtk.Label</span></tt> with bold font.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.ControlPointGraph">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">ControlPointGraph</tt><big>(</big><em>x_legend_text</em>, <em>y_legend_text</em>, <em>x_res_list</em>, <em>y_res_list</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.DrawingArea</span></tt></p>
+<p>Graph-widget allowing to edit a <tt class="xref py py-class docutils literal"><span class="pre">LinearSegmentFunction</span></tt>
+visually in a cartesian coordinate system.
+<em>x_legend_text</em> and <em>y_legend_text</em> specify the labels for the
+x- and y-axis.
+<em>x_res_list</em> and <em>y_res_list</em> are lists containing acceptable
+resolutions for the x- and y-axis.</p>
+<p>Behaviour:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>Left-click</strong>: Creates a new control-point</li>
+<li><strong>Left-click + drag</strong>: Drags an existing control-point</li>
+<li><strong>Right-click</strong>: Removes an existing control-point</li>
+</ul>
+</div></blockquote>
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.button_pressed">
+<tt class="descname">button_pressed</tt><big>(</big><em>area</em>, <em>event</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.button_pressed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.button_pressed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.button_released">
+<tt class="descname">button_released</tt><big>(</big><em>area</em>, <em>event</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.button_released"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.button_released" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.calc_size_factors">
+<tt class="descname">calc_size_factors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.calc_size_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.calc_size_factors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the graph, removing all references
+to the function which was displayed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.create_coordinate_system">
+<tt class="descname">create_coordinate_system</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.create_coordinate_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.create_coordinate_system" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.draw">
+<tt class="descname">draw</tt><big>(</big><em>area</em>, <em>cr</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_abs_coords">
+<tt class="descname">get_abs_coords</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.get_abs_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_abs_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_axis_data_at_pos">
+<tt class="descname">get_axis_data_at_pos</tt><big>(</big><em>c</em>, <em>pos</em>, <em>res</em>, <em>max_value</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.get_axis_data_at_pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_axis_data_at_pos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_func_data">
+<tt class="descname">get_func_data</tt><big>(</big><em>config_object</em><big>)</big><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_func_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method which knows how to extract
+the relevant graph_data from a <em>config_object</em>.
+Must return 3-tuple of the form:
+<tt class="docutils literal"><span class="pre">(x_max,</span> <span class="pre">y_max,</span> <span class="pre">func)</span></tt> where x/y_max
+specify the range of the x/y-axis and
+func is the <tt class="xref py py-class docutils literal"><span class="pre">LinearSegmentFunction</span></tt>
+used to display the graph.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_needed_space">
+<tt class="descname">get_needed_space</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.get_needed_space"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_needed_space" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_resolution">
+<tt class="descname">get_resolution</tt><big>(</big><em>nr_labels</em>, <em>max_value</em>, <em>res_list</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.get_resolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_resolution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_speed_coords">
+<tt class="descname">get_speed_coords</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.get_speed_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_speed_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.get_touched_point">
+<tt class="descname">get_touched_point</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.get_touched_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.get_touched_point" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.load">
+<tt class="descname">load</tt><big>(</big><em>config_object</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the graph using <em>config_object</em>. Requires
+<a class="reference internal" href="#electrip.widgets.ControlPointGraph.get_func_data" title="electrip.widgets.ControlPointGraph.get_func_data"><tt class="xref py py-func docutils literal"><span class="pre">get_func_data()</span></tt></a> to be overridden by a child-class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.motion">
+<tt class="descname">motion</tt><big>(</big><em>area</em>, <em>event</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.motion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.motion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.ControlPointGraph.update_config_object">
+<tt class="descname">update_config_object</tt><big>(</big><em>func</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ControlPointGraph.update_config_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ControlPointGraph.update_config_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Child classes should use this method to update their data-model
+to be in sync with the changed <tt class="xref py py-class docutils literal"><span class="pre">LinearSegmentFunction</span></tt> <em>func</em>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.CustomHandlePaned">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">CustomHandlePaned</tt><a class="reference internal" href="_modules/electrip/widgets.html#CustomHandlePaned"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.CustomHandlePaned" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Paned</span></tt></p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Gtk.Paned</span></tt> with <tt class="docutils literal"><span class="pre">30px</span></tt> height.
+Can be accessed via CSS using the name
+&#8216;custom-handle-paned&#8217;.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.EasyComboBox">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">EasyComboBox</tt><big>(</big><em>liststore</em>, <em>displayed_to_saved_vals</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyComboBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyComboBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.ComboBox</span></tt></p>
+<dl class="method">
+<dt id="electrip.widgets.EasyComboBox.retrieve_disp_value">
+<tt class="descname">retrieve_disp_value</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyComboBox.retrieve_disp_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyComboBox.retrieve_disp_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EasyComboBox.retrieve_value">
+<tt class="descname">retrieve_value</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyComboBox.retrieve_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyComboBox.retrieve_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EasyComboBox.set_value">
+<tt class="descname">set_value</tt><big>(</big><em>saved_value</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyComboBox.set_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyComboBox.set_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.EasyFileButton">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">EasyFileButton</tt><big>(</big><em>file_filters=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyFileButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyFileButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.FileChooserButton</span></tt></p>
+<dl class="method">
+<dt id="electrip.widgets.EasyFileButton.retrieve_value">
+<tt class="descname">retrieve_value</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyFileButton.retrieve_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyFileButton.retrieve_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EasyFileButton.set_value">
+<tt class="descname">set_value</tt><big>(</big><em>path</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyFileButton.set_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyFileButton.set_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.EasyVolumeButton">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">EasyVolumeButton</tt><big>(</big><em>file_filters=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyVolumeButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyVolumeButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.VolumeButton</span></tt></p>
+<dl class="method">
+<dt id="electrip.widgets.EasyVolumeButton.volume_set">
+<tt class="descname">volume_set</tt><big>(</big><em>button</em>, <em>new_value</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EasyVolumeButton.volume_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EasyVolumeButton.volume_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.EntryTable">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">EntryTable</tt><big>(</big><em>use_tooltips</em>, <em>use_bold_labels</em>, <em>orientation=&lt;enum GTK_ORIENTATION_VERTICAL of type GtkOrientation&gt;</em>, <em>end=None</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Grid</span></tt></p>
+<p>Provides a UI to set attributes on
+configuration objects. Allows you to stop caring
+about signal-handling and layout.</p>
+<p>If <em>use_tooltips</em> is <tt class="docutils literal"><span class="pre">True</span></tt>, the descriptions are
+provided as tooltips. Otherwise the description will
+appear behind the ui-elements.
+If <em>use_bold_labels</em> is <tt class="docutils literal"><span class="pre">True</span></tt>, the labels for the
+object-attributes appear in bold font.</p>
+<p>New input-elements can be added using the
+&#8216;add_(some_element)&#8217;-methods, where the first two arguments
+specify the <em>label</em> and the <em>description</em>-text for the
+respective attribute.</p>
+<p>Have a look at the following example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># NOTE: we assume a Loco-instance called &#39;loco&#39;</span>
+<span class="c"># has already been created</span>
+
+<span class="c"># choose layout-options on creation</span>
+<span class="n">table</span> <span class="o">=</span> <span class="n">EntryTable</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+<span class="c"># add a combo-box which operates on loco.protocol</span>
+<span class="n">table</span><span class="o">.</span><span class="n">add_combo_entry</span><span class="p">(</span><span class="s">&quot;Protokoll&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;Das Digitalprotokoll, welches&quot;</span>
+                      <span class="s">&quot;vom Decoder verwendet wird.&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;protocol&quot;</span><span class="p">,</span>
+                      <span class="n">GObject</span><span class="o">.</span><span class="n">TYPE_STRING</span><span class="p">,</span>
+                      <span class="p">((</span><span class="s">&quot;M 1&quot;</span><span class="p">,</span> <span class="s">&quot;Märklin Motorola Version 1&quot;</span><span class="p">),</span>
+                       <span class="p">(</span><span class="s">&quot;M 2&quot;</span><span class="p">,</span> <span class="s">&quot;Märklin Motorola Version 2&quot;</span><span class="p">),</span>
+                       <span class="p">(</span><span class="s">&quot;N 1&quot;</span><span class="p">,</span> <span class="s">&quot;DCC kurzes Adressformat&quot;</span><span class="p">),</span>
+                       <span class="p">(</span><span class="s">&quot;N 2&quot;</span><span class="p">,</span> <span class="s">&quot;DCC langes Adressformat&quot;</span><span class="p">)))</span>
+
+<span class="c"># you can add more ui-elements for different attributes </span>
+<span class="n">table</span><span class="o">.</span><span class="n">add_</span><span class="o">...</span>
+
+<span class="c"># load the protocol value from loco</span>
+<span class="c"># and the others you have specified</span>
+<span class="n">table</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">loco</span><span class="p">)</span>
+
+<span class="c"># now, if the user selects &quot;Märklin Motorola Version 1&quot;,</span>
+<span class="c"># &quot;M 1&quot; will be stored in loco.protocol</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_action_button">
+<tt class="descname">add_action_button</tt><big>(</big><em>label</em>, <em>description</em>, <em>button_label</em>, <em>callback</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_action_button"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_action_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.Button</span></tt> with <em>button_label</em>
+which calls <em>callback</em> when clicked.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_bool_entry">
+<tt class="descname">add_bool_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_bool_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_bool_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.CheckButton</span></tt> for boolean values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_combo_entry">
+<tt class="descname">add_combo_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em>, <em>content_type</em>, <em>mapping</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_combo_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_combo_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <a class="reference internal" href="#electrip.widgets.EasyComboBox" title="electrip.widgets.EasyComboBox"><tt class="xref py py-class docutils literal"><span class="pre">EasyComboBox</span></tt></a>.</p>
+<p><em>content_type</em> specifies the type of the values
+to be stored in the combobox
+(e.g. <tt class="xref py py-class docutils literal"><span class="pre">GObject.TYPE_STRING</span></tt>, ...).
+<em>mapping</em> is a list of 2-tuples, which maps values
+stored in the  model to the displayed values.
+Example: see <a class="reference internal" href="#electrip.widgets.EntryTable" title="electrip.widgets.EntryTable"><tt class="xref py py-class docutils literal"><span class="pre">EntryTable</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_float_entry">
+<tt class="descname">add_float_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em>, <em>min_value=0.0</em>, <em>max_value=9999.0</em>, <em>step=0.1</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_float_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_float_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.SpinButton</span></tt> for floats.</p>
+<p><em>min_value</em> and <em>max_value</em> specify the value range for
+the float.
+<em>step</em> specifies the precision of the number as step
+between two possible values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_image_file_entry">
+<tt class="descname">add_image_file_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_image_file_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_image_file_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an <a class="reference internal" href="#electrip.widgets.EasyFileButton" title="electrip.widgets.EasyFileButton"><tt class="xref py py-class docutils literal"><span class="pre">EasyFileButton</span></tt></a> for image-file selection.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_int_entry">
+<tt class="descname">add_int_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em>, <em>min_value=0</em>, <em>max_value=9999</em>, <em>step=1</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_int_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_int_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.SpinButton</span></tt>.</p>
+<p><em>min_value</em> and <em>max_value</em> specify the value range for
+the integer.
+<em>step</em> specifies the step between two possible values.
+<em>step</em> must not be an integer, but the values will be
+converted to integers before being stored.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_label">
+<tt class="descname">add_label</tt><big>(</big><em>label</em>, <em>description</em>, <em>markup</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_label"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a Label with a text according to <em>markup</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_sound_file_entry">
+<tt class="descname">add_sound_file_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_sound_file_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_sound_file_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an <a class="reference internal" href="#electrip.widgets.EasyFileButton" title="electrip.widgets.EasyFileButton"><tt class="xref py py-class docutils literal"><span class="pre">EasyFileButton</span></tt></a> for sound-file selection.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_string_entry">
+<tt class="descname">add_string_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_string_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_string_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.Entry</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.add_volume_entry">
+<tt class="descname">add_volume_entry</tt><big>(</big><em>label</em>, <em>description</em>, <em>config_attribute</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.add_volume_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.add_volume_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an <a class="reference internal" href="#electrip.widgets.EasyVolumeButton" title="electrip.widgets.EasyVolumeButton"><tt class="xref py py-class docutils literal"><span class="pre">EasyVolumeButton</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.attach_entry_widget">
+<tt class="descname">attach_entry_widget</tt><big>(</big><em>entry_widget</em>, <em>label</em>, <em>description</em>, <em>config_attribute=None</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.attach_entry_widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.attach_entry_widget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.load">
+<tt class="descname">load</tt><big>(</big><em>config_object</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the values for the user interface elements from
+<em>config_object</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.EntryTable.save_changes">
+<tt class="descname">save_changes</tt><big>(</big><em>widget</em>, <em>config_attrib</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#EntryTable.save_changes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.EntryTable.save_changes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transports changes from the user-interface to the
+<tt class="docutils literal"><span class="pre">EntryTable.config_object</span></tt> which was set using
+<a class="reference internal" href="#electrip.widgets.EntryTable.load" title="electrip.widgets.EntryTable.load"><tt class="xref py py-func docutils literal"><span class="pre">EntryTable.load()</span></tt></a>.
+This method is called automatically whenever the user
+changes an element which was added using one of the
+&#8216;add_(some_element)&#8217;-methods.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.Frame">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">Frame</tt><big>(</big><em>label=None</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#Frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.Frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Frame</span></tt></p>
+<p><tt class="xref py py-class docutils literal"><span class="pre">Gtk.Frame</span></tt> which displays <em>label</em>
+as a <a class="reference internal" href="#electrip.widgets.BoldLabel" title="electrip.widgets.BoldLabel"><tt class="xref py py-class docutils literal"><span class="pre">BoldLabel</span></tt></a>, if specified.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.Popup">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">Popup</tt><big>(</big><em>main_window</em>, <em>title=''</em>, <em>type_hint=&lt;enum GDK_WINDOW_TYPE_HINT_TOOLTIP of type GdkWindowTypeHint&gt;</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#Popup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.Popup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Window</span></tt></p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Gtk.Window</span></tt> which hides itself if closed, instead
+of being destroyed. It tries to be transient for the
+<em>main_window</em> and asks the window-manager to be displayed
+like a tooltip.</p>
+<dl class="method">
+<dt id="electrip.widgets.Popup.delete_event">
+<tt class="descname">delete_event</tt><big>(</big><em>window</em>, <em>event</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#Popup.delete_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.Popup.delete_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.Popup.set_content">
+<tt class="descname">set_content</tt><big>(</big><em>widget</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#Popup.set_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.Popup.set_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the content-widget of the popup
+to <em>widget</em>. Multiple calls will result in
+the removal of the prior widget.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.Popup.show_at_center">
+<tt class="descname">show_at_center</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#Popup.show_at_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.Popup.show_at_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the popup and its contents at the center
+of the screen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.Popup.show_at_mouse">
+<tt class="descname">show_at_mouse</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#Popup.show_at_mouse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.Popup.show_at_mouse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the popup and its contents at the current
+position of the mouse-pointer.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.PopupButton">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">PopupButton</tt><big>(</big><em>text</em>, <em>use_bold</em>, <em>popup</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#PopupButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.PopupButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Button</span></tt></p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Gtk.Button</span></tt> which opens a <a class="reference internal" href="#electrip.widgets.Popup" title="electrip.widgets.Popup"><tt class="xref py py-class docutils literal"><span class="pre">Popup</span></tt></a>-window.
+The buttons label is <em>text</em> and it appears bold if <em>use_bold</em>
+is <tt class="docutils literal"><span class="pre">True</span></tt>. <em>popup</em> specifies the <a class="reference internal" href="#electrip.widgets.Popup" title="electrip.widgets.Popup"><tt class="xref py py-class docutils literal"><span class="pre">Popup</span></tt></a>-instance
+to be used.</p>
+<dl class="method">
+<dt id="electrip.widgets.PopupButton.show_popup">
+<tt class="descname">show_popup</tt><big>(</big><em>button</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#PopupButton.show_popup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.PopupButton.show_popup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.ScrolledTreeView">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">ScrolledTreeView</tt><big>(</big><em>treeview</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#ScrolledTreeView"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.ScrolledTreeView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.ScrolledWindow</span></tt></p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Gtk.ScrolledWindow</span></tt> which embeds a
+<tt class="xref py py-class docutils literal"><span class="pre">Gtk.TreeView</span></tt>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.StockImageButton">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">StockImageButton</tt><big>(</big><em>label</em>, <em>stock</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#StockImageButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.StockImageButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.Button</span></tt></p>
+<p>DEPRECATED - will be removed any time soon</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.TopAlignment">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">TopAlignment</tt><big>(</big><em>child</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TopAlignment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TopAlignment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.Alignment</span></tt></p>
+<p><tt class="xref py py-class docutils literal"><span class="pre">Gtk.Alignment</span></tt> which aligns <em>child</em>
+to the top.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.TreeView">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">TreeView</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.overrides.Gtk.TreeView</span></tt></p>
+<p>A simplified TreeView, allowing to easily add columns
+and transport changes back to a datamodel.</p>
+<p><em>name</em> specifies the name of the TreeView, used for the
+&#8216;unsaved-changes&#8217;-messages.</p>
+<dl class="docutils">
+<dt>Example::</dt>
+<dd><dl class="first docutils">
+<dt>class CustomTreeView(TreeView):</dt>
+<dd><dl class="first last docutils">
+<dt>def __init__(self):</dt>
+<dd><p class="first">widgets.TreeView.__init__(self, &#8220;CustomTreeView&#8221;)
+self.add_text_colum(&#8220;Eine Text-Spalte&#8221;,</p>
+<blockquote>
+<div>&#8220;Name der Spalte&#8221;,
+GObject.TYPE_STRING)</div></blockquote>
+<dl class="docutils">
+<dt>self.add_non_editable_text_colum(&#8220;Geräuschdatei&#8221;,</dt>
+<dd>&#8220;Datei für die Wiedergabe &#8221;
+&#8220;(&#8216;<em>.wav&#8217; oder &#8216;</em>.ogg&#8217;)&#8221;,
+GObject.TYPE_STRING)</dd>
+</dl>
+<p class="last">self.add_more_stuff ...
+self.update_model()</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="last">self.connect(&#8220;row-activated&#8221;, self.choose_sound)</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="electrip.widgets.TreeView.add_column">
+<tt class="descname">add_column</tt><big>(</big><em>column_name</em>, <em>column_tooltip</em>, <em>cell_renderer</em>, <em>content_type</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.add_column"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.add_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new column using <em>cell_renderer</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeView.add_combo_colum">
+<tt class="descname">add_combo_colum</tt><big>(</big><em>column_name</em>, <em>column_tooltip</em>, <em>content_type</em>, <em>values</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.add_combo_colum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.add_combo_colum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a column with <tt class="xref py py-class docutils literal"><span class="pre">Gtk.ComboBox</span></tt>-widgets.</p>
+<p>For <em>column_name</em> and <em>column_tooltip</em> see
+<tt class="xref py py-func docutils literal"><span class="pre">add_text_column()</span></tt>.
+<em>content_type</em> defines the type of the values
+to be stored in the combobox (e.g. str, float ...).
+<em>values</em> is a list of the values the user can
+choose from.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeView.add_non_editable_text_colum">
+<tt class="descname">add_non_editable_text_colum</tt><big>(</big><em>column_name</em>, <em>column_tooltip</em>, <em>content_type</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.add_non_editable_text_colum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.add_non_editable_text_colum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a column with non-editable text.
+For arguments, see <tt class="xref py py-func docutils literal"><span class="pre">add_text_column()</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeView.add_text_colum">
+<tt class="descname">add_text_colum</tt><big>(</big><em>column_name</em>, <em>column_tooltip</em>, <em>content_type</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.add_text_colum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.add_text_colum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a column with editable text.
+The <em>column_name</em> is displayed above the column
+and the <em>column_tooltip</em> appears when the mouse hovers
+over the colums header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeView.new_value">
+<tt class="descname">new_value</tt><big>(</big><em>cellrenderer</em>, <em>path</em>, <em>new_value</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.new_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.new_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeView.save_changes">
+<tt class="descname">save_changes</tt><big>(</big><em>path</em>, <em>column_nr</em>, <em>new_value</em><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.save_changes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.save_changes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is called whenever a value of a cell
+in the TreeView has changed. Child classes should
+make use of this.</p>
+<p><em>path</em>: a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.TreePath</span></tt> to the respective cell.
+<em>column_nr</em>: number of the column where the change occured
+<em>new_value</em>: the new value of the cell</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeView.update_model">
+<tt class="descname">update_model</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/widgets.html#TreeView.update_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.widgets.TreeView.update_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overwrites the old liststore (if there is any) with the current
+column-setup. Must be called after all columns have been added.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.widgets.TreeViewActionBox">
+<em class="property">class </em><tt class="descclassname">electrip.widgets.</tt><tt class="descname">TreeViewActionBox</tt><big>(</big><em>treeview</em>, <em>add_row_label</em>, <em>remove_row_label</em><big>)</big><a class="headerlink" href="#electrip.widgets.TreeViewActionBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">gi.repository.Gtk.ButtonBox</span></tt></p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Gtk.ButtonBox</span></tt> providing Buttons for adding, removing
+and moving rows in a <tt class="xref py py-class docutils literal"><span class="pre">Gtk.TreeView</span></tt>.</p>
+<dl class="method">
+<dt id="electrip.widgets.TreeViewActionBox.add_row">
+<tt class="descname">add_row</tt><big>(</big><em>button</em>, <em>treeview</em><big>)</big><a class="headerlink" href="#electrip.widgets.TreeViewActionBox.add_row" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeViewActionBox.move_row">
+<tt class="descname">move_row</tt><big>(</big><em>button</em>, <em>treeview</em>, <em>direction</em><big>)</big><a class="headerlink" href="#electrip.widgets.TreeViewActionBox.move_row" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.widgets.TreeViewActionBox.remove_row">
+<tt class="descname">remove_row</tt><big>(</big><em>button</em>, <em>treeview</em><big>)</big><a class="headerlink" href="#electrip.widgets.TreeViewActionBox.remove_row" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="electrip.config.html">config Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#id1"><tt class="docutils literal"><span class="pre">config</span></tt> Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.gamepad"><tt class="docutils literal"><span class="pre">gamepad</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.json_model"><tt class="docutils literal"><span class="pre">json_model</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.linear_segment_function"><tt class="docutils literal"><span class="pre">linear_segment_function</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.loco"><tt class="docutils literal"><span class="pre">loco</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.loco_functions"><tt class="docutils literal"><span class="pre">loco_functions</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.server"><tt class="docutils literal"><span class="pre">server</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.sound"><tt class="docutils literal"><span class="pre">sound</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.sound_engines"><tt class="docutils literal"><span class="pre">sound_engines</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.sound_function"><tt class="docutils literal"><span class="pre">sound_function</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.sound_segments"><tt class="docutils literal"><span class="pre">sound_segments</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrip.config.html#module-electrip.config.unsaved_changes"><tt class="docutils literal"><span class="pre">unsaved_changes</span></tt> Module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/small_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">electrip Package</a><ul>
+<li><a class="reference internal" href="#configuration-ui-module"><tt class="docutils literal"><span class="pre">configuration_ui</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.constants"><tt class="docutils literal"><span class="pre">constants</span></tt> Module</a></li>
+<li><a class="reference internal" href="#control-ui-module"><tt class="docutils literal"><span class="pre">control_ui</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.dialog_templates"><tt class="docutils literal"><span class="pre">dialog_templates</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.electrip"><tt class="docutils literal"><span class="pre">electrip</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.locked_print"><tt class="docutils literal"><span class="pre">locked_print</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.pygame_io"><tt class="docutils literal"><span class="pre">pygame_io</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.srcpd_setup_assistant"><tt class="docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.widgets"><tt class="docutils literal"><span class="pre">widgets</span></tt> Module</a></li>
+<li><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/electrip.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Electrip 4.16.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Moritz Renftle.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

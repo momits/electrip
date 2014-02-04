@@ -5,8 +5,12 @@ from unsaved_changes import UnsavedChangesHandler
 
 class Sound(UnsavedChangesHandler):
     """
-    Representation for all settings concerning
-    sound output.
+    Used for basic settings concerning sound output.
+    *sampling_rate* specifies the sampling rate Electrip
+    should use for sound-playback.
+    *show_level_bar* specifies whether an animated bar
+    should be shown on the speed-scale to visualize
+    sound-playback.
     """
     def __init__(self,
                  save_status_method,

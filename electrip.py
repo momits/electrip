@@ -16,6 +16,7 @@ from constants import ELECTRIP_VERSION, ICON_PATHS
 import configuration_ui
 import control_ui
 import dialog_templates
+from widgets import StockImageButton
 from locked_print import locked_print
 from socket import error as SocketError
 import gc
@@ -103,21 +104,6 @@ class BasicVBox(Gtk.Grid):
             pass
         self.add(self.top_grid)
         self.add(self.config_box)
-
-class StockImageButton(Gtk.Button):
-    def __init__(self, label, stock):
-        Gtk.Button.__init__(self)
-        icon = Gtk.Image()
-        icon.set_from_stock(stock, Gtk.IconSize.BUTTON)
-        grid = Gtk.Grid()
-        grid.set_orientation(Gtk.Orientation.HORIZONTAL)
-        grid.set_column_spacing(5)
-        if label != None:
-            label = Gtk.Label(label)
-            label.set_hexpand(True)
-            grid.add(label)
-        grid.add(icon)
-        self.add(grid)
 
 class LoadButton(StockImageButton):
     loading = False
@@ -321,8 +307,9 @@ class TopGrid(Gtk.Grid):
         self.add(self.config_control_switch)
 
 if __name__ == "__main__":
-    Config = config.Config()
-    GObject.threads_init() # Needed to start threads
+    Config = config.JsonModel()
+    # Needed to start threads:
+    GObject.threads_init()
     start_msg = " Starting Electrip Version "+ ELECTRIP_VERSION + " "
     line = " " + "-" * len(start_msg) + " "
     locked_print(line + "\n|" + start_msg + "|\n" + line)

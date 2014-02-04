@@ -120,14 +120,14 @@ class CenterGrid(Gtk.Grid):
         self.set_margin_bottom(8)
         self.controllers = []
         self.socket = socket
-        for i, loco in enumerate(Config.locos): # Alle Controller hinzufügen
+        for i, loco in enumerate(Config.locos):
             self.controllers.append(Controller(socket,
                                                loco,
                                                h_adjustment,
                                                event_thread))
             self.add(self.controllers[i])
         self.connect("realize", self.realized, event_thread)
-                
+    
     def realized(self, hbox, event_thread):
         max_height = 0
         max_label_width = 0

@@ -16,4 +16,4 @@ from server import Server
 from gamepad import Joystick
 from sound import Sound
 
-from json_model import Config
+from json_model import JsonModel

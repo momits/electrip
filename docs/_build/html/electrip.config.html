@@ -1,0 +1,897 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>config Package &mdash; Electrip 4.16.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.16.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Electrip 4.16.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Electrip 4.16.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="config-package">
+<h1>config Package<a class="headerlink" href="#config-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">config</span></tt> Package<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-electrip.config"></span></div>
+<div class="section" id="module-electrip.config.gamepad">
+<span id="gamepad-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">gamepad</span></tt> Module<a class="headerlink" href="#module-electrip.config.gamepad" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.gamepad.Joystick">
+<em class="property">class </em><tt class="descclassname">electrip.config.gamepad.</tt><tt class="descname">Joystick</tt><big>(</big><em>save_status_method</em>, <em>emergency_button=0</em>, <em>reverse_button=1</em>, <em>accel_axis=2</em>, <em>axis_threshold=0.06</em>, <em>focus_button=3</em>, <em>sound_button=4</em>, <em>use_auto_focus=True</em>, <em>show_function_nr=False</em><big>)</big><a class="reference internal" href="_modules/electrip/config/gamepad.html#Joystick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.gamepad.Joystick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>Input device with knobs and axes, used to
+control the model railway.
+Used for general Gamepad-settings.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.json_model">
+<span id="json-model-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">json_model</span></tt> Module<a class="headerlink" href="#module-electrip.config.json_model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.json_model.DictWrapper">
+<em class="property">class </em><tt class="descclassname">electrip.config.json_model.</tt><tt class="descname">DictWrapper</tt><a class="reference internal" href="_modules/electrip/config/json_model.html#DictWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.DictWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper used to retrieve values from
+a dictionary.</p>
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.DictWrapper.get">
+<em class="property">static </em><tt class="descname">get</tt><big>(</big><em>d</em>, <em>k</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#DictWrapper.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.DictWrapper.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the element from <em>d</em>
+with key <em>k</em>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.DictWrapper.get_param_list">
+<em class="property">static </em><tt class="descname">get_param_list</tt><big>(</big><em>config_dict</em>, <em>attribute_list</em>, <em>ignore=False</em><big>)</big><a class="headerlink" href="#electrip.config.json_model.DictWrapper.get_param_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.DictWrapper.has_key">
+<em class="property">static </em><tt class="descname">has_key</tt><big>(</big><em>d</em>, <em>k</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#DictWrapper.has_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.DictWrapper.has_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if <em>d</em> has a key named <em>k</em>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.DictWrapper.set">
+<em class="property">static </em><tt class="descname">set</tt><big>(</big><em>d</em>, <em>k</em>, <em>v</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#DictWrapper.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.DictWrapper.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the element in <em>d</em>
+with key <em>k</em> to <em>v</em>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.json_model.JsonModel">
+<em class="property">class </em><tt class="descclassname">electrip.config.json_model.</tt><tt class="descname">JsonModel</tt><big>(</big><em>locos=None</em>, <em>server=None</em>, <em>joystick=None</em>, <em>sound=None</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel" title="Permalink to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line">Object-tree representing all the data needed by Electrip.</div>
+<div class="line">Able to load and save itself from/to Json-files.</div>
+</div>
+<p>Stores several attribute-lists, which are lists of tuples
+of the form <tt class="docutils literal"><span class="pre">[(&quot;attribute_name&quot;,</span> <span class="pre">default_value),</span> <span class="pre">...]</span></tt>.
+Each attribute-list maps to an object in the configuration:</p>
+<blockquote>
+<div><ul class="simple">
+<li>self.loco_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">Loco</span></tt></li>
+<li>self.engine_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></li>
+<li>self.event_sound_attributes  -&gt; <tt class="xref py py-class docutils literal"><span class="pre">EventSound</span></tt></li>
+<li>self.function_sound_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">FunctionSound</span></tt></li>
+<li>self.segment_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">SoundSegment</span></tt></li>
+<li>self.function_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">Function</span></tt></li>
+<li>self.server_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">Server</span></tt></li>
+<li>self.joystick_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">Joystick</span></tt></li>
+<li>self.sound_attributes -&gt; <tt class="xref py py-class docutils literal"><span class="pre">Sound</span></tt></li>
+</ul>
+</div></blockquote>
+<p>The Object-tree looks similar to this:</p>
+<div class="highlight-python"><pre>JsonModel
+    |
+    |- locos
+    |     |- Loco
+    |     |    |- name = "V 200"
+    |     |    |- image = "/home/user/V200.png"
+    |     |    |- engine = ...
+    |     |    |- ...
+    |     |
+    |     |- Loco
+    |     |    |- ...
+    |     |- ...
+    |
+    |- server
+    |     |- host = "localhost"
+    |     |- port = 4303
+    |     |- ...
+    |
+    |- joystick
+    |     |- emergency_button = 0
+    |     |- accel_axis = 2
+    |     |- ...
+    |- ...   </pre>
+</div>
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.add_file_to_zip">
+<tt class="descname">add_file_to_zip</tt><big>(</big><em>zip_file</em>, <em>file_path</em>, <em>dest=''</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.add_file_to_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.add_file_to_zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a file located at <em>file_path</em> to <em>zip-file</em>,
+placing it at the subdirectory <em>dest</em>.
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">zip_file</span><span class="p">,</span>
+                     <span class="s">&quot;/home/user/image.gif&quot;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">zip_file</span><span class="p">,</span>
+                     <span class="s">&quot;/home/user/test.wav&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+<span class="c"># Will place &#39;image.gif&#39; in the root</span>
+<span class="c"># directory of zip_file and &#39;test.wav&#39; in the</span>
+<span class="c"># subdirectory &#39;/sound&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.add_files_to_zip">
+<tt class="descname">add_files_to_zip</tt><big>(</big><em>zip_file</em>, <em>config_object</em>, <em>attribs</em>, <em>dest=''</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.add_files_to_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.add_files_to_zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds multiple files to <em>zip_file</em>, where <em>attribs</em>
+is a list of attributes of <em>config_object</em> which
+should be used for the file locations.
+See <a class="reference internal" href="#electrip.config.json_model.JsonModel.add_file_to_zip" title="electrip.config.json_model.JsonModel.add_file_to_zip"><tt class="xref py py-func docutils literal"><span class="pre">add_file_to_zip()</span></tt></a>.
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">add_files_to_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                      <span class="n">zip_file</span><span class="p">,</span>
+                      <span class="n">segment</span><span class="p">,</span>
+                      <span class="p">[</span><span class="s">&quot;load_sound&quot;</span><span class="p">,</span>
+                       <span class="s">&quot;accel_sound&quot;</span><span class="p">,</span>
+                       <span class="s">&quot;decel_sound&quot;</span><span class="p">,</span>
+                       <span class="s">&quot;idle_sound&quot;</span><span class="p">])</span>
+<span class="c"># Will add the files located at</span>
+<span class="c"># segment.load_sound, segment.accel_sound, ...</span>
+<span class="c"># to &#39;zip_file&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.create_copy">
+<tt class="descname">create_copy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.create_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.create_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#electrip.config.json_model.JsonModel" title="electrip.config.json_model.JsonModel"><tt class="xref py py-class docutils literal"><span class="pre">JsonModel</span></tt></a>-instance, whose object-tree is
+identical, except that is a recursive copy of the existing one.
+This means, that the new instance and the original one don&#8217;t share
+any objects, only the tree-structure and the values of the objects
+attributes.
+This allows the <tt class="xref py py-mod docutils literal"><span class="pre">control_ui</span></tt> module to modify its own copy of
+the configuration without destroying the original one.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.create_dict">
+<tt class="descname">create_dict</tt><big>(</big><em>config_object</em>, <em>attribute_list</em><big>)</big><a class="headerlink" href="#electrip.config.json_model.JsonModel.create_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary-representation of <em>config_object</em>,
+using the attributes from <em>attribute_list</em>. <em>attribute_list</em>
+is a list of tuples of the form
+<tt class="docutils literal"><span class="pre">[(&quot;attribute_name&quot;,</span> <span class="pre">default_value),</span> <span class="pre">...]</span></tt>.
+The default values are not used in this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.create_loco">
+<tt class="descname">create_loco</tt><big>(</big><em>loco_obj</em>, <em>wrapper</em>, <em>unsaved_changes_method</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.create_loco"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.create_loco" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method covers the logic to create a new <tt class="xref py py-class docutils literal"><span class="pre">Loco</span></tt>-object.
+Depending on the situation, one may want to use different data-types
+for this operation. This is specified by <em>wrapper</em>, which must be
+one of <a class="reference internal" href="#electrip.config.json_model.DictWrapper" title="electrip.config.json_model.DictWrapper"><tt class="xref py py-class docutils literal"><span class="pre">DictWrapper</span></tt></a> or <a class="reference internal" href="#electrip.config.json_model.ObjectWrapper" title="electrip.config.json_model.ObjectWrapper"><tt class="xref py py-class docutils literal"><span class="pre">ObjectWrapper</span></tt></a>.
+E.g. if you want to create a new Loco using an existing Loco,
+you could do this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">new_loco</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_loco</span><span class="p">(</span><span class="n">existing_loco</span><span class="p">,</span>
+                            <span class="n">ObjectWrapper</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>unsaved_changes_method</em> defines the method to be called if
+an attribute on the new loco changes, usually this is
+<tt class="docutils literal"><span class="pre">Config.unsaved_changes</span></tt>.</p>
+<p>Returns: The new <tt class="xref py py-class docutils literal"><span class="pre">Loco</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.create_loco_dict">
+<tt class="descname">create_loco_dict</tt><big>(</big><em>loco</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.create_loco_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.create_loco_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary-representation of the
+object-tree in <em>loco</em>. This is needed save the
+loco in the Json-format.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.JsonModel.get_param_list_from_dict">
+<em class="property">static </em><tt class="descname">get_param_list_from_dict</tt><big>(</big><em>config_dict</em>, <em>attribute_list</em>, <em>ignore=False</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.get_param_list_from_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.get_param_list_from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses a dictionary <em>config_dict</em> and <em>attribute_list</em>
+to create a parameter-list which can be fed into a constructor of
+an object.
+<em>attribute_list</em> is a list of tuples of the form
+<tt class="docutils literal"><span class="pre">[(&quot;attribute_name&quot;,</span> <span class="pre">default_value),</span> <span class="pre">...]</span></tt>. The default values
+are used, if <em>config_dict</em> has no key for the respective
+<em>attribute_name</em>. If the <em>ignore</em> flag is set to <tt class="docutils literal"><span class="pre">false</span></tt> (default)
+a warning is printed if a fallback to default values happens.</p>
+<p>Example: You could create a new <tt class="xref py py-class docutils literal"><span class="pre">Server</span></tt>-object like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">server_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;host&quot;</span><span class="p">:</span> <span class="s">&quot;localhost&quot;</span><span class="p">,</span>
+               <span class="s">&quot;port&quot;</span><span class="p">:</span> <span class="mi">4303</span><span class="p">}</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">,</span>
+                <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_dict</span><span class="p">(</span><span class="n">server_dict</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">server_attributes</span><span class="p">),</span>
+                <span class="bp">True</span><span class="p">)</span>
+<span class="c"># &#39;server_dict&#39; doesn&#39;t contain all needed keys, so the</span>
+<span class="c"># default-values in self.server_attributes will be used</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.JsonModel.get_param_list_from_object">
+<em class="property">static </em><tt class="descname">get_param_list_from_object</tt><big>(</big><em>obj</em>, <em>attribute_list</em>, <em>unused_ignore=False</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.get_param_list_from_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.get_param_list_from_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses an object <em>obj</em> and <em>attribute_list</em>
+to create a parameter-list which can be fed into a constructor of
+a new object. Works similar to <a class="reference internal" href="#electrip.config.json_model.JsonModel.get_param_list_from_dict" title="electrip.config.json_model.JsonModel.get_param_list_from_dict"><tt class="xref py py-func docutils literal"><span class="pre">get_param_list_from_dict()</span></tt></a></p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.JsonModel.get_utf8_bytestring">
+<em class="property">static </em><tt class="descname">get_utf8_bytestring</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.get_utf8_bytestring"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.get_utf8_bytestring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a utf8-bytestring made from
+a unicode-object <em>value</em>. If <em>value</em> is not
+a unicode-object, <em>value</em> is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.load">
+<tt class="descname">load</tt><big>(</big><em>file_path</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the object-tree from a Json-file specified by <em>file_path</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.load_loco">
+<tt class="descname">load_loco</tt><big>(</big><em>file_path</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.load_loco"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.load_loco" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <tt class="xref py py-class docutils literal"><span class="pre">Loco</span></tt>-object which is
+unpacked from a zip-file-package.
+See <a class="reference internal" href="#electrip.config.json_model.JsonModel.save_loco" title="electrip.config.json_model.JsonModel.save_loco"><tt class="xref py py-func docutils literal"><span class="pre">save_loco()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.save">
+<tt class="descname">save</tt><big>(</big><em>file_path</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the current object-tree to the Json-file
+specified by <em>file_path</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.save_loco">
+<tt class="descname">save_loco</tt><big>(</big><em>loco</em>, <em>dir_path</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.save_loco"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.save_loco" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports <em>loco</em> to a zip-file, including all sound-
+and image-files needed. This standalone package is
+placed in <em>dir_path</em>, named like <tt class="docutils literal"><span class="pre">loco.name</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.save_opened_file">
+<tt class="descname">save_opened_file</tt><big>(</big><em>file_path</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.save_opened_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.save_opened_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the <em>file_path</em> of the currently opened
+file in <tt class="file docutils literal"><span class="pre">last_file.json</span></tt> which will be placed
+in the current working directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.set_absolute_path">
+<tt class="descname">set_absolute_path</tt><big>(</big><em>path_prefix</em>, <em>config_object</em>, <em>attribs</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.set_absolute_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.set_absolute_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends <em>path_prefix</em> to all attributes in the list <em>attribs</em> 
+of <em>config_object</em>. Used to change a relative path to
+an absolute path.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.json_model.JsonModel.unsaved_changes">
+<tt class="descname">unsaved_changes</tt><big>(</big><em>obj</em>, <em>name</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.unsaved_changes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.unsaved_changes" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be called whenever an action changes the JsonModel-object.
+Normally this is done using <tt class="xref py py-class docutils literal"><span class="pre">UnsavedChangesHandler</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.json_model.ObjectWrapper">
+<em class="property">class </em><tt class="descclassname">electrip.config.json_model.</tt><tt class="descname">ObjectWrapper</tt><a class="reference internal" href="_modules/electrip/config/json_model.html#ObjectWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.ObjectWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper used to retrieve values from
+an object.</p>
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.ObjectWrapper.get">
+<em class="property">static </em><tt class="descname">get</tt><big>(</big><em>o</em>, <em>a</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#ObjectWrapper.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.ObjectWrapper.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the attribute of <em>o</em>
+named <em>a</em>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.ObjectWrapper.get_param_list">
+<em class="property">static </em><tt class="descname">get_param_list</tt><big>(</big><em>obj</em>, <em>attribs</em>, <em>unused_ignore=False</em><big>)</big><a class="headerlink" href="#electrip.config.json_model.ObjectWrapper.get_param_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.ObjectWrapper.has_key">
+<em class="property">static </em><tt class="descname">has_key</tt><big>(</big><em>o</em>, <em>a</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#ObjectWrapper.has_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.ObjectWrapper.has_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if <em>o</em> has an attribute
+named <em>a</em>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="electrip.config.json_model.ObjectWrapper.set">
+<em class="property">static </em><tt class="descname">set</tt><big>(</big><em>o</em>, <em>a</em>, <em>v</em><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#ObjectWrapper.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.ObjectWrapper.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the attribute of <em>o</em>
+named <em>a</em> to <em>v</em>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.linear_segment_function">
+<span id="linear-segment-function-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">linear_segment_function</span></tt> Module<a class="headerlink" href="#module-electrip.config.linear_segment_function" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction">
+<em class="property">class </em><tt class="descclassname">electrip.config.linear_segment_function.</tt><tt class="descname">LinearSegmentFunction</tt><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function consisting of linear segments which build a
+continuous line connecting certain control points.
+The function increases monotonically.</p>
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.add_control_point">
+<tt class="descname">add_control_point</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.add_control_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.add_control_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a control point at <tt class="docutils literal"><span class="pre">(x,</span> <span class="pre">y)</span></tt>, updating the function.
+If the resulting function after inserting <tt class="docutils literal"><span class="pre">(x,</span> <span class="pre">y)</span></tt> would
+not be monotonically increasing, nothing will happen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.calc_func_segment">
+<tt class="descname">calc_func_segment</tt><big>(</big><em>point1</em>, <em>point2</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.calc_func_segment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.calc_func_segment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the equation y=a*x+b using the
+two points <tt class="docutils literal"><span class="pre">(x1,</span> <span class="pre">y1)</span></tt> and <tt class="docutils literal"><span class="pre">(x2,</span> <span class="pre">y2)</span></tt>.
+Returns <tt class="docutils literal"><span class="pre">(a,</span> <span class="pre">b)</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.get_segment_nr_from_x">
+<tt class="descname">get_segment_nr_from_x</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.get_segment_nr_from_x"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.get_segment_nr_from_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of the function segment belonging
+to the x-coordinate <em>x</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.get_segment_nr_from_y">
+<tt class="descname">get_segment_nr_from_y</tt><big>(</big><em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.get_segment_nr_from_y"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.get_segment_nr_from_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of the function segment belonging
+to the y-coordinate <em>y</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.get_x">
+<tt class="descname">get_x</tt><big>(</big><em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.get_x"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.get_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the functions x-value matching <em>y</em>.
+(Possible due to the functions injectivity).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.get_y">
+<tt class="descname">get_y</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.get_y"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.get_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the functions y-value at <em>x</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.load">
+<tt class="descname">load</tt><big>(</big><em>control_points</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the function from the control points, building
+the linear function segments between the control-points.
+<em>control_points</em> are a list of <tt class="docutils literal"><span class="pre">(x,</span> <span class="pre">y)</span></tt>-point-tuples
+defining the control-points of the function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.move_control_point">
+<tt class="descname">move_control_point</tt><big>(</big><em>nr</em>, <em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.move_control_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.move_control_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Moves the <em>nr</em>-th control point to the point <tt class="docutils literal"><span class="pre">(x,</span> <span class="pre">y)</span></tt>.
+If <tt class="docutils literal"><span class="pre">x</span> <span class="pre">&gt;</span> <span class="pre">x</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">next</span> <span class="pre">point</span></tt>, nothing will happen, to ensure
+a monotonic increase (Same for <tt class="docutils literal"><span class="pre">y</span> <span class="pre">&gt;</span> <span class="pre">y</span> <span class="pre">of</span> <span class="pre">next</span> <span class="pre">point</span></tt>).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.linear_segment_function.LinearSegmentFunction.remove_control_point">
+<tt class="descname">remove_control_point</tt><big>(</big><em>nr</em><big>)</big><a class="reference internal" href="_modules/electrip/config/linear_segment_function.html#LinearSegmentFunction.remove_control_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.linear_segment_function.LinearSegmentFunction.remove_control_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the <em>nr</em>-th control point from the function.
+Attempting to delete the first or last control point
+will result in nothing happening, because they are
+necessary for the function to exist.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.loco">
+<span id="loco-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">loco</span></tt> Module<a class="headerlink" href="#module-electrip.config.loco" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.loco.Loco">
+<em class="property">class </em><tt class="descclassname">electrip.config.loco.</tt><tt class="descname">Loco</tt><big>(</big><em>save_status_method</em>, <em>functions=None</em>, <em>speed_to_step_func=None</em>, <em>function_sounds=None</em>, <em>engine=None</em>, <em>name='Unbenannte Lok'</em>, <em>speed_steps=128</em>, <em>max_speed=100.0</em>, <em>address=1</em>, <em>protocol='N 1'</em>, <em>accel_duration=11.5</em>, <em>decel_duration=8.5</em>, <em>direction=True</em>, <em>img_path=None</em>, <em>sound_volume=0.8</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco.html#Loco"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco.Loco" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>A model-train loco.</p>
+<dl class="method">
+<dt id="electrip.config.loco.Loco.accelerate">
+<tt class="descname">accelerate</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco.html#Loco.accelerate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco.Loco.accelerate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.loco.Loco.get_srcp_status">
+<tt class="descname">get_srcp_status</tt><big>(</big><em>bus</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco.html#Loco.get_srcp_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco.Loco.get_srcp_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.loco.Loco.toggle_direction">
+<tt class="descname">toggle_direction</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/config/loco.html#Loco.toggle_direction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco.Loco.toggle_direction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.loco_functions">
+<span id="loco-functions-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">loco_functions</span></tt> Module<a class="headerlink" href="#module-electrip.config.loco_functions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.loco_functions.DecoderFunction">
+<em class="property">class </em><tt class="descclassname">electrip.config.loco_functions.</tt><tt class="descname">DecoderFunction</tt><big>(</big><em>save_status_method</em>, <em>name=''</em>, <em>function=0</em>, <em>state=False</em>, <em>button=0</em>, <em>toggle_mode=0</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco_functions.html#DecoderFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco_functions.DecoderFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.loco_functions.LocoFunction" title="electrip.config.loco_functions.LocoFunction"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.loco_functions.LocoFunction</span></tt></a></p>
+<p>Function of the Decoder in a model-train loco.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.loco_functions.EventSound">
+<em class="property">class </em><tt class="descclassname">electrip.config.loco_functions.</tt><tt class="descname">EventSound</tt><big>(</big><em>save_status_method</em>, <em>name=''</em>, <em>file_path=None</em>, <em>state=True</em>, <em>min_speed=None</em>, <em>max_speed=None</em>, <em>min_accel=None</em>, <em>max_accel=None</em>, <em>button=0</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco_functions.html#EventSound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco_functions.EventSound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.loco_functions.LocoFunction" title="electrip.config.loco_functions.LocoFunction"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.loco_functions.LocoFunction</span></tt></a></p>
+<p>A <a class="reference internal" href="#electrip.config.loco_functions.LocoFunction" title="electrip.config.loco_functions.LocoFunction"><tt class="xref py py-class docutils literal"><span class="pre">LocoFunction</span></tt></a> which defines conditions
+for the sound-file at <em>file_path</em> to be played.
+The sound should be played if</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>min_speed</em> &lt;= <tt class="docutils literal"><span class="pre">loco.speed</span></tt> &lt;=  <em>max_speed</em></li>
+<li><em>min_accel</em> &lt;= <tt class="docutils literal"><span class="pre">derivation</span> <span class="pre">of</span> <span class="pre">loco.speed</span></tt> &lt;=  <em>max_accel</em></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.loco_functions.FunctionSound">
+<em class="property">class </em><tt class="descclassname">electrip.config.loco_functions.</tt><tt class="descname">FunctionSound</tt><big>(</big><em>save_status_method</em>, <em>name=''</em>, <em>file_path=None</em>, <em>state=False</em>, <em>button=0</em>, <em>toggle_mode=3</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco_functions.html#FunctionSound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco_functions.FunctionSound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.loco_functions.LocoFunction" title="electrip.config.loco_functions.LocoFunction"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.loco_functions.LocoFunction</span></tt></a></p>
+<p>A <a class="reference internal" href="#electrip.config.loco_functions.LocoFunction" title="electrip.config.loco_functions.LocoFunction"><tt class="xref py py-class docutils literal"><span class="pre">LocoFunction</span></tt></a> which plays a sound-file
+if triggered via Gamepad.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.loco_functions.LocoFunction">
+<em class="property">class </em><tt class="descclassname">electrip.config.loco_functions.</tt><tt class="descname">LocoFunction</tt><big>(</big><em>save_status_method</em>, <em>name=''</em>, <em>state=False</em>, <em>button=0</em><big>)</big><a class="reference internal" href="_modules/electrip/config/loco_functions.html#LocoFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco_functions.LocoFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>Function of a Loco with a name and a state triggered
+by a Gamepad-Button.</p>
+<dl class="method">
+<dt id="electrip.config.loco_functions.LocoFunction.toggle">
+<tt class="descname">toggle</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/config/loco_functions.html#LocoFunction.toggle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco_functions.LocoFunction.toggle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the state of the funtion.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.loco_functions.ToggleMode">
+<em class="property">class </em><tt class="descclassname">electrip.config.loco_functions.</tt><tt class="descname">ToggleMode</tt><a class="reference internal" href="_modules/electrip/config/loco_functions.html#ToggleMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.loco_functions.ToggleMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class used to specify different ways
+to toggle a button:</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>SWITCH</em>: first click = on, second click = off</li>
+<li><em>PUSH</em>: button pressed = on, button released = off</li>
+<li><em>PUSH_LIMITED</em>: button pressed = on, button released = off,
+program may turn off earlier</li>
+<li><em>TAP</em>: first click = on, program decides when off</li>
+</ul>
+</div></blockquote>
+<dl class="attribute">
+<dt id="electrip.config.loco_functions.ToggleMode.PUSH">
+<tt class="descname">PUSH</tt><em class="property"> = 1</em><a class="headerlink" href="#electrip.config.loco_functions.ToggleMode.PUSH" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.config.loco_functions.ToggleMode.PUSH_LIMITED">
+<tt class="descname">PUSH_LIMITED</tt><em class="property"> = 2</em><a class="headerlink" href="#electrip.config.loco_functions.ToggleMode.PUSH_LIMITED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.config.loco_functions.ToggleMode.SWITCH">
+<tt class="descname">SWITCH</tt><em class="property"> = 0</em><a class="headerlink" href="#electrip.config.loco_functions.ToggleMode.SWITCH" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.config.loco_functions.ToggleMode.TAP">
+<tt class="descname">TAP</tt><em class="property"> = 3</em><a class="headerlink" href="#electrip.config.loco_functions.ToggleMode.TAP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.server">
+<span id="server-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">server</span></tt> Module<a class="headerlink" href="#module-electrip.config.server" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.server.Server">
+<em class="property">class </em><tt class="descclassname">electrip.config.server.</tt><tt class="descname">Server</tt><big>(</big><em>save_status_method</em>, <em>host='localhost'</em>, <em>port=4303</em>, <em>bus=1</em>, <em>power=True</em><big>)</big><a class="reference internal" href="_modules/electrip/config/server.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.server.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>SRCP-compatible Server.
+Used for all settings concerning
+TCP/IP connectivity.</p>
+<dl class="method">
+<dt id="electrip.config.server.Server.toggle_power">
+<tt class="descname">toggle_power</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/config/server.html#Server.toggle_power"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.server.Server.toggle_power" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.sound">
+<span id="sound-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">sound</span></tt> Module<a class="headerlink" href="#module-electrip.config.sound" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.sound.Sound">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound.</tt><tt class="descname">Sound</tt><big>(</big><em>save_status_method</em>, <em>sampling_rate=44100</em>, <em>show_level_bar=True</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound.html#Sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound.Sound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>Used for basic settings concerning sound output.
+<em>sampling_rate</em> specifies the sampling rate Electrip
+should use for sound-playback.
+<em>show_level_bar</em> specifies whether an animated bar
+should be shown on the speed-scale to visualize
+sound-playback.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.sound_engines">
+<span id="sound-engines-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">sound_engines</span></tt> Module<a class="headerlink" href="#module-electrip.config.sound_engines" title="Permalink to this headline">¶</a></h2>
+<p>Contains the different sound implementations.</p>
+<dl class="class">
+<dt id="electrip.config.sound_engines.DieselEngine">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_engines.</tt><tt class="descname">DieselEngine</tt><big>(</big><em>save_status_method</em>, <em>start_sound=None</em>, <em>idle_sound=None</em>, <em>quit_sound=None</em>, <em>sound_segments=None</em>, <em>event_sounds=None</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_engines.html#DieselEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_engines.DieselEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.sound_engines.Engine" title="electrip.config.sound_engines.Engine"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.sound_engines.Engine</span></tt></a></p>
+<p>A Diesel-powered engine. It has <em>start_sound</em>,
+<em>idle_sound</em> and <em>quit_sound</em> attributes,
+which are strings containing the path
+to the sound-files representing the off-on-transition,
+idle-state and on-off-transition of the engine.
+For <em>sound_segments</em> and <em>event_sounds</em> see
+<a class="reference internal" href="#electrip.config.sound_engines.Engine" title="electrip.config.sound_engines.Engine"><tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.sound_engines.Engine">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_engines.</tt><tt class="descname">Engine</tt><big>(</big><em>save_status_method</em>, <em>sound_segments</em>, <em>event_sounds</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_engines.html#Engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_engines.Engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>Abstract representation of an engine which
+has some kind of sound.
+<em>sound_segments</em> is a list of <tt class="xref py py-class docutils literal"><span class="pre">SoundSegment</span></tt>-
+objects defining the sound of the engine at
+different speed-ranges.
+<em>event_sounds</em> is a list of <tt class="xref py py-class docutils literal"><span class="pre">EventSound</span></tt>-
+objects defining sounds which should be played under
+certain conditions.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.sound_engines.EngineType">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_engines.</tt><tt class="descname">EngineType</tt><a class="reference internal" href="_modules/electrip/config/sound_engines.html#EngineType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_engines.EngineType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines all possible engine types
+for sound generation.</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>STEAM</em>: A steam engine</li>
+<li><em>DIESEL</em>: A diesel engine</li>
+</ul>
+</div></blockquote>
+<dl class="attribute">
+<dt id="electrip.config.sound_engines.EngineType.DIESEL">
+<tt class="descname">DIESEL</tt><em class="property"> = 'diesel'</em><a class="headerlink" href="#electrip.config.sound_engines.EngineType.DIESEL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.config.sound_engines.EngineType.STEAM">
+<tt class="descname">STEAM</tt><em class="property"> = 'steam'</em><a class="headerlink" href="#electrip.config.sound_engines.EngineType.STEAM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.sound_engines.SteamEngine">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_engines.</tt><tt class="descname">SteamEngine</tt><big>(</big><em>save_status_method</em>, <em>idle_sound=None</em>, <em>cylinder_steam_sound=None</em>, <em>nr_strokes=4</em>, <em>stroke_start_delay=2.0</em>, <em>wheel_diameter=1.2</em>, <em>min_freq=0.2</em>, <em>sound_segments=None</em>, <em>event_sounds=None</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_engines.html#SteamEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_engines.SteamEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.sound_engines.Engine" title="electrip.config.sound_engines.Engine"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.sound_engines.Engine</span></tt></a></p>
+<div class="line-block">
+<div class="line">A steam-powered engine.</div>
+</div>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><ul class="first last simple">
+<li><em>idle_sound</em>: sound which is played
+continuously, base noise of a steam-engine</li>
+<li><em>cylinder_steam_sound</em>: sound which is played
+when the engine starts to move, simulating
+steam coming out of the cylinder</li>
+<li><em>nr_strokes</em>: the number of cylinder strokes
+the engine performs (typically 4 on a 2 cylinder
+engine)</li>
+<li><em>stroke_start_delay</em>: the timespan the
+<em>cylinder_steam_sound</em> is played before the
+first stroke sound is played</li>
+<li><em>wheel_diameter</em>: diameter of the traction wheels</li>
+<li><em>min_freq</em>: minimal frequency of strokes / second,
+helps to avoid extremely long pauses between strokes
+at speeds near 0</li>
+<li><em>sound_segments</em>: see <a class="reference internal" href="#electrip.config.sound_engines.Engine" title="electrip.config.sound_engines.Engine"><tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></a></li>
+<li><em>event_sounds</em>: see <a class="reference internal" href="#electrip.config.sound_engines.Engine" title="electrip.config.sound_engines.Engine"><tt class="xref py py-class docutils literal"><span class="pre">Engine</span></tt></a></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="electrip.config.sound_engines.create_engine">
+<tt class="descclassname">electrip.config.sound_engines.</tt><tt class="descname">create_engine</tt><big>(</big><em>engine_type</em>, <em>*args</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_engines.html#create_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_engines.create_engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a newly created &#8216;Engine&#8217;
+according to &#8216;engine_type&#8217;.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.sound_function">
+<span id="sound-function-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">sound_function</span></tt> Module<a class="headerlink" href="#module-electrip.config.sound_function" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.sound_function.SoundFunction">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_function.</tt><tt class="descname">SoundFunction</tt><big>(</big><em>segments</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_function.html#SoundFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_function.SoundFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Function consisting of <tt class="xref py py-class docutils literal"><span class="pre">SoundSegment</span></tt>-
+objects, used to determine the sound to be played at
+a certain speed.</p>
+<dl class="method">
+<dt id="electrip.config.sound_function.SoundFunction.get_segment_nr_from_x">
+<tt class="descname">get_segment_nr_from_x</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_function.html#SoundFunction.get_segment_nr_from_x"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_function.SoundFunction.get_segment_nr_from_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of the <tt class="xref py py-class docutils literal"><span class="pre">SoundSegment</span></tt>
+belonging to the x-coordinate <em>x</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="electrip.config.sound_function.SoundFunction.get_sound">
+<tt class="descname">get_sound</tt><big>(</big><em>x</em>, <em>sound_type</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_function.html#SoundFunction.get_sound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_function.SoundFunction.get_sound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the sound of type <em>sound_type</em>
+from the segment at position <em>x</em>.
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">func</span> <span class="o">=</span> <span class="n">SoundFunction</span><span class="p">(</span><span class="n">various_diesel_sound_segments</span><span class="p">)</span>
+<span class="n">sound</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">get_sound</span><span class="p">(</span><span class="mf">67.0</span><span class="p">,</span> <span class="s">&quot;load_sound&quot;</span><span class="p">)</span>
+
+<span class="c"># &#39;sound&#39; now stores the filepath to</span>
+<span class="c"># the &quot;load_sound&quot; of the segment at 67.0 km/h</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.sound_segments">
+<span id="sound-segments-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">sound_segments</span></tt> Module<a class="headerlink" href="#module-electrip.config.sound_segments" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.sound_segments.DieselSoundSegment">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_segments.</tt><tt class="descname">DieselSoundSegment</tt><big>(</big><em>save_status_method</em>, <em>start</em>, <em>end</em>, <em>load_sound=None</em>, <em>idle_sound=None</em>, <em>accel_sound=None</em>, <em>decel_sound=None</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_segments.html#DieselSoundSegment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.DieselSoundSegment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.sound_segments.SoundSegment" title="electrip.config.sound_segments.SoundSegment"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.sound_segments.SoundSegment</span></tt></a></p>
+<p>A segment for Diesel-sound.
+Provides different sounds for different conditions:</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>load_sound</em>: engine is running under load at
+constant speed</li>
+<li><em>idle_sound</em>: engine is running idle at
+constant speed</li>
+<li><em>accel_sound</em>: engine is accelerating</li>
+<li><em>accel_sound</em>: engine is decelerating</li>
+</ul>
+</div></blockquote>
+<dl class="method">
+<dt id="electrip.config.sound_segments.DieselSoundSegment.set_position">
+<tt class="descname">set_position</tt><big>(</big><em>position</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_segments.html#DieselSoundSegment.set_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.DieselSoundSegment.set_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the <em>idle_sound</em>-attribute if position
+is <em>SegmentPosition.MIDDLE</em>, erases it if position
+is <em>SegmentPosition.UPPER</em> (in the upper
+<em>DieselSoundSegment</em> the loco is always under load).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.sound_segments.SegmentPosition">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_segments.</tt><tt class="descname">SegmentPosition</tt><a class="reference internal" href="_modules/electrip/config/sound_segments.html#SegmentPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.SegmentPosition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines two types of Segments: upper and middle
+ones. Used e.g. in <a class="reference internal" href="#electrip.config.sound_segments.SoundSegment.set_position" title="electrip.config.sound_segments.SoundSegment.set_position"><tt class="xref py py-func docutils literal"><span class="pre">SoundSegment.set_position()</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="electrip.config.sound_segments.SegmentPosition.MIDDLE">
+<tt class="descname">MIDDLE</tt><em class="property"> = 1</em><a class="headerlink" href="#electrip.config.sound_segments.SegmentPosition.MIDDLE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="electrip.config.sound_segments.SegmentPosition.UPPER">
+<tt class="descname">UPPER</tt><em class="property"> = 2</em><a class="headerlink" href="#electrip.config.sound_segments.SegmentPosition.UPPER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.sound_segments.SoundSegment">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_segments.</tt><tt class="descname">SoundSegment</tt><big>(</big><em>save_status_method</em>, <em>start</em>, <em>end</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_segments.html#SoundSegment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.SoundSegment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
+<p>Defines sounds for a certain speed-range
+reaching from speeds greater than <em>start</em> to
+speeds smaller or equal to <em>end</em>.</p>
+<dl class="method">
+<dt id="electrip.config.sound_segments.SoundSegment.set_position">
+<tt class="descname">set_position</tt><big>(</big><big>)</big><a class="headerlink" href="#electrip.config.sound_segments.SoundSegment.set_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows segment-implementations to react to
+position-changes. Should be called whenever the position
+of a segment changes.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="electrip.config.sound_segments.SteamSoundSegment">
+<em class="property">class </em><tt class="descclassname">electrip.config.sound_segments.</tt><tt class="descname">SteamSoundSegment</tt><big>(</big><em>save_status_method</em>, <em>start</em>, <em>end</em>, <em>stroke_sounds=None</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_segments.html#SteamSoundSegment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.SteamSoundSegment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#electrip.config.sound_segments.SoundSegment" title="electrip.config.sound_segments.SoundSegment"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.sound_segments.SoundSegment</span></tt></a></p>
+<p>A segment for steam-sound. Provides the attribute
+<em>stroke_sounds</em>, which is a list of strings specifying the
+sound-filepaths for the cylinder-strokes.
+E.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">segment</span> <span class="o">=</span> <span class="n">SteamSoundSegment</span><span class="p">(</span><span class="n">some_method</span><span class="p">,</span>
+                            <span class="mf">12.0</span><span class="p">,</span>
+                            <span class="mf">31.2</span><span class="p">,</span>
+                            <span class="p">[</span><span class="s">&quot;/home/user/tchoo.wav&quot;</span><span class="p">,</span>
+                             <span class="s">&quot;/home/user/piff.wav&quot;</span><span class="p">,</span>
+                             <span class="s">&quot;/home/user/paff.wav&quot;</span><span class="p">])</span>
+<span class="c"># if active, tchoo-piff-paff-tchoo-piff-paff-tchoo...</span>
+<span class="c"># should be played</span>
+</pre></div>
+</div>
+<p>will create a new <a class="reference internal" href="#electrip.config.sound_segments.SteamSoundSegment" title="electrip.config.sound_segments.SteamSoundSegment"><tt class="xref py py-class docutils literal"><span class="pre">SteamSoundSegment</span></tt></a> reaching from
+any speed greater than 12.0 km/h to 31.2 km/h. If active,
+<tt class="file docutils literal"><span class="pre">tchoo.wav</span></tt>, <tt class="file docutils literal"><span class="pre">piff.wav</span></tt> and <tt class="file docutils literal"><span class="pre">paff.wav</span></tt>.
+should be used as cylinder-stroke-sounds.</p>
+<dl class="method">
+<dt id="electrip.config.sound_segments.SteamSoundSegment.set_position">
+<tt class="descname">set_position</tt><big>(</big><em>position</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_segments.html#SteamSoundSegment.set_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.SteamSoundSegment.set_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does nothing at all, position doesn&#8217;t matter for
+<a class="reference internal" href="#electrip.config.sound_segments.SteamSoundSegment" title="electrip.config.sound_segments.SteamSoundSegment"><tt class="xref py py-class docutils literal"><span class="pre">SteamSoundSegment</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="electrip.config.sound_segments.create_sound_segment">
+<tt class="descclassname">electrip.config.sound_segments.</tt><tt class="descname">create_sound_segment</tt><big>(</big><em>engine_type</em>, <em>*args</em><big>)</big><a class="reference internal" href="_modules/electrip/config/sound_segments.html#create_sound_segment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.sound_segments.create_sound_segment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a newly created <a class="reference internal" href="#electrip.config.sound_segments.SoundSegment" title="electrip.config.sound_segments.SoundSegment"><tt class="xref py py-class docutils literal"><span class="pre">SoundSegment</span></tt></a>
+according to <em>engine_type</em>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-electrip.config.unsaved_changes">
+<span id="unsaved-changes-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">unsaved_changes</span></tt> Module<a class="headerlink" href="#module-electrip.config.unsaved_changes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="electrip.config.unsaved_changes.UnsavedChangesHandler">
+<em class="property">class </em><tt class="descclassname">electrip.config.unsaved_changes.</tt><tt class="descname">UnsavedChangesHandler</tt><big>(</big><em>save_status_method</em><big>)</big><a class="reference internal" href="_modules/electrip/config/unsaved_changes.html#UnsavedChangesHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>An object which reports changes on any of its
+attributes to a <em>save_status_method</em> (usually
+<tt class="xref py py-func docutils literal"><span class="pre">JsonModel.unsaved_changes()</span></tt>).</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/small_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">config Package</a><ul>
+<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">config</span></tt> Package</a></li>
+<li><a class="reference internal" href="#module-electrip.config.gamepad"><tt class="docutils literal"><span class="pre">gamepad</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.json_model"><tt class="docutils literal"><span class="pre">json_model</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.linear_segment_function"><tt class="docutils literal"><span class="pre">linear_segment_function</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.loco"><tt class="docutils literal"><span class="pre">loco</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.loco_functions"><tt class="docutils literal"><span class="pre">loco_functions</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.server"><tt class="docutils literal"><span class="pre">server</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.sound"><tt class="docutils literal"><span class="pre">sound</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.sound_engines"><tt class="docutils literal"><span class="pre">sound_engines</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.sound_function"><tt class="docutils literal"><span class="pre">sound_function</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.sound_segments"><tt class="docutils literal"><span class="pre">sound_segments</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-electrip.config.unsaved_changes"><tt class="docutils literal"><span class="pre">unsaved_changes</span></tt> Module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/electrip.config.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Electrip 4.16.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Moritz Renftle.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
