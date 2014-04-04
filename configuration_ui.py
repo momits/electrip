@@ -104,7 +104,7 @@ class FunctionSoundFrame(widgets.TreeViewFrame):
                                        self.treeview,
                                        self.action_box)
 
-# is in fact an overlay, but uses a frame as "background"
+# is in fact an overlay, but uses a frame as "background", thus named *Frame*
 class SpeedGraphFrame(Gtk.Overlay):
     loco_sound_bars = {}
     warn_frame_active = False
@@ -601,7 +601,7 @@ class DecoderTable(widgets.EntryTable):
         for speed_steps in speed_step_options:
             liststore.append([speed_steps])
             disp_to_saved_vals.append((speed_steps, speed_steps))
-        self.speed_steps_combo.displayed_to_saved_vals = disp_to_saved_vals
+        self.speed_steps_combo.mapping = disp_to_saved_vals
         self.speed_steps_combo.set_model(liststore)
         # Set label text
         self.max_function_label.set_text(str(max_functions))
@@ -1047,10 +1047,10 @@ class SpeedSoundFrame(Gtk.Frame):
         self.main_window = main_window
         self.grid = Gtk.Grid()
         
-        liststore = Gtk.ListStore(GObject.TYPE_STRING)
-        for unused_engine_type, type_def in self.engine_types:
-            liststore.append([type_def])
-        self.type_combo = widgets.EasyComboBox(liststore, self.engine_types)
+#         liststore = Gtk.ListStore(GObject.TYPE_STRING)
+#         for unused_engine_type, type_def in self.engine_types:
+#             liststore.append([type_def])
+        self.type_combo = widgets.EasyComboBox(GObject.TYPE_STRING, self.engine_types)
         self.type_combo.set_valign(Gtk.Align.START)
         self.type_combo.set_halign(Gtk.Align.START)
         self.type_combo.connect("changed", self.engine_type_changed)

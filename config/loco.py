@@ -3,7 +3,6 @@
 
 from unsaved_changes import UnsavedChangesHandler
 from linear_segment_function import LinearSegmentFunction
-from locked_print import locked_print
 
 class Loco(UnsavedChangesHandler):
     """
@@ -70,26 +69,22 @@ class Loco(UnsavedChangesHandler):
             functions = " " + " ".join(str(int(val)) for val in toggled)
         else:
             functions = ""
-        text = "SET " + str(bus) + " GL " + str(self.address) + " " \
+        return "SET " + str(bus) + " GL " + str(self.address) + " " \
                 + str(int(self.direction)) + " " + str(int(self.speed_step)) \
                 + " " + str(self.speed_steps) + functions + "\n"
-        
-        locked_print(text)
-        return text
     
-    # value between -1 and 1, -1 means acceleration
+    # value between -1 and 1, negative means acceleration
     def accelerate(self, value):
-        if value < 0:
+        if value >= 0:
             self.speed = min(self.max_speed,
                              max(0,
-                                 self.speed - value *
+                                 self.speed + value *
                                  (0.05 / self.accel_duration * self.max_speed)))
         else:
             self.speed = min(self.max_speed,
-                             max(0, self.speed - value *
+                             max(0, self.speed + value *
                                  (0.05 / self.decel_duration * self.max_speed)))
         return self.speed
         
     def toggle_direction(self):
         self.direction = not self.direction
-

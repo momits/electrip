@@ -10,8 +10,9 @@
     
     <title>config Package &mdash; Electrip 4.16.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -25,43 +26,31 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Electrip 4.16.0 documentation" href="index.html" /> 
   </head>
   <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li><a href="index.html">Electrip 4.16.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+      <div class="header"><img class="rightlogo" src="_static/small_logo.png" alt="Logo"/><h1 class="heading"><a href="index.html">
+          <span>Electrip 4.16.0 documentation</span></a></h1>
+        <h2 class="heading"><span>config Package</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body">
-            
+      </div>
+      <div class="content">
+        
+        
   <div class="section" id="config-package">
 <h1>config Package<a class="headerlink" href="#config-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id1">
 <h2><tt class="xref py py-mod docutils literal"><span class="pre">config</span></tt> Package<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="module-electrip.config"></span></div>
-<div class="section" id="module-electrip.config.gamepad">
-<span id="gamepad-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">gamepad</span></tt> Module<a class="headerlink" href="#module-electrip.config.gamepad" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="electrip.config.gamepad.Joystick">
-<em class="property">class </em><tt class="descclassname">electrip.config.gamepad.</tt><tt class="descname">Joystick</tt><big>(</big><em>save_status_method</em>, <em>emergency_button=0</em>, <em>reverse_button=1</em>, <em>accel_axis=2</em>, <em>axis_threshold=0.06</em>, <em>focus_button=3</em>, <em>sound_button=4</em>, <em>use_auto_focus=True</em>, <em>show_function_nr=False</em><big>)</big><a class="reference internal" href="_modules/electrip/config/gamepad.html#Joystick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.gamepad.Joystick" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#electrip.config.unsaved_changes.UnsavedChangesHandler" title="electrip.config.unsaved_changes.UnsavedChangesHandler"><tt class="xref py py-class docutils literal"><span class="pre">electrip.config.unsaved_changes.UnsavedChangesHandler</span></tt></a></p>
-<p>Input device with knobs and axes, used to
-control the model railway.
-Used for general Gamepad-settings.</p>
-</dd></dl>
-
+<div class="section" id="gamepad-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">gamepad</span></tt> Module<a class="headerlink" href="#gamepad-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-electrip.config.json_model">
 <span id="json-model-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">json_model</span></tt> Module<a class="headerlink" href="#module-electrip.config.json_model" title="Permalink to this headline">¶</a></h2>
@@ -191,7 +180,7 @@ Example:</p>
 <dt id="electrip.config.json_model.JsonModel.create_copy">
 <tt class="descname">create_copy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/electrip/config/json_model.html#JsonModel.create_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#electrip.config.json_model.JsonModel.create_copy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a new <a class="reference internal" href="#electrip.config.json_model.JsonModel" title="electrip.config.json_model.JsonModel"><tt class="xref py py-class docutils literal"><span class="pre">JsonModel</span></tt></a>-instance, whose object-tree is
-identical, except that is a recursive copy of the existing one.
+identical, except that it is a recursive copy of the existing one.
 This means, that the new instance and the original one don&#8217;t share
 any objects, only the tree-structure and the values of the objects
 attributes.
@@ -828,67 +817,15 @@ attributes to a <em>save_status_method</em> (usually
 </div>
 
 
-          </div>
-        </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-            <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/small_logo.png" alt="Logo"/>
-            </a></p>
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">config Package</a><ul>
-<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">config</span></tt> Package</a></li>
-<li><a class="reference internal" href="#module-electrip.config.gamepad"><tt class="docutils literal"><span class="pre">gamepad</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.json_model"><tt class="docutils literal"><span class="pre">json_model</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.linear_segment_function"><tt class="docutils literal"><span class="pre">linear_segment_function</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.loco"><tt class="docutils literal"><span class="pre">loco</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.loco_functions"><tt class="docutils literal"><span class="pre">loco_functions</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.server"><tt class="docutils literal"><span class="pre">server</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.sound"><tt class="docutils literal"><span class="pre">sound</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.sound_engines"><tt class="docutils literal"><span class="pre">sound_engines</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.sound_function"><tt class="docutils literal"><span class="pre">sound_function</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.sound_segments"><tt class="docutils literal"><span class="pre">sound_segments</span></tt> Module</a></li>
-<li><a class="reference internal" href="#module-electrip.config.unsaved_changes"><tt class="docutils literal"><span class="pre">unsaved_changes</span></tt> Module</a></li>
-</ul>
-</li>
-</ul>
+      <div class="bottomnav">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
 
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/electrip.config.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li><a href="index.html">Electrip 4.16.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
+
     <div class="footer">
         &copy; Copyright 2014, Moritz Renftle.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.

@@ -11,7 +11,7 @@ from loco import Loco
 from loco_functions import ToggleMode, DecoderFunction, \
     FunctionSound, EventSound
 from server import Server
-from gamepad import Joystick
+from joystick import Joystick
 from sound import Sound
 from sound_segments import create_sound_segment
 from sound_engines import create_engine, EngineType
@@ -713,7 +713,7 @@ class JsonModel:
     def create_copy(self):
         """
         Returns a new :class:`JsonModel`-instance, whose object-tree is
-        identical, except that is a recursive copy of the existing one.
+        identical, except that it is a recursive copy of the existing one.
         This means, that the new instance and the original one don't share
         any objects, only the tree-structure and the values of the objects
         attributes.

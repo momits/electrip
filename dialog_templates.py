@@ -31,6 +31,21 @@ class FileLoadDialog(Gtk.FileChooserDialog):
         self.set_default_response(Gtk.ResponseType.OK)
         self.add_filter(ElectripFileFilter())
         self.add_filter(AllFileFilter())
+        
+class FileSetResetDialog(Gtk.FileChooserDialog):
+    def __init__(self, filters=None):
+        Gtk.FileChooserDialog.__init__(self,
+                                       "Datei auswählen ...",
+                                       None,
+                                       Gtk.FileChooserAction.OPEN,
+                                       (Gtk.STOCK_CANCEL,
+                                        Gtk.ResponseType.CANCEL,
+                                        "Zurücksetzen",
+                                        2,
+                                        Gtk.STOCK_OPEN,
+                                        Gtk.ResponseType.OK))
+        self.set_default_response(Gtk.ResponseType.OK)
+        
 
 class SoundLoadDialog(Gtk.FileChooserDialog):
     def __init__(self, parent_window, filters=None):

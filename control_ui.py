@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from os.path import normpath
+
 from gi.repository.GLib import GError
 from gi.repository import GObject, Gtk, Pango, GdkPixbuf
 
@@ -8,10 +10,11 @@ import socket
 import threading
 import time
 
-from locked_print import locked_print, SocketRecvThread
+from locked_print import locked_print, SocketThread
 import pygame_io
 import config
 from constants import CIRCLE_PATHS, SOUND_LEVEL_ANIM_RES
+from utils import TwoWayDict
 
 class MainBox(Gtk.Grid):    
     def __init__(self, config, main_window):
@@ -22,10 +25,7 @@ class MainBox(Gtk.Grid):
          
         self.socket_init()
          
-        if pygame_io.pygame_installed:
-            self.event_thread = pygame_io.EventHandlerThread(Config)
-        else:
-            self.event_thread = None
+        if not pygame_io.pygame_installed:
             dialog = Gtk.MessageDialog(main_window,
                                        0,
                                        Gtk.MessageType.WARNING,
@@ -37,20 +37,15 @@ class MainBox(Gtk.Grid):
             dialog.run()
             dialog.destroy()
              
-        self.scrolled_window = ScrolledWindow(self.socket, self.event_thread)
+        self.scrolled_window = ScrolledWindow(self.socket)
         self.emergency_button = EmergencyButton(self.socket)  
         self.add(self.scrolled_window)
         self.add(self.emergency_button)
-         
-        if self.event_thread != None:
-            self.event_thread.joystick_init(self.scrolled_window.center_grid.controllers,
-                                            self.emergency_button)
-            self.event_thread.start()
+
         self.show_all()
     
     def quit(self):
-        if self.event_thread != None:
-            self.event_thread.quit()
+        self.scrolled_window.controller_hub.quit()
         global Config
         del Config
         self.socket.send("TERM 1 POWER\n")
@@ -61,24 +56,19 @@ class MainBox(Gtk.Grid):
     
     def socket_init(self):
         bus = str(Config.server.bus)
-        # Create Socket-Connection
+        handshake = ["SET CONNECTIONMODE SRCP COMMAND\n",
+                     "GO\n",
+                     "INIT " + bus + " POWER\n"]
+        
         self.socket = socket.create_connection((Config.server.host,
                                                 Config.server.port))
+        self.socket_thread = SocketThread(self.socket)
+        
         #-------- Handshake ----------
-        locked_print("Socketverbindung aktiv mit:")
-        locked_print(self.socket.recv(4096))
-        
-        self.socket.send("SET CONNECTIONMODE SRCP COMMAND\n")
-        locked_print("Connectionmode 'Command' wird angefordert:")
-        locked_print(self.socket.recv(4096))
-        
-        self.socket.send('GO\n')
-        locked_print("Es kann losgehen, was sagt der Server?")
-        locked_print(self.socket.recv(4096))
-        
-        # -------- Initialize Power on Server-Bus ---------
-        self.socket.send("INIT " + bus + " POWER\n")
-        locked_print(self.socket.recv(4096))
+        locked_print("Socket-Verbindung aktiv mit:")
+        self.socket_thread.wait_for_answer()
+        for msg in handshake:
+            self.socket_thread.send_and_wait_for_answer(msg)
         
         # ---------- Initialize Locos -------------
         for loco in Config.locos:
@@ -89,84 +79,234 @@ class MainBox(Gtk.Grid):
                                            for function in loco.functions)
             else:
                 nr_functions_to_send = 0
-            text = "INIT " + bus + " GL " + str(loco.address) + " " + \
+            loco_srcp_init = "INIT " + bus + " GL " + str(loco.address) + " " + \
                    str(loco.protocol) + " " + str(int(loco.speed_steps)) + \
                    " " + str(nr_functions_to_send) + "\n"
-            locked_print(text)
-            self.socket.send(text)
-            locked_print(self.socket.recv(4096))
-            self.socket.send(loco.get_srcp_status(Config.server.bus))
-            locked_print(self.socket.recv(4096))
+            self.socket_thread.send_and_wait_for_answer(loco_srcp_init)
+            
+            loco_srcp_status = loco.get_srcp_status(Config.server.bus)
+            self.socket_thread.send_and_wait_for_answer(loco_srcp_status)
         # After the handshake receiving is done in a separate thread
         # -> avoid blocking of main-program
-        self.socket_thread = SocketRecvThread(self.socket)
         self.socket_thread.start()
         
 class ScrolledWindow(Gtk.ScrolledWindow):
-    def __init__(self, socket, event_thread):
+    def __init__(self, socket):
         Gtk.ScrolledWindow.__init__(self)
         self.set_vexpand(True)
         self.set_hexpand(True)
-        self.center_grid = CenterGrid(socket,
-                                      event_thread,
-                                      self.get_hadjustment())
-        self.add_with_viewport(self.center_grid)
+        self.controller_hub = ControllerHub(socket,
+                                            self.get_hadjustment())
+        self.add_with_viewport(self.controller_hub)
         
-class CenterGrid(Gtk.Grid):
-    def __init__(self, socket, event_thread, h_adjustment):
+class ControllerHub(Gtk.Grid):
+    def __init__(self, socket, h_adjustment):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_column_spacing(8)
         self.set_margin_bottom(8)
         self.controllers = []
-        self.socket = socket
+        
+        if pygame_io.pygame_installed:
+            # pygame is available, thus gamepads may be used
+            # 1. create list of gamepad-pixbufs
+            self.image_list = [GdkPixbuf.Pixbuf.new_from_file(normpath("icons/gamepads/" + 
+                                                                       str(img_nr) + ".png"))
+                               for img_nr in range(1, 13)]
+            
+            # 2. create event-thread and connect event handlers
+            self.event_thread = pygame_io.EventHandlerThread(Config.sound.sampling_rate)
+            if self.event_thread.gamepad_init(self.gamepad_button_pressed,
+                                              self.gamepad_button_released,
+                                              self.horiz_joyhat_moved,
+                                              len(self.controllers)) > 0:
+                # if the nr of gamepads we can use is > 0 we proceed:
+                
+                # 3. mapping allows us to track which loco belongs to which gamepad
+                self.mapping = TwoWayDict()
+                for loco_id, gmp in enumerate(self.event_thread.gamepads):
+                    self.mapping[gmp] = loco_id
+                
+                # 4. set auto-focus according to the number of gamepads and the global setting
+                self.auto_focus = len(self.event_thread.gamepads) == 1 \
+                                  and Config.joystick.use_auto_focus
+                
+                self.accel_timeout_id = GObject.timeout_add(50, self.check_acceleration)
+                
+            self.event_thread.start()
+        
+        func_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.VERTICAL)
+        
         for i, loco in enumerate(Config.locos):
-            self.controllers.append(Controller(socket,
-                                               loco,
-                                               h_adjustment,
-                                               event_thread))
+            self.controllers.append(LocoController(socket,
+                                                   loco,
+                                                   h_adjustment,
+                                                   func_size_group,
+                                                   self.event_thread))
             self.add(self.controllers[i])
-        self.connect("realize", self.realized, event_thread)
     
-    def realized(self, hbox, event_thread):
-        max_height = 0
-        max_label_width = 0
-        config_has_functions = False
-        circle_pixbufs = dict([(name, GdkPixbuf.Pixbuf.new_from_file(path))
-                               for name, path in CIRCLE_PATHS.items()])
+    def gamepad_button_pressed(self, gamepad, button):
+        """
+        Checks if the pressed *button* is assigned an action
+        at the :class:`LocoController` belonging to *gamepad*
+        (e.g. switching a loco-function) or if it is assigned a
+        global action (e.g. reverse loco direction, emergency stop ...)
+        """
+        loco_id = self.mapping(gamepad)
+        configured = False
+        for function_button in self.controllers[loco_id].function_box.buttons:
+            if hasattr(function_button, "function") \
+            and button == function_button.function.button:
+                if function_button.get_sensitive():
+                    function_button.clicked()
+                configured = True
+         
+        if button == Config.joystick.reverse_button:
+            self.controllers[loco_id].reverser.clicked()
+         
+        elif button == Config.joystick.emergency_button:
+            self.emergency_button.clicked()
+         
+        elif button == Config.joystick.focus_button:
+            self.controllers[loco_id].set_focus()
+         
+        elif button == Config.joystick.sound_button \
+        and self.controllers[loco_id].loco.engine != None:
+            sound_switch = self.controllers[loco_id].function_box.sound_switch
+            if sound_switch.get_sensitive():
+                sound_switch.clicked()
+           
+        elif not configured:
+            locked_print("Nicht konfigurierter Button wurde gedrückt.")
+    
+    def gamepad_button_released(self, gamepad, button):
+        """
+        Checks if the toggle-mode of a function in a
+        :class:`LocoController` identified by *gamepad* and *button*
+        is of kind "PUSH" or "PUSH_LIMITED" (comp.
+        :class:`config.loco_functions.ToggleMode`). If such function
+        exists its state is switched.
+        """
+        loco_id = self.mapping(gamepad)
+        for function_button in self.controllers[loco_id].function_box.buttons:
+            if hasattr(function_button, "function") \
+            and button == function_button.function.button:
+                if hasattr(function_button.function, "toggle_mode") \
+                and (function_button.function.toggle_mode == config.ToggleMode.PUSH or \
+                     function_button.function.toggle_mode == config.ToggleMode.PUSH_LIMITED):
+                    function_button.clicked()
+    
+    def horiz_joyhat_moved(self, gamepad, direction):
+        """
         
-        for controller in self.controllers:
-            controller.function_box = FunctionBox(controller.loco,
-                                                  controller.speed_scale,
-                                                  event_thread,
-                                                  self.socket,
-                                                  circle_pixbufs)
-            controller.function_box.show_all()
-            controller.add(controller.function_box)
-            height = controller.function_box.get_preferred_height()[1]
-            if height > max_height:
-                max_height = height
-            if not config_has_functions \
-            and len(controller.function_box.buttons) > 0:
-                config_has_functions = True
-            width = controller.loco_label.get_preferred_width()[1]
-            if width > max_label_width:
-                max_label_width = width
+        """
+        # TODO: needs thorough testing
+        old_direction = gamepad.scroll_direction
+        gamepad.scroll_direction = direction
         
-        # if there are no functions, we dont need to do special size-requests
-        if config_has_functions:
-            for controller in self.controllers:
-                controller.function_box.set_size_request(-1, max_height)
-                if controller.get_preferred_width()[1] <= max_label_width:
-                    # if the label-width of another controller is bigger than
-                    # controllers width, request size -> nicer layout
-                    controller.set_size_request(max_label_width, -1)
+        if direction == 1 != old_direction:
+            # scroll one position to the right
+            self.scroll(1, gamepad)
+            # after 500 ms, check if auto-scrolling should be enabled
+            GObject.timeout_add(500, self.set_auto_scroll, 1, gamepad)
+        
+        elif direction == -1 != old_direction:
+            # scroll one position to the left
+            self.scroll(-1, gamepad)
+            # after 500 ms, check if auto-scrolling should be enabled
+            GObject.timeout_add(500, self.set_auto_scroll, -1, gamepad)
+            
+            
+    def scroll(self, direction, gamepad):
+        """
+        Assigns the *gamepad* another loco to control, namely
+        either the one at the controller at the right (``direction == True``)
+        or the left side (``direction == False``) of the currently assigned loco.
+        """
+        loco_id = self.mapping(gamepad)
+        # if direction != gamepad.scroll_direction the joyhat was already released
+        if direction == gamepad.scroll_direction:
+            # no possibility to change if loco is at the right end
+            if direction == 1 and loco_id < len(self.controllers) - 1:
+                new_loco_id = loco_id
+                # find next free loco_id
+                while new_loco_id < len(self.controllers) - 1 \
+                and self.mapping.has_key(new_loco_id): # TODO: check if this condition is sane
+                    new_loco_id += 1
+                # check if loco is free (in case all locos are occupied by gamepads)
+                if self.controllers[new_loco_id].joystick == None:
+                    self.change_loco(loco_id, new_loco_id, gamepad)
+            
+            # no possibility to change if loco is at the left end
+            elif direction == -1 and loco_id > 0:
+                new_loco_id = loco_id
+                while new_loco_id > 0 and self.mapping.has_key(new_loco_id):
+                    new_loco_id -= 1
+                if self.controllers[new_loco_id].joystick == None:
+                    self.change_loco(loco_id, new_loco_id, gamepad)
+            
+            # return true to keep the timeout alive
+            return True
+        
+    def change_loco(self, loco_id, new_loco_id, gamepad):
+        """
+        Makes *gamepad* switch from controlling the Loco with *loco_id*
+        to the Loco with *new_loco_id*.
+        Attention: This is an internal method. No error handling is done here.
+        Use :func:`scroll` instead.
+        """
+        self.controllers[loco_id].gamepad_image.clear()
+        self.controllers[new_loco_id].gamepad_image.set_from_pixbuf(self.image_list[gamepad.pygame_id])
+        
+        # if auto-focus is active, make the controller focus itself in the window
+        if self.auto_focus:
+            self.controllers[new_loco_id].set_focus()
+        
+        self.mapping[gamepad] = new_loco_id
+        
+    def set_auto_scroll(self, direction, gamepad):
+        """
+        This method is called 500 ms after the joyhat has been pushed in
+        *direction* (-1 or 1). If it is still pushed in the same direction,
+        auto-scrolling in *direction* is activated, meaning :func:`scroll` will
+        be called every 60 ms until the joyhat is released.
+        """
+        # if the joyhat is still pushed in the same direction
+        if gamepad.scroll_direction == direction:
+            GObject.timeout_add(60, self.scroll, direction, gamepad)
+        return False
+    
+    def check_acceleration(self):
+        """
+        Iterates over all initialized :class:`Gamepad`-objects and
+        sets the acceleration of the corresponding :class:`Loco`
+        according to the deviation of the acceleration-axis of the
+        gamepad.
+        """
+        for gamepad in self.event_thread.gamepads:
+            scale = self.controllers[self.mapping[gamepad]].speed_scale
+            if scale.get_sensitive():
+                axis_value = -1 * gamepad.pygame_joystick.get_axis(Config.joystick.accel_axis)
+                if abs(axis_value) > Config.joystick.axis_threshold: # TODO: check if loco.accelerate works
+                    scale.set_value(Config.locos[self.mapping[gamepad]].accelerate(axis_value))
+        return True
+                    
+    def quit(self):
+        if hasattr(self, "accel_timeout_id"):
+            GObject.source_remove(self.accel_timeout_id)
+        if hasattr(self, "event_thread"):
+            self.event_thread.quit()
 
-class Controller(Gtk.Grid):
+class LocoController(Gtk.Grid):
     joystick = None
     sound_controller = None
     
-    def __init__(self, socket, loco, h_adjustment, event_thread=None):
+    def __init__(self,
+                 socket,
+                 loco,
+                 h_adjustment,
+                 func_size_group,
+                 event_thread=None):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         self.set_halign(Gtk.Align.CENTER)
@@ -196,14 +336,24 @@ class Controller(Gtk.Grid):
         self.gamepad_image.set_size_request(100, 76)
         self.h_adjustment = h_adjustment
         
+        circle_pixbufs = dict([(name, GdkPixbuf.Pixbuf.new_from_file(path))
+                               for name, path in CIRCLE_PATHS.items()])
+        self.function_box = FunctionBox(self.loco,
+                                        self.speed_scale,
+                                        event_thread,
+                                        socket,
+                                        circle_pixbufs)
+        func_size_group.add_widget(self.function_box)
+        
         self.add(self.loco_image)
         self.add(self.speed_scale)
         self.add(Gtk.Label.new("km/h"))
         self.add(self.loco_label)
         self.add(self.gamepad_image)
         self.add(self.reverser)
+        self.add(self.function_box)
     
-    # Put the Controller in the visible area of ScrolledWindow
+    # Put the LocoController in the visible area of ScrolledWindow
     def set_focus(self):
         allocation = self.get_allocation()
         self.h_adjustment.clamp_page(allocation.x,
@@ -267,12 +417,14 @@ class SpeedScale(Gtk.Scale):
 class DieselSpeedScale(SpeedScale):
     stop_handler_id = start_handler_id = None
     ignore_sound_changes = False
+    
     __gsignals__ = {
       "started-driving": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
+    
     def __init__(self, loco, socket, sound_controller=None):
         SpeedScale.__init__(self, loco, socket, sound_controller)
-        sound_controller.connect("speed-changed", self.animate_fill_level)
+        sound_controller.connect("sound-level-changed", self.animate_fill_level)
         if Config.sound.show_level_bar:
             self.set_show_fill_level(True)
             self.set_fill_level(0)
@@ -285,7 +437,7 @@ class DieselSpeedScale(SpeedScale):
         
         # if speed has changed
         if real_speed_step != self.loco.last_speed_step:
-            if sound_controller.engine_is_running:
+            if sound_controller.get_engine_is_running():
                 if real_speed_step == 0 \
                 and self.stop_handler_id == None:
                     self.stop_handler_id = sound_controller.connect("engine-idle",
@@ -298,8 +450,8 @@ class DieselSpeedScale(SpeedScale):
                                                          socket)
             if self.start_handler_id == self.stop_handler_id == None:
                 self.send_srcp(socket)
-        if sound_controller.engine_is_running:
-            sound_controller.set_scheduled_speed(self.loco.speed)
+        if sound_controller.get_engine_is_running():
+            sound_controller.set_target_speed(self.loco.speed)
     
     # synchronize loco-speed with sound (loco does stop/start when sound is ready)
     def stop_loco(self, sound_controller, socket):
@@ -367,8 +519,8 @@ class SteamSpeedScale(SpeedScale):
         self.loco.speed_step = self.loco.speed_to_step_func.get_y(self.loco.speed)
         if int(self.loco.speed_step) != self.loco.last_speed_step:
             self.send_srcp(socket)
-        if sound_controller.engine_is_running:
-            sound_controller.set_scheduled_speed(self.loco.speed)
+        if sound_controller.get_engine_is_running():
+            sound_controller.set_target_speed(self.loco.speed)
             self.set_fill_level(self.loco.speed)
         
 class Animator(GObject.GObject, threading.Thread):
@@ -481,19 +633,31 @@ class EngineSwitch(Gtk.ToggleButton):
         
     def engine_toggled(self, switch, is_active):
         loco_speed = self.speed_scale.get_value()
-        if self.get_active() and not self.sound_controller.engine_is_running:
+        if self.get_active() and not self.sound_controller.get_engine_is_running():
             if loco_speed == 0:
                 self.perform_engine_startup()
             else:
-                self.sound_controller.start_engine_with_speed(loco_speed)
+                self.sound_controller.start_engine_at_speed(loco_speed)
             self.set_fill_level(loco_speed)
                     
-        elif not self.get_active() and self.sound_controller.engine_is_running:
+        elif not self.get_active() and self.sound_controller.get_engine_is_running():
             if loco_speed == 0:
                 self.perform_engine_shutdown()
             else:
-                self.sound_controller.pause_engine()
+                self.sound_controller.stop_engine()
             self.reset_fill_level()
+            
+    def perform_engine_startup(self):
+        raise NotImplementedError()
+        
+    def perform_engine_shutdown(self):
+        raise NotImplementedError()
+    
+    def set_fill_level(self, loco_speed):
+        raise NotImplementedError()
+    
+    def reset_fill_level(self):
+        raise NotImplementedError()
 
 class DieselEngineSwitch(EngineSwitch):
     def __init__(self, sound_controller, speed_scale, sound_circle):
@@ -523,7 +687,7 @@ class DieselEngineSwitch(EngineSwitch):
         self.speed_scale.ignore_sound_changes = True
         if hasattr(self.speed_scale, "animator") \
         and not self.speed_scale.animator.stop_event.is_set():
-            locked_print("speed-scale is animating, stopping it")
+#             locked_print("speed-scale is animating, stopping it")
             self.speed_scale.animator.stop_event.set()
         self.speed_scale.set_fill_level(0)
         
@@ -536,14 +700,14 @@ class DieselEngineSwitch(EngineSwitch):
     def perform_engine_shutdown(self):
         # quit engine when it is idle!
         self.idle_handler_id = self.sound_controller.connect("engine-idle",
-                                                             self.quit_engine)
+                                                             self.shutdown_engine)
         GObject.idle_add(self.start_spinner)
         
-    def quit_engine(self, sound_controller):
+    def shutdown_engine(self, sound_controller):
         sound_controller.disconnect(self.idle_handler_id)
         self.stopped_handler_id = self.sound_controller.connect("engine-stopped",
                                                                 self.finished_stopping_engine)
-        sound_controller.quit_engine()
+        sound_controller.shutdown_engine()
         
     def finished_stopping_engine(self, sound_controller):
         sound_controller.disconnect(self.stopped_handler_id)
@@ -589,7 +753,7 @@ class SteamEngineSwitch(EngineSwitch):
         self.sound_controller.start_engine()
         
     def perform_engine_shutdown(self):
-        self.sound_controller.quit_engine()
+        self.sound_controller.shutdown_engine()
 
 class CircleNumber(Gtk.Overlay):
     size = 22
@@ -655,8 +819,8 @@ class LocoFunctionButton(FunctionButton):
                      self.function.name,
                      "von Lok",
                      self.loco.name,
-                     "hat nun den Status",
-                     self.function.state)
+                     "wurde " + {True: "an", False: "aus"}[self.function.state] +
+                     "geschaltet.")
 
 class FunctionSoundButton(FunctionButton):
     def __init__(self, function_sound, circle_pixbuf, mixer, channel_id):
@@ -730,7 +894,7 @@ class FunctionBox(Gtk.Grid):
         self.boxes = []
         self.nr_rows = 0
         
-        if event_thread != None:
+        if pygame_io.pygame_installed:
             # we need func-nr in the whole method,
             # therefore it must be declared here
             func_nr = 0

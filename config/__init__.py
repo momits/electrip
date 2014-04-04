@@ -13,7 +13,7 @@ from sound_function import SoundFunction
 from linear_segment_function import LinearSegmentFunction
 
 from server import Server
-from gamepad import Joystick
+from joystick import Joystick
 from sound import Sound
 
 from json_model import JsonModel

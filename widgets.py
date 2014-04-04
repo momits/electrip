@@ -7,8 +7,8 @@ import cairo
 from math import pi
 
 from constants import ELECTRIP_VERSION
-from dialog_templates import ImageFileFilter, AllFileFilter, \
-    SoundFileFilter
+from dialog_templates import FileSetResetDialog, ImageFileFilter, \
+    AllFileFilter, SoundFileFilter
 
 class StockImageButton(Gtk.Button):
     """
@@ -85,6 +85,11 @@ class TreeViewActionBox(Gtk.ButtonBox):
     """
     A :class:`Gtk.ButtonBox` providing Buttons for adding, removing
     and moving rows in a :class:`Gtk.TreeView`.
+    
+    *treeview* is the :class:`Gtk.TreeView`-instance the
+    :class:`TreeViewActionBox` should operate on.
+    *add_row_label* and *remove_row_label* specify the labels displayed
+    on the buttons used for adding and removing rows.
     """
     def __init__(self, treeview, add_row_label, remove_row_label):
         Gtk.ButtonBox.__init__(self)
@@ -118,6 +123,9 @@ class TreeViewActionBox(Gtk.ButtonBox):
         self.add(self.move_down_button)
         
     def move_row(self, button, treeview, direction):
+        """
+        Internal method.
+        """
         path = treeview.get_cursor()[0]
         liststore = treeview.get_model()
         if path != None:
@@ -141,6 +149,9 @@ class TreeViewActionBox(Gtk.ButtonBox):
                          "es kann nichts verschoben werden.")
                 
     def add_row(self, button, treeview):
+        """
+        Internal method.
+        """
         path = treeview.get_cursor()[0]
         liststore = treeview.get_model()
         if liststore != None:
@@ -158,6 +169,9 @@ class TreeViewActionBox(Gtk.ButtonBox):
                          "nichts hinzugefügt werden.")
             
     def remove_row(self, button, treeview):
+        """
+        Internal method.
+        """
         path = treeview.get_cursor()[0]
         liststore = treeview.get_model()
         if path != None:
@@ -167,74 +181,184 @@ class TreeViewActionBox(Gtk.ButtonBox):
         else:
             locked_print("Keine Zeile ausgewählt, "
                          "es kann nichts gelöscht werden.")
+    
+    def add_row_at_start(self):
+        """
+        Called when the user has asked the :class:`TreeViewActionBox` to add a
+        new row at the start-position of the TreeView.
+        Must be implemented in a child class and return a list representing
+        the data in the new row. E.g. if the TreeView consists of a name- and
+        a description-column, the list could be
+        ``["some name", "the description"]``.
+        """
+        raise NotImplementedError()
+    
+    def add_row_beneath(self, row_nr):
+        """
+        Called when the user has asked the :class:`TreeViewActionBox` to add a
+        new row beneath *row_nr*.
+        Must be implemented in a child class and return a list representing
+        the data in the new row (see :func:`add_row_at_start`).
+        """
+        raise NotImplementedError()
+      
+    def remove_row_at(self, row_nr):
+        """
+        Called when the :class:`TreeViewActionBox` has removed the
+        row with *row_nr*. Must be implemented in a child class to force it to
+        update its datamodel.
+        """
+        raise NotImplementedError()
+    
+    def move_row_up(self, row_nr):
+        """
+        Called when the :class:`TreeViewActionBox` has moved the
+        row with *row_nr* one position upwards (*row_nr* - 1).
+        Must be implemented in a child class to force it to
+        update its datamodel.
+        """
+        raise NotImplementedError()
+    
+    def move_row_down(self, row_nr):
+        """
+        Called when the :class:`TreeViewActionBox` has moved the
+        row with *row_nr* one position downwards (*row_nr* + 1).
+        Must be implemented in a child class to force it to
+        update its datamodel.
+        """
+        raise NotImplementedError()
+        
+    def unsaved_changes(self):
+        """
+        Called whenever changes were made to the data in the TreeView
+        (reordering, deleting rows etc.).
+        Allows child classes to get notified when these changes occur.
+        Must not necessarily be implemented.
+        """
 
-
-# subclassed combobox with methods allowing to
-# easily acces the displayed value
 class EasyComboBox(Gtk.ComboBox):
-    # displayed_to_saved_vals: the names of the parameters
-    # of config_object (often shorter than the displayed ones)
-    # howto use: displayed_to_saved_vals =  [(parameter_name1,
-    #                                         displayed_value1),
-    #                                        (parameter_name2 ...
-    def __init__(self, liststore, displayed_to_saved_vals): 
+    """
+    A simplified :class:`Gtk.ComboBox` using a simple
+    python-style data-model.
+    *content_type* specifies the type of the values
+    to be stored in the combobox
+    (e.g. :class:`GObject.TYPE_STRING`, ...).
+    *mapping* is a list of 2-tuples, which maps values
+    stored in the  model (referred to as *model_values*)
+    to the displayed values (referred to as *disp_values*).
+    Example: see :class:`EntryTable`.
+    """
+    def __init__(self, content_type, mapping): 
         Gtk.ComboBox.__init__(self)
-        self.displayed_to_saved_vals = displayed_to_saved_vals
+        self.mapping = mapping
+        liststore = Gtk.ListStore(content_type)
+        for unused_saved_val, disp_val in mapping:
+            liststore.append([disp_val])
         self.set_model(liststore)
+        
         renderer = Gtk.CellRendererText()
         self.pack_start(renderer, True)
         self.add_attribute(renderer, "text", 0)
         self.set_active(0)
 
     def retrieve_value(self):
+        """
+        Returns the *model_value* for the datamodel according to the
+        currently active item.
+        """
         displayed_value = self.get_model()[self.get_active()][0]
-        for saved_val, disp_val in self.displayed_to_saved_vals:
+        for saved_val, disp_val in self.mapping:
             if displayed_value == disp_val:
                 return saved_val
             
     def retrieve_disp_value(self):
+        """
+        Returns the *disp_value* which is currently displayed.
+        """
         return self.get_model()[self.get_active()][0]
         
-    def set_value(self, saved_value):
-        saved_value_correct = False
-        for saved_val, disp_val in self.displayed_to_saved_vals:
-            if saved_value == saved_val:
+    def set_value(self, model_value):
+        """
+        Makes the EasyComboBox display the *disp_value* that belongs
+        to *model_value*.
+        """
+        model_value_correct = False
+        for saved_val, disp_val in self.mapping:
+            if model_value == saved_val:
                 for row_nr, row in enumerate(self.get_model()):
                     if disp_val in row:
                         self.set_active(row_nr)
-                        saved_value_correct = True
+                        model_value_correct = True
                         break
                 break
-        if not saved_value_correct:
+        if not model_value_correct:
             self.set_active(0)
             value = self.retrieve_value()
             locked_print("Dateiformat inkorrekt: Unbekannter Wert '" +
-                         str(saved_value) +
+                         str(model_value) +
                          "', verwende Standardwert '" +
                          str(value) + "'")
+            # report we changed the value to the default
             self.emit("changed")
 
-class EasyFileButton(Gtk.FileChooserButton):
+class EasyFileButton(Gtk.Bin):
+    """
+    A simplified :class:`Gtk.FileChooserButton` (opens a
+    file-selection-dialog when clicked).
+    *file_filters* is a list of :class:`Gtk.FileFilter`-objects
+    used to filter the displayed files in the dialog, the first
+    filter in the list is the default. 
+    """
+    
+    __gsignals__ = {
+      "file-set": (GObject.SIGNAL_RUN_FIRST, None, ())
+    }
+    
+    # FIXME: it must be possible to reset the selection
+    # to 'None'
+    
     def __init__(self, file_filters=[]):
-        Gtk.FileChooserButton.__init__(self, Gtk.FileChooserAction.OPEN)
-        # the first file_filter is the active one
+        # we fake a subclass of Gtk.FileChooserButton
+        # to be able to use our own dialog
+        Gtk.Bin.__init__(self)
+        dialog = FileSetResetDialog()
         if len(file_filters) > 0:
             for file_filter in file_filters:
-                self.add_filter(file_filter)
-            self.set_filter(file_filters[0])
+                dialog.add_filter(file_filter)
+            dialog.set_filter(file_filters[0])
+        dialog.connect("response", self.check_reset)
+        self.button = Gtk.FileChooserButton.new_with_dialog(dialog)
+        self.add(self.button)
+        
+    def check_reset(self, unused_button, response_id):
+        if response_id == 2:
+            self.set_value(None)
         
     def retrieve_value(self):
-        return self.get_filename()
+        """
+        Returns the currently selected file.
+        """
+        return self.button.get_filename()
     
     def set_value(self, path):
+        """
+        Makes the :class:`EasyFileButton` point to the file located
+        at *path*.
+        """
         if path != None:
-            self.set_filename(path)
+            self.button.set_filename(path)
         else:
             # TODO: find out how to reset the filename to "None"
-            self.set_filename("(keine)")
+            self.button.set_filename("(keine)")
             self.emit("file-set")
-            
+    
 class EasyVolumeButton(Gtk.VolumeButton):
+    """
+    A simplified :class:`Gtk.VolumeButton`, emits the
+    *volume-set*-signal if its value changes.
+    Does also provide the ``set_value`` and ``retrieve_value``-
+    methods.
+    """
     __gsignals__ = {
       "volume-set": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
@@ -436,10 +560,7 @@ class EntryTable(Gtk.Grid):
         stored in the  model to the displayed values.
         Example: see :class:`EntryTable`.
         """
-        liststore = Gtk.ListStore(content_type)
-        for unused_saved_val, disp_val in mapping:
-            liststore.append([disp_val])
-        combo = EasyComboBox(liststore, mapping)
+        combo = EasyComboBox(content_type, mapping)
         combo.connect("changed",
                       self.save_changes,
                       config_attribute)
@@ -570,20 +691,23 @@ class TreeView(Gtk.TreeView):
     'unsaved-changes'-messages.
     
     Example::
+    
         class CustomTreeView(TreeView):
             def __init__(self):
                 widgets.TreeView.__init__(self, "CustomTreeView")
-                self.add_text_colum("Eine Text-Spalte",
-                                    "Name der Spalte",
+                self.add_text_colum("Name of the column",
+                                    "A nice column",
                                     GObject.TYPE_STRING)
-                self.add_non_editable_text_colum("Geräuschdatei",
-                                                 "Datei für die Wiedergabe "
-                                                 "('*.wav' oder '*.ogg')",
+                self.add_non_editable_text_colum("Sound file",
+                                                 "The sound to be played "
+                                                 "('*.wav' or '*.ogg')",
                                                  GObject.TYPE_STRING)
-                self.add_more_stuff ...
+                # self.add_more_stuff ...
                 self.update_model()
-        
-        self.connect("row-activated", self.choose_sound)
+                
+                # we can connect to double-clicks as follows:
+                # (assuming we created a handler 'choose_sound')
+                self.connect("row-activated", self.choose_sound)
     """
     def __init__(self, name):
         Gtk.TreeView.__init__(self)
@@ -731,8 +855,7 @@ class TreeView(Gtk.TreeView):
         *column_nr*: number of the column where the change occured
         *new_value*: the new value of the cell
         """
-        raise RuntimeError("The method 'save_changes' must be implemented in "
-                           "the child classes.")
+        raise NotImplementedError()
 
 
 class CustomHandlePaned(Gtk.Paned):
@@ -992,11 +1115,10 @@ class ControlPointGraph(Gtk.DrawingArea):
             
     def update_config_object(self, func):
         """
-        Child classes should use this method to update their data-model
+        Child classes must use this method to update their data-model
         to be in sync with the changed :class:`LinearSegmentFunction` *func*.
         """
-        raise RuntimeError("the method 'update_config_object' must be implemented"
-                           "in a child class of 'ControlPointGraph'")
+        raise NotImplementedError()
     
     def button_released(self, area, event):
         if self.drag != None:
@@ -1157,13 +1279,12 @@ class ControlPointGraph(Gtk.DrawingArea):
         func is the :class:`LinearSegmentFunction`
         used to display the graph.
         """
-        raise RuntimeError("the method 'get_func_data' must be implemented "
-                           "in a child class.")
+        raise NotImplementedError()
         
     def load(self, config_object):
         """
         Loads the graph using *config_object*. Requires
-        :func:`get_func_data` to be overridden by a child-class.
+        :func:`get_func_data` to be overridden by a child class.
         """
         self.x_max, self.y_max, self.func = self.get_func_data(config_object)
         self.calc_size_factors()
