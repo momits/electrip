@@ -60,6 +60,10 @@ class Loco(UnsavedChangesHandler):
         self.engine = engine
 
     def get_srcp_status(self, bus):
+        """
+        Returns a SRCP-command representing the current
+        state of the loco.
+        """
         self.last_speed_step = int(self.speed_step)
         if len(self.functions) > 0:
             toggled = [False for unused_i in range(max([function.nr + 1 for function in self.functions]))]
@@ -73,8 +77,15 @@ class Loco(UnsavedChangesHandler):
                 + str(int(self.direction)) + " " + str(int(self.speed_step)) \
                 + " " + str(self.speed_steps) + functions + "\n"
     
-    # value between -1 and 1, negative means acceleration
     def accelerate(self, value):
+        """
+        Accelerates the loco by *value*. *value* must be a float
+        between -1 and 1 representing the acceleration rate.
+        If *value* is positive, the loco is accelerated
+        with respect to ``loco.accel_duration``, if negative
+        ``loco.decel_duration``.
+        Returns the new speed of the loco.
+        """
         if value >= 0:
             self.speed = min(self.max_speed,
                              max(0,

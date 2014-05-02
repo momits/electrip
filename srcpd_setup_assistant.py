@@ -200,9 +200,10 @@ class SummaryPage(MarkupLabel):
     def __init__(self):
         MarkupLabel.__init__(self, "<b>Herzlichen Glückwunsch!</b>\nDer srcpd wurde erfolgreich eingerichtet und kann jetzt verwendet werden.")
 
-if os.getuid() == 0: # if user-id=0 we are root (which is needed for all operations)
-    assistant = SrcpdAssistant()
-    GObject.threads_init()
-    Gtk.main()
-else:
-    sub.call(["gksudo", "python srcpd_setup_assistant.py"])
+if __name__ == "__main__":
+    if os.getuid() == 0: # if user-id=0 we are root (which is needed for all operations)
+        assistant = SrcpdAssistant()
+        GObject.threads_init()
+        Gtk.main()
+    else:
+        sub.call(["gksudo", "python srcpd_setup_assistant.py"])

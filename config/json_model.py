@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 
-from locked_print import locked_print
 import json
 from os.path import basename, split, exists, sep as os_sep
 import zipfile
 from copy import deepcopy
 
-from loco import Loco
-from loco_functions import ToggleMode, DecoderFunction, \
+from electrip.concurrent import locked_print
+from electrip.config.loco import Loco
+from electrip.config.loco_functions import ToggleMode, DecoderFunction, \
     FunctionSound, EventSound
-from server import Server
-from joystick import Joystick
-from sound import Sound
-from sound_segments import create_sound_segment
-from sound_engines import create_engine, EngineType
-from linear_segment_function import LinearSegmentFunction
+from electrip.config.server import Server
+from electrip.config.joystick import Joystick
+from electrip.config.sound import Sound
+from electrip.config.sound_segments import create_sound_segment
+from electrip.config.sound_engines import create_engine, EngineType
+from electrip.config.linear_segment_function import LinearSegmentFunction
 
 class DictWrapper:
     """

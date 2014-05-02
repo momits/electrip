@@ -24,19 +24,22 @@ class LinearSegmentFunction:
         """
         Adds a control point at ``(x, y)``, updating the function.
         If the resulting function after inserting ``(x, y)`` would
-        not be monotonically increasing, nothing will happen.
+        not be monotonically increasing, nothing will happen. If *x*
+        lies outside the existing segments, behaviour is undefined.
         """
-        nr = self.get_segment_nr_from_x(x)
-        if nr != None:
-            self.control_points.insert(nr + 1,
-                                       (x,
-                                        max(self.control_points[nr][1] ,
-                                        min(y, self.control_points[nr + 1][1]))))
-            self.func_segments[nr] = self.calc_func_segment(self.control_points[nr],
-                                                            self.control_points[nr + 1])
-            self.func_segments.insert(nr + 1,
-                                      self.calc_func_segment(self.control_points[nr + 1],
-                                                             self.control_points[nr + 2]))
+        # no good to have two points at one spot:
+        if not (x, y) in self.control_points:
+            nr = self.get_segment_nr_from_x(x)
+            if nr != None:
+                self.control_points.insert(nr + 1,
+                                           (x,
+                                            max(self.control_points[nr][1] ,
+                                            min(y, self.control_points[nr + 1][1]))))
+                self.func_segments[nr] = self.calc_func_segment(self.control_points[nr],
+                                                                self.control_points[nr + 1])
+                self.func_segments.insert(nr + 1,
+                                          self.calc_func_segment(self.control_points[nr + 1],
+                                                                 self.control_points[nr + 2]))
                 
     def remove_control_point(self, nr):
         """

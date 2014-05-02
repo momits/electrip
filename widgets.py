@@ -2,12 +2,12 @@
 # -*- coding: UTF 8 -*-
 
 from gi.repository import GObject, Gtk, Pango, Gdk
-from locked_print import locked_print
 import cairo
 from math import pi
 
-from constants import ELECTRIP_VERSION
-from dialog_templates import FileSetResetDialog, ImageFileFilter, \
+from electrip.concurrent import locked_print
+from electrip.constants import ELECTRIP_VERSION
+from electrip.dialog_templates import FileSetResetDialog, ImageFileFilter, \
     AllFileFilter, SoundFileFilter
 
 class StockImageButton(Gtk.Button):
@@ -74,6 +74,10 @@ class Frame(Gtk.Frame):
 
 
 class TreeViewFrame(Frame):
+    """
+    A frame hosting a :class:`Gtk.TreeView` *treeview*
+    and a *button_box* to perform actions on the treeview-data.
+    """
     def __init__(self, frame_label, treeview, button_box):
         Frame.__init__(self, frame_label)
         grid = Gtk.Grid()
@@ -301,57 +305,67 @@ class EasyComboBox(Gtk.ComboBox):
             # report we changed the value to the default
             self.emit("changed")
 
-class EasyFileButton(Gtk.Bin):
+class EasyFileButton(Gtk.Button):
     """
-    A simplified :class:`Gtk.FileChooserButton` (opens a
-    file-selection-dialog when clicked).
+    A :class:`Gtk.Button` which opens a file-selection-dialog
+    when clicked.
     *file_filters* is a list of :class:`Gtk.FileFilter`-objects
     used to filter the displayed files in the dialog, the first
-    filter in the list is the default. 
+    filter in the list is the default.
     """
     
     __gsignals__ = {
       "file-set": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
     
-    # FIXME: it must be possible to reset the selection
-    # to 'None'
-    
     def __init__(self, file_filters=[]):
         # we fake a subclass of Gtk.FileChooserButton
         # to be able to use our own dialog
-        Gtk.Bin.__init__(self)
+        self.file_filters = file_filters
+        Gtk.Button.__init__(self)
+        self.connect("clicked", self.select_file)
+        self.label = Gtk.Label("Auswählen...")
+        self.label.set_ellipsize(Pango.EllipsizeMode.END)
+        self.add(self.label)
+        
+        # we need to store the path because it gets lost if the
+        # user hits 'Cancel'
+        self.current_path = None
+    
+    def select_file(self, unused_button):
         dialog = FileSetResetDialog()
-        if len(file_filters) > 0:
-            for file_filter in file_filters:
+        if len(self.file_filters) > 0:
+            for file_filter in self.file_filters:
                 dialog.add_filter(file_filter)
-            dialog.set_filter(file_filters[0])
-        dialog.connect("response", self.check_reset)
-        self.button = Gtk.FileChooserButton.new_with_dialog(dialog)
-        self.add(self.button)
-        
-    def check_reset(self, unused_button, response_id):
-        if response_id == 2:
+            dialog.set_filter(self.file_filters[0])
+        if self.current_path:
+            dialog.set_filename(self.current_path)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.set_value(dialog.get_filename())
+        elif response == 2:
             self.set_value(None)
-        
+        dialog.destroy()
+    
     def retrieve_value(self):
         """
         Returns the currently selected file.
         """
-        return self.button.get_filename()
+        return self.current_path
     
     def set_value(self, path):
         """
         Makes the :class:`EasyFileButton` point to the file located
         at *path*.
         """
-        if path != None:
-            self.button.set_filename(path)
-        else:
-            # TODO: find out how to reset the filename to "None"
-            self.button.set_filename("(keine)")
+        if path != self.current_path:
+            if path != None:
+                self.label.set_text(path)
+            else:
+                self.label.set_text("Auswählen...")
+            self.current_path = path
             self.emit("file-set")
-    
+
 class EasyVolumeButton(Gtk.VolumeButton):
     """
     A simplified :class:`Gtk.VolumeButton`, emits the
@@ -945,29 +959,34 @@ class Popup(Gtk.Window):
         self.hide()
         return True
 
-
 class ControlPointGraph(Gtk.DrawingArea):
     """
     Graph-widget allowing to edit a :class:`LinearSegmentFunction`
     visually in a cartesian coordinate system.
     *x_legend_text* and *y_legend_text* specify the labels for the
-    x- and y-axis.
+    x- and y-axis as tuples of the form ``(x_var_name, x_full_name)`` where
+    *x/y_var_name* is the variable name (e.g. ``'t'``) and *x/y_full_name*
+    is the longer description (e.g. ``'time in secs'``).
     *x_res_list* and *y_res_list* are lists containing acceptable
     resolutions for the x- and y-axis.
     
     Behaviour:
     
         * **Left-click**: Creates a new control-point
-        * **Left-click + drag**: Drags an existing control-point
-        * **Right-click**: Removes an existing control-point
+        * **Left-click on an existing point + drag**:
+          Moves the control-point with the mouse
+        * **Right-click on an existing point**: Removes the
+          control-point
     """
     def __init__(self,
                  x_legend_text,
                  y_legend_text,
                  x_res_list,
                  y_res_list):
-        self.x_legend_text = x_legend_text
-        self.y_legend_text = y_legend_text
+        self.x_var_name, x_full_name = x_legend_text
+        self.x_legend_text = self.x_var_name + ": " + x_full_name
+        self.y_var_name, y_full_name = y_legend_text
+        self.y_legend_text = self.y_var_name + ": " + y_full_name
         self.x_res_list = x_res_list
         self.y_res_list = y_res_list
         
@@ -1009,11 +1028,11 @@ class ControlPointGraph(Gtk.DrawingArea):
         
         # we dont use the special popup class since we dont
         # need the replace-content-functionality
-        self.popup = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
-        self.popup.set_type_hint(Gdk.WindowTypeHint.TOOLTIP)
-        self.popup.set_opacity(0.65)
-        self.popup.label = Gtk.Label.new("")
-        self.popup.add(self.popup.label)
+        self.drag_popup = Gtk.Window.new(Gtk.WindowType.TOPLEVEL)
+        self.drag_popup.set_type_hint(Gdk.WindowTypeHint.TOOLTIP)
+        self.drag_popup.set_opacity(0.68)
+        self.drag_popup.label = Gtk.Label.new("")
+        self.drag_popup.add(self.drag_popup.label)
     
     def draw(self, area, cr):
         if hasattr(self, "func"):
@@ -1032,7 +1051,7 @@ class ControlPointGraph(Gtk.DrawingArea):
             for y in xrange(1, int(self.y_max)):
                 x = self.func.get_x(y)
                 if x != None:
-                    x_abs, y_abs = self.get_abs_coords(x, y)
+                    x_abs, y_abs = self.get_pixel_coords(x, y)
                     cr.arc(x_abs,
                            y_abs,
                            self.radius_small,
@@ -1041,8 +1060,8 @@ class ControlPointGraph(Gtk.DrawingArea):
                     cr.fill()
             cr.stroke()
             for nr in xrange(len(self.func.control_points) - 1):
-                x_abs_1, y_abs_1 = self.get_abs_coords(*self.func.control_points[nr])
-                x_abs_2, y_abs_2 = self.get_abs_coords(*self.func.control_points[nr + 1])
+                x_abs_1, y_abs_1 = self.get_pixel_coords(*self.func.control_points[nr])
+                x_abs_2, y_abs_2 = self.get_pixel_coords(*self.func.control_points[nr + 1])
                 
                 cr.move_to(x_abs_1, y_abs_1)
                 cr.set_source_rgb(*self.line_color)
@@ -1074,25 +1093,44 @@ class ControlPointGraph(Gtk.DrawingArea):
     
     def get_touched_point(self, x, y):
         result = None, None
-        for nr, point in enumerate(self.func.control_points):
-            x_abs, y_abs = self.get_abs_coords(*point)
+        # reverse the list, to make sure the topmost control-point
+        # is found
+        for nr, point in enumerate(reversed(self.func.control_points)):
+            x_abs, y_abs = self.get_pixel_coords(*point)
             circle_left_end = x_abs - self.radius_large
             circle_right_end = x_abs + self.radius_large
             circle_upper_end = y_abs - self.radius_large
             circle_lower_end = y_abs + self.radius_large
             if circle_left_end < x < circle_right_end \
             and circle_upper_end < y < circle_lower_end:
-                result = nr, point
+                result = len(self.func.control_points) - 1 - nr, point
                 break
         return result
     
-    def get_abs_coords(self, x, y):
+    def get_pixel_coords(self, x, y):
         return self.border_left_bottom + x * self.x_factor, \
                self.height - self.border_left_bottom - y * self.y_factor
     
-    def get_speed_coords(self, x, y):
+    def get_real_coords(self, x, y):
         return (x - self.border_left_bottom) / self.x_factor, \
                (self.height - self.border_left_bottom - y) / self.y_factor
+    
+    def update_drag_popup_label(self, point):
+        """
+        Makes the label on the drag-popup show
+        the coordinates of *point*. Internal method.
+        """
+        self.drag_popup.label.set_text(self.y_var_name + ": " +
+                                       str("%0.2f" % point[1]) + "\n" +
+                                       self.x_var_name + ": " +
+                                       str("%0.2f" % point[0]))
+    
+    def update_config_object(self, func):
+        """
+        Child classes must use this method to update their data-model
+        to be in sync with the changed :class:`LinearSegmentFunction` *func*.
+        """
+        raise NotImplementedError()
     
     def button_pressed(self, area, event):
         nr, point = self.get_touched_point(event.x, event.y)
@@ -1103,32 +1141,22 @@ class ControlPointGraph(Gtk.DrawingArea):
                 self.update_config_object(self.func)
             else:
                 self.drag = nr
-                self.popup.set_position(Gtk.WindowPosition.MOUSE)
-                self.popup.label.set_text(str("%0.2f" % point[0]) +
-                                          "\n" + str("%0.2f" % point[1]))
-                self.popup.show_all()
+                self.drag_popup.set_position(Gtk.WindowPosition.MOUSE)
+                self.update_drag_popup_label(point)
+                self.drag_popup.show_all()
         else:
-            x, y = self.get_speed_coords(event.x, event.y)
-            self.func.add_control_point(x, y)
-            self.queue_draw()
-            self.update_config_object(self.func)
-            
-    def update_config_object(self, func):
-        """
-        Child classes must use this method to update their data-model
-        to be in sync with the changed :class:`LinearSegmentFunction` *func*.
-        """
-        raise NotImplementedError()
+            x, y = self.get_real_coords(event.x, event.y)
+            self.add_control_point(x, y)
     
     def button_released(self, area, event):
         if self.drag != None:
             self.update_config_object(self.func)
-            self.popup.hide()
+            self.drag_popup.hide()
             self.drag = None
     
     def motion(self, area, event):
         if self.drag != None:
-            x, y = self.get_speed_coords(event.x, event.y)
+            x, y = self.get_real_coords(event.x, event.y)
             if x < 0:
                 x = 0
             elif x > self.x_max:
@@ -1139,9 +1167,23 @@ class ControlPointGraph(Gtk.DrawingArea):
                 y = self.y_max
             new_point = self.func.move_control_point(self.drag, x, y)
             self.queue_draw()
-            self.popup.label.set_text(str("%0.2f" % new_point[0]) + "\n" +
-                                      str("%0.2f" % new_point[1]))
-                
+            self.update_drag_popup_label(new_point)
+    
+#     def delete_point_cb(self, unused_popup, nr):
+#         self.func.remove_control_point(nr)
+#         self.queue_draw()
+#         self.update_config_object(self.func)
+#         
+#     def change_point_cb(self,
+#                           unused_popup, nr,
+#                           new_x, new_y):
+#         self.func.move_control_point(nr, new_x, new_y)
+#         self.queue_draw()
+#         self.update_config_object(self.func)
+#         
+#     def restore_sensitivity_cb(self, unused_popup):
+#         self.set_sensitive(True)
+    
     def create_coordinate_system(self):
         self.coordinate_system = cairo.ImageSurface(cairo.FORMAT_ARGB32,
                                                     self.width,
@@ -1198,7 +1240,7 @@ class ControlPointGraph(Gtk.DrawingArea):
         
         pos = 0
         used_width = 0
-#        abs_x_max = self.get_abs_coords(self.x_max, 0)[0]
+#        abs_x_max = self.get_pixel_coords(self.x_max, 0)[0]
         while pos <= self.x_max + x_res:
             text, x, y, width, height = self.get_axis_data_at_pos(c,
                                                                   pos,
@@ -1242,7 +1284,7 @@ class ControlPointGraph(Gtk.DrawingArea):
         else:
             value = int(pos)
         text = str(value)
-        x, y = self.get_abs_coords(value, value)
+        x, y = self.get_pixel_coords(value, value)
         width, height = c.text_extents(text)[2:4]
         return text, x, y, width, height
     
@@ -1256,11 +1298,25 @@ class ControlPointGraph(Gtk.DrawingArea):
         return self.border_left_bottom, \
                self.border_right + self.radius_large
     
+    def add_control_point(self, x, y):
+        """
+        Adds a control-point to the graphs
+        :class:`LinearSegmentFunction` and queues
+        a redraw.
+        """
+        self.func.add_control_point(x, y)
+        self.queue_draw()
+        self.update_config_object(self.func)
+    
     def clear(self):
         """
         Clears the graph, removing all references
         to the function which was displayed.
         """
+#         # stop editing, the current function will be deleted
+#         if self.edit_popup.get_visible():
+#             self.edit_popup.hide()
+#             self.set_sensitive(True)
         # all attribs must be set at once in get_func_data,
         # so we only need to check if one of them exists
         if hasattr(self, "func"):
@@ -1278,6 +1334,7 @@ class ControlPointGraph(Gtk.DrawingArea):
         specify the range of the x/y-axis and
         func is the :class:`LinearSegmentFunction`
         used to display the graph.
+        To be implemented in a child class.
         """
         raise NotImplementedError()
         

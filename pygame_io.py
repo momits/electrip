@@ -3,11 +3,15 @@
 
 from gi.repository import GdkPixbuf, GObject
 
+from os.path import normpath
 import threading
 import time
 from math import pi
 
-from locked_print import locked_print
+from electrip.concurrent import locked_print
+from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND
+from electrip import config
+
 try:
     import pygame
     from pygame.locals import *
@@ -19,9 +23,6 @@ except ImportError:
 else:
     pygame_installed = True
 
-from constants import STOP_EVENT, END_EVENT_LOWER_BOUND
-import config
-
 class Gamepad:
     """
     Representation of a Gamepad in the users hand, using
@@ -31,14 +32,15 @@ class Gamepad:
         self.pygame_joystick = pygame.joystick.Joystick(pygame_id)
         self.pygame_joystick.init()
         self.pygame_id = pygame_id
-        locked_print("ID:",
-                     self.pygame_joystick.get_id(),
+        self.pixbuf = GdkPixbuf.Pixbuf.new_from_file(normpath("icons/gamepads/" +
+                                                              str(pygame_id + 1) + ".png"))
+        locked_print("--- GAMEPAD ---\n",
+                     "Id:",
+                     str(self.pygame_joystick.get_id()) + "\n",
                      "Bezeichnung:",
-                     self.pygame_joystick.get_name(),
-                     self.pygame_joystick.get_numaxes(),
-                     "Achsen",
-                     self.pygame_joystick.get_numbuttons(),
-                     "Knöpfe")
+                     self.pygame_joystick.get_name() + "\n",
+                     str(self.pygame_joystick.get_numaxes()) + " Achsen\n",
+                     str(self.pygame_joystick.get_numbuttons()) + " Knöpfe\n")
         self.scroll_direction = 0
         
     @staticmethod
@@ -60,7 +62,6 @@ class EventHandlerThread(threading.Thread):
     Class for pygame event handling. Deals with joystick input
     and sound output.
     """
-    
     def __init__(self, sampling_rate):
         self.running = False
         self.channels = []
@@ -82,17 +83,17 @@ class EventHandlerThread(threading.Thread):
                      horiz_joyhat_moved_cb,
                      max_gamepads=-1):
         """
-        This method be called before :func:`EventHandlerThread.start` is called,
+        This method must be called before :func:`EventHandlerThread.start` is called,
         as it prepares the :class:`EventHandlerThread` for gamepad-usage. The
         *..._cb*-arguments specify callback-methods for the following events:
             
-            * *button_pressed_cb(gmp_id, button)*: *button* at gamepad
-              with gmp_id was pressed
-            * *button_released_cb(gmp_id, button)*: *button* at gamepad
-              with gmp_id was released
-            * *joyhat_moved_horiz_cb(gmp_id, direction)*: joyhat at gamepad
-              with gmp_id was moved to the left (direction = -1), the right
-              (direction = 1) or released (direction = 0).
+            * *button_pressed_cb(gmp, button)*: *button* at gamepad
+              *gmp* was pressed
+            * *button_released_cb(gmp, button)*: *button* at gamepad
+              *gmp* was released
+            * *joyhat_moved_horiz_cb(gmp, direction)*: joyhat at gamepad
+              *gmp* was moved to the left (``direction == -1``), the right
+              (``direction == 1``) or released (``direction == 0``).
         
         *max_gamepads* specifies the highest allowed number of
         :class:`Gamepad`-objects to be created by the :class:`EventHandlerThread`.
@@ -103,7 +104,6 @@ class EventHandlerThread(threading.Thread):
         self.button_released_cb = button_released_cb
         self.horiz_joyhat_moved_cb = horiz_joyhat_moved_cb
         
-        locked_print("\n--- Initialisiere Gamepads ---")
         self.gamepads = [gmp for gmp in Gamepad.gamepads(max_gamepads)]
         
         return len(self.gamepads) 
@@ -221,6 +221,9 @@ class EventHandlerThread(threading.Thread):
         del self.channels
         del self.callbacks
         del self.quit_callbacks
+        del self.button_pressed_cb
+        del self.button_released_cb
+        del self.horiz_joyhat_moved_cb 
 
 def create_sound_controller(engine_type, *args):
     if engine_type == config.EngineType.DIESEL:
@@ -262,7 +265,6 @@ class SoundController(GObject.GObject):
                 self.mixer.queue_sound(some_channel_id, self.engine.start_sound)
                 self.mixer.queue_sound(some_channel_id, self.engine.idle_sound)
     """
-    
     def __init__(self, handler_thread, loco_engine, volume):
         GObject.GObject.__init__(self)
         self.mixer = handler_thread
@@ -276,8 +278,15 @@ class SoundController(GObject.GObject):
                                         self.queue_event_sound, event_sound)
         self.engine = loco_engine
         
-        self.engine_is_running = False
+#         self.engine_is_running = False
         self.old_speed = 0
+        
+    def get_engine_is_running(self):
+        """
+        Returns whether the engine is running (sound is playing). To be
+        implemented in a child class.
+        """
+        raise NotImplementedError()
     
     def start_engine(self):
         """
@@ -416,18 +425,19 @@ class SoundController(GObject.GObject):
 
 class DieselSoundController(SoundController):
     """
-    A SoundController for :class:`DieselEngine`-instances.
+    A :class:`SoundController` for :class:`DieselEngine`-instances.
     Have a look at :class:`DieselEngine` and :class:`DieselSoundSegment`
     to understand how it works.
     
-    The :class:`SoundController` emits three signals:
+    The DieselSoundController emits three signals which can be used to
+    synchronize the UI:
     
         * *sound-level-changed*: emitted when a new sound segment is
           reached and the transition begins
         * *engine-idle*: emitted when the diesel-engine runs idle and the loco
           is standing still (after the loco has been driving)
         * *engine-stopped*: emitted when the shutdown-process of the engine
-          has completed 
+          has completed
     """
     
     __gsignals__ = {
@@ -586,6 +596,8 @@ class SteamSoundController(SoundController):
         self.engine_is_running = False
         if hasattr(self, "stroke_stop_event"):
             self.stroke_stop_event.set()
+        for stroke in xrange(self.engine.nr_strokes):
+            self.mixer.channels[self.stroke_channel_ids[stroke]].stop()
         self.mixer.channels[self.idle_channel_id].stop()
         self.mixer.channels[self.steam_channel_id].stop()
     
@@ -631,8 +643,7 @@ class SteamSoundController(SoundController):
 #            locked_print("Playing next stroke", self.stroke_nr, "after", start_time - old_time)
             stroke_sound = self.engine.sound_function.get_sound(self.speed,
                                                                 "stroke_sounds")[self.stroke_nr]
-            self.mixer.queue_sound(self.stroke_channel_ids[self.stroke_nr],
-                                   stroke_sound)
+            self.mixer.channels[self.stroke_channel_ids[self.stroke_nr]].play(stroke_sound)
             if self.stroke_nr < self.engine.nr_strokes - 1:
                 self.stroke_nr += 1
             else:
@@ -654,26 +665,37 @@ class SteamSoundController(SoundController):
         elif hasattr(self, "stroke_thread"):
             self.stroke_thread.join()
 
-class FunctionSoundController:
+def prepare_function_sounds(handler_thread, function_sounds, volume):
     """
-    
+    Creates a :class:`pygame.mixer.Sound` for every ``function_sound`` in
+    *function_sounds* and stores it in ``function_sound.sound``.
+    Registers a unique channel for the sound using *handler_thread* and
+    stores it in ``function_sound.channel_id``.
+    Makes sure the sound will be played according to its respective
+    :class:`ToggleMode`.
     """
-    def __init__(self, handler_thread, function_sounds, volume):
-        self.mixer = handler_thread
-        for function_sound in function_sounds:
-            if function_sound.file_path != None:
-                function_sound.sound = pygame.mixer.Sound(function_sound.file_path)
-                function_sound.sound.set_volume(volume)
-            else:
-                function_sound.sound = None
-            function_sound.channel_id = self.mixer.acquire_channel_id()
-            if function_sound.toggle_mode in [config.ToggleMode.SWITCH,
-                                              config.ToggleMode.PUSH]:
-                self.mixer.add_callback(function_sound.channel_id,
-                                        self.queue_function_sound,
+    for function_sound in function_sounds:
+        if function_sound.file_path != None:
+            function_sound.sound = pygame.mixer.Sound(function_sound.file_path)
+            function_sound.sound.set_volume(volume)
+        else:
+            function_sound.sound = None
+        function_sound.channel_id = handler_thread.acquire_channel_id()
+        if function_sound.toggle_mode in [config.ToggleMode.SWITCH,
+                                          config.ToggleMode.PUSH]:
+            handler_thread.add_callback(function_sound.channel_id,
+                                        queue_function_sound,
+                                        handler_thread,
                                         function_sound)
-    
-    def queue_function_sound(self, function_sound):
-        if function_sound.state:
-            self.mixer.queue_sound(function_sound.channel_id,
+
+def queue_function_sound(handler_thread, function_sound):
+    """
+    Queues the *function_sound* using *handler_thread* if
+    ``function_sound.state == True``.
+    *function_sound* must have been prepared using
+    :func:`prepare_function_sounds`.
+    Internal callback method.
+    """
+    if function_sound.state:
+        handler_thread.queue_sound(function_sound.channel_id,
                                    function_sound.sound)
