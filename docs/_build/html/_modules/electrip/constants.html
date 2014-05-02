@@ -1,0 +1,214 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>electrip.constants &mdash; Electrip 5.0.0 beta documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Electrip 5.0.0 beta documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Electrip</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../electrip.html">electrip Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.configuration_ui"><tt class="docutils literal"><span class="pre">configuration_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.constants"><tt class="docutils literal"><span class="pre">constants</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.control_ui"><tt class="docutils literal"><span class="pre">control_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.dialog_templates"><tt class="docutils literal"><span class="pre">dialog_templates</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.main"><tt class="docutils literal"><span class="pre">main</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.concurrent"><tt class="docutils literal"><span class="pre">concurrent</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.pygame_io"><tt class="docutils literal"><span class="pre">pygame_io</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.srcpd_setup_assistant"><tt class="docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.utils"><tt class="docutils literal"><span class="pre">utils</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.widgets"><tt class="docutils literal"><span class="pre">widgets</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Electrip</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>electrip.constants</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for electrip.constants</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">normpath</span> <span class="k">as</span> <span class="n">_</span>
+
+<span class="c"># ELECTRIP-Constants</span>
+
+<span class="c"># ----------- General -----------</span>
+
+<span class="n">ELECTRIP_VERSION</span> <span class="o">=</span> <span class="s">&quot;5.0.0&quot;</span>
+
+<span class="n">ICON_PATHS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/logo_icon_128.png&quot;</span><span class="p">),</span>
+              <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/logo_icon_64.png&quot;</span><span class="p">),</span>
+              <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/logo_icon_48.png&quot;</span><span class="p">),</span>
+              <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/logo_icon_32.png&quot;</span><span class="p">))</span>
+
+<span class="n">CIRCLE_PATHS</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;loco_function&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/loco_function_circle.png&quot;</span><span class="p">),</span>
+                <span class="s">&quot;function_sound&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/function_sound_circle.png&quot;</span><span class="p">),</span>
+                <span class="s">&quot;event_sound&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/event_sound_circle.png&quot;</span><span class="p">),</span>
+                <span class="s">&quot;speed_sound&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/speed_sound_circle.png&quot;</span><span class="p">)}</span>
+
+<span class="n">RELOAD_GRAPH_IMAGE_PATH</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;icons/reload_graph.png&quot;</span><span class="p">)</span>
+
+<span class="c"># ----------- Configuration -----------</span>
+
+<span class="n">PROTOCOLS</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;M 1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">14</span><span class="p">,)),</span>
+             <span class="s">&quot;M 2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">28</span><span class="p">)),</span>
+             <span class="s">&quot;N 1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">10239</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">128</span><span class="p">)),</span>
+             <span class="s">&quot;N 2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">10239</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">128</span><span class="p">))}</span>
+
+<span class="c"># ----------- Control -----------</span>
+
+<span class="c"># the number of steps the sound-level-animation performs when</span>
+<span class="c"># traversing the whole speed-scale</span>
+<span class="n">SOUND_LEVEL_ANIM_RES</span> <span class="o">=</span> <span class="mf">500.0</span>
+
+<span class="c"># ----------- Sound -----------</span>
+
+<div class="viewcode-block" id="SoundType"><a class="viewcode-back" href="../../electrip.html#electrip.constants.SoundType">[docs]</a><span class="k">class</span> <span class="nc">SoundType</span><span class="p">:</span>
+    <span class="n">LOAD</span> <span class="o">=</span> <span class="s">&quot;load&quot;</span>
+    <span class="n">IDLE</span> <span class="o">=</span> <span class="s">&quot;idle&quot;</span>
+    <span class="n">ACCEL</span> <span class="o">=</span> <span class="s">&quot;accel&quot;</span>
+    <span class="n">DECEL</span> <span class="o">=</span> <span class="s">&quot;decel&quot;</span>
+</div>
+<span class="n">END_EVENT_LOWER_BOUND</span> <span class="o">=</span> <span class="mi">35</span>
+<span class="n">STOP_EVENT</span> <span class="o">=</span> <span class="mi">25</span>
+    
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Moritz Renftle.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'5.0.0 beta',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

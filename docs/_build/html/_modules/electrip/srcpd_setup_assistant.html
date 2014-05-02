@@ -1,0 +1,376 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>electrip.srcpd_setup_assistant &mdash; Electrip 5.0.0 beta documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Electrip 5.0.0 beta documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Electrip</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../electrip.html">electrip Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.configuration_ui"><tt class="docutils literal"><span class="pre">configuration_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.constants"><tt class="docutils literal"><span class="pre">constants</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.control_ui"><tt class="docutils literal"><span class="pre">control_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.dialog_templates"><tt class="docutils literal"><span class="pre">dialog_templates</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.main"><tt class="docutils literal"><span class="pre">main</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.concurrent"><tt class="docutils literal"><span class="pre">concurrent</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.pygame_io"><tt class="docutils literal"><span class="pre">pygame_io</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.srcpd_setup_assistant"><tt class="docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.utils"><tt class="docutils literal"><span class="pre">utils</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#module-electrip.widgets"><tt class="docutils literal"><span class="pre">widgets</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../electrip.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Electrip</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>electrip.srcpd_setup_assistant</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for electrip.srcpd_setup_assistant</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">gi.repository</span> <span class="kn">import</span> <span class="n">Gtk</span><span class="p">,</span> <span class="n">GObject</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="kn">as</span> <span class="nn">sub</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">mmap</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">takewhile</span>
+<span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">copy</span><span class="p">,</span> <span class="n">Error</span>
+
+<span class="n">LIMITS_PATH</span> <span class="o">=</span> <span class="s">&quot;/etc/security/limits.conf&quot;</span>
+<span class="n">LIMITS_LINE</span> <span class="o">=</span> <span class="s">&quot;srcpd    -    rtprio    99&quot;</span>
+<span class="c"># TODO: check if &quot;/etc/pam.d/sudo&quot; should also be included</span>
+<span class="n">PAM_PATHS</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;/etc/pam.d/su&quot;</span><span class="p">,</span> <span class="s">&quot;/etc/pam.d/login&quot;</span><span class="p">]</span>
+<span class="n">PAM_LINE</span> <span class="o">=</span> <span class="s">&quot;session    required   pam_limits.so&quot;</span>
+
+<div class="viewcode-block" id="SrcpdAssistant"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.SrcpdAssistant">[docs]</a><span class="k">class</span> <span class="nc">SrcpdAssistant</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Assistant</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Assistant</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;cancel&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;delete-event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;close&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s">&quot;Den SRCP-Server &#39;srcpd&#39; einrichten&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pages</span> <span class="o">=</span> <span class="p">[(</span><span class="n">WelcomePage</span><span class="p">(),</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">AssistantPageType</span><span class="o">.</span><span class="n">INTRO</span><span class="p">,</span> <span class="s">&quot;Willkommen!&quot;</span><span class="p">),</span>
+                      <span class="p">(</span><span class="n">RealtimePage</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">AssistantPageType</span><span class="o">.</span><span class="n">CONTENT</span><span class="p">,</span> <span class="s">&quot;Realtime-Rechte&quot;</span><span class="p">),</span>
+                      <span class="p">(</span><span class="n">WebConfigEditorPage</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">AssistantPageType</span><span class="o">.</span><span class="n">CONTENT</span><span class="p">,</span> <span class="s">&quot;Konfigurationsdatei&quot;</span><span class="p">),</span>
+                      <span class="p">(</span><span class="n">SummaryPage</span><span class="p">(),</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">AssistantPageType</span><span class="o">.</span><span class="n">SUMMARY</span><span class="p">,</span> <span class="s">&quot;Glückwunsch!&quot;</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">page</span><span class="p">,</span> <span class="n">page_type</span><span class="p">,</span> <span class="n">page_title</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pages</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_page</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_page_title</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">page_title</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_page_type</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">page_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_page_complete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="SrcpdAssistant.quit"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.SrcpdAssistant.quit">[docs]</a>    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">main_quit</span><span class="p">()</span>
+        </div></div>
+<div class="viewcode-block" id="MarkupLabel"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.MarkupLabel">[docs]</a><span class="k">class</span> <span class="nc">MarkupLabel</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">markup</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">START</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_markup</span><span class="p">(</span><span class="n">markup</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_line_wrap</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="WelcomePage"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.WelcomePage">[docs]</a><span class="k">class</span> <span class="nc">WelcomePage</span><span class="p">(</span><span class="n">MarkupLabel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">MarkupLabel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="s">&quot;Herzlich Willkommen!</span><span class="se">\n</span><span class="s">Dieser Dialog führt Sie durch die Konfiguration des srcpd-Servers auf Ubuntu.</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;Der srcpd muss bereits installiert sein.&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;Klicken Sie auf &#39;&lt;b&gt;Fortsetzen&lt;/b&gt;&#39; um die Einrichtung des srcpd zu beginnen.&quot;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="RealtimePage"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.RealtimePage">[docs]</a><span class="k">class</span> <span class="nc">RealtimePage</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assistant</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="n">assistant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_row_spacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MarkupLabel</span><span class="p">(</span><span class="s">&quot;Der srcpd benötigt &lt;b&gt;spezielle Rechte&lt;/b&gt; um schnell auf die serielle Schnittstelle zugreifen zu können.</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;Dazu sollte</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;&lt;b&gt;1. &lt;/b&gt;ein &lt;b&gt;neuer Benutzer namens </span><span class="se">\&quot;</span><span class="s">srcpd</span><span class="se">\&quot;</span><span class="s">&lt;/b&gt; im System angelegt werden und</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;&lt;b&gt;2. &lt;/b&gt;in die Datei </span><span class="se">\&quot;</span><span class="s">&lt;b&gt;/etc/security/limits.conf&lt;/b&gt;</span><span class="se">\&quot;</span><span class="s"> eingetragen werden.</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;&lt;b&gt;3. PAM&lt;/b&gt; (Pluggable Authentication Module) so konfiguriert werden, dass Ihr System die Datei </span><span class="se">\&quot;</span><span class="s">limits.conf</span><span class="se">\&quot;</span><span class="s"> auch beachtet.&quot;</span><span class="p">))</span>
+        <span class="n">button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="s">&quot;Realtime-Rechte einrichten&quot;</span><span class="p">)</span>
+        <span class="n">button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_realtime_privileges</span><span class="p">)</span>
+        <span class="n">button</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="n">button</span><span class="o">.</span><span class="n">set_valign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_label</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Label</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_label</span><span class="o">.</span><span class="n">set_halign</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Align</span><span class="o">.</span><span class="n">START</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error_label</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="RealtimePage.set_realtime_privileges"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.RealtimePage.set_realtime_privileges">[docs]</a>    <span class="k">def</span> <span class="nf">set_realtime_privileges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="n">error_text</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">button</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s">&quot;addgroup&quot;</span><span class="p">,</span> <span class="s">&quot;--system&quot;</span><span class="p">,</span> <span class="s">&quot;srcpd&quot;</span><span class="p">])</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s">&quot;adduser&quot;</span><span class="p">,</span> <span class="s">&quot;--system&quot;</span><span class="p">,</span> <span class="s">&quot;--no-create-home&quot;</span><span class="p">,</span> <span class="s">&quot;--ingroup&quot;</span><span class="p">,</span> <span class="s">&quot;srcpd&quot;</span><span class="p">,</span> <span class="s">&quot;srcpd&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">sub</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">error_text</span> <span class="o">+=</span> <span class="s">&quot;&lt;b&gt;1. &lt;/b&gt;Konnte Benutzer nicht hinzufügen, Fehlercode: &quot;</span><span class="p">,</span> <span class="n">error</span><span class="o">.</span><span class="n">returncode</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_text</span> <span class="o">+=</span> <span class="s">&quot;&lt;b&gt;1. &lt;/b&gt;Benutzer &#39;srcpd&#39; wurde hinzugefügt (oder ist bereits vorhanden)</span><span class="se">\n</span><span class="s">&quot;</span>
+            
+            <span class="n">f</span><span class="p">,</span> <span class="n">mapped_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_mapped_file</span><span class="p">(</span><span class="n">LIMITS_PATH</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mapped_file</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;srcpd&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">append_line_to_mapped_file</span><span class="p">(</span><span class="n">mapped_file</span><span class="p">,</span> <span class="n">LIMITS_LINE</span><span class="p">)</span>
+                <span class="n">mapped_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">error_text</span> <span class="o">+=</span> <span class="s">&quot;&lt;b&gt;2. &lt;/b&gt;srcpd wurde in limits.conf eingetragen</span><span class="se">\n</span><span class="s">&quot;</span>
+                
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">error_text</span> <span class="o">+=</span> <span class="s">&quot;&lt;b&gt;2. &lt;/b&gt;srcpd ist bereits in limits.conf eingetragen</span><span class="se">\n</span><span class="s">&quot;</span>
+                
+            <span class="n">pam_changes_needed</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">for</span> <span class="n">pam_path</span> <span class="ow">in</span> <span class="n">PAM_PATHS</span><span class="p">:</span>
+                <span class="n">f</span><span class="p">,</span> <span class="n">mapped_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_mapped_file</span><span class="p">(</span><span class="n">pam_path</span><span class="p">)</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">mapped_file</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;pam_limits.so&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pos</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">append_line_to_mapped_file</span><span class="p">(</span><span class="n">mapped_file</span><span class="p">,</span> <span class="n">PAM_LINE</span><span class="p">)</span>
+                    <span class="n">mapped_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="n">pam_changes_needed</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># gives us the byte-pos for all the lines up to the searched word:</span>
+                    <span class="n">byte_positions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">takewhile</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_bytes</span><span class="p">(</span><span class="n">f</span><span class="p">)))</span>
+                    <span class="c"># go to start-byte of the searched line</span>
+                    <span class="n">mapped_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">byte_positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">mapped_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;#&quot;</span><span class="p">:</span>
+                        <span class="n">mapped_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">byte_positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="n">mapped_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">PAM_LINE</span><span class="p">)</span>
+                        <span class="c"># calculate the start and end position for the rest of the old line we want to cut away</span>
+                        <span class="n">start</span> <span class="o">=</span> <span class="n">mapped_file</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+                        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">mapped_file</span><span class="o">.</span><span class="n">readline</span><span class="p">())</span> <span class="o">-</span> <span class="mi">1</span>
+                        <span class="c"># remove the rest of the old line</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">remove_from_mapped_file</span><span class="p">(</span><span class="n">mapped_file</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+                        <span class="n">pam_changes_needed</span> <span class="o">=</span> <span class="bp">True</span>
+                    
+            <span class="k">if</span> <span class="n">pam_changes_needed</span><span class="p">:</span>
+                <span class="n">error_text</span> <span class="o">+=</span> <span class="s">&quot;&lt;b&gt;3. &lt;/b&gt;PAM wurde konfiguriert</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">error_text</span> <span class="o">+=</span> <span class="s">&quot;&lt;b&gt;3. &lt;/b&gt;PAM war bereits korrekt konfiguriert</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s">&quot;Rechte wurden erfolgreich eingerichtet!&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span><span class="o">.</span><span class="n">set_page_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_label</span><span class="o">.</span><span class="n">set_markup</span><span class="p">(</span><span class="n">error_text</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="RealtimePage.create_mapped_file"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.RealtimePage.create_mapped_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_mapped_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;r+&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">,</span> <span class="n">mmap</span><span class="o">.</span><span class="n">mmap</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">access</span><span class="o">=</span><span class="n">mmap</span><span class="o">.</span><span class="n">ACCESS_WRITE</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="RealtimePage.append_line_to_mapped_file"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.RealtimePage.append_line_to_mapped_file">[docs]</a>    <span class="k">def</span> <span class="nf">append_line_to_mapped_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapped_file</span><span class="p">,</span> <span class="n">new_line</span><span class="p">):</span>
+        <span class="n">mapped_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">SEEK_END</span><span class="p">)</span>
+        <span class="n">mapped_file</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mapped_file</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_line</span><span class="p">))</span>
+        <span class="n">mapped_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_line</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="RealtimePage.remove_from_mapped_file"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.RealtimePage.remove_from_mapped_file">[docs]</a>    <span class="k">def</span> <span class="nf">remove_from_mapped_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapped_file</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+        <span class="n">file_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mapped_file</span><span class="p">)</span>
+        <span class="n">cut_length</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+        <span class="n">new_length</span> <span class="o">=</span> <span class="n">file_length</span> <span class="o">-</span> <span class="n">cut_length</span>
+        <span class="n">mapped_file</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">file_length</span> <span class="o">-</span> <span class="n">end</span><span class="p">)</span>
+        <span class="n">mapped_file</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">new_length</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="RealtimePage.count_bytes"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.RealtimePage.count_bytes">[docs]</a>    <span class="k">def</span> <span class="nf">count_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="nb">bytes</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+            <span class="nb">bytes</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="nb">bytes</span>
+</div></div>
+<div class="viewcode-block" id="WebConfigEditorPage"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.WebConfigEditorPage">[docs]</a><span class="k">class</span> <span class="nc">WebConfigEditorPage</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assistant</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="n">assistant</span>
+        
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Grid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_orientation</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Orientation</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_row_spacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MarkupLabel</span><span class="p">(</span><span class="s">&quot;Als Nächstes muss die &lt;b&gt;Konfigurationsdatei </span><span class="se">\&quot;</span><span class="s">/etc/srcpd.conf</span><span class="se">\&quot;</span><span class="s">&lt;/b&gt; erstellt werden.</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;Gehen Sie dazu auf den </span><span class="se">\&quot;</span><span class="s">&lt;b&gt;Web Config Generator&lt;/b&gt; (Rechtsklick-&gt;Kopieren):</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">))</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">MarkupLabel</span><span class="p">(</span><span class="s">&quot;&lt;span fgcolor=&#39;#0080FF&#39;&gt;srcpd.sourceforge.net/srcpd/cfg/index.html&lt;/span&gt;&quot;</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_selectable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_margin_top</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">set_margin_bottom</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MarkupLabel</span><span class="p">(</span><span class="s">&quot;&lt;b&gt;1. Befolgen Sie die Anweisungen der Webanwendung&lt;/b&gt; (leider auf Englisch).</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;&lt;b&gt;2. Speichern&lt;/b&gt; Sie dann die erzeugte XML-Datei in ein beliebiges Verzeichnis (unter Firefox: Rechtsklick-&gt;Seite speichern unter...)</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> \
+                             <span class="s">&quot;&lt;b&gt;3. Geben Sie hier die gespeicherte Datei an&lt;/b&gt;, damit sie an die korrekte Stelle (</span><span class="se">\&quot;</span><span class="s">/etc</span><span class="se">\&quot;</span><span class="s">) kopiert wird:&quot;</span><span class="p">))</span>
+        <span class="n">file_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">FileChooserButton</span><span class="p">()</span>
+        <span class="n">file_filter</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">FileFilter</span><span class="p">()</span>
+        <span class="n">file_filter</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s">&quot;XML-Textdateien&quot;</span><span class="p">)</span>
+        <span class="n">file_filter</span><span class="o">.</span><span class="n">add_mime_type</span><span class="p">(</span><span class="s">&quot;application/xml&quot;</span><span class="p">)</span>
+        <span class="n">file_button</span><span class="o">.</span><span class="n">add_filter</span><span class="p">(</span><span class="n">file_filter</span><span class="p">)</span>
+        <span class="n">file_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;file-set&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_copy_confirmation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">file_button</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span> <span class="o">=</span> <span class="n">MarkupLabel</span><span class="p">(</span><span class="s">&quot;&lt;i&gt;Keine Datei zum Kopieren gewählt&lt;/i&gt;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span> <span class="o">=</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="s">&quot;Datei kopieren&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;clicked&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_file_to_etc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="WebConfigEditorPage.show_copy_confirmation"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.WebConfigEditorPage.show_copy_confirmation">[docs]</a>    <span class="k">def</span> <span class="nf">show_copy_confirmation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_button</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_button</span><span class="o">.</span><span class="n">get_filename</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="s">&quot;Soll die Datei </span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s"> nach </span><span class="se">\&quot;</span><span class="s">/etc</span><span class="se">\&quot;</span><span class="s"> kopiert werden?&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="WebConfigEditorPage.copy_file_to_etc"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.WebConfigEditorPage.copy_file_to_etc">[docs]</a>    <span class="k">def</span> <span class="nf">copy_file_to_etc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="s">&quot;/etc&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="s">&quot;Fehler beim Kopieren: Quelldatei liegt bereits in </span><span class="se">\&quot;</span><span class="s">/etc</span><span class="se">\&quot;</span><span class="s">!&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="s">&quot;Datei wurde erfolgreich kopiert!&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">confirm_label</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span><span class="o">.</span><span class="n">set_sensitive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span><span class="o">.</span><span class="n">set_page_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="SummaryPage"><a class="viewcode-back" href="../../electrip.html#electrip.srcpd_setup_assistant.SummaryPage">[docs]</a><span class="k">class</span> <span class="nc">SummaryPage</span><span class="p">(</span><span class="n">MarkupLabel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">MarkupLabel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;&lt;b&gt;Herzlichen Glückwunsch!&lt;/b&gt;</span><span class="se">\n</span><span class="s">Der srcpd wurde erfolgreich eingerichtet und kann jetzt verwendet werden.&quot;</span><span class="p">)</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getuid</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c"># if user-id=0 we are root (which is needed for all operations)</span>
+        <span class="n">assistant</span> <span class="o">=</span> <span class="n">SrcpdAssistant</span><span class="p">()</span>
+        <span class="n">GObject</span><span class="o">.</span><span class="n">threads_init</span><span class="p">()</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="s">&quot;gksudo&quot;</span><span class="p">,</span> <span class="s">&quot;python srcpd_setup_assistant.py&quot;</span><span class="p">])</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Moritz Renftle.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'5.0.0 beta',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,935 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>electrip.config.json_model &mdash; Electrip 5.0.0 beta documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Electrip 5.0.0 beta documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../../index.html" class="fa fa-home"> Electrip</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../electrip.html">electrip Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.configuration_ui"><tt class="docutils literal"><span class="pre">configuration_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.constants"><tt class="docutils literal"><span class="pre">constants</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.control_ui"><tt class="docutils literal"><span class="pre">control_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.dialog_templates"><tt class="docutils literal"><span class="pre">dialog_templates</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.main"><tt class="docutils literal"><span class="pre">main</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.concurrent"><tt class="docutils literal"><span class="pre">concurrent</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.pygame_io"><tt class="docutils literal"><span class="pre">pygame_io</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.srcpd_setup_assistant"><tt class="docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.utils"><tt class="docutils literal"><span class="pre">utils</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.widgets"><tt class="docutils literal"><span class="pre">widgets</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Electrip</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>electrip.config.json_model</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for electrip.config.json_model</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: UTF 8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">basename</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">exists</span><span class="p">,</span> <span class="n">sep</span> <span class="k">as</span> <span class="n">os_sep</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">from</span> <span class="nn">electrip.concurrent</span> <span class="kn">import</span> <span class="n">locked_print</span>
+<span class="kn">from</span> <span class="nn">electrip.config.loco</span> <span class="kn">import</span> <span class="n">Loco</span>
+<span class="kn">from</span> <span class="nn">electrip.config.loco_functions</span> <span class="kn">import</span> <span class="n">ToggleMode</span><span class="p">,</span> <span class="n">DecoderFunction</span><span class="p">,</span> \
+    <span class="n">FunctionSound</span><span class="p">,</span> <span class="n">EventSound</span>
+<span class="kn">from</span> <span class="nn">electrip.config.server</span> <span class="kn">import</span> <span class="n">Server</span>
+<span class="kn">from</span> <span class="nn">electrip.config.joystick</span> <span class="kn">import</span> <span class="n">Joystick</span>
+<span class="kn">from</span> <span class="nn">electrip.config.sound</span> <span class="kn">import</span> <span class="n">Sound</span>
+<span class="kn">from</span> <span class="nn">electrip.config.sound_segments</span> <span class="kn">import</span> <span class="n">create_sound_segment</span>
+<span class="kn">from</span> <span class="nn">electrip.config.sound_engines</span> <span class="kn">import</span> <span class="n">create_engine</span><span class="p">,</span> <span class="n">EngineType</span>
+<span class="kn">from</span> <span class="nn">electrip.config.linear_segment_function</span> <span class="kn">import</span> <span class="n">LinearSegmentFunction</span>
+
+<div class="viewcode-block" id="DictWrapper"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.DictWrapper">[docs]</a><span class="k">class</span> <span class="nc">DictWrapper</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper used to retrieve values from</span>
+<span class="sd">    a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="DictWrapper.get"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.DictWrapper.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the element from *d*</span>
+<span class="sd">        with key *k*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="DictWrapper.has_key"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.DictWrapper.has_key">[docs]</a>    <span class="k">def</span> <span class="nf">has_key</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if *d* has a key named *k*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="DictWrapper.set"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.DictWrapper.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the element in *d*</span>
+<span class="sd">        with key *k* to *v*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="DictWrapper.get_param_list"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.DictWrapper.get_param_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_param_list</span><span class="p">(</span><span class="n">config_dict</span><span class="p">,</span>
+                       <span class="n">attribute_list</span><span class="p">,</span>
+                       <span class="n">ignore</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">JsonModel</span><span class="o">.</span><span class="n">get_param_list_from_dict</span><span class="p">(</span><span class="n">config_dict</span><span class="p">,</span>
+                                                  <span class="n">attribute_list</span><span class="p">,</span>
+                                                  <span class="n">ignore</span><span class="p">)</span>
+        </div></div>
+<div class="viewcode-block" id="ObjectWrapper"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.ObjectWrapper">[docs]</a><span class="k">class</span> <span class="nc">ObjectWrapper</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper used to retrieve values from</span>
+<span class="sd">    an object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ObjectWrapper.get"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.ObjectWrapper.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the attribute of *o*</span>
+<span class="sd">        named *a*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ObjectWrapper.has_key"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.ObjectWrapper.has_key">[docs]</a>    <span class="k">def</span> <span class="nf">has_key</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if *o* has an attribute</span>
+<span class="sd">        named *a*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ObjectWrapper.set"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.ObjectWrapper.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the attribute of *o*</span>
+<span class="sd">        named *a* to *v*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ObjectWrapper.get_param_list"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.ObjectWrapper.get_param_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_param_list</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attribs</span><span class="p">,</span> <span class="n">unused_ignore</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">JsonModel</span><span class="o">.</span><span class="n">get_param_list_from_object</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attribs</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="JsonModel"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel">[docs]</a><span class="k">class</span> <span class="nc">JsonModel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    | Object-tree representing all the data needed by Electrip.</span>
+<span class="sd">    | Able to load and save itself from/to Json-files.</span>
+<span class="sd">    </span>
+<span class="sd">    Stores several attribute-lists, which are lists of tuples</span>
+<span class="sd">    of the form ``[(&quot;attribute_name&quot;, default_value), ...]``.</span>
+<span class="sd">    Each attribute-list maps to an object in the configuration:</span>
+<span class="sd">    </span>
+<span class="sd">        * self.loco_attributes -&gt; :class:`Loco`</span>
+<span class="sd">        * self.engine_attributes -&gt; :class:`Engine`</span>
+<span class="sd">        * self.event_sound_attributes  -&gt; :class:`EventSound`</span>
+<span class="sd">        * self.function_sound_attributes -&gt; :class:`FunctionSound`</span>
+<span class="sd">        * self.segment_attributes -&gt; :class:`SoundSegment`</span>
+<span class="sd">        * self.function_attributes -&gt; :class:`Function`</span>
+<span class="sd">        * self.server_attributes -&gt; :class:`Server`</span>
+<span class="sd">        * self.joystick_attributes -&gt; :class:`Joystick`</span>
+<span class="sd">        * self.sound_attributes -&gt; :class:`Sound`</span>
+<span class="sd">    </span>
+<span class="sd">    The Object-tree looks similar to this::</span>
+<span class="sd">    </span>
+<span class="sd">        JsonModel</span>
+<span class="sd">            |</span>
+<span class="sd">            |- locos</span>
+<span class="sd">            |     |- Loco</span>
+<span class="sd">            |     |    |- name = &quot;V 200&quot;</span>
+<span class="sd">            |     |    |- image = &quot;/home/user/V200.png&quot;</span>
+<span class="sd">            |     |    |- engine = ...</span>
+<span class="sd">            |     |    |- ...</span>
+<span class="sd">            |     |</span>
+<span class="sd">            |     |- Loco</span>
+<span class="sd">            |     |    |- ...</span>
+<span class="sd">            |     |- ...</span>
+<span class="sd">            |</span>
+<span class="sd">            |- server</span>
+<span class="sd">            |     |- host = &quot;localhost&quot;</span>
+<span class="sd">            |     |- port = 4303</span>
+<span class="sd">            |     |- ...</span>
+<span class="sd">            |</span>
+<span class="sd">            |- joystick</span>
+<span class="sd">            |     |- emergency_button = 0</span>
+<span class="sd">            |     |- accel_axis = 2</span>
+<span class="sd">            |     |- ...</span>
+<span class="sd">            |- ...   </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locos</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">joystick</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sound</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates an empty object tree, or uses the passed arguments *loco*,</span>
+<span class="sd">        *server*, *joystick* and *sound*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notice_unsaved_changes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_unsaved_changes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened_file</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">loco_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;Unbenannte Lok&quot;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;speed_steps&quot;</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;max_speed&quot;</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;address&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;protocol&quot;</span><span class="p">,</span> <span class="s">&quot;N 1&quot;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;accel_duration&quot;</span><span class="p">,</span> <span class="mf">11.5</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;decel_duration&quot;</span><span class="p">,</span> <span class="mf">8.5</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;direction&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;img_path&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s">&quot;sound_volume&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;diesel&quot;</span><span class="p">:</span>
+                                  <span class="p">[(</span><span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;diesel&quot;</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;start_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;idle_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;quit_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)],</span>
+                                  <span class="s">&quot;steam&quot;</span><span class="p">:</span>
+                                  <span class="p">[(</span><span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;steam&quot;</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;idle_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;cylinder_steam_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;nr_strokes&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;stroke_start_delay&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;wheel_diameter&quot;</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="s">&quot;min_freq&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)]}</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_sound_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;file_path&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;state&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;min_speed&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;max_speed&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;min_accel&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;max_accel&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                       <span class="p">(</span><span class="s">&quot;button&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">function_sound_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+                                          <span class="p">(</span><span class="s">&quot;file_path&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                          <span class="p">(</span><span class="s">&quot;state&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+                                          <span class="p">(</span><span class="s">&quot;button&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                          <span class="p">(</span><span class="s">&quot;toggle_mode&quot;</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">TAP</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">segment_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;diesel&quot;</span><span class="p">:</span>
+                                   <span class="p">[(</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;load_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;idle_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;accel_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;decel_sound&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)],</span>
+                                   <span class="s">&quot;steam&quot;</span><span class="p">:</span>
+                                   <span class="p">[(</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;stroke_sounds&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)]}</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">function_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;nr&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;state&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;button&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;toggle_mode&quot;</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">SWITCH</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">server_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;host&quot;</span><span class="p">,</span> <span class="s">&quot;localhost&quot;</span><span class="p">),</span>
+                                  <span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="mi">4303</span><span class="p">),</span>
+                                  <span class="p">(</span><span class="s">&quot;bus&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                  <span class="p">(</span><span class="s">&quot;power&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">joystick_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;emergency_button&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;reverse_button&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;accel_axis&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;axis_threshold&quot;</span><span class="p">,</span> <span class="mf">0.06</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;focus_button&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;sound_button&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;use_auto_focus&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s">&quot;show_function_nr&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_attributes</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;sampling_rate&quot;</span><span class="p">,</span> <span class="mi">44100</span><span class="p">),</span>
+                                 <span class="p">(</span><span class="s">&quot;show_level_bar&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)]</span>
+    
+        <span class="k">if</span> <span class="n">locos</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locos</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locos</span> <span class="o">=</span> <span class="n">locos</span>
+        <span class="k">if</span> <span class="n">server</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+        <span class="k">if</span> <span class="n">joystick</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">joystick</span> <span class="o">=</span> <span class="n">Joystick</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">joystick</span> <span class="o">=</span> <span class="n">joystick</span>
+        <span class="k">if</span> <span class="n">sound</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="n">Sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="n">sound</span>
+        <span class="c"># loco that is currently configured</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_loco</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;last_file.json&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_file</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="s">&quot;last_file&quot;</span><span class="p">]</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_file</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Noch kein letzter Dateipfad gespeichert.&quot;</span><span class="p">)</span>
+            
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="JsonModel.get_utf8_bytestring"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.get_utf8_bytestring">[docs]</a>    <span class="k">def</span> <span class="nf">get_utf8_bytestring</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a utf8-bytestring made from</span>
+<span class="sd">        a unicode-object *value*. If *value* is not</span>
+<span class="sd">        a unicode-object, *value* is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">unicode</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+            </div>
+<div class="viewcode-block" id="JsonModel.add_file_to_zip"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.add_file_to_zip">[docs]</a>    <span class="k">def</span> <span class="nf">add_file_to_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zip_file</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a file located at *file_path* to *zip-file*,</span>
+<span class="sd">        placing it at the subdirectory *dest*.</span>
+<span class="sd">        Example::</span>
+<span class="sd">        </span>
+<span class="sd">            self.add_file_to_zip(self,</span>
+<span class="sd">                                 zip_file,</span>
+<span class="sd">                                 &quot;/home/user/image.gif&quot;)</span>
+<span class="sd">            self.add_file_to_zip(self,</span>
+<span class="sd">                                 zip_file,</span>
+<span class="sd">                                 &quot;/home/user/test.wav&quot;,</span>
+<span class="sd">                                 &quot;sound&quot;)</span>
+<span class="sd">            # Will place &#39;image.gif&#39; in the root</span>
+<span class="sd">            # directory of zip_file and &#39;test.wav&#39; in the</span>
+<span class="sd">            # subdirectory &#39;/sound&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="n">basename</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dest</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">file_name</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">+</span> <span class="n">os_sep</span> <span class="o">+</span> <span class="n">file_name</span>
+            <span class="k">if</span> <span class="n">file_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">zip_file</span><span class="o">.</span><span class="n">namelist</span><span class="p">():</span>
+                <span class="n">zip_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+        <span class="c"># error occurs if file_path is None (type of error</span>
+        <span class="c"># varies on different platforms)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Ungültige Datei &#39;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="o">+</span> 
+                         <span class="s">&quot;&#39; konnte nicht in Lok-Verzeichnis kopiert werden.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">file_name</span>
+        </div>
+<div class="viewcode-block" id="JsonModel.add_files_to_zip"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.add_files_to_zip">[docs]</a>    <span class="k">def</span> <span class="nf">add_files_to_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">zip_file</span><span class="p">,</span>
+                         <span class="n">config_object</span><span class="p">,</span>
+                         <span class="n">attribs</span><span class="p">,</span>
+                         <span class="n">dest</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds multiple files to *zip_file*, where *attribs*</span>
+<span class="sd">        is a list of attributes of *config_object* which</span>
+<span class="sd">        should be used for the file locations.</span>
+<span class="sd">        See :func:`add_file_to_zip`.</span>
+<span class="sd">        Example::</span>
+<span class="sd">        </span>
+<span class="sd">            self.add_files_to_zip(self,</span>
+<span class="sd">                                  zip_file,</span>
+<span class="sd">                                  segment,</span>
+<span class="sd">                                  [&quot;load_sound&quot;,</span>
+<span class="sd">                                   &quot;accel_sound&quot;,</span>
+<span class="sd">                                   &quot;decel_sound&quot;,</span>
+<span class="sd">                                   &quot;idle_sound&quot;])</span>
+<span class="sd">            # Will add the files located at</span>
+<span class="sd">            # segment.load_sound, segment.accel_sound, ...</span>
+<span class="sd">            # to &#39;zip_file&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">attrib</span> <span class="ow">in</span> <span class="n">attribs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">):</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)</span>
+                <span class="n">file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                                 <span class="n">file_path</span><span class="p">,</span>
+                                                 <span class="n">dest</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="JsonModel.save_loco"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.save_loco">[docs]</a>    <span class="k">def</span> <span class="nf">save_loco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">,</span> <span class="n">dir_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Exports *loco* to a zip-file, including all sound-</span>
+<span class="sd">        and image-files needed. This standalone package is</span>
+<span class="sd">        placed in *dir_path*, named like ``loco.name``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">dir_path</span> <span class="o">+</span> <span class="n">os_sep</span> <span class="o">+</span> <span class="n">loco</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.zip&quot;</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span>
+                             <span class="s">&quot;w&quot;</span><span class="p">,</span>
+                             <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">,</span>
+                             <span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_file</span><span class="p">:</span>
+            <span class="n">save_status_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_unsaved_changes_method</span>
+            <span class="c"># remove any references to GObjects, as they are not copyable</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_unsaved_changes_method</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">notice_unsaved_changes</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">loco</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_loco</span><span class="p">(</span><span class="n">loco</span><span class="p">,</span>
+                                    <span class="n">ObjectWrapper</span><span class="p">,</span>
+                                    <span class="bp">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">:</span>
+                        <span class="n">segment</span><span class="o">.</span><span class="n">stroke_sounds</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                                                      <span class="n">stroke_sound</span><span class="p">,</span>
+                                                                      <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+                                                 <span class="k">for</span> <span class="n">stroke_sound</span> <span class="ow">in</span> <span class="n">segment</span><span class="o">.</span><span class="n">stroke_sounds</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_files_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;idle_sound&quot;</span><span class="p">,</span>
+                                                                  <span class="s">&quot;cylinder_steam_sound&quot;</span><span class="p">],</span>
+                                          <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+                    
+                <span class="k">elif</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">add_files_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                              <span class="n">segment</span><span class="p">,</span>
+                                              <span class="p">[</span><span class="s">&quot;load_sound&quot;</span><span class="p">,</span>
+                                               <span class="s">&quot;idle_sound&quot;</span><span class="p">,</span>
+                                               <span class="s">&quot;accel_sound&quot;</span><span class="p">,</span>
+                                               <span class="s">&quot;decel_sound&quot;</span><span class="p">],</span>
+                                              <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_files_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                          <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+                                          <span class="p">[</span><span class="s">&quot;start_sound&quot;</span><span class="p">,</span>
+                                           <span class="s">&quot;idle_sound&quot;</span><span class="p">,</span>
+                                           <span class="s">&quot;quit_sound&quot;</span><span class="p">],</span>
+                                          <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+                    
+                <span class="k">for</span> <span class="n">sound</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">:</span>
+                    <span class="n">sound</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                                           <span class="n">sound</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span>
+                                                           <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+                        
+            <span class="k">for</span> <span class="n">sound</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">function_sounds</span><span class="p">:</span>
+                <span class="n">sound</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                                       <span class="n">sound</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span>
+                                                       <span class="s">&quot;sound&quot;</span><span class="p">)</span>
+            
+            <span class="n">loco</span><span class="o">.</span><span class="n">img_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_file_to_zip</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span>
+                                                 <span class="n">loco</span><span class="o">.</span><span class="n">img_path</span><span class="p">,</span>
+                                                 <span class="s">&quot;image&quot;</span><span class="p">)</span>
+            <span class="c"># write loco-config file</span>
+            <span class="n">zip_file</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;.loco&quot;</span><span class="p">,</span>
+                              <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_loco_dict</span><span class="p">(</span><span class="n">loco</span><span class="p">),</span>
+                                         <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Lok wurde gespeichert in&quot;</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">new_unsaved_changes_method</span> <span class="o">=</span> <span class="n">save_status_method</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">notice_unsaved_changes</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="JsonModel.create_loco_dict"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.create_loco_dict">[docs]</a>    <span class="k">def</span> <span class="nf">create_loco_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary-representation of the</span>
+<span class="sd">        object-tree in *loco*. This is needed save the</span>
+<span class="sd">        loco in the Json-format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loco_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="n">loco</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">loco_attributes</span><span class="p">)</span>
+        <span class="n">loco_dict</span><span class="p">[</span><span class="s">&quot;speed_control_points&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loco</span><span class="o">.</span><span class="n">speed_to_step_func</span><span class="o">.</span><span class="n">control_points</span>
+        <span class="n">loco_dict</span><span class="p">[</span><span class="s">&quot;function_sounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="n">function_sound</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">function_sound_attributes</span><span class="p">)</span>
+                                        <span class="k">for</span> <span class="n">function_sound</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">function_sounds</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">engine_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">engine_attributes</span><span class="p">[</span><span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">engine_dict</span><span class="p">[</span><span class="s">&quot;sound_segments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span>
+                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">segment_attributes</span><span class="p">[</span><span class="n">segment</span><span class="o">.</span><span class="n">type</span><span class="p">])</span>
+                                                 <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">engine_dict</span><span class="p">[</span><span class="s">&quot;sound_segments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">engine_dict</span><span class="p">[</span><span class="s">&quot;event_sounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="n">event_sound</span><span class="p">,</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">event_sound_attributes</span><span class="p">)</span>
+                                                 <span class="k">for</span> <span class="n">event_sound</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">engine_dict</span><span class="p">[</span><span class="s">&quot;event_sounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">loco_dict</span><span class="p">[</span><span class="s">&quot;engine&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">engine_dict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loco_dict</span><span class="p">[</span><span class="s">&quot;engine&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">function_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="n">function</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">function_attributes</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">functions</span><span class="p">]</span>
+        <span class="n">loco_dict</span><span class="p">[</span><span class="s">&quot;functions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">function_list</span>
+        <span class="k">return</span> <span class="n">loco_dict</span>
+        </div>
+<div class="viewcode-block" id="JsonModel.save"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the current object-tree to the Json-file</span>
+<span class="sd">        specified by *file_path*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Config</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;locos&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_loco_dict</span><span class="p">(</span><span class="n">loco</span><span class="p">)</span> <span class="k">for</span> <span class="n">loco</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locos</span><span class="p">],</span>
+                  <span class="s">&quot;server&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">server_attributes</span><span class="p">),</span>
+                  <span class="s">&quot;joystick&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">joystick</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">joystick_attributes</span><span class="p">),</span>
+                  <span class="s">&quot;sound&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sound</span><span class="p">,</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">sound_attributes</span><span class="p">)}</span>
+        
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">Config</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_unsaved_changes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_opened_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Einstellungen wurden gespeichert in &quot;</span> <span class="o">+</span> <span class="n">file_path</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="JsonModel.create_dict"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.create_dict">[docs]</a>    <span class="k">def</span> <span class="nf">create_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_object</span><span class="p">,</span> <span class="n">attribute_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary-representation of *config_object*,</span>
+<span class="sd">        using the attributes from *attribute_list*. *attribute_list*</span>
+<span class="sd">        is a list of tuples of the form</span>
+<span class="sd">        ``[(&quot;attribute_name&quot;, default_value), ...]``.</span>
+<span class="sd">        The default values are not used in this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">obj_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">attrib</span> <span class="ow">in</span> <span class="n">attribute_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">obj_dict</span><span class="p">[</span><span class="n">attrib</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c"># needed for objects where we don&#39;t know if they have a</span>
+            <span class="c"># certain attribute (e.g. sound_segments)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">obj_dict</span>
+    </div>
+<div class="viewcode-block" id="JsonModel.set_absolute_path"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.set_absolute_path">[docs]</a>    <span class="k">def</span> <span class="nf">set_absolute_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_prefix</span><span class="p">,</span> <span class="n">config_object</span><span class="p">,</span> <span class="n">attribs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends *path_prefix* to all attributes in the list *attribs* </span>
+<span class="sd">        of *config_object*. Used to change a relative path to</span>
+<span class="sd">        an absolute path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">attrib</span> <span class="ow">in</span> <span class="n">attribs</span><span class="p">:</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">file_name</span> <span class="o">!=</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">exists</span><span class="p">(</span><span class="n">path_prefix</span> <span class="o">+</span> <span class="n">file_name</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">,</span> <span class="n">path_prefix</span> <span class="o">+</span> <span class="n">file_name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">config_object</span><span class="p">,</span> <span class="n">attrib</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="JsonModel.load_loco"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.load_loco">[docs]</a>    <span class="k">def</span> <span class="nf">load_loco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a :class:`Loco`-object which is</span>
+<span class="sd">        unpacked from a zip-file-package.</span>
+<span class="sd">        See :func:`save_loco`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dir_path</span><span class="p">,</span> <span class="n">file_name</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">loco_name</span><span class="p">,</span> <span class="n">ending</span> <span class="o">=</span> <span class="n">file_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ending</span> <span class="o">==</span> <span class="s">&quot;zip&quot;</span><span class="p">:</span>
+            <span class="n">dir_path</span> <span class="o">+=</span> <span class="n">os_sep</span> <span class="o">+</span> <span class="n">loco_name</span> <span class="o">+</span> <span class="n">os_sep</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_file</span><span class="p">:</span>
+                <span class="n">zip_file</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">dir_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dir_path</span> <span class="o">+=</span> <span class="n">os_sep</span>
+            
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dir_path</span> <span class="o">+</span> <span class="n">loco_name</span> <span class="o">+</span> <span class="s">&quot;.loco&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">loco_file</span><span class="p">:</span>
+            <span class="n">loco_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">loco_file</span><span class="p">)</span>
+            <span class="n">loco</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_loco</span><span class="p">(</span><span class="n">loco_dict</span><span class="p">,</span>
+                                    <span class="n">DictWrapper</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">:</span>
+                        <span class="n">segment</span><span class="o">.</span><span class="n">stroke_sounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">dir_path</span> <span class="o">+</span> <span class="n">stroke_sound</span>
+                                                 <span class="k">for</span> <span class="n">stroke_sound</span> <span class="ow">in</span> <span class="n">segment</span><span class="o">.</span><span class="n">stroke_sounds</span>
+                                                 <span class="k">if</span> <span class="n">stroke_sound</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_absolute_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span>
+                                           <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+                                           <span class="p">[</span><span class="s">&quot;idle_sound&quot;</span><span class="p">,</span>
+                                            <span class="s">&quot;cylinder_steam_sound&quot;</span><span class="p">])</span>
+                    
+                <span class="k">elif</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">set_absolute_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span>
+                                               <span class="n">segment</span><span class="p">,</span>
+                                               <span class="p">[</span><span class="s">&quot;load_sound&quot;</span><span class="p">,</span>
+                                                <span class="s">&quot;idle_sound&quot;</span><span class="p">,</span>
+                                                <span class="s">&quot;accel_sound&quot;</span><span class="p">,</span>
+                                                <span class="s">&quot;decel_sound&quot;</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_absolute_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span>
+                                           <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+                                           <span class="p">[</span><span class="s">&quot;start_sound&quot;</span><span class="p">,</span>
+                                            <span class="s">&quot;idle_sound&quot;</span><span class="p">,</span>
+                                            <span class="s">&quot;quit_sound&quot;</span><span class="p">])</span>
+                    
+                <span class="k">for</span> <span class="n">sound</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">event_sounds</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_absolute_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span>
+                                           <span class="n">sound</span><span class="p">,</span>
+                                           <span class="p">[</span><span class="s">&quot;file_path&quot;</span><span class="p">])</span>
+                    
+            <span class="k">for</span> <span class="n">sound</span> <span class="ow">in</span> <span class="n">loco</span><span class="o">.</span><span class="n">function_sounds</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_absolute_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span>
+                                       <span class="n">sound</span><span class="p">,</span>
+                                       <span class="p">[</span><span class="s">&quot;file_path&quot;</span><span class="p">])</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_absolute_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span>
+                                   <span class="n">loco</span><span class="p">,</span>
+                                   <span class="p">[</span><span class="s">&quot;img_path&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">loco</span>
+</div>
+<div class="viewcode-block" id="JsonModel.create_loco"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.create_loco">[docs]</a>    <span class="k">def</span> <span class="nf">create_loco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loco_obj</span><span class="p">,</span> <span class="n">wrapper</span><span class="p">,</span> <span class="n">unsaved_changes_method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method covers the logic to create a new :class:`Loco`-object.</span>
+<span class="sd">        Depending on the situation, one may want to use different data-types</span>
+<span class="sd">        for this operation. This is specified by *wrapper*, which must be</span>
+<span class="sd">        one of :class:`DictWrapper` or :class:`ObjectWrapper`.</span>
+<span class="sd">        E.g. if you want to create a new Loco using an existing Loco,</span>
+<span class="sd">        you could do this::</span>
+<span class="sd">        </span>
+<span class="sd">            new_loco = self.create_loco(existing_loco,</span>
+<span class="sd">                                        ObjectWrapper,</span>
+<span class="sd">                                        self.unsaved_changes)</span>
+<span class="sd">        </span>
+<span class="sd">        *unsaved_changes_method* defines the method to be called if</span>
+<span class="sd">        an attribute on the new loco changes, usually this is</span>
+<span class="sd">        ``Config.unsaved_changes``.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns: The new :class:`Loco`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">functions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">function_obj</span> <span class="ow">in</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span> <span class="s">&quot;functions&quot;</span><span class="p">):</span>
+            <span class="c"># old file format has no attrib &#39;toggle_mode&#39;, but bool &#39;use_push_to_make&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">function_obj</span><span class="p">,</span> <span class="s">&quot;toggle_mode&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">function_obj</span><span class="p">,</span> <span class="s">&quot;use_push_to_make&quot;</span><span class="p">):</span>
+                    <span class="n">wrapper</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">function_obj</span><span class="p">,</span> <span class="s">&quot;toggle_mode&quot;</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">PUSH</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">wrapper</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">function_obj</span><span class="p">,</span> <span class="s">&quot;toggle_mode&quot;</span><span class="p">,</span> <span class="n">ToggleMode</span><span class="o">.</span><span class="n">SWITCH</span><span class="p">)</span>
+            <span class="n">functions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DecoderFunction</span><span class="p">(</span><span class="n">unsaved_changes_method</span><span class="p">,</span>
+                                      <span class="o">*</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get_param_list</span><span class="p">(</span><span class="n">function_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_attributes</span><span class="p">)))</span>
+        <span class="n">speed_func</span> <span class="o">=</span> <span class="n">LinearSegmentFunction</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">wrapper</span> <span class="o">==</span> <span class="n">DictWrapper</span><span class="p">:</span>
+            <span class="n">speed_func</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span>
+                                <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span>
+                                            <span class="s">&quot;speed_control_points&quot;</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">speed_func</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span>
+                                                    <span class="s">&quot;speed_to_step_func&quot;</span><span class="p">),</span>
+                                        <span class="s">&quot;control_points&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span> <span class="s">&quot;function_sounds&quot;</span><span class="p">):</span>
+            <span class="n">function_sounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">FunctionSound</span><span class="p">(</span><span class="n">unsaved_changes_method</span><span class="p">,</span>
+                                             <span class="o">*</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get_param_list</span><span class="p">(</span><span class="n">function_sound_obj</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">function_sound_attributes</span><span class="p">))</span>
+                               <span class="k">for</span> <span class="n">function_sound_obj</span> <span class="ow">in</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span>
+                                                                     <span class="s">&quot;function_sounds&quot;</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">function_sounds</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span>  <span class="n">wrapper</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span> <span class="s">&quot;engine&quot;</span><span class="p">)</span> \
+        <span class="ow">and</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span> <span class="s">&quot;engine&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">engine_obj</span> <span class="o">=</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span> <span class="s">&quot;engine&quot;</span><span class="p">)</span>
+            <span class="n">param_list</span> <span class="o">=</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get_param_list</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">engine_attributes</span><span class="p">[</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span>
+                                                                           <span class="s">&quot;type&quot;</span><span class="p">)])</span>
+            <span class="n">param_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unsaved_changes_method</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span> <span class="s">&quot;sound_segments&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c"># deepcopy(param) copies the attributes of the sound-segments</span>
+                    <span class="c"># to make sure the &#39;nr_strokes&#39;-list of SteamSoundSegment</span>
+                    <span class="c"># is not passed by reference (causes pygame.Sound-objects lying</span>
+                    <span class="c"># in memory after switching back from control to configuration)</span>
+                    <span class="n">sound_segments</span> <span class="o">=</span> <span class="p">[</span><span class="n">create_sound_segment</span><span class="p">(</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span> <span class="s">&quot;type&quot;</span><span class="p">),</span>
+                                                           <span class="n">unsaved_changes_method</span><span class="p">,</span>
+                                                           <span class="o">*</span><span class="p">[</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+                                                             <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get_param_list</span><span class="p">(</span><span class="n">segment_obj</span><span class="p">,</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">segment_attributes</span><span class="p">[</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span> <span class="s">&quot;type&quot;</span><span class="p">)],</span>
+                                                                <span class="bp">True</span><span class="p">)])</span>
+                                      <span class="k">for</span> <span class="n">segment_obj</span> <span class="ow">in</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span>
+                                                                     <span class="s">&quot;sound_segments&quot;</span><span class="p">)]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Die Datei besitzt noch keine &quot;</span>
+                                 <span class="s">&quot;Geräusch-Informationen.&quot;</span><span class="p">)</span>
+                    <span class="n">sound_segments</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sound_segments</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sound_segments</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span> <span class="s">&quot;event_sounds&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span> <span class="s">&quot;event_sounds&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">EventSound</span><span class="p">(</span><span class="n">unsaved_changes_method</span><span class="p">,</span>
+                                                  <span class="o">*</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get_param_list</span><span class="p">(</span><span class="n">event_sound_obj</span><span class="p">,</span>
+                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">event_sound_attributes</span><span class="p">))</span>
+                                       <span class="k">for</span> <span class="n">event_sound_obj</span> <span class="ow">in</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_obj</span><span class="p">,</span>
+                                                                          <span class="s">&quot;event_sounds&quot;</span><span class="p">)])</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="o">*</span><span class="n">param_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="bp">None</span>
+             
+        <span class="k">return</span> <span class="n">Loco</span><span class="p">(</span><span class="n">unsaved_changes_method</span><span class="p">,</span>
+                    <span class="n">functions</span><span class="p">,</span>
+                    <span class="n">speed_func</span><span class="p">,</span>
+                    <span class="n">function_sounds</span><span class="p">,</span>
+                    <span class="n">engine</span><span class="p">,</span>
+                    <span class="o">*</span><span class="n">wrapper</span><span class="o">.</span><span class="n">get_param_list</span><span class="p">(</span><span class="n">loco_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loco_attributes</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="JsonModel.load"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the object-tree from a Json-file specified by *file_path*. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">Config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">notice_unsaved_changes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locos</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_loco</span><span class="p">(</span><span class="n">loco_dict</span><span class="p">,</span>
+                                       <span class="n">DictWrapper</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">loco_dict</span> <span class="ow">in</span> <span class="n">Config</span><span class="p">[</span><span class="s">&quot;locos&quot;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">,</span>
+                             <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_dict</span><span class="p">(</span><span class="n">Config</span><span class="p">[</span><span class="s">&quot;server&quot;</span><span class="p">],</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">server_attributes</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">joystick</span> <span class="o">=</span> <span class="n">Joystick</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">,</span>
+                                 <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_dict</span><span class="p">(</span><span class="n">Config</span><span class="p">[</span><span class="s">&quot;joystick&quot;</span><span class="p">],</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">joystick_attributes</span><span class="p">))</span>
+        <span class="c"># due to a bug in previous 4.x.x-versions,</span>
+        <span class="c"># the sound was not saved in the config file -&gt; KeyError</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="n">Sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">,</span>
+                               <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_dict</span><span class="p">(</span><span class="n">Config</span><span class="p">[</span><span class="s">&quot;sound&quot;</span><span class="p">],</span>
+                                                              <span class="bp">self</span><span class="o">.</span><span class="n">sound_attributes</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sound</span> <span class="o">=</span> <span class="n">Sound</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unsaved_changes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_loco</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_unsaved_changes</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_opened_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Einstellungen wurden geladen aus &quot;</span> <span class="o">+</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notice_unsaved_changes</span> <span class="o">=</span> <span class="bp">True</span>
+    </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="JsonModel.get_param_list_from_dict"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.get_param_list_from_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_param_list_from_dict</span><span class="p">(</span><span class="n">config_dict</span><span class="p">,</span> <span class="n">attribute_list</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses a dictionary *config_dict* and *attribute_list*</span>
+<span class="sd">        to create a parameter-list which can be fed into a constructor of</span>
+<span class="sd">        an object.</span>
+<span class="sd">        *attribute_list* is a list of tuples of the form</span>
+<span class="sd">        ``[(&quot;attribute_name&quot;, default_value), ...]``. The default values</span>
+<span class="sd">        are used, if *config_dict* has no key for the respective</span>
+<span class="sd">        *attribute_name*. If the *ignore* flag is set to ``false`` (default)</span>
+<span class="sd">        a warning is printed if a fallback to default values happens.</span>
+<span class="sd">        </span>
+<span class="sd">        Example: You could create a new :class:`Server`-object like this::</span>
+<span class="sd">        </span>
+<span class="sd">            server_dict = {&quot;host&quot;: &quot;localhost&quot;,</span>
+<span class="sd">                           &quot;port&quot;: 4303}</span>
+<span class="sd">            server = Server(self.unsaved_changes,</span>
+<span class="sd">                            *self.get_param_list_from_dict(server_dict,</span>
+<span class="sd">                                                           self.server_attributes),</span>
+<span class="sd">                            True)</span>
+<span class="sd">            # &#39;server_dict&#39; doesn&#39;t contain all needed keys, so the</span>
+<span class="sd">            # default-values in self.server_attributes will be used</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">param_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attrib</span><span class="p">,</span> <span class="n">standard_value</span> <span class="ow">in</span> <span class="n">attribute_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="n">attrib</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">standard_value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore</span><span class="p">:</span>
+                    <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Dateiformat inkorrekt: Attribut&quot;</span><span class="p">,</span>
+                                 <span class="n">attrib</span><span class="p">,</span>
+                                 <span class="s">&quot;ist nicht enthalten, es wurde der Standardwert&quot;</span><span class="p">,</span>
+                                 <span class="n">standard_value</span><span class="p">,</span>
+                                 <span class="s">&quot;verwendet.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># convert all unicode-objects into</span>
+                <span class="c"># utf-8-bytestrings to avoid ascii-related problems</span>
+                <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">JsonModel</span><span class="o">.</span><span class="n">get_utf8_bytestring</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">param_list</span>
+    </div>
+<div class="viewcode-block" id="JsonModel.save_opened_file"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.save_opened_file">[docs]</a>    <span class="k">def</span> <span class="nf">save_opened_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stores the *file_path* of the currently opened</span>
+<span class="sd">        file in :file:`last_file.json` which will be placed</span>
+<span class="sd">        in the current working directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_file</span> <span class="o">!=</span> <span class="n">file_path</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;last_file.json&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s">&quot;last_file&quot;</span><span class="p">:</span> <span class="n">file_path</span><span class="p">},</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_file</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened_file</span> <span class="o">=</span> <span class="n">file_path</span>
+    </div>
+<div class="viewcode-block" id="JsonModel.create_copy"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.create_copy">[docs]</a>    <span class="k">def</span> <span class="nf">create_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a new :class:`JsonModel`-instance, whose object-tree is</span>
+<span class="sd">        identical, except that it is a recursive copy of the existing one.</span>
+<span class="sd">        This means, that the new instance and the original one don&#39;t share</span>
+<span class="sd">        any objects, only the tree-structure and the values of the objects</span>
+<span class="sd">        attributes.</span>
+<span class="sd">        This allows the :mod:`control_ui` module to modify its own copy of</span>
+<span class="sd">        the configuration without destroying the original one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+                        <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">server_attributes</span><span class="p">))</span>
+        <span class="n">joystick</span> <span class="o">=</span> <span class="n">Joystick</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+                            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">joystick</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">joystick_attributes</span><span class="p">))</span>
+        <span class="n">sound</span> <span class="o">=</span> <span class="n">Sound</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_list_from_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sound</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">sound_attributes</span><span class="p">))</span>
+         
+        <span class="n">locos</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">create_loco</span><span class="p">(</span><span class="n">loco</span><span class="p">,</span>
+                                  <span class="n">ObjectWrapper</span><span class="p">,</span>
+                                  <span class="bp">None</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">loco</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locos</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">JsonModel</span><span class="p">(</span><span class="n">locos</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">joystick</span><span class="p">,</span> <span class="n">sound</span><span class="p">)</span>
+        </div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="JsonModel.get_param_list_from_object"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.get_param_list_from_object">[docs]</a>    <span class="k">def</span> <span class="nf">get_param_list_from_object</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span>
+                                   <span class="n">attribute_list</span><span class="p">,</span>
+                                   <span class="n">unused_ignore</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses an object *obj* and *attribute_list*</span>
+<span class="sd">        to create a parameter-list which can be fed into a constructor of</span>
+<span class="sd">        a new object. Works similar to :func:`get_param_list_from_dict`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">param_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attrib</span><span class="p">,</span> <span class="n">standard_value</span> <span class="ow">in</span> <span class="n">attribute_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attrib</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">standard_value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">param_list</span>
+    </div>
+<div class="viewcode-block" id="JsonModel.unsaved_changes"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.json_model.JsonModel.unsaved_changes">[docs]</a>    <span class="k">def</span> <span class="nf">unsaved_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        To be called whenever an action changes the JsonModel-object.</span>
+<span class="sd">        Normally this is done using :class:`UnsavedChangesHandler`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">notice_unsaved_changes</span><span class="p">:</span>
+            <span class="n">locked_print</span><span class="p">(</span><span class="s">&quot;Attribute &#39;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39; of object &#39;&quot;</span> <span class="o">+</span>
+                         <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;&#39; has new value:&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_unsaved_changes</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="c"># if method has been setup, call it</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened_file</span> <span class="o">!=</span> <span class="bp">None</span> \
+            <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;new_unsaved_changes_method&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_unsaved_changes_method</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Moritz Renftle.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'5.0.0 beta',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

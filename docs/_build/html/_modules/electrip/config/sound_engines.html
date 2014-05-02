@@ -1,0 +1,296 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>electrip.config.sound_engines &mdash; Electrip 5.0.0 beta documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Electrip 5.0.0 beta documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../../index.html" class="fa fa-home"> Electrip</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../electrip.html">electrip Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.configuration_ui"><tt class="docutils literal"><span class="pre">configuration_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.constants"><tt class="docutils literal"><span class="pre">constants</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.control_ui"><tt class="docutils literal"><span class="pre">control_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.dialog_templates"><tt class="docutils literal"><span class="pre">dialog_templates</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.main"><tt class="docutils literal"><span class="pre">main</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.concurrent"><tt class="docutils literal"><span class="pre">concurrent</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.pygame_io"><tt class="docutils literal"><span class="pre">pygame_io</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.srcpd_setup_assistant"><tt class="docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.utils"><tt class="docutils literal"><span class="pre">utils</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.widgets"><tt class="docutils literal"><span class="pre">widgets</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Electrip</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>electrip.config.sound_engines</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for electrip.config.sound_engines</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: UTF 8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Contains the different sound implementations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">unsaved_changes</span> <span class="kn">import</span> <span class="n">UnsavedChangesHandler</span>
+<span class="kn">from</span> <span class="nn">sound_function</span> <span class="kn">import</span> <span class="n">SoundFunction</span>
+
+<div class="viewcode-block" id="EngineType"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.sound_engines.EngineType">[docs]</a><span class="k">class</span> <span class="nc">EngineType</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines all possible engine types</span>
+<span class="sd">    for sound generation.</span>
+<span class="sd">    </span>
+<span class="sd">        * *STEAM*: A steam engine</span>
+<span class="sd">        * *DIESEL*: A diesel engine</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">STEAM</span> <span class="o">=</span> <span class="s">&quot;steam&quot;</span>
+    <span class="n">DIESEL</span> <span class="o">=</span> <span class="s">&quot;diesel&quot;</span>
+</div>
+<div class="viewcode-block" id="create_engine"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.sound_engines.create_engine">[docs]</a><span class="k">def</span> <span class="nf">create_engine</span><span class="p">(</span><span class="n">engine_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a newly created &#39;Engine&#39;</span>
+<span class="sd">    according to &#39;engine_type&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DieselEngine</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SteamEngine</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Engine"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.sound_engines.Engine">[docs]</a><span class="k">class</span> <span class="nc">Engine</span><span class="p">(</span><span class="n">UnsavedChangesHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract representation of an engine which</span>
+<span class="sd">    has some kind of sound.</span>
+<span class="sd">    *sound_segments* is a list of :class:`SoundSegment`-</span>
+<span class="sd">    objects defining the sound of the engine at</span>
+<span class="sd">    different speed-ranges.</span>
+<span class="sd">    *event_sounds* is a list of :class:`EventSound`-</span>
+<span class="sd">    objects defining sounds which should be played under</span>
+<span class="sd">    certain conditions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">save_status_method</span><span class="p">,</span>
+                 <span class="n">sound_segments</span><span class="p">,</span>
+                 <span class="n">event_sounds</span><span class="p">):</span>
+        <span class="n">UnsavedChangesHandler</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save_status_method</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_segments</span> <span class="o">=</span> <span class="n">sound_segments</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sound_segments</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sound_function</span> <span class="o">=</span> <span class="n">SoundFunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sound_segments</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sound_function</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">event_sounds</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_sounds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_sounds</span> <span class="o">=</span> <span class="n">event_sounds</span>
+</div>
+<div class="viewcode-block" id="DieselEngine"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.sound_engines.DieselEngine">[docs]</a><span class="k">class</span> <span class="nc">DieselEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Diesel-powered engine. It has *start_sound*,</span>
+<span class="sd">    *idle_sound* and *quit_sound* attributes,</span>
+<span class="sd">    which are strings containing the path</span>
+<span class="sd">    to the sound-files representing the off-on-transition,</span>
+<span class="sd">    idle-state and on-off-transition of the engine.</span>
+<span class="sd">    For *sound_segments* and *event_sounds* see</span>
+<span class="sd">    :class:`Engine`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">save_status_method</span><span class="p">,</span>
+                 <span class="n">start_sound</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">idle_sound</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">quit_sound</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">sound_segments</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">event_sounds</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Engine</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">save_status_method</span><span class="p">,</span>
+                        <span class="n">sound_segments</span><span class="p">,</span>
+                        <span class="n">event_sounds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">DIESEL</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_sound</span> <span class="o">=</span> <span class="n">start_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idle_sound</span> <span class="o">=</span> <span class="n">idle_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quit_sound</span> <span class="o">=</span> <span class="n">quit_sound</span>
+        </div>
+<div class="viewcode-block" id="SteamEngine"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.sound_engines.SteamEngine">[docs]</a><span class="k">class</span> <span class="nc">SteamEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    | A steam-powered engine.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        * *idle_sound*: sound which is played</span>
+<span class="sd">          continuously, base noise of a steam-engine</span>
+<span class="sd">        * *cylinder_steam_sound*: sound which is played</span>
+<span class="sd">          when the engine starts to move, simulating</span>
+<span class="sd">          steam coming out of the cylinder</span>
+<span class="sd">        * *nr_strokes*: the number of cylinder strokes</span>
+<span class="sd">          the engine performs (typically 4 on a 2 cylinder</span>
+<span class="sd">          engine)</span>
+<span class="sd">        * *stroke_start_delay*: the timespan the</span>
+<span class="sd">          *cylinder_steam_sound* is played before the</span>
+<span class="sd">          first stroke sound is played</span>
+<span class="sd">        * *wheel_diameter*: diameter of the traction wheels</span>
+<span class="sd">        * *min_freq*: minimal frequency of strokes / second,</span>
+<span class="sd">          helps to avoid extremely long pauses between strokes</span>
+<span class="sd">          at speeds near 0</span>
+<span class="sd">        * *sound_segments*: see :class:`Engine`</span>
+<span class="sd">        * *event_sounds*: see :class:`Engine`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">save_status_method</span><span class="p">,</span>
+                 <span class="n">idle_sound</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">cylinder_steam_sound</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">nr_strokes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                 <span class="n">stroke_start_delay</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+                 <span class="n">wheel_diameter</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+                 <span class="n">min_freq</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                 <span class="n">sound_segments</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">event_sounds</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">Engine</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">save_status_method</span><span class="p">,</span>
+                        <span class="n">sound_segments</span><span class="p">,</span>
+                        <span class="n">event_sounds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">EngineType</span><span class="o">.</span><span class="n">STEAM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idle_sound</span> <span class="o">=</span> <span class="n">idle_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cylinder_steam_sound</span> <span class="o">=</span> <span class="n">cylinder_steam_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_strokes</span> <span class="o">=</span> <span class="n">nr_strokes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_start_delay</span> <span class="o">=</span> <span class="n">stroke_start_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wheel_diameter</span> <span class="o">=</span> <span class="n">wheel_diameter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_freq</span> <span class="o">=</span> <span class="n">min_freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sound_segments</span> <span class="o">=</span> <span class="n">sound_segments</span>
+        </div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Moritz Renftle.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'5.0.0 beta',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
