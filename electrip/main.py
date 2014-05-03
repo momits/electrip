@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os.path import abspath
-from sys import path, argv
+import os, sys
 # add parent-directory to sys.path, to allow relative imports in submodules
-path.append(abspath(".."))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from socket import error as SocketError
 import gc
@@ -37,8 +36,8 @@ class MainWindow(Gtk.Window):
         self.main_grid = MainGrid(self)
         self.add(self.main_grid)
         
-        if len(argv) > 2 and (argv[1] == "-f" or argv[1] == "--file"):
-            file_path = argv[2]
+        if len(sys.argv) > 2 and (sys.argv[1] == "-f" or sys.argv[1] == "--file"):
+            file_path = sys.argv[2]
             success = self.main_grid.top_grid.load_button.load(file_path, self)
             if success:
                 self.main_grid.top_grid.config_control_switch.control_button.set_active(True)

@@ -237,8 +237,6 @@ class SpeedGraphFrame(Gtk.Overlay):
         self.add(frame)
         self.set_sensitive(False)
         
-#         # we cache the sound-bars to avoid heavy recreation
-#         self.segment_bars = {}
         # flag indicating whether the overlay-warn-frame
         # is shown
         self.warn_frame_active = False
@@ -254,6 +252,7 @@ class SpeedGraphFrame(Gtk.Overlay):
                             message,
                             accept_callback,
                             undo_callback):
+        self.control_point_popup.hide()
         self.warn_label.set_text(message)
         self.accept_callback = accept_callback
         self.undo_callback = undo_callback
@@ -277,6 +276,11 @@ class SpeedGraphFrame(Gtk.Overlay):
         self.warn_frame_active = False
     
     def load(self, loco):
+        if self.warn_frame_active:
+            self.undo_callback()
+            self.remove(self.warn_frame)
+            self.warn_frame_active = False
+        self.control_point_popup.hide()
         self.loco = loco
         self.graph.load(loco)
         self.engine_frame.load(loco)
@@ -884,14 +888,17 @@ class LocoTreeView(widgets.TreeView):
         self.set_vexpand(True)
 
     def loco_selected(self, treeview):
+        print "hey"
         path = self.get_cursor()[0]
         if path != None:
             row = path.get_indices()[0]
             Config.active_loco = Config.locos[row]
+            # attention: speed-frame must be loaded first, to ensure
+            # it is able to call its 'undo-callbacks' if needed
+            self.speed_frame.load(Config.active_loco)
             self.function_treeview.load(Config.active_loco.functions)
             self.loco_properties_frame.load(Config.active_loco)
             self.decoder_frame.load(Config.active_loco)
-            self.speed_frame.load(Config.active_loco)
         
     def append_loco(self, loco):
         return self.liststore.append([loco.name])
