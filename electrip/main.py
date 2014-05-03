@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
-# add parent-directory to sys.path, to allow relative imports in submodules
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+# add parent-directory to sys.path,
+# to allow relative imports in submodules
+sys.path.append(os.path.join(os.path.dirname(__file__),".."))
 
 from socket import error as SocketError
 import gc

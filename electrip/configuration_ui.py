@@ -888,7 +888,6 @@ class LocoTreeView(widgets.TreeView):
         self.set_vexpand(True)
 
     def loco_selected(self, treeview):
-        print "hey"
         path = self.get_cursor()[0]
         if path != None:
             row = path.get_indices()[0]
