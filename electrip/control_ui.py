@@ -135,9 +135,11 @@ class ControllerHub(Gtk.Grid):
                 for loco_id, gmp in enumerate(self.event_thread.gamepads):
                     self.mapping[gmp] = loco_id
                 
-                # 3. set auto-focus according to the number of gamepads and the global setting
-                self.auto_focus = len(self.event_thread.gamepads) == 1 \
-                                  and Config.joystick.use_auto_focus
+#                 # 3. set auto-focus according to the number of gamepads and the global setting
+#                 # NOTE: the behaviour of this setting was recently changed to not
+#                 # be restricted to one loco
+#                 self.auto_focus = len(self.event_thread.gamepads) == 1 \
+#                                   and Config.joystick.use_auto_focus
                 
                 self.accel_timeout_id = GObject.timeout_add(50, self.check_acceleration)
                 
@@ -278,8 +280,9 @@ class ControllerHub(Gtk.Grid):
         self.controllers[new_loco_id].gamepad_image.set_from_pixbuf(gamepad.pixbuf)
         
         # if auto-focus is active, make the controller focus itself in the window
-        if self.auto_focus:
-            self.controllers[new_loco_id].set_focus()
+        # using GObject.idle_add makes this work fluidly
+        if Config.joystick.use_auto_focus:
+            GObject.idle_add(self.controllers[new_loco_id].set_focus)
         
         self.mapping[gamepad] = new_loco_id
         
@@ -423,7 +426,8 @@ class SpeedScale(Gtk.Scale):
         self.set_orientation(Gtk.Orientation.VERTICAL)
         self.set_vexpand(True)
         self.set_adjustment(Gtk.Adjustment(0, 0, loco.max_speed,
-                                           0.01, 0, 0))
+                                           loco.max_speed / 50.0,
+                                           loco.max_speed / 20.0, 0))
         self.connect("value-changed",
                      self.speed_changed,
                      sound_controller)

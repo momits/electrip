@@ -26,7 +26,7 @@ class MainBox(Gtk.Notebook):
                                                          main_window)
         self.decoder_frame = DecoderFrame(self.speed_frame,
                                           main_window)
-
+        
         self.loco_scrolled_window = widgets.ScrolledTreeView(LocoTreeView(self.loco_properties_frame,
                                                                           self.decoder_frame,
                                                                           self.function_frame,
@@ -834,8 +834,8 @@ class JoystickTable(widgets.EntryTable):
                            "/Ausschalten des Lok-Geräuschs",
                            "sound_button")
         self.add_bool_entry("Auto-Fokus",
-                            "Ausgewählte Lok immer fokussieren "
-                            "wenn nur ein Gamepad angeschlossen ist",
+                            "Beim Lok-Wechsel mit dem Gamepad "
+                            "die neue Lok fokussieren",
                             "use_auto_focus")
         self.add_bool_entry("Button-Nr",
                             "Nummer des zugehörigen Gamepad-Buttons "
