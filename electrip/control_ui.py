@@ -157,8 +157,9 @@ class ControllerHub(Gtk.Grid):
                                                    self.event_thread))
             self.add(self.controllers[i])
         
-        for nr, gmp in enumerate(self.event_thread.gamepads):
-            self.controllers[nr].gamepad_image.set_from_pixbuf(gmp.pixbuf)
+        if pygame_io.pygame_installed:
+            for nr, gmp in enumerate(self.event_thread.gamepads):
+                self.controllers[nr].gamepad_image.set_from_pixbuf(gmp.pixbuf)
     
     def gamepad_button_pressed(self, gamepad, button):
         """
@@ -316,7 +317,7 @@ class ControllerHub(Gtk.Grid):
     def quit(self):
         if hasattr(self, "accel_timeout_id"):
             GObject.source_remove(self.accel_timeout_id)
-        if hasattr(self, "event_thread"):
+        if self.event_thread:
             self.event_thread.quit()
 
 class LocoController(Gtk.Grid):
