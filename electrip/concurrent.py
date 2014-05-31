@@ -26,7 +26,7 @@ class SocketThread(threading.Thread):
     communication from a client-perspective:
     It sends commands and the other side (the server) has
     to reply with information about its new state or errors.
-    Provides non-blocking methods to add commands to the
+    Provides (non-)blocking methods to add commands to the
     internal queue, the reply will be printed as soon as it
     was received using :func:`locked_print`.
     Prints error messages if more than 20 unanswered
@@ -50,6 +50,20 @@ class SocketThread(threading.Thread):
             self.msg_queue.put(cmd, False)
         except Queue.Full:
             locked_print("Socket-Fehler: Mehr als 20 unbeantwortete Befehle.")
+    
+    def send_and_block_for_answer(self, cmd):
+        """
+        Blocking method which sends *cmd*, waits for the
+        answer and then prints out both in a pretty format.
+        """
+        try:
+            self.socket.send(cmd)
+        except timeout:
+            locked_print("Zeitüberschreitung beim "
+                         "Senden des Befehls:\n" + cmd)
+        else:
+            locked_print("SEND>>: " + cmd,
+                         "RECV<<:" + self.wait_for_answer())
     
     def wait_for_answer(self):
         """

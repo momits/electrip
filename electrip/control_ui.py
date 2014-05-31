@@ -71,16 +71,19 @@ class MainBox(Gtk.Grid):
                                                                     Config.server.port)))
         self.socket_thread.start()
         
+        # we will use blocking socket methods to ensure
+        # correct sequential order of commands and avoid
+        # overflow errors
         #-------- Handshake ----------
         locked_print("Socket-Verbindung ist aktiv:\n",
                      self.socket_thread.wait_for_answer())
         for msg in handshake:
-            self.socket_thread.send_and_wait_for_answer(msg)
+            self.socket_thread.send_and_block_for_answer(msg)
         
         # ---------- Initialize Locos -------------
         for loco in Config.locos:
             # nr_functions_to_send is NOT the same as len(loco.functions),
-            # but the highest decoder-function-nr
+            # but rather the highest decoder-function-nr
             if len(loco.functions) > 0:
                 nr_functions_to_send = max(function.nr + 1
                                            for function in loco.functions)
@@ -89,10 +92,10 @@ class MainBox(Gtk.Grid):
             loco_srcp_init = "INIT " + bus + " GL " + str(loco.address) + " " + \
                    str(loco.protocol) + " " + str(int(loco.speed_steps)) + \
                    " " + str(nr_functions_to_send) + "\n"
-            self.socket_thread.send_and_wait_for_answer(loco_srcp_init)
+            self.socket_thread.send_and_block_for_answer(loco_srcp_init)
             
             loco_srcp_status = loco.get_srcp_status(Config.server.bus)
-            self.socket_thread.send_and_wait_for_answer(loco_srcp_status)
+            self.socket_thread.send_and_block_for_answer(loco_srcp_status)
         
 class ScrolledWindow(Gtk.ScrolledWindow):
     def __init__(self, socket_thread, emergency_button):
