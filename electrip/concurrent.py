@@ -27,8 +27,8 @@ class SocketThread(threading.Thread):
     It sends commands and the other side (the server) has
     to reply with information about its new state or errors.
     Provides (non-)blocking methods to add commands to the
-    internal queue, the reply will be printed as soon as it
-    was received using :func:`locked_print`.
+    internal queue, the reply will be printed in a pretty format
+    using :func:`locked_print` as soon as it was received.
     Prints error messages if more than 20 unanswered
     commands are pending in the queue or *timeout* is
     reached.
@@ -55,6 +55,7 @@ class SocketThread(threading.Thread):
         """
         Blocking method which sends *cmd*, waits for the
         answer and then prints out both in a pretty format.
+        Returns an error message if timeout was reached.
         """
         try:
             self.socket.send(cmd)
@@ -67,8 +68,9 @@ class SocketThread(threading.Thread):
     
     def wait_for_answer(self):
         """
-        Blocks for a server-reply until
-        the timeout is reached.
+        Blocks for a server-reply and
+        returns it. Returns an error message if
+        timeout was reached.
         """
         try:
             ans = self.socket.recv(4096)
