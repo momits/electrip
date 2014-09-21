@@ -352,6 +352,7 @@ class SoundController(GObject.GObject):
         """
         Plays shutdown sound if the engine is not moving
         and makes sure there is no sound emission afterwards.
+        To be implemented in a child class.
         """
         raise NotImplementedError()
     

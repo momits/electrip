@@ -18,6 +18,7 @@ class MainBox(Gtk.Notebook):
     """
     def __init__(self, config, main_window):
         Gtk.Notebook.__init__(self)
+        
         global Config
         Config = config
         self.function_frame = FunctionFrame()
@@ -60,11 +61,12 @@ class MainBox(Gtk.Notebook):
                                          0, 2, 2, 1)
         self.scrolled_window_loco_properties.add_with_viewport(self.loco_properties_grid)
         
-        horizontal_grid = Gtk.Grid()
-        horizontal_grid.add(self.loco_grid)
-        horizontal_grid.add(self.scrolled_window_loco_properties)
-        horizontal_grid.add(Gtk.Separator.new(Gtk.Orientation.VERTICAL))
-        self.append_page(horizontal_grid, Gtk.Label("Lokomotiven"))
+        paned = Gtk.Paned()
+        paned.set_orientation(Gtk.Orientation.HORIZONTAL)
+#         paned.set_position(160)
+        paned.add1(self.loco_grid)
+        paned.add2(self.scrolled_window_loco_properties)
+        self.append_page(paned, Gtk.Label("Lokomotiven"))
         
         self.server_table = ServerTable()
         self.append_page(widgets.TopAlignment(self.server_table),
@@ -1299,8 +1301,8 @@ class EngineFrame(Gtk.Frame):
                                             "Geräusch beim Ausströmen von Dampf "
                                             "aus den Zylindern",
                                             "cylinder_steam_sound")
-            self.table.add_int_entry("Takte",
-                                     "Anzahl der Zylinder-Takte der Dampflok",
+            self.table.add_int_entry("Schläge",
+                                     "Anzahl der Zylinderschläge der Dampflok",
                                      "nr_strokes")
             self.table.add_float_entry("Dampfablass-Dauer",
                                        "Zeit in der Dampf aus den Zylindern strömt "
@@ -1310,9 +1312,9 @@ class EngineFrame(Gtk.Frame):
                                        "Durchmesser eines Antriebsrades in m",
                                        "wheel_diameter",
                                        0.1, 99, 0.001)
-            self.table.add_float_entry("Minimale Taktfrequenz",
+            self.table.add_float_entry("Minimale Schlagfrequenz",
                                        "Die kleinstmögliche Frequenz in "
-                                       "Takten pro s",
+                                       "Schlägen pro s",
                                        "min_freq")
             
         self.table.add_action_button("Geräusch-Ereignisse",
@@ -1636,13 +1638,13 @@ class SteamSoundSelectorButton(SoundSelectorButton):
         self.update_stroke_sounds()
         for stroke_nr in xrange(self.segment_bar.loco.engine.nr_strokes):
             button = widgets.EasyFileButton([SoundFileFilter()])
-            button.set_tooltip_text("Geräusch für Zylindertakt " + str(stroke_nr + 1))
+            button.set_tooltip_text("Geräusch für Zylinderschlag " + str(stroke_nr + 1))
             path = self.segment.stroke_sounds[stroke_nr]
             if path != None:
                 button.set_value(path)
                 
             button.connect("file-set", self.file_set, stroke_nr)
-            label = Gtk.Label("Takt " + str(stroke_nr + 1))
+            label = Gtk.Label("Schlag " + str(stroke_nr + 1))
             label.set_halign(Gtk.Align.CENTER)
             grid.attach(label, 0, stroke_nr, 1, 1)
             grid.attach(button, 1, stroke_nr, 1, 1)
