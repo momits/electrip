@@ -32,7 +32,7 @@ class LocoFunction(UnsavedChangesHandler):
         
     def toggle(self):
         """
-        Toggles the state of the funtion.
+        Toggles the state of the function.
         """
         self.state = not self.state
         
@@ -61,29 +61,47 @@ class EventSound(LocoFunction):
     for the sound-file at *file_path* to be played.
     The sound should be played if
     
+        * *direction* == `loco.direction`
         * *min_speed* <= ``loco.speed`` <=  *max_speed*
         * *min_accel* <= ``derivation of loco.speed`` <=  *max_accel*
+        
+    If you set a parameter to ``None`` it won't be taken into
+    account.
+    *fade_in* and *fade_out* specify fade times for the sound.
+    The sound is only faded out, if the conditions for playback
+    were not met anymore before playback reached the end of
+    the sound.
+    If *play_to_end* is ``True``, the sound is always played until
+    it ends, *fade_out* then has no effect at all.
     """
     def __init__(self,
                  save_status_method,
                  name="",
-                 file_path=None,
                  state=True,
+                 button=0,
+                 file_path=None,
+                 direction=None,
                  min_speed=None,
                  max_speed=None,
                  min_accel=None,
                  max_accel=None,
-                 button=0):
+                 fade_in=0,
+                 fade_out=0,
+                 play_to_end=False):
         LocoFunction.__init__(self,
                               save_status_method,
                               name,
                               state,
                               button)
         self.file_path = file_path
+        self.direction = direction
         self.min_speed = min_speed
         self.max_speed = max_speed
         self.min_accel = min_accel
         self.max_accel = max_accel
+        self.fade_in = fade_in
+        self.fade_out = fade_out
+        self.play_to_end = play_to_end
         
 class FunctionSound(LocoFunction):
     """

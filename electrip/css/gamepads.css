@@ -1,0 +1,97 @@
+
+@define-color opaque_white rgba(255, 255, 255, 0.45);
+
+/* Base state */
+
+.loco-controller {
+	background: none;
+	border: none;
+	border-radius: 5px;
+}
+
+/* Any Gamepad */
+
+.loco-controller.has-gamepad {
+	color: white;
+}
+
+.loco-controller.has-gamepad .loco-label {
+	color: white;
+	font-weight: bold;
+}
+
+.loco-controller.has-gamepad .reverser GtkImage.left-arrow {
+    background-image: url("../icons/arrows/left_light_white.svg");
+}
+
+.loco-controller.has-gamepad .reverser .right-arrow {
+    background-image: url("../icons/arrows/right_bold_white.svg");
+}
+
+.loco-controller.has-gamepad .reverser.point-left .left-arrow {
+    background-image: url("../icons/arrows/left_bold_white.svg");
+}
+
+.loco-controller.has-gamepad .reverser.point-left .right-arrow {
+    background-image: url("../icons/arrows/right_light_white.svg");
+}
+
+.loco-controller.has-gamepad .loco-speed-scale.slider {
+	background: -gtk-gradient (linear, 0 0, 0 1,
+                               color-stop(0, rgb(135, 135, 135)),
+                               color-stop(1, rgb(80, 80, 80)));
+    border-color: rgb(63, 63, 63);
+}
+
+.loco-controller.has-gamepad .loco-speed-scale.trough {
+	background: rgb(145, 145, 145);
+    border-color: rgb(108, 108, 108);
+}
+
+/* Gamepad 0 */
+
+.loco-controller.has-gamepad-0 {
+	background: shade(#5696bc, 1.2);
+}
+
+/* Gamepad 1 */
+
+.loco-controller.has-gamepad-1 {
+	background: #f39d41;
+}
+
+/* Gamepad 2 */
+
+.loco-controller.has-gamepad-2 {
+	background: shade(#e66d5e, 1.15);
+}
+
+/*
+.loco-controller.has-gamepad-0 .reverser GtkImage.left-arrow {
+    background-image: url("../icons/arrows/left_light_white.svg");
+}
+
+.loco-controller.has-gamepad-0 .reverser .right-arrow {
+    background-image: url("../icons/arrows/right_bold_white.svg");
+}
+
+.loco-controller.has-gamepad-0 .reverser.point-left .left-arrow {
+    background-image: url("../icons/arrows/left_bold_white.svg");
+}
+
+.loco-controller.has-gamepad-0 .reverser.point-left .right-arrow {
+    background-image: url("../icons/arrows/right_light_white.svg");
+}
+
+.loco-controller.has-gamepad-0 .loco-speed-scale.slider {
+	background: -gtk-gradient (linear, 0 0, 0 1,
+                               color-stop(0, rgb(135, 135, 135)),
+                               color-stop(1, rgb(80, 80, 80)));
+    border-color: rgb(63, 63, 63);
+}
+
+.loco-controller.has-gamepad-0 .loco-speed-scale.trough {
+	background: rgb(145, 145, 145);
+    border-color: rgb(108, 108, 108);
+}
+*/

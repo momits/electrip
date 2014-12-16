@@ -42,18 +42,13 @@ class Engine(UnsavedChangesHandler):
     """
     def __init__(self,
                  save_status_method,
-                 sound_segments,
-                 event_sounds):
+                 sound_segments):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.sound_segments = sound_segments
         if self.sound_segments != None:
             self.sound_function = SoundFunction(self.sound_segments)
         else:
             self.sound_function = None
-        if event_sounds == None:
-            self.event_sounds = []
-        else:
-            self.event_sounds = event_sounds
 
 class DieselEngine(Engine):
     """
@@ -70,12 +65,10 @@ class DieselEngine(Engine):
                  start_sound=None,
                  idle_sound=None,
                  quit_sound=None,
-                 sound_segments=None,
-                 event_sounds=None):
+                 sound_segments=None):
         Engine.__init__(self,
                         save_status_method,
-                        sound_segments,
-                        event_sounds)
+                        sound_segments)
         self.type = EngineType.DIESEL
         self.start_sound = start_sound
         self.idle_sound = idle_sound
@@ -112,12 +105,10 @@ class SteamEngine(Engine):
                  stroke_start_delay=2.0,
                  wheel_diameter=1.2,
                  min_freq=0.2,
-                 sound_segments=None,
-                 event_sounds=None):
+                 sound_segments=None):
         Engine.__init__(self,
                         save_status_method,
-                        sound_segments,
-                        event_sounds)
+                        sound_segments)
         self.type = EngineType.STEAM
         self.idle_sound = idle_sound
         self.cylinder_steam_sound = cylinder_steam_sound

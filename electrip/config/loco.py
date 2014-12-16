@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: UTF 8 -*-
 
 from unsaved_changes import UnsavedChangesHandler
 from linear_segment_function import LinearSegmentFunction
+import time
 
 class Loco(UnsavedChangesHandler):
     """
@@ -13,6 +14,7 @@ class Loco(UnsavedChangesHandler):
                  functions=None,
                  speed_to_step_func=None,
                  function_sounds=None,
+                 event_sounds=None,
                  engine=None,
                  name="Unbenannte Lok",
                  speed_steps=128,
@@ -33,17 +35,28 @@ class Loco(UnsavedChangesHandler):
             self.functions = []
         else:
             self.functions = functions
-        self.speed_steps = speed_steps
+        
         if speed_to_step_func == None:
             self.speed_to_step_func = LinearSegmentFunction()
             self.speed_to_step_func.load([(0.0, 0.0), (100.0, 128.0)])
         else:
             self.speed_to_step_func = speed_to_step_func
+        
         if function_sounds == None:
             self.function_sounds = []
         else:
             self.function_sounds = function_sounds
+        
+        if event_sounds == None:
+            self.event_sounds = []
+        else:
+            self.event_sounds = event_sounds
+            
+        self.engine = engine
+        
         self.name = name
+        self.speed_steps = speed_steps
+        self.max_speed = max_speed
         self.address = address
         self.protocol = protocol
 
@@ -51,14 +64,37 @@ class Loco(UnsavedChangesHandler):
         self.decel_duration = decel_duration
         self.direction = direction
         self.img_path = img_path
-        self.max_speed = max_speed
-        self.speed = 0.0
+        
+        # property 'speed' with getters and setters is used
+        # to automatically update 'acceleration'
+        self._speed = 0.0
+        self._last_speed = 0.0
+        self.acceleration = 0.0
+        self._last_time = 0
+        
         self.speed_step = 0.0
         self.last_speed_step = 0
         
         self.sound_volume = sound_volume
-        self.engine = engine
+    
+    @property
+    def speed(self):
+        return self._speed
+    
+    @speed.setter
+    def speed(self, value):
+        if value != self._speed:
+            self._speed = value
+            current_time = time.time()
+            self.acceleration = (self._speed - self._last_speed) / \
+                (current_time - self._last_time)
+            self._last_time = current_time
+            self._last_speed = self._speed
 
+    @speed.deleter
+    def speed(self):
+        del self._speed
+    
     def get_srcp_status(self, bus):
         """
         Returns a SRCP-command representing the current
@@ -77,25 +113,5 @@ class Loco(UnsavedChangesHandler):
                 + str(int(self.direction)) + " " + str(int(self.speed_step)) \
                 + " " + str(self.speed_steps) + functions + "\n"
     
-    def accelerate(self, value):
-        """
-        Accelerates the loco by *value*. *value* must be a float
-        between -1 and 1 representing the acceleration rate.
-        If *value* is positive, the loco is accelerated
-        with respect to ``loco.accel_duration``, if negative
-        ``loco.decel_duration``.
-        Returns the new speed of the loco.
-        """
-        if value >= 0:
-            self.speed = min(self.max_speed,
-                             max(0,
-                                 self.speed + value *
-                                 (0.05 / self.accel_duration * self.max_speed)))
-        else:
-            self.speed = min(self.max_speed,
-                             max(0, self.speed + value *
-                                 (0.05 / self.decel_duration * self.max_speed)))
-        return self.speed
-        
     def toggle_direction(self):
         self.direction = not self.direction

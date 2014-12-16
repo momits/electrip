@@ -1,0 +1,23 @@
+
+@import url("control.css");
+
+
+/* ------------------
+CustomHandlePaned    |
+--------------------*/
+
+GtkPaned.custom-handle-paned {
+	-GtkPaned-handle-size: 6px;
+}
+
+GtkPaned.custom-handle-paned.pane-separator {
+	background-image: url("../icons/sound-bar-pane-handle3.png");
+}
+
+/* ------------------
+Warning frame        |
+--------------------*/
+
+GtkEventBox#warn-box {
+	background: rgb(250, 200, 200);
+}

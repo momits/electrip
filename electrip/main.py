@@ -1,20 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-
-import os, sys
-# add parent-directory to sys.path,
-# to allow relative imports in submodules
-sys.path.append(os.path.join(os.path.dirname(__file__),".."))
 
 from socket import error as SocketError
 import gc
 import argparse
 
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import GObject, Gtk, GdkPixbuf, Gdk, Gio, GLib
 
 from electrip.concurrent import locked_print
 from electrip.constants import ELECTRIP_VERSION, ICON_PATHS
-from electrip.widgets import StockImageButton
 from electrip.config import JsonModel
 from electrip import configuration_ui
 from electrip import control_ui
@@ -29,6 +25,12 @@ class Electrip(Gtk.Application):
     of `config.JsonModel`
     """
     def __init__(self):
+        global Config
+        Config = JsonModel()
+        
+        # Needed to start parallel threads later on:
+        GObject.threads_init()
+        
         Gtk.Application.__init__(self,
                                  application_id="apps.momits.electrip",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
@@ -60,17 +62,13 @@ class Electrip(Gtk.Application):
         self.quitting = False
         self.control_box = None
         
-        try:
-            screen = Gdk.Screen.get_default()
-            css_provider = Gtk.CssProvider()
-            css_provider.load_from_path("gtk_styles_and_transitions.css")
-            context = Gtk.StyleContext()
-            context.add_provider_for_screen(screen,
-                                            css_provider,
-                                            Gtk.STYLE_PROVIDER_PRIORITY_USER)
-        # Electrip shouldn't break if special themeing is not available
-        except:
-            pass
+        screen = Gdk.Screen.get_default()
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_path("css/electrip.css")
+        context = Gtk.StyleContext()
+        context.add_provider_for_screen(screen,
+                                        css_provider,
+                                        Gtk.STYLE_PROVIDER_PRIORITY_USER)
     
         
     def do_command_line(self, args):
@@ -95,6 +93,9 @@ class Electrip(Gtk.Application):
                                  "on_view_switched": self.toggle_view})
         
         self.window = builder.get_object("electrip_main_window")
+        self.window.set_title("Electrip " + ELECTRIP_VERSION)
+        self.window.set_icon_list([GdkPixbuf.Pixbuf.new_from_file(path)
+                                   for path in ICON_PATHS])
         self.add_window(self.window)
         
         self.config_box = configuration_ui.MainBox(Config, self.window)
@@ -145,7 +146,7 @@ class Electrip(Gtk.Application):
                               "Konnte Konfiguration nicht laden.")
             return False
         except IOError:
-            self.error_dialog("Der Dateipfad ist ungültig!"
+            self.error_dialog("Der Dateipfad ist ungültig! "
                               "Konnte Konfiguration nicht laden.")
             return False
         except KeyError:
@@ -285,13 +286,3 @@ class Electrip(Gtk.Application):
                                          warning)
         error_dialog.run()
         error_dialog.destroy()
-
-if __name__ == "__main__":
-    Config = JsonModel()
-    # Needed to start threads:
-    GObject.threads_init()
-    start_msg = " Starting Electrip Version "+ ELECTRIP_VERSION + " "
-    line = " " + "-" * len(start_msg) + " "
-    locked_print(line + "\n|" + start_msg + "|\n" + line)
-    app = Electrip()
-    app.run(sys.argv)

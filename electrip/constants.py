@@ -7,17 +7,12 @@ from os.path import normpath as _
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "5.0.8"
+ELECTRIP_VERSION = "5.3.6"
 
 ICON_PATHS = (_("icons/logo_icon_128.png"),
               _("icons/logo_icon_64.png"),
               _("icons/logo_icon_48.png"),
               _("icons/logo_icon_32.png"))
-
-CIRCLE_PATHS = {"loco_function": _("icons/loco_function_circle.png"),
-                "function_sound": _("icons/function_sound_circle.png"),
-                "event_sound": _("icons/event_sound_circle.png"),
-                "speed_sound": _("icons/speed_sound_circle.png")}
 
 RELOAD_GRAPH_IMAGE_PATH = _("icons/reload_graph.png")
 

@@ -844,7 +844,7 @@ class TreeView(Gtk.TreeView):
                 liststore[path][column_nr] = new_value
                 self.save_changes(path, column_nr, new_value)
         
-        elif self.column_types[column_nr] == GObject.TYPE_DOUBLE:
+        elif self.column_types[column_nr] == GObject.TYPE_FLOAT:
             try:
                 # dot needed for float-conversion (instead of comma)
                 new_value = float(new_value.replace(",", "."))
@@ -875,13 +875,13 @@ class TreeView(Gtk.TreeView):
 class CustomHandlePaned(Gtk.Paned):
     """
     A :class:`Gtk.Paned` with ``30px`` height.
-    Can be accessed via CSS using the name
+    Can be accessed via CSS using the class
     'custom-handle-paned'.
     """
     def __init__(self):
         Gtk.Paned.__init__(self)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.set_name("custom-handle-paned")
+        self.get_style_context().add_class("custom-handle-paned")
         self.set_hexpand(True)
         # Attention: these values only fit to the shipped handle-icon!
         self.set_size_request(-1, 30)
@@ -922,7 +922,8 @@ class Popup(Gtk.Window):
         self.connect("delete-event", self.delete_event)
         if type_hint != None:
             self.set_type_hint(type_hint)
-        self.main_window = main_window
+        self.set_transient_for(main_window)
+        self.set_modal(True)
         
     def show_at_mouse(self):
         """
@@ -930,7 +931,6 @@ class Popup(Gtk.Window):
         position of the mouse-pointer.
         """
         self.set_position(Gtk.WindowPosition.MOUSE)
-        self.set_transient_for(self.main_window)
         self.show_all()
         
     def show_at_center(self):
@@ -939,7 +939,6 @@ class Popup(Gtk.Window):
         of the screen.
         """
         self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_transient_for(self.main_window)
         self.show_all()
     
     # can be called multiple times

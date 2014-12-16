@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: UTF-8 -*-
 
 from gi.repository import GdkPixbuf, GObject
 
-from os.path import normpath
+from os.path import isfile
 import threading
 import time
 from math import pi
@@ -32,13 +32,14 @@ class Gamepad:
         self.pygame_joystick = pygame.joystick.Joystick(pygame_id)
         self.pygame_joystick.init()
         self.pygame_id = pygame_id
-        self.pixbuf = GdkPixbuf.Pixbuf.new_from_file(normpath("icons/gamepads/" +
-                                                              str(pygame_id + 1) + ".png"))
+        self.name = self.pygame_joystick.get_name()
+#         self.pixbuf = GdkPixbuf.Pixbuf.new_from_file(normpath(GAMEPADS[pygame_id])) \
+#                       .scale_simple(70, 49.7, GdkPixbuf.InterpType.HYPER)
         locked_print("--- GAMEPAD ---\n",
                      "Id:",
                      str(self.pygame_joystick.get_id()) + "\n",
                      "Bezeichnung:",
-                     self.pygame_joystick.get_name() + "\n",
+                     self.name + "\n",
                      str(self.pygame_joystick.get_numaxes()) + " Achsen\n",
                      str(self.pygame_joystick.get_numbuttons()) + " Knöpfe\n")
         self.scroll_direction = 0
@@ -81,6 +82,7 @@ class EventHandlerThread(threading.Thread):
                      button_pressed_cb,
                      button_released_cb,
                      horiz_joyhat_moved_cb,
+                     axis_released_cb,
                      max_gamepads=-1):
         """
         This method must be called before :func:`EventHandlerThread.start` is called,
@@ -94,6 +96,8 @@ class EventHandlerThread(threading.Thread):
             * *joyhat_moved_horiz_cb(gmp, direction)*: joyhat at gamepad
               *gmp* was moved to the left (``direction == -1``), the right
               (``direction == 1``) or released (``direction == 0``).
+            * *axis_released_cb(gmp, axis)*: axis at gamepad
+              *gmp* was released to center position.
         
         *max_gamepads* specifies the highest allowed number of
         :class:`Gamepad`-objects to be created by the :class:`EventHandlerThread`.
@@ -103,6 +107,7 @@ class EventHandlerThread(threading.Thread):
         self.button_pressed_cb = button_pressed_cb
         self.button_released_cb = button_released_cb
         self.horiz_joyhat_moved_cb = horiz_joyhat_moved_cb
+        self.axis_released_cb = axis_released_cb
         
         self.gamepads = [gmp for gmp in Gamepad.gamepads(max_gamepads)]
         
@@ -116,8 +121,12 @@ class EventHandlerThread(threading.Thread):
                 channel_id = event.type - END_EVENT_LOWER_BOUND
                 if channel_id in self.callbacks:
                     func, args = self.callbacks[channel_id]
-                    # safe calling from main-loop:
                     GObject.idle_add(func, *args)
+                    
+            elif event.type == JOYAXISMOTION and event.value == 0:
+                GObject.idle_add(self.axis_released_cb,
+                                 self.gamepads[event.joy],
+                                 event.axis)
             
             elif event.type == JOYBUTTONDOWN:
                 GObject.idle_add(self.button_pressed_cb,
@@ -178,7 +187,7 @@ class EventHandlerThread(threading.Thread):
         to *channel_id*, passing *sound* as parameter. *sound* is allowed to be
         ``None``, nothing will happen then.
         """
-        if sound != None: # sounds are None when not configured
+        if sound: # sounds are None when not configured
             self.channels[channel_id].queue(sound)
     
     def double_queue_sound(self, channel_id, sound):
@@ -188,9 +197,31 @@ class EventHandlerThread(threading.Thread):
         *sound* in the queue, which is useful to start gapless playback.
         *sound* is allowed to be ``None``, nothing will happen then.
         """
-        if sound != None:
+        if sound:
             self.channels[channel_id].queue(sound)
             self.channels[channel_id].queue(sound)
+            
+    def play_sound(self, channel_id, sound, fade_in=0):
+        """
+        Starts playback of *sound* on the channel belonging
+        to *channel_id*. If *fade_in* is set to a number of seconds,
+        the sound is faded in accordingly.
+        *sound* is allowed to be ``None``, nothing will happen then.
+        """
+        if sound:
+            self.channels[channel_id].play(sound,
+                                           fade_ms=int(1000 * fade_in))
+            
+    def stop_channel(self, channel_id, fade_out=0):
+        """
+        Stops playback on the channel belonging
+        to *channel_id*. If *fade_out* is set to a number
+        of seconds, the sound is faded out accordingly.
+        """
+        if fade_out:
+            self.channels[channel_id].get_sound().fadeout(int(1000 * fade_out))
+        else:
+            self.channels[channel_id].stop()
     
     def acquire_channel_id(self):
         """
@@ -207,6 +238,25 @@ class EventHandlerThread(threading.Thread):
         else:
             raise RuntimeError("Reached the limit of 255 allocated channels!")
         return nr
+    
+    def convert_to_sound(self, sound_file, volume):
+        """
+        Returns a newly created :class:`pygame.mixer.Sound`
+        made of *sound_file* with volume *volume*.
+        Returns ``None`` if *sound_file* is not a valid
+        path to a sound-file.
+        """
+        # pygame creates empty sounds if the file path is wrong,
+        # which is crazy behaviour we dont want
+        if sound_file and isfile(sound_file):
+            try:
+                sound = pygame.mixer.Sound(sound_file)
+                sound.set_volume(volume)
+                return sound
+            except pygame.error:
+                pass
+        locked_print("Not a valid sound_file:", sound_file)
+        return None
     
     def quit(self):
         """
@@ -231,21 +281,158 @@ def create_sound_controller(engine_type, *args):
     elif engine_type == config.EngineType.STEAM:
         return SteamSoundController(*args)
 
+class FunctionSoundPlayer:
+    """
+    Controls playback of all :class:`FunctionSound`-objects
+    which belong to *loco*. Starts playing directly after
+    instantiation.
+    """
+    def __init__(self, loco, handler_thread):
+        self.loco = loco
+        self.mixer = handler_thread
+        
+        for function_sound in loco.function_sounds:
+            function_sound.sound = self.mixer.convert_to_sound(function_sound.file_path,
+                                                               self.loco.sound_volume)
+            function_sound.channel_id = self.mixer.acquire_channel_id()
+            
+            if function_sound.toggle_mode in [config.ToggleMode.PUSH,
+                                              config.ToggleMode.SWITCH]:
+                self.mixer.add_callback(function_sound.channel_id,
+                                        self.check_queue_function_sound,
+                                        function_sound)
+            
+            function_sound.watch("state", self.state_changed, function_sound)
+    
+    def check_queue_function_sound(self, function_sound):
+        if function_sound.state:
+            self.mixer.queue_sound(function_sound.channel_id,
+                                   function_sound.sound)
+            
+    def state_changed(self, new_state, function_sound):
+        if new_state:
+            self.mixer.play_sound(function_sound.channel_id,
+                                  function_sound.sound)
+#                                   function_sound.fade_in)
+            if function_sound.toggle_mode in [config.ToggleMode.SWITCH,
+                                              config.ToggleMode.PUSH]:
+                # queue second time for gapless looping
+                self.mixer.queue_sound(function_sound.channel_id,
+                                       function_sound.sound)
+#             elif self.function_sound.toggle_mode == config.ToggleMode.TAP:
+#                 
+        else:
+            self.mixer.stop_channel(function_sound.channel_id)
+#                                     function_sound.fade_out)
+#             if self.function_sound.toggle_mode == config.ToggleMode.TAP:
+#                 self.
+
+
+class EventSoundPlayer:
+    """
+    Controls playback of all :class:`EventSound`-objects
+    which belong to *loco*. Starts playing directly after
+    instantiation.
+    """
+    def __init__(self, loco, handler_thread):
+        self.checks = {}
+        self.loco = loco
+        self.mixer = handler_thread
+        
+        for event_sound in loco.event_sounds:
+            event_sound.sound = self.mixer.convert_to_sound(event_sound.file_path,
+                                                            self.loco.sound_volume)
+            event_sound.channel_id = self.mixer.acquire_channel_id()
+            self.mixer.add_callback(event_sound.channel_id,
+                                    self.queue_event_sound,
+                                    event_sound)
+            
+            # state
+            checks = [self.check_state]
+            event_sound.watch("state", self.attribute_changed, event_sound)
+            
+            #direction
+            if event_sound.direction:
+                checks.append(self.check_direction)
+                loco.watch("direction", self.attribute_changed, event_sound)
+            
+            # speed
+            if event_sound.min_speed or event_sound.max_speed:
+                # no need to watch for speed if we watch the acceleration (s. below)
+                if event_sound.min_speed:
+                    checks.append(self.check_min_speed)
+                
+                if event_sound.max_speed:
+                    checks.append(self.check_max_speed)
+            
+            # acceleration
+            if event_sound.min_accel or event_sound.max_accel:
+                loco.watch("acceleration", self.attribute_changed, event_sound)
+                if event_sound.min_accel:
+                    checks.append(self.check_min_accel)
+                
+                if event_sound.max_accel:
+                    checks.append(self.check_max_accel)
+            
+            self.checks[event_sound] = checks
+            # Check if we should start playback rightaway:
+            self.check_all(event_sound)
+        
+    def queue_event_sound(self, event_sound):
+        # if the conditions for playing the event sound are still met,
+        # put it in queue again
+        if self.check_all(event_sound):
+            self.mixer.queue_sound(event_sound.channel_id, event_sound.sound)
+        
+    def check_state(self, event_sound):
+        return event_sound.state
+    
+    def check_direction(self, event_sound):
+        return event_sound.direction == self.loco.direction
+    
+    def check_min_accel(self, event_sound):
+        return self.loco.acceleration >= event_sound.min_accel
+    
+    def check_max_accel(self, event_sound):
+        return self.loco.acceleration <= event_sound.max_accel
+    
+    def check_min_speed(self, event_sound):
+        return self.loco.speed >= event_sound.min_speed
+    
+    def check_max_speed(self, event_sound):
+        return self.loco.speed <= event_sound.max_speed
+    
+    def attribute_changed(self, unused_new_value, event_sound):
+        self.check_all(event_sound)
+    
+    def check_all(self, event_sound):
+        """
+        Checks if all conditions for the playback
+        of *event_sound* are satisfied and starts playback
+        if this is the case.
+        """
+        channel = self.mixer.channels[event_sound.channel_id]
+        if all(check(event_sound) for check in self.checks[event_sound]):
+            # don't interrupt if already playing
+            if not channel.get_busy():
+                self.mixer.play_sound(event_sound.channel_id,
+                                      event_sound.sound,
+                                      event_sound.fade_in)
+        elif channel.get_busy() and not event_sound.play_to_end:
+            self.mixer.stop_channel(event_sound.channel_id, event_sound.fade_out)
+#                 print "queued!"
+
 class SoundController(GObject.GObject):
     """
     Abstract base class for sound controllers using a :class:`Engine`-object
     *loco_engine* and the :class:`EventHandlerThread`-instance *handler_thread*
     for sound-playback.
     *volume* specifies the volume of the engine as a float from 0 to 1.
-    The work done by a :class:`SoundController` consists of two parts:
-        
-        * (1) Playback of the :class:`EventSound`-objects from
-              *loco_engine.event_sounds*. This happens automatically.
-        * (2) Playback of engine-sounds, according to the current speed
-              of the loco. This part must be dealt with in the child class.
+    :class:`SoundController` provides an interface for the playback of
+    engine-sounds, according to the current speed
+    of the loco.
     
-    How (2) works:
-    Generally, the :class:`SoundController` leaves most of the actual
+    The :class:`SoundController` leaves most of the actual
     implementation to the child classes, to ensure high flexibility.
     
     Still, child classes must
@@ -270,15 +457,8 @@ class SoundController(GObject.GObject):
         self.mixer = handler_thread
         self.volume = volume
         
-        if loco_engine.event_sounds != None:
-            for event_sound in loco_engine.event_sounds:
-                event_sound.sound = self.convert_to_sound(event_sound.file_path)
-                event_sound.channel_id = self.mixer.acquire_channel_id()
-                self.mixer.add_callback(event_sound.channel_id,
-                                        self.queue_event_sound, event_sound)
         self.engine = loco_engine
         
-#         self.engine_is_running = False
         self.old_speed = 0
         
     def get_engine_is_running(self):
@@ -331,7 +511,6 @@ class SoundController(GObject.GObject):
         """
         if self.get_engine_is_running():
             self.do_stop_engine()
-            self.stop_event_sounds()
     
     def do_stop_engine(self):
         """
@@ -363,7 +542,6 @@ class SoundController(GObject.GObject):
         """
         self.speed = speed
         self.do_set_target_speed(speed)
-        self.check_event_sounds()
         
     def do_set_target_speed(self, speed):
         """
@@ -373,56 +551,6 @@ class SoundController(GObject.GObject):
         To be implemented in a child class.
         """
         raise NotImplementedError()
-        
-    
-    def stop_event_sounds(self):
-        if self.engine.event_sounds != None:
-            for event_sound in self.engine.event_sounds:
-                self.mixer.channels[event_sound.channel_id].stop()
-    
-    def check_event_sounds(self):
-        current_time = time.time()
-        self.accel = (self.speed - self.old_speed) / (current_time - self.old_time)
-#        locked_print("new accel", self.accel)
-        for event_sound in self.engine.event_sounds:
-            if self.check_event_sound(event_sound) \
-            and not self.mixer.channels[event_sound.channel_id].get_busy():
-                self.mixer.queue_sound(event_sound.channel_id, event_sound.sound)
-        self.old_time = current_time
-        self.old_speed = self.speed
-    
-    def check_event_sound(self, event_sound):
-        if event_sound.state:
-            fulfilled = True
-            if event_sound.min_accel != None:
-                if self.accel < event_sound.min_accel:
-                    fulfilled = False
-            if event_sound.max_accel != None:
-                if self.accel > event_sound.max_accel:
-                    fulfilled = False
-            if event_sound.min_speed != None:
-                if self.speed < event_sound.min_speed:
-                    fulfilled = False
-            if event_sound.max_speed != None:
-                if self.speed > event_sound.max_speed:
-                    fulfilled = False
-            return fulfilled
-        else:
-            return False
-    
-    def queue_event_sound(self, event_sound):
-        # if the conditions for playing the event sound are still met,
-        # put it in queue again
-        if self.check_event_sound(event_sound) and self.get_engine_is_running():
-            self.mixer.queue_sound(event_sound.channel_id, event_sound.sound)
-    
-    def convert_to_sound(self, sound_file):
-        try:
-            sound = pygame.mixer.Sound(sound_file)
-            sound.set_volume(self.volume)
-            return sound
-        except pygame.error:
-            locked_print("Not a valid sound_file:", sound_file)
 
 class DieselSoundController(SoundController):
     """
@@ -453,15 +581,21 @@ class DieselSoundController(SoundController):
         self.mixer.add_callback(self.engine_channel_id, self.update_engine_queue)
         
         for segment in self.engine.sound_segments:
-            for attrib in ["load_sound", "idle_sound", "accel_sound", "decel_sound"]:
+            for attrib in ["load_sound", "idle_sound",
+                           "accel_sound", "decel_sound"]:
                 if hasattr(segment, attrib):
-                    setattr(segment, attrib, self.convert_to_sound(getattr(segment, attrib)))
+                    setattr(segment, attrib,
+                            self.mixer.convert_to_sound(getattr(segment, attrib),
+                                                        self.volume))
         for attrib in ["quit_sound", "start_sound", "idle_sound"]:
             if hasattr(self.engine, attrib):
-                setattr(self.engine, attrib, self.convert_to_sound(getattr(self.engine, attrib)))
+                setattr(self.engine,
+                        attrib,
+                        self.mixer.convert_to_sound(getattr(self.engine, attrib),
+                                                    self.volume))
         
-        self.scheduled_segment = -1
-        self.actual_segment = -1
+        self.scheduled_segment_nr = -1
+        self.actual_segment_nr = -1
         self.next_sound_level = None
         self.on_load = False
         self.shutdown = False
@@ -471,7 +605,7 @@ class DieselSoundController(SoundController):
     
     # new speed may be a float!
     def do_set_target_speed(self, speed):
-        self.scheduled_segment = self.engine.sound_function.get_segment_nr_from_x(speed)
+        self.scheduled_segment_nr = self.engine.sound_function.get_segment_nr_from_x(speed)
         # if nothings played on engine_channel at the moment
         if not self.get_engine_is_running():
             self.update_engine_queue()
@@ -479,13 +613,14 @@ class DieselSoundController(SoundController):
     
     def do_start_engine(self):
         self.shutdown = False
-        self.actual_segment = self.scheduled_segment = -1
+        self.actual_segment_nr = self.scheduled_segment_nr = -1
         self.mixer.queue_sound(self.engine_channel_id, self.engine.start_sound)
         self.mixer.queue_sound(self.engine_channel_id, self.engine.idle_sound)
     
     def do_start_engine_at_speed(self, speed):
         self.shutdown = False
-        self.actual_segment = self.scheduled_segment = self.engine.sound_function.get_segment_nr_from_x(speed)
+        self.actual_segment_nr = self.scheduled_segment_nr = \
+            self.engine.sound_function.get_segment_nr_from_x(speed)
         self.on_load = True
         # Must be called two times, to fill the pygame-queue
         self.update_engine_queue()
@@ -493,22 +628,22 @@ class DieselSoundController(SoundController):
     
     def do_shutdown_engine(self):
         self.shutdown = True
-        if self.actual_segment == -1:
+        if self.actual_segment_nr == -1:
             self.mixer.queue_sound(self.engine_channel_id, self.engine.quit_sound)
     
     def do_stop_engine(self):
         self.shutdown = True
-        self.mixer.channels[self.engine_channel_id].stop()
+        self.mixer.stop_channel(self.engine_channel_id)
     
     def get_sound_for_acceleration(self):
-        return self.engine.sound_segments[self.actual_segment + 1].accel_sound
+        return self.engine.sound_segments[self.actual_segment_nr + 1].accel_sound
     
     def get_sound_for_deceleration(self):
-        return self.engine.sound_segments[self.actual_segment].decel_sound
+        return self.engine.sound_segments[self.actual_segment_nr].decel_sound
     
     def get_sound_for_same_speed(self):
-        actual_segment = self.engine.sound_segments[self.actual_segment]
-        if self.actual_segment == -1:
+        actual_segment = self.engine.sound_segments[self.actual_segment_nr]
+        if self.actual_segment_nr == -1:
             return self.engine.idle_sound
         elif self.on_load:
             return actual_segment.load_sound
@@ -520,34 +655,34 @@ class DieselSoundController(SoundController):
             self.emit("sound-level-changed", *self.next_sound_level)
             self.next_sound_level = None
             
-        old_speed = self.actual_segment
+        old_speed = self.actual_segment_nr
         emit_idle = False
         if not self.shutdown:
-            if self.actual_segment < self.scheduled_segment:
+            if self.actual_segment_nr < self.scheduled_segment_nr:
                 sound = self.get_sound_for_acceleration()
-                self.actual_segment += 1
+                self.actual_segment_nr += 1
                 self.on_load = True
             
-            elif self.actual_segment == self.scheduled_segment:
-                if self.actual_segment == -1:
+            elif self.actual_segment_nr == self.scheduled_segment_nr:
+                if self.actual_segment_nr == -1:
                     emit_idle = True
                 sound = self.get_sound_for_same_speed()
             
-            elif self.actual_segment > self.scheduled_segment:
+            elif self.actual_segment_nr > self.scheduled_segment_nr:
                 sound = self.get_sound_for_deceleration()
-                self.actual_segment -= 1
+                self.actual_segment_nr -= 1
                 self.on_load = False
             
-            # it IS possible (by design) that the playback stream gets broken,
+            # it IS possible that the playback stream gets broken,
             # if a sound-engine is not configured correctly
-            if sound != None:
+            if sound:
                 self.mixer.queue_sound(self.engine_channel_id, sound)
                 sound_length = sound.get_length()
             else:
                 sound_length = 0.0
                 
-            if old_speed != self.actual_segment:
-                self.next_sound_level = [self.actual_segment, sound_length]
+            if old_speed != self.actual_segment_nr:
+                self.next_sound_level = [self.actual_segment_nr, sound_length]
             elif emit_idle:
                 self.emit("engine-idle")
         
@@ -562,8 +697,9 @@ class SteamSoundController(SoundController):
     """
     def __init__(self, handler_thread, loco_engine, volume):
         SoundController.__init__(self, handler_thread, loco_engine, volume)
-        loco_engine.idle_sound = self.convert_to_sound(loco_engine.idle_sound)
-        loco_engine.cylinder_steam_sound = self.convert_to_sound(loco_engine.cylinder_steam_sound)
+        loco_engine.idle_sound = self.mixer.convert_to_sound(loco_engine.idle_sound, self.volume)
+        loco_engine.cylinder_steam_sound = self.mixer.convert_to_sound(loco_engine.cylinder_steam_sound,
+                                                                       self.volume)
         self.steam_channel_id = self.mixer.acquire_channel_id()
         self.idle_channel_id = self.mixer.acquire_channel_id()
         self.stroke_channel_ids = [self.mixer.acquire_channel_id()
@@ -571,7 +707,7 @@ class SteamSoundController(SoundController):
         
         for segment in self.engine.sound_segments:
             for nr, sound_path in enumerate(segment.stroke_sounds):
-                segment.stroke_sounds[nr] = self.convert_to_sound(sound_path)
+                segment.stroke_sounds[nr] = self.mixer.convert_to_sound(sound_path, self.volume)
         
         self.mixer.add_callback(self.idle_channel_id, self.queue_idle_sound)
         self.mixer.add_quit_callback(self.quit)
@@ -598,9 +734,9 @@ class SteamSoundController(SoundController):
         if hasattr(self, "stroke_stop_event"):
             self.stroke_stop_event.set()
         for stroke in xrange(self.engine.nr_strokes):
-            self.mixer.channels[self.stroke_channel_ids[stroke]].stop()
-        self.mixer.channels[self.idle_channel_id].stop()
-        self.mixer.channels[self.steam_channel_id].stop()
+            self.mixer.stop_channel(self.stroke_channel_ids[stroke])
+        self.mixer.stop_channel(self.idle_channel_id)
+        self.mixer.stop_channel(self.steam_channel_id)
     
     def do_set_target_speed(self, speed):
         if speed > 0:
@@ -644,7 +780,7 @@ class SteamSoundController(SoundController):
 #            locked_print("Playing next stroke", self.stroke_nr, "after", start_time - old_time)
             stroke_sound = self.engine.sound_function.get_sound(self.speed,
                                                                 "stroke_sounds")[self.stroke_nr]
-            self.mixer.channels[self.stroke_channel_ids[self.stroke_nr]].play(stroke_sound)
+            self.mixer.play_sound(self.stroke_channel_ids[self.stroke_nr], stroke_sound)
             if self.stroke_nr < self.engine.nr_strokes - 1:
                 self.stroke_nr += 1
             else:
@@ -676,11 +812,8 @@ def prepare_function_sounds(handler_thread, function_sounds, volume):
     :class:`ToggleMode`.
     """
     for function_sound in function_sounds:
-        if function_sound.file_path != None:
-            function_sound.sound = pygame.mixer.Sound(function_sound.file_path)
-            function_sound.sound.set_volume(volume)
-        else:
-            function_sound.sound = None
+        function_sound.sound = handler_thread.convert_to_sound(function_sound.file_path,
+                                                               volume)
         function_sound.channel_id = handler_thread.acquire_channel_id()
         if function_sound.toggle_mode in [config.ToggleMode.SWITCH,
                                           config.ToggleMode.PUSH]:

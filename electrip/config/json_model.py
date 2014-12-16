@@ -166,13 +166,17 @@ class JsonModel:
                                    ("min_freq", 0.2)]}
         
         self.event_sound_attributes = [("name", ""),
-                                       ("file_path", None),
                                        ("state", True),
+                                       ("button", 0),
+                                       ("file_path", None),
+                                       ("direction", None),
                                        ("min_speed", None),
                                        ("max_speed", None),
                                        ("min_accel", None),
                                        ("max_accel", None),
-                                       ("button", 0)]
+                                       ("fade_in", 0),
+                                       ("fade_out", 0),
+                                       ("play_to_end", False)]
         
         self.function_sound_attributes = [("name", ""),
                                           ("file_path", None),
@@ -361,7 +365,7 @@ class JsonModel:
                                            "quit_sound"],
                                           "sound")
                     
-                for sound in loco.engine.event_sounds:
+                for sound in loco.event_sounds:
                     sound.file_path = self.add_file_to_zip(zip_file,
                                                            sound.file_path,
                                                            "sound")
@@ -385,7 +389,7 @@ class JsonModel:
     def create_loco_dict(self, loco):
         """
         Returns a dictionary-representation of the
-        object-tree in *loco*. This is needed save the
+        object-tree in *loco*. This is needed to save the
         loco in the Json-format.
         """
         loco_dict = self.create_dict(loco,
@@ -394,7 +398,11 @@ class JsonModel:
         loco_dict["function_sounds"] = [self.create_dict(function_sound,
                                                          self.function_sound_attributes)
                                         for function_sound in loco.function_sounds]
-        if loco.engine != None:
+        loco_dict["event_sounds"] = [self.create_dict(event_sound,
+                                                      self.event_sound_attributes)
+                                     for event_sound in loco.event_sounds]
+        
+        if loco.engine:
             engine_dict = self.create_dict(loco.engine,
                                            self.engine_attributes[loco.engine.type])
             if loco.engine.sound_segments != None:
@@ -403,12 +411,6 @@ class JsonModel:
                                                  for segment in loco.engine.sound_segments]
             else:
                 engine_dict["sound_segments"] = None
-            if loco.engine.event_sounds != None:
-                engine_dict["event_sounds"] = [self.create_dict(event_sound,
-                                                                self.event_sound_attributes)
-                                                 for event_sound in loco.engine.event_sounds]
-            else:
-                engine_dict["event_sounds"] = None
             loco_dict["engine"] = engine_dict
         else:
             loco_dict["engine"] = None
@@ -490,6 +492,12 @@ class JsonModel:
             loco = self.create_loco(loco_dict,
                                     DictWrapper,
                                     self.unsaved_changes)
+            
+            for sound in loco.event_sounds:
+                    self.set_absolute_path(dir_path,
+                                           sound,
+                                           ["file_path"])
+            
             if loco.engine != None:
                 if loco.engine.type == EngineType.STEAM:
                     for segment in loco.engine.sound_segments:
@@ -514,11 +522,6 @@ class JsonModel:
                                            ["start_sound",
                                             "idle_sound",
                                             "quit_sound"])
-                    
-                for sound in loco.engine.event_sounds:
-                    self.set_absolute_path(dir_path,
-                                           sound,
-                                           ["file_path"])
                     
             for sound in loco.function_sounds:
                 self.set_absolute_path(dir_path,
@@ -568,6 +571,7 @@ class JsonModel:
             speed_func.load(wrapper.get(wrapper.get(loco_obj,
                                                     "speed_to_step_func"),
                                         "control_points"))
+        
         if wrapper.has_key(loco_obj, "function_sounds"):
             function_sounds = [FunctionSound(unsaved_changes_method,
                                              *wrapper.get_param_list(function_sound_obj,
@@ -576,6 +580,26 @@ class JsonModel:
                                                                      "function_sounds")]
         else:
             function_sounds = None
+        
+        if wrapper.has_key(loco_obj, "event_sounds"):
+            if wrapper.get(loco_obj, "event_sounds") != None:
+                event_sounds = [EventSound(unsaved_changes_method,
+                                              *wrapper.get_param_list(event_sound_obj,
+                                                                      self.event_sound_attributes))
+                                   for event_sound_obj in wrapper.get(loco_obj,
+                                                                      "event_sounds")]
+        else:
+            try:
+                # until v5.0.8 event sounds were stored in the engine
+                event_sounds = [EventSound(unsaved_changes_method,
+                                           *wrapper.get_param_list(event_sound_obj,
+                                                                   self.event_sound_attributes))
+                                for event_sound_obj in wrapper.get(wrapper.get(loco_obj,
+                                                                               "engine"),
+                                                                   "event_sounds")]
+            except:
+                event_sounds = None
+        
         if  wrapper.has_key(loco_obj, "engine") \
         and wrapper.get(loco_obj, "engine") != None:
             engine_obj = wrapper.get(loco_obj, "engine")
@@ -604,21 +628,15 @@ class JsonModel:
             else:
                 sound_segments = None
             param_list.append(sound_segments)
-            if wrapper.has_key(engine_obj, "event_sounds"):
-                if wrapper.get(engine_obj, "event_sounds") != None:
-                    param_list.append([EventSound(unsaved_changes_method,
-                                                  *wrapper.get_param_list(event_sound_obj,
-                                                                  self.event_sound_attributes))
-                                       for event_sound_obj in wrapper.get(engine_obj,
-                                                                          "event_sounds")])
             engine = create_engine(*param_list)
         else:
             engine = None
-             
+        
         return Loco(unsaved_changes_method,
                     functions,
                     speed_func,
                     function_sounds,
+                    event_sounds,
                     engine,
                     *wrapper.get_param_list(loco_obj, self.loco_attributes))
 
