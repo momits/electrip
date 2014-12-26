@@ -1,6 +1,10 @@
 
 @import url("gamepads.css");
 
+* {
+    -GtkWidget-focus-line-width: 0;
+}
+
 /* ----------------------
 Global background        |
 ------------------------*/
