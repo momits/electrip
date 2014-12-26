@@ -5,6 +5,7 @@ import threading
 import Queue
 from socket import timeout
 
+
 def locked_print(*args):
     """
     Acquires ``print_lock`` and then prints
@@ -19,6 +20,7 @@ def locked_print(*args):
     print_lock.release()
 
 print_lock = threading.Lock()
+
 
 class SocketThread(threading.Thread):
     """
@@ -82,7 +84,7 @@ class SocketThread(threading.Thread):
     def run(self):
         while True:
             msg = self.msg_queue.get()
-            if msg == None:
+            if msg is None:
                 break
             try:
                 self.socket.send(msg)

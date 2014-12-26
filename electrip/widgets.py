@@ -10,9 +10,10 @@ from electrip.constants import ELECTRIP_VERSION
 from electrip.dialog_templates import FileSetResetDialog, ImageFileFilter, \
     AllFileFilter, SoundFileFilter
 
+
 class StockImageButton(Gtk.Button):
     """
-    DEPRECATED - will be removed any time soon
+    DEPRECATED - will be removed
     """
     def __init__(self, label, stock):
         Gtk.Button.__init__(self)
@@ -21,13 +22,14 @@ class StockImageButton(Gtk.Button):
         grid = Gtk.Grid()
         grid.set_orientation(Gtk.Orientation.HORIZONTAL)
         grid.set_column_spacing(5)
-        if label != None:
+        if label:
             label = Gtk.Label(label)
             label.set_hexpand(True)
             grid.add(label)
         grid.add(icon)
         self.add(grid)
-        
+
+
 class ArrowButton(Gtk.Button):
     """
     :class:`Gtk.Button` which displays an arrow.
@@ -43,6 +45,7 @@ class ArrowButton(Gtk.Button):
             self.set_image(Gtk.Arrow.new(Gtk.ArrowType.DOWN,
                                          Gtk.ShadowType.NONE))
 
+
 class BoldLabel(Gtk.Label):
     """
     :class:`Gtk.Label` with bold font.
@@ -50,6 +53,7 @@ class BoldLabel(Gtk.Label):
     def __init__(self, text):
         Gtk.Label.__init__(self)
         self.set_markup("<b>" + text + "</b>")
+
 
 class TopAlignment(Gtk.Alignment):
     """
@@ -61,6 +65,7 @@ class TopAlignment(Gtk.Alignment):
         self.set(0.0, 0.0, 0.0, 0.0)
         self.add(child)
 
+
 class Frame(Gtk.Frame):
     """
     :class:`Gtk.Frame` which displays *label*
@@ -69,7 +74,7 @@ class Frame(Gtk.Frame):
     def __init__(self, label=None):
         Gtk.Frame.__init__(self)
         self.set_border_width(6)
-        if label != None:
+        if label:
             self.set_label_widget(BoldLabel(label))
 
 
@@ -84,6 +89,7 @@ class TreeViewFrame(Frame):
         grid.attach(ScrolledTreeView(treeview), 0, 0, 1, 1)
         grid.attach(button_box, 0, 1, 1, 1)
         self.add(grid)
+
 
 class TreeViewActionBox(Gtk.ButtonBox):
     """
@@ -132,7 +138,7 @@ class TreeViewActionBox(Gtk.ButtonBox):
         """
         path = treeview.get_cursor()[0]
         liststore = treeview.get_model()
-        if path != None:
+        if path:
             row = liststore.get_iter(path)
             row_nr = path.get_indices()[0]
             if direction and row_nr > 0:
@@ -158,8 +164,8 @@ class TreeViewActionBox(Gtk.ButtonBox):
         """
         path = treeview.get_cursor()[0]
         liststore = treeview.get_model()
-        if liststore != None:
-            if path == None:
+        if liststore:
+            if path is None:
                 new_row = liststore.append(self.add_row_at_start())
             else:
                 row = liststore.get_iter(path)
@@ -178,7 +184,7 @@ class TreeViewActionBox(Gtk.ButtonBox):
         """
         path = treeview.get_cursor()[0]
         liststore = treeview.get_model()
-        if path != None:
+        if path:
             self.remove_row_at(path.get_indices()[0])
             liststore.remove(liststore.get_iter(path))
             self.unsaved_changes()
@@ -239,6 +245,7 @@ class TreeViewActionBox(Gtk.ButtonBox):
         Allows child classes to get notified when these changes occur.
         Must not necessarily be implemented.
         """
+
 
 class EasyComboBox(Gtk.ComboBox):
     """
@@ -305,6 +312,7 @@ class EasyComboBox(Gtk.ComboBox):
             # report we changed the value to the default
             self.emit("changed")
 
+
 class EasyFileButton(Gtk.Button):
     """
     A :class:`Gtk.Button` which opens a file-selection-dialog
@@ -315,7 +323,7 @@ class EasyFileButton(Gtk.Button):
     """
     
     __gsignals__ = {
-      "file-set": (GObject.SIGNAL_RUN_FIRST, None, ())
+        "file-set": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
     
     def __init__(self, file_filters=[]):
@@ -359,12 +367,13 @@ class EasyFileButton(Gtk.Button):
         at *path*.
         """
         if path != self.current_path:
-            if path != None:
+            if path:
                 self.label.set_text(path)
             else:
                 self.label.set_text("Auswählen...")
             self.current_path = path
             self.emit("file-set")
+
 
 class EasyVolumeButton(Gtk.VolumeButton):
     """
@@ -374,7 +383,7 @@ class EasyVolumeButton(Gtk.VolumeButton):
     methods.
     """
     __gsignals__ = {
-      "volume-set": (GObject.SIGNAL_RUN_FIRST, None, ())
+        "volume-set": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
     def __init__(self, file_filters=[]):
         Gtk.VolumeButton.__init__(self)
@@ -383,7 +392,8 @@ class EasyVolumeButton(Gtk.VolumeButton):
         
     def volume_set(self, button, new_value):
         self.emit("volume-set")
-        
+
+
 class EntryTable(Gtk.Grid):
     """
     Provides a UI to set attributes on
@@ -478,7 +488,7 @@ class EntryTable(Gtk.Grid):
         
         # calculate the position for the next widget
         if self.orientation == Gtk.Orientation.VERTICAL:
-            if self.end == None:
+            if self.end is None:
                 self.y += 1
             else:
                 if self.y < self.end - 1:
@@ -487,7 +497,7 @@ class EntryTable(Gtk.Grid):
                     self.x += 2
                     self.y = 0
         else:
-            if self.end == None:
+            if self.end is None:
                 self.x += 2
             else:
                 if self.x < 2 * self.end - 2:
@@ -651,7 +661,7 @@ class EntryTable(Gtk.Grid):
         """
         self.config_object = config_object
         for nr, config_attribute in enumerate(self.config_attributes):
-            if config_attribute != None:
+            if config_attribute:
                 try:
                     value = getattr(config_object, config_attribute)
                 except AttributeError:
@@ -672,12 +682,13 @@ class EntryTable(Gtk.Grid):
         changes an element which was added using one of the
         'add_(some_element)'-methods.
         """
-        if config_attrib != None:
+        if config_attrib:
             value = widget.retrieve_value()
             # only set attributes when they differ from what is already saved
             # -> prevent signal-handler trouble on loading
             if getattr(self.config_object, config_attrib) != value:
                 setattr(self.config_object, config_attrib, value)
+
 
 class ScrolledTreeView(Gtk.ScrolledWindow):
     """
@@ -765,10 +776,10 @@ class TreeView(Gtk.TreeView):
         self.liststore = Gtk.ListStore(*self.column_types)
         self.set_model(self.liststore)
     
-    def add_text_colum(self,
-                       column_name,
-                       column_tooltip,
-                       content_type):
+    def add_text_column(self,
+                        column_name,
+                        column_tooltip,
+                        content_type):
         """
         Adds a column with editable text.
         The *column_name* is displayed above the column
@@ -784,10 +795,10 @@ class TreeView(Gtk.TreeView):
                         text_renderer,
                         content_type)
         
-    def add_non_editable_text_colum(self,
-                                    column_name,
-                                    column_tooltip,
-                                    content_type):
+    def add_non_editable_text_column(self,
+                                     column_name,
+                                     column_tooltip,
+                                     content_type):
         """
         Adds a column with non-editable text.
         For arguments, see :func:`add_text_column`.
@@ -799,11 +810,11 @@ class TreeView(Gtk.TreeView):
                         text_renderer,
                         content_type)
         
-    def add_combo_colum(self,
-                        column_name,
-                        column_tooltip,
-                        content_type,
-                        values):
+    def add_combo_column(self,
+                         column_name,
+                         column_tooltip,
+                         content_type,
+                         values):
         """
         Adds a column with :class:`Gtk.ComboBox`-widgets.
         
@@ -828,7 +839,7 @@ class TreeView(Gtk.TreeView):
                         combo_renderer,
                         content_type)
         
-    def new_value(self, cellrenderer, path, new_value):
+    def new_value(self, unused_cr, path, new_value):
         liststore = self.get_model()
         path, column = self.get_cursor()
         column_nr = column.colnr
@@ -908,6 +919,7 @@ class PopupButton(Gtk.Button):
     def show_popup(self, button):
         self.popup.show_at_mouse()
 
+
 class Popup(Gtk.Window):
     """
     A :class:`Gtk.Window` which hides itself if closed, instead
@@ -920,7 +932,7 @@ class Popup(Gtk.Window):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
         self.set_title("Electrip " + ELECTRIP_VERSION + " - " + title)
         self.connect("delete-event", self.delete_event)
-        if type_hint != None:
+        if type_hint:
             self.set_type_hint(type_hint)
         self.set_transient_for(main_window)
         self.set_modal(True)
@@ -957,6 +969,7 @@ class Popup(Gtk.Window):
     def delete_event(self, window, event):
         self.hide()
         return True
+
 
 class ControlPointGraph(Gtk.DrawingArea):
     """
@@ -1033,7 +1046,7 @@ class ControlPointGraph(Gtk.DrawingArea):
         self.drag_popup.label = Gtk.Label.new("")
         self.drag_popup.add(self.drag_popup.label)
     
-    def draw(self, area, cr):
+    def draw(self, unused_area, cr):
         if hasattr(self, "func"):
             new_width = self.get_allocated_width()
             new_height = self.get_allocated_height()
@@ -1049,7 +1062,7 @@ class ControlPointGraph(Gtk.DrawingArea):
             cr.set_source_rgb(*self.point_color)
             for y in xrange(1, int(self.y_max)):
                 x = self.func.get_x(y)
-                if x != None:
+                if x:
                     x_abs, y_abs = self.get_pixel_coords(x, y)
                     cr.arc(x_abs,
                            y_abs,
@@ -1133,7 +1146,7 @@ class ControlPointGraph(Gtk.DrawingArea):
     
     def button_pressed(self, area, event):
         nr, point = self.get_touched_point(event.x, event.y)
-        if nr != None:
+        if nr:
             if event.button == 3:
                 self.func.remove_control_point(nr)
                 self.queue_draw()
@@ -1147,14 +1160,14 @@ class ControlPointGraph(Gtk.DrawingArea):
             x, y = self.get_real_coords(event.x, event.y)
             self.add_control_point(x, y)
     
-    def button_released(self, area, event):
-        if self.drag != None:
+    def button_released(self, area, unused_event):
+        if self.drag:
             self.update_config_object(self.func)
             self.drag_popup.hide()
             self.drag = None
     
     def motion(self, area, event):
-        if self.drag != None:
+        if self.drag:
             x, y = self.get_real_coords(event.x, event.y)
             if x < 0:
                 x = 0
@@ -1167,21 +1180,6 @@ class ControlPointGraph(Gtk.DrawingArea):
             new_point = self.func.move_control_point(self.drag, x, y)
             self.queue_draw()
             self.update_drag_popup_label(new_point)
-    
-#     def delete_point_cb(self, unused_popup, nr):
-#         self.func.remove_control_point(nr)
-#         self.queue_draw()
-#         self.update_config_object(self.func)
-#         
-#     def change_point_cb(self,
-#                           unused_popup, nr,
-#                           new_x, new_y):
-#         self.func.move_control_point(nr, new_x, new_y)
-#         self.queue_draw()
-#         self.update_config_object(self.func)
-#         
-#     def restore_sensitivity_cb(self, unused_popup):
-#         self.set_sensitive(True)
     
     def create_coordinate_system(self):
         self.coordinate_system = cairo.ImageSurface(cairo.FORMAT_ARGB32,
@@ -1239,7 +1237,6 @@ class ControlPointGraph(Gtk.DrawingArea):
         
         pos = 0
         used_width = 0
-#        abs_x_max = self.get_pixel_coords(self.x_max, 0)[0]
         while pos <= self.x_max + x_res:
             text, x, y, width, height = self.get_axis_data_at_pos(c,
                                                                   pos,
@@ -1312,10 +1309,6 @@ class ControlPointGraph(Gtk.DrawingArea):
         Clears the graph, removing all references
         to the function which was displayed.
         """
-#         # stop editing, the current function will be deleted
-#         if self.edit_popup.get_visible():
-#             self.edit_popup.hide()
-#             self.set_sensitive(True)
         # all attribs must be set at once in get_func_data,
         # so we only need to check if one of them exists
         if hasattr(self, "func"):

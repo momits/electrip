@@ -23,6 +23,7 @@ except ImportError:
 else:
     pygame_installed = True
 
+
 class Gamepad:
     """
     Representation of a Gamepad in the users hand, using
@@ -33,8 +34,6 @@ class Gamepad:
         self.pygame_joystick.init()
         self.pygame_id = pygame_id
         self.name = self.pygame_joystick.get_name()
-#         self.pixbuf = GdkPixbuf.Pixbuf.new_from_file(normpath(GAMEPADS[pygame_id])) \
-#                       .scale_simple(70, 49.7, GdkPixbuf.InterpType.HYPER)
         locked_print("--- GAMEPAD ---\n",
                      "Id:",
                      str(self.pygame_joystick.get_id()) + "\n",
@@ -57,6 +56,7 @@ class Gamepad:
                              "weitere Gamepads werden ignoriert.")
                 break
             yield Gamepad(gamepad_id)
+
 
 class EventHandlerThread(threading.Thread):
     """
@@ -275,11 +275,13 @@ class EventHandlerThread(threading.Thread):
         del self.button_released_cb
         del self.horiz_joyhat_moved_cb 
 
+
 def create_sound_controller(engine_type, *args):
     if engine_type == config.EngineType.DIESEL:
         return DieselSoundController(*args)
     elif engine_type == config.EngineType.STEAM:
         return SteamSoundController(*args)
+
 
 class FunctionSoundPlayer:
     """
@@ -313,19 +315,13 @@ class FunctionSoundPlayer:
         if new_state:
             self.mixer.play_sound(function_sound.channel_id,
                                   function_sound.sound)
-#                                   function_sound.fade_in)
             if function_sound.toggle_mode in [config.ToggleMode.SWITCH,
                                               config.ToggleMode.PUSH]:
                 # queue second time for gapless looping
                 self.mixer.queue_sound(function_sound.channel_id,
                                        function_sound.sound)
-#             elif self.function_sound.toggle_mode == config.ToggleMode.TAP:
-#                 
         else:
             self.mixer.stop_channel(function_sound.channel_id)
-#                                     function_sound.fade_out)
-#             if self.function_sound.toggle_mode == config.ToggleMode.TAP:
-#                 self.
 
 
 class EventSoundPlayer:
@@ -351,7 +347,7 @@ class EventSoundPlayer:
             checks = [self.check_state]
             event_sound.watch("state", self.attribute_changed, event_sound)
             
-            #direction
+            # direction
             if event_sound.direction:
                 checks.append(self.check_direction)
                 loco.watch("direction", self.attribute_changed, event_sound)
@@ -420,7 +416,7 @@ class EventSoundPlayer:
                                       event_sound.fade_in)
         elif channel.get_busy() and not event_sound.play_to_end:
             self.mixer.stop_channel(event_sound.channel_id, event_sound.fade_out)
-#                 print "queued!"
+
 
 class SoundController(GObject.GObject):
     """
@@ -570,9 +566,9 @@ class DieselSoundController(SoundController):
     """
     
     __gsignals__ = {
-      "sound-level-changed": (GObject.SIGNAL_RUN_FIRST, None, (int, float,)),
-      "engine-idle": (GObject.SIGNAL_RUN_FIRST, None, ()),
-      "engine-stopped": (GObject.SIGNAL_RUN_FIRST, None, ())
+        "sound-level-changed": (GObject.SIGNAL_RUN_FIRST, None, (int, float,)),
+        "engine-idle": (GObject.SIGNAL_RUN_FIRST, None, ()),
+        "engine-stopped": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
     
     def __init__(self, handler_thread, loco_engine, volume):
@@ -651,7 +647,7 @@ class DieselSoundController(SoundController):
             return actual_segment.idle_sound
     
     def update_engine_queue(self):
-        if self.next_sound_level != None:
+        if self.next_sound_level:
             self.emit("sound-level-changed", *self.next_sound_level)
             self.next_sound_level = None
             
@@ -688,6 +684,7 @@ class DieselSoundController(SoundController):
         
         elif not self.get_engine_is_running():
             self.emit("engine-stopped")
+
 
 class SteamSoundController(SoundController):
     """
@@ -743,7 +740,7 @@ class SteamSoundController(SoundController):
             self.pause_time = self.get_pause_time(speed)
         elif hasattr(self, "stroke_stop_event"):
             self.stroke_stop_event.set()
-            if self.timeout_id != None:
+            if self.timeout_id:
                 GObject.source_remove(self.timeout_id)
         self.check_start_thread()
     
@@ -777,7 +774,6 @@ class SteamSoundController(SoundController):
     def play_next_stroke(self):
         while not self.stroke_stop_event.is_set():
             start_time = time.time()
-#            locked_print("Playing next stroke", self.stroke_nr, "after", start_time - old_time)
             stroke_sound = self.engine.sound_function.get_sound(self.speed,
                                                                 "stroke_sounds")[self.stroke_nr]
             self.mixer.play_sound(self.stroke_channel_ids[self.stroke_nr], stroke_sound)
@@ -797,10 +793,11 @@ class SteamSoundController(SoundController):
     def quit(self):
         self.engine_is_running = False
         self.stroke_stop_event.set()
-        if self.timeout_id != None:
+        if self.timeout_id:
             GObject.source_remove(self.timeout_id)
         elif hasattr(self, "stroke_thread"):
             self.stroke_thread.join()
+
 
 def prepare_function_sounds(handler_thread, function_sounds, volume):
     """
@@ -821,6 +818,7 @@ def prepare_function_sounds(handler_thread, function_sounds, volume):
                                         queue_function_sound,
                                         handler_thread,
                                         function_sound)
+
 
 def queue_function_sound(handler_thread, function_sound):
     """

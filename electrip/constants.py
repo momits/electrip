@@ -7,7 +7,7 @@ from os.path import normpath as _
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "5.3.6"
+ELECTRIP_VERSION = "5.3.7"
 
 ICON_PATHS = (_("icons/logo_icon_128.png"),
               _("icons/logo_icon_64.png"),
@@ -39,4 +39,3 @@ class SoundType:
 
 END_EVENT_LOWER_BOUND = 35
 STOP_EVENT = 25
-    

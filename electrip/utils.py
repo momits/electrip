@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 class TwoWayDict(dict):
     """
     A dictionary working both ways. Keys and values must
