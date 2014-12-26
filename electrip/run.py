@@ -12,7 +12,7 @@ Starts Electrip.
 """
 
 if __name__ == "__main__":
-    start_msg = " Starting Electrip Version "+ ELECTRIP_VERSION + " "
+    start_msg = " Starting Electrip Version " + ELECTRIP_VERSION + " "
     line = " " + "-" * len(start_msg) + " "
     locked_print(line + "\n|" + start_msg + "|\n" + line)
     app = Electrip()
