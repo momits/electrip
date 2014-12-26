@@ -149,15 +149,15 @@ class Electrip(Gtk.Application):
             self.error_dialog("Der Dateipfad ist ungültig! "
                               "Konnte Konfiguration nicht laden.")
             return False
-        #except KeyError:
-        #    self.error_dialog("Ein Parameter konnte nicht geladen werden, "
-        #                      "eventuell handelt es ich um eine ältere Electrip-Datei.")
-        #    return False
-        #except:
-        #    self.error_dialog("Beim Laden der Datei ist ein unbekannter "
-        #                      "Fehler aufgetreten - es handelt sich nicht "
-        #                      "um eine gültige Electrip-Datei.")
-        #    return False
+        except KeyError:
+            self.error_dialog("Ein Parameter konnte nicht geladen werden, "
+                              "eventuell handelt es ich um eine ältere Electrip-Datei.")
+            return False
+        except:
+            self.error_dialog("Beim Laden der Datei ist ein unbekannter "
+                              "Fehler aufgetreten - es handelt sich nicht "
+                              "um eine gültige Electrip-Datei.")
+            return False
         else:
             self.config_box.loco_scrolled_window.treeview.load()
             self.config_box.joystick_table.load(Config.joystick)
