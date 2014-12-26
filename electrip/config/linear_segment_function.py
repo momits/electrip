@@ -31,7 +31,7 @@ class LinearSegmentFunction:
         # no good to have two points at one spot:
         if not (x, y) in self.control_points:
             nr = self.get_segment_nr_from_x(x)
-            if nr:
+            if nr is not None:
                 self.control_points.insert(nr + 1,
                                            (x,
                                             max(self.control_points[nr][1] ,
@@ -124,7 +124,7 @@ class LinearSegmentFunction:
             return 0
         else:
             seg_nr = self.get_segment_nr_from_y(y)
-            if seg_nr:
+            if seg_nr is not None:
                 a, b = self.func_segments[seg_nr]
                 x = (y - b) / a
                 if x > self.control_points[seg_nr][0]:

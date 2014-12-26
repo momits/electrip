@@ -1003,10 +1003,10 @@ class ControlPointGraph(Gtk.DrawingArea):
         self.y_res_list = y_res_list
         
         # default colors
-        self.line_color = (0.2, 0.2, 0.4)
-        self.control_point_outer_color = (0.1686, 0.1686, 0.1686)
-        self.control_point_inner_color = (0.804, 0.804, 0.757)
-        self.point_color = (0.35, 0.35, 0.7216)
+        self.line_color = (0.25, 0.4, 0.7)
+        self.control_point_outer_color = (0.4, 0.4, 0.4)
+        self.control_point_inner_color = (0.82, 0.82, 0.82)
+        self.point_color = self.line_color
         self.axes_color = (0, 0, 0)
         self.legend_color = (0.1, 0.1, 0.1)
         
@@ -1019,9 +1019,10 @@ class ControlPointGraph(Gtk.DrawingArea):
         self.border_right = 10
         self.coordinate_line_length = 7
         self.axis_distance = 2
-        self.radius_small = 3.6
-        self.radius_large = 7.3
-        self.control_point_border_width = 1.3
+        self.radius_small = 2.5
+        self.radius_large = 8
+        self.line_width = 1.2
+        self.control_point_border_width = 1
         self.min_label_distance = 7
         self.drag = None
         
@@ -1057,12 +1058,12 @@ class ControlPointGraph(Gtk.DrawingArea):
                 self.create_coordinate_system()
             cr.set_source_surface(self.coordinate_system, 0, 0)        
             cr.paint()
-            cr.set_line_width(2.2)
-            
+            cr.set_line_width(self.line_width)
+
             cr.set_source_rgb(*self.point_color)
             for y in xrange(1, int(self.y_max)):
                 x = self.func.get_x(y)
-                if x:
+                if x is not None:
                     x_abs, y_abs = self.get_pixel_coords(x, y)
                     cr.arc(x_abs,
                            y_abs,
@@ -1071,6 +1072,7 @@ class ControlPointGraph(Gtk.DrawingArea):
                            2 * pi)
                     cr.fill()
             cr.stroke()
+
             for nr in xrange(len(self.func.control_points) - 1):
                 x_abs_1, y_abs_1 = self.get_pixel_coords(*self.func.control_points[nr])
                 x_abs_2, y_abs_2 = self.get_pixel_coords(*self.func.control_points[nr + 1])
@@ -1090,7 +1092,7 @@ class ControlPointGraph(Gtk.DrawingArea):
                        0,
                        2 * pi)
                 cr.fill()
-            
+
             cr.set_source_rgb(*self.control_point_outer_color)
             cr.arc(x_abs_2, y_abs_2, self.radius_large, 0, 2 * pi)
             cr.fill()
@@ -1146,7 +1148,7 @@ class ControlPointGraph(Gtk.DrawingArea):
     
     def button_pressed(self, area, event):
         nr, point = self.get_touched_point(event.x, event.y)
-        if nr:
+        if nr is not None:
             if event.button == 3:
                 self.func.remove_control_point(nr)
                 self.queue_draw()
@@ -1161,13 +1163,13 @@ class ControlPointGraph(Gtk.DrawingArea):
             self.add_control_point(x, y)
     
     def button_released(self, area, unused_event):
-        if self.drag:
+        if self.drag is not None:
             self.update_config_object(self.func)
             self.drag_popup.hide()
             self.drag = None
     
     def motion(self, area, event):
-        if self.drag:
+        if self.drag is not None:
             x, y = self.get_real_coords(event.x, event.y)
             if x < 0:
                 x = 0

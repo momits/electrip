@@ -260,7 +260,8 @@ class JsonModel:
             value = value.encode("utf-8")
         return value
             
-    def add_file_to_zip(self, zip_file, file_path, dest=""):
+    @staticmethod
+    def add_file_to_zip(zip_file, file_path, dest=""):
         """
         Adds a file located at *file_path* to *zip-file*,
         placing it at the subdirectory *dest*.
@@ -341,7 +342,7 @@ class JsonModel:
             loco = self.create_loco(loco,
                                     ObjectWrapper,
                                     None)
-            if loco.engine != None:
+            if loco.engine:
                 if loco.engine.type == EngineType.STEAM:
                     for segment in loco.engine.sound_segments:
                         segment.stroke_sounds = [self.add_file_to_zip(zip_file,
@@ -408,7 +409,7 @@ class JsonModel:
         if loco.engine:
             engine_dict = self.create_dict(loco.engine,
                                            self.engine_attributes[loco.engine.type])
-            if loco.engine.sound_segments != None:
+            if loco.engine.sound_segments:
                 engine_dict["sound_segments"] = [self.create_dict(segment,
                                                                   self.segment_attributes[segment.type])
                                                  for segment in loco.engine.sound_segments]
@@ -444,7 +445,8 @@ class JsonModel:
         self.save_opened_file(file_path)
         locked_print("Einstellungen wurden gespeichert in " + file_path)
         
-    def create_dict(self, config_object, attribute_list):
+    @staticmethod
+    def create_dict(config_object, attribute_list):
         """
         Returns a dictionary-representation of *config_object*,
         using the attributes from *attribute_list*. *attribute_list*
@@ -462,7 +464,8 @@ class JsonModel:
                 pass
         return obj_dict
     
-    def set_absolute_path(self, path_prefix, config_object, attribs):
+    @staticmethod
+    def set_absolute_path(path_prefix, config_object, attribs):
         """
         Appends *path_prefix* to all attributes in the list *attribs* 
         of *config_object*. Used to change a relative path to
@@ -470,7 +473,7 @@ class JsonModel:
         """
         for attrib in attribs:
             file_name = getattr(config_object, attrib)
-            if file_name != None and exists(path_prefix + file_name):
+            if file_name is not None and exists(path_prefix + file_name):
                 setattr(config_object, attrib, path_prefix + file_name)
             else:
                 setattr(config_object, attrib, file_name)
@@ -501,12 +504,12 @@ class JsonModel:
                                            sound,
                                            ["file_path"])
             
-            if loco.engine != None:
+            if loco.engine:
                 if loco.engine.type == EngineType.STEAM:
                     for segment in loco.engine.sound_segments:
                         segment.stroke_sounds = [dir_path + stroke_sound
                                                  for stroke_sound in segment.stroke_sounds
-                                                 if stroke_sound != None]
+                                                 if stroke_sound is not None]
                     self.set_absolute_path(dir_path,
                                            loco.engine,
                                            ["idle_sound",
@@ -564,7 +567,8 @@ class JsonModel:
                 else:
                     wrapper.set(function_obj, "toggle_mode", ToggleMode.SWITCH)
             functions.append(DecoderFunction(unsaved_changes_method,
-                                      *wrapper.get_param_list(function_obj, self.function_attributes)))
+                                             *wrapper.get_param_list(function_obj, self.function_attributes)))
+
         speed_func = LinearSegmentFunction()
         if wrapper == DictWrapper:
             speed_func.load(map(tuple,
@@ -578,14 +582,14 @@ class JsonModel:
         if wrapper.has_key(loco_obj, "function_sounds"):
             function_sounds = [FunctionSound(unsaved_changes_method,
                                              *wrapper.get_param_list(function_sound_obj,
-                                                             self.function_sound_attributes))
+                                                                     self.function_sound_attributes))
                                for function_sound_obj in wrapper.get(loco_obj,
                                                                      "function_sounds")]
         else:
             function_sounds = None
         
         if wrapper.has_key(loco_obj, "event_sounds"):
-            if wrapper.get(loco_obj, "event_sounds") != None:
+            if wrapper.get(loco_obj, "event_sounds") is not None:
                 event_sounds = [EventSound(unsaved_changes_method,
                                               *wrapper.get_param_list(event_sound_obj,
                                                                       self.event_sound_attributes))
@@ -604,13 +608,13 @@ class JsonModel:
                 event_sounds = None
         
         if  wrapper.has_key(loco_obj, "engine") \
-        and wrapper.get(loco_obj, "engine") != None:
+        and wrapper.get(loco_obj, "engine"):
             engine_obj = wrapper.get(loco_obj, "engine")
             param_list = wrapper.get_param_list(engine_obj,
                                         self.engine_attributes[wrapper.get(engine_obj,
                                                                            "type")])
             param_list.insert(1, unsaved_changes_method)
-            if wrapper.get(engine_obj, "sound_segments") != None:
+            if wrapper.get(engine_obj, "sound_segments"):
                 try:
                     # deepcopy(param) copies the attributes of the sound-segments
                     # to make sure the 'nr_strokes'-list of SteamSoundSegment
@@ -784,6 +788,6 @@ class JsonModel:
                          str(obj) + "' has new value:", value)
             self.has_unsaved_changes = True
             # if method has been setup, call it
-            if self.opened_file != None \
+            if self.opened_file is not None \
             and hasattr(self, "new_unsaved_changes_method"):
                 self.new_unsaved_changes_method()
