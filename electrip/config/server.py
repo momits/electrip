@@ -3,6 +3,7 @@
 
 from unsaved_changes import UnsavedChangesHandler
 
+
 class Server(UnsavedChangesHandler):
     """
     SRCP-compatible Server.
@@ -23,4 +24,3 @@ class Server(UnsavedChangesHandler):
         
     def toggle_power(self):
         self.power = not self.power
-        

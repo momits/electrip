@@ -3,6 +3,7 @@
 
 from unsaved_changes import UnsavedChangesHandler
 
+
 class Sound(UnsavedChangesHandler):
     """
     Used for basic settings concerning sound output.

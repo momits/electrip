@@ -8,6 +8,7 @@ Contains the different sound implementations.
 from unsaved_changes import UnsavedChangesHandler
 from sound_function import SoundFunction
 
+
 class EngineType:
     """
     Defines all possible engine types
@@ -19,6 +20,7 @@ class EngineType:
     STEAM = "steam"
     DIESEL = "diesel"
 
+
 def create_engine(engine_type, *args):
     """
     Returns a newly created 'Engine'
@@ -28,6 +30,7 @@ def create_engine(engine_type, *args):
         return DieselEngine(*args)
     elif engine_type == EngineType.STEAM:
         return SteamEngine(*args)
+
 
 class Engine(UnsavedChangesHandler):
     """
@@ -45,10 +48,11 @@ class Engine(UnsavedChangesHandler):
                  sound_segments):
         UnsavedChangesHandler.__init__(self, save_status_method)
         self.sound_segments = sound_segments
-        if self.sound_segments != None:
+        if self.sound_segments:
             self.sound_function = SoundFunction(self.sound_segments)
         else:
             self.sound_function = None
+
 
 class DieselEngine(Engine):
     """
@@ -73,7 +77,8 @@ class DieselEngine(Engine):
         self.start_sound = start_sound
         self.idle_sound = idle_sound
         self.quit_sound = quit_sound
-        
+
+
 class SteamEngine(Engine):
     """
     | A steam-powered engine.
@@ -117,4 +122,4 @@ class SteamEngine(Engine):
         self.wheel_diameter = wheel_diameter
         self.min_freq = min_freq
         self.sound_segments = sound_segments
-        
+

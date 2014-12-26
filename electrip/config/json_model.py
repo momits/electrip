@@ -17,6 +17,7 @@ from electrip.config.sound_segments import create_sound_segment
 from electrip.config.sound_engines import create_engine, EngineType
 from electrip.config.linear_segment_function import LinearSegmentFunction
 
+
 class DictWrapper:
     """
     Wrapper used to retrieve values from
@@ -52,7 +53,8 @@ class DictWrapper:
         return JsonModel.get_param_list_from_dict(config_dict,
                                                   attribute_list,
                                                   ignore)
-        
+
+
 class ObjectWrapper:
     """
     Wrapper used to retrieve values from
@@ -83,8 +85,9 @@ class ObjectWrapper:
         setattr(o, a, v)
     
     @staticmethod
-    def get_param_list(obj, attribs, unused_ignore=False):
-        return JsonModel.get_param_list_from_object(obj, attribs)
+    def get_param_list(obj, attributes, unused_ignore=False):
+        return JsonModel.get_param_list_from_object(obj, attributes)
+
 
 class JsonModel:
     """
@@ -219,19 +222,19 @@ class JsonModel:
         self.sound_attributes = [("sampling_rate", 44100),
                                  ("show_level_bar", True)]
     
-        if locos == None:
+        if locos is None:
             self.locos = []
         else:
             self.locos = locos
-        if server == None:
+        if server is None:
             self.server = Server(self.unsaved_changes)
         else:
             self.server = server
-        if joystick == None:
+        if joystick is None:
             self.joystick = Joystick(self.unsaved_changes)
         else:
             self.joystick = joystick
-        if sound == None:
+        if sound is None:
             self.sound = Sound(self.unsaved_changes)
         else:
             self.sound = sound

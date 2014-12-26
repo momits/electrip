@@ -3,6 +3,7 @@
 
 from unsaved_changes import UnsavedChangesHandler
 
+
 class ToggleMode:
     """
     Class used to specify different ways
@@ -18,6 +19,7 @@ class ToggleMode:
     PUSH = 1
     PUSH_LIMITED = 2
     TAP = 3
+
 
 class LocoFunction(UnsavedChangesHandler):
     """
@@ -35,7 +37,8 @@ class LocoFunction(UnsavedChangesHandler):
         Toggles the state of the function.
         """
         self.state = not self.state
-        
+
+
 class DecoderFunction(LocoFunction):
     """
     Function of the Decoder in a model-train loco.
@@ -54,6 +57,7 @@ class DecoderFunction(LocoFunction):
                               button)
         self.nr = function
         self.toggle_mode = toggle_mode
+
 
 class EventSound(LocoFunction):
     """
@@ -102,7 +106,8 @@ class EventSound(LocoFunction):
         self.fade_in = fade_in
         self.fade_out = fade_out
         self.play_to_end = play_to_end
-        
+
+
 class FunctionSound(LocoFunction):
     """
     A :class:`LocoFunction` which plays a sound-file

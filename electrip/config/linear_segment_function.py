@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 
+
 class LinearSegmentFunction:
     """
     Function consisting of linear segments which build a
@@ -30,7 +31,7 @@ class LinearSegmentFunction:
         # no good to have two points at one spot:
         if not (x, y) in self.control_points:
             nr = self.get_segment_nr_from_x(x)
-            if nr != None:
+            if nr:
                 self.control_points.insert(nr + 1,
                                            (x,
                                             max(self.control_points[nr][1] ,
@@ -88,7 +89,8 @@ class LinearSegmentFunction:
                                                                     self.control_points[nr])
         return self.control_points[nr]
                         
-    def calc_func_segment(self, point1, point2):
+    @staticmethod
+    def calc_func_segment(point1, point2):
         """
         Solves the equation y=a*x+b using the
         two points ``(x1, y1)`` and ``(x2, y2)``.
@@ -108,7 +110,7 @@ class LinearSegmentFunction:
             return 0
         else:
             seg_nr = self.get_segment_nr_from_x(x)
-            if seg_nr != None:
+            if seg_nr is not None:
                 a, b = self.func_segments[seg_nr]
                 y = a * x + b
                 return y
@@ -122,7 +124,7 @@ class LinearSegmentFunction:
             return 0
         else:
             seg_nr = self.get_segment_nr_from_y(y)
-            if seg_nr != None:
+            if seg_nr:
                 a, b = self.func_segments[seg_nr]
                 x = (y - b) / a
                 if x > self.control_points[seg_nr][0]:

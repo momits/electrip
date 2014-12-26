@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 
+
 class SoundFunction:
     """
     A Function consisting of :class:`SoundSegment`-
@@ -23,7 +24,7 @@ class SoundFunction:
             # the "load_sound" of the segment at 67.0 km/h
         """
         nr = self.get_segment_nr_from_x(x)
-        if nr != None:
+        if nr is not None:
             return getattr(self.segments[nr], sound_type)
         
     def get_segment_nr_from_x(self, x):

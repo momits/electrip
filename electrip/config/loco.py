@@ -5,6 +5,7 @@ from unsaved_changes import UnsavedChangesHandler
 from linear_segment_function import LinearSegmentFunction
 import time
 
+
 class Loco(UnsavedChangesHandler):
     """
     A model-train loco.

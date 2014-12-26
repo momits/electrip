@@ -315,7 +315,8 @@ class LoadLocoButton(Gtk.Button):
                      main_window,
                      loco_treeview)
         
-    def import_loco(self, button, main_window, loco_treeview):
+    @staticmethod
+    def import_loco(button, main_window, loco_treeview):
         file_chooser_dialog = LocoLoadDialog(main_window)
         response = file_chooser_dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -348,7 +349,8 @@ class SaveLocoButton(Gtk.Button):
         self.set_valign(Gtk.Align.END)
         self.connect("clicked", self.export_loco, main_window)
         
-    def export_loco(self, button, main_window):
+    @staticmethod
+    def export_loco(button, main_window):
         if Config.active_loco:
             file_chooser_dialog = LocoSaveDialog(main_window)
             response = file_chooser_dialog.run()
@@ -535,8 +537,9 @@ class FunctionActionBox(widgets.TreeViewActionBox):
                                            function_treeview,
                                            "Neue Funktion",
                                            "Funktion löschen")
-        
-    def get_liststore_row(self, function):
+
+    @staticmethod
+    def get_liststore_row(function):
         return [function.name,
                 function.nr,
                 vocab.on_off[function.state],
@@ -581,16 +584,21 @@ class EventSoundActionBox(widgets.TreeViewActionBox):
                                            "Neues Geräusch",
                                            "Geräusch löschen")
         
-    def get_liststore_row(self, event_sound):
+    @staticmethod
+    def get_liststore_row(event_sound):
         return [event_sound.name,
-                event_sound.file_path,
                 vocab.on_off[event_sound.state],
+                event_sound.button,
+                event_sound.file_path,
+                vocab.maybe_direction_to_str(event_sound.direction),
                 vocab.maybe_float_to_str(event_sound.min_speed),
                 vocab.maybe_float_to_str(event_sound.max_speed),
                 vocab.maybe_float_to_str(event_sound.min_accel),
                 vocab.maybe_float_to_str(event_sound.max_accel),
-                event_sound.button]
-        
+                event_sound.fade_in,
+                event_sound.fade_out,
+                vocab.on_off[event_sound.play_to_end]]
+
     def add_row_at_start(self):
         new_event_sound = config.EventSound(Config.unsaved_changes)
         Config.active_loco.event_sounds.append(new_event_sound)
@@ -630,7 +638,8 @@ class FunctionSoundActionBox(widgets.TreeViewActionBox):
                                            "Neues Geräusch",
                                            "Geräusch löschen")
         
-    def get_liststore_row(self, func_sound):
+    @staticmethod
+    def get_liststore_row(func_sound):
         return [func_sound.name,
                 func_sound.file_path,
                 vocab.on_off[func_sound.state],

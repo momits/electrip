@@ -250,7 +250,6 @@ class ControllerHub(Gtk.Grid):
             # remove auto-scrolling attempts
             GObject.source_remove(self.timeout_handle)
 
-
     def scroll(self, direction, gamepad):
         """
         Assigns the *gamepad* another loco to control, namely
@@ -338,7 +337,8 @@ class ControllerHub(Gtk.Grid):
                                                          axis_value))
         return True
 
-    def accelerate_loco(self, loco, value):
+    @staticmethod
+    def accelerate_loco(loco, value):
         """
         Calculates the acceleration of *loco* using *value*,
         which must be a float between -1 and 1 representing the
@@ -417,8 +417,6 @@ class LocoController(Gtk.Frame):
 
         self.reverser = Reverser(loco, socket_thread, self.speed_scale)
 
-#         circle_pixbufs = dict([(name, GdkPixbuf.Pixbuf.new_from_file(path))
-#                                for name, path in CIRCLE_PATHS.items()])
         self.function_box = FunctionBox(self.loco,
                                         self.speed_scale,
                                         event_thread,
@@ -452,14 +450,6 @@ class LocoController(Gtk.Frame):
             self.get_style_context().add_class("has-gamepad")
             self.get_style_context().add_class("has-gamepad-" + str(new_gamepad.pygame_id))
         self.gamepad = new_gamepad
-
-#     def set_gamepad_label(self, gamepad):
-#         self.gamepad_label = Gtk.Label.new(gamepad.name)
-#         self.gamepad_label.set_max_width_chars(25)
-#         self.gamepad_label.get_style_context().add_class("gamepad-label")
-#         self.gamepad_label.set_ellipsize(Pango.EllipsizeMode.END)
-#         self.gamepad_label.show()
-#         self.set_label_widget(self.gamepad_label)
 
 
 class LocoImage(Gtk.Image):
@@ -726,7 +716,6 @@ class Reverser(Gtk.ToggleButton):
     def __init__(self, loco, socket_thread, scale):
         Gtk.ToggleButton.__init__(self)
         self.get_style_context().add_class("reverser")
-#         self.set_halign(Gtk.Align.CENTER)
         self.set_hexpand(True)
 
         # all the state logic is covered in 'styles.css'
