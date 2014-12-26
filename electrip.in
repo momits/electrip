@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# change into the electrip package
+cd @pythondir@/electrip;
+
+# start electrip and pass all arguments to it
+python run.py $*;
