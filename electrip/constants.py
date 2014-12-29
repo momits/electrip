@@ -10,9 +10,7 @@ from os.path import normpath as _
 ELECTRIP_VERSION = "5.3.7"
 
 ICON_PATHS = (_("icons/logo_icon_128.png"),
-              _("icons/logo_icon_64.png"),
-              _("icons/logo_icon_48.png"),
-              _("icons/logo_icon_32.png"))
+              _("icons/logo_icon_64.png"))
 
 RELOAD_GRAPH_IMAGE_PATH = _("icons/reload_graph.png")
 
