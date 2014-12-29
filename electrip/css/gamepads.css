@@ -7,6 +7,7 @@
 	background: none;
 	border: none;
 	border-radius: 5px;
+	opacity: 1.0;
 }
 
 /* Any Gamepad */
@@ -44,8 +45,12 @@
 }
 
 .loco-controller.has-gamepad .loco-speed-scale.trough {
-	background: rgb(145, 145, 145);
+    background: rgb(145, 145, 145);
     border-color: rgb(108, 108, 108);
+}
+
+.loco-controller.has-gamepad.focus {
+    animation: pulse-bg infinite alternate ease-in-out 0.2s;
 }
 
 /* Gamepad 0 */
@@ -95,3 +100,15 @@
     border-color: rgb(108, 108, 108);
 }
 */
+
+/* Pulse on focus request */
+
+@keyframes pulse-bg {
+    from {
+	opacity: 0.2;
+    }
+    
+    to {
+	opacity: 1.0
+    }
+}
