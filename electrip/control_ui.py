@@ -205,6 +205,7 @@ class ControllerHub(Gtk.Grid):
 
         elif button == Config.joystick.focus_button:
             self.focus_controller(self.controllers[loco_id])
+            self.controllers[loco_id].get_style_context().add_class("focus")
 
         elif button == Config.joystick.sound_button \
         and self.controllers[loco_id].loco.engine:
@@ -224,13 +225,16 @@ class ControllerHub(Gtk.Grid):
         exists its state is switched.
         """
         loco_id = self.mapping[gamepad]
-        for function_button in self.controllers[loco_id].function_box.buttons:
-            if hasattr(function_button, "function") \
-            and button == function_button.function.button:
-                if hasattr(function_button.function, "toggle_mode") \
-                and (function_button.function.toggle_mode == config.ToggleMode.PUSH or \
-                     function_button.function.toggle_mode == config.ToggleMode.PUSH_LIMITED):
-                    function_button.clicked()
+        if button == Config.joystick.focus_button:
+            self.controllers[loco_id].get_style_context().remove_class("focus")
+        else:
+            for function_button in self.controllers[loco_id].function_box.buttons:
+                if hasattr(function_button, "function") \
+                and button == function_button.function.button:
+                    if hasattr(function_button.function, "toggle_mode") \
+                    and (function_button.function.toggle_mode == config.ToggleMode.PUSH \
+                         or function_button.function.toggle_mode == config.ToggleMode.PUSH_LIMITED):
+                        function_button.clicked()
 
     def horiz_joyhat_moved(self, gamepad, direction):
         """

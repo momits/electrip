@@ -9,7 +9,7 @@ from sys import platform
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "5.3.8"
+ELECTRIP_VERSION = "5.3.9"
 
 ICON_PATHS = (_("icons/logo_icon_128.png"),
               _("icons/logo_icon_64.png"))
