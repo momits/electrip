@@ -15,4 +15,9 @@ setup(name='Electrip',
       package_data={'electrip': ['styles.css',
                                  'electrip.ui',
                                  'icons/arrows/*',
-                                 'icons/gamepads/*.png']})
+                                 'icons/circle.svg',
+                                 'icons/circle_insensitive.svg',
+                                 'icons/question_mark.svg',
+                                 'icons/reload_graph.png',
+                                 'icons/sound_bar_pane_handle3.png',
+                                 'css/*.css']})

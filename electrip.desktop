@@ -4,6 +4,6 @@ Encoding=UTF-8
 Name=Electrip
 Comment=SRCP model railroad control using Gamepads
 Comment[de]=SRCP-Modellbahnsteuerung mit Gamepad-Unterstützung
-Exec=electrip -f %f
+Exec=electrip
 Icon=electrip
 Terminal=false
