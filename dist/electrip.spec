@@ -1,5 +1,5 @@
-%define name Electrip
-%define version 5.0.8
+%define name electrip
+%define version 5.3.8
 %define release 1
 
 Summary: Model railroad control using Gamepads
@@ -11,14 +11,14 @@ License: GPL Version 3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildArch: noarch
-Vendor: Moritz Renftle momits@users.sourceforge.net
 Url: http://www.electrip.sourceforge.net
 
-Requires: "python(abi) = 2.7"
-Requires: "gtk3 >= 3.10.2"
-Requires: "pygame >= 1.9.1"
+Requires: python(abi) = 2.7
+Requires: gtk3 >= 3.10.2
+Requires: pygame >= 1.9.1
 
 BuildRequires: desktop-file-utils
+BuildRequires: xdg-utils
 
 %description
 Electrip is a SRCP-Client which allows you to control your locos
@@ -26,22 +26,28 @@ with Gamepads. Electrip is very configurable and offers some powerful
 features, including the simulation of loco sounds.
 
 %prep
-%setup -n %{name}-%{version}
+%autosetup -n %{name}-%{version}
 
 %build
 %{__python} setup.py build
 
 %install
 %{__python} setup.py install -O1 --root=%{buildroot} --skip-build --record=INSTALLED_FILES
-sed 's/@pythondir@/%{python_sitelib}/g' electrip.in > %{_bindir}/electrip
+mkdir %{buildroot}%{_bindir}
+sed 's/@pythondir@/'$( echo %{python_sitelib} | sed 's|/|\\/|g' | sed 's| |\\ |g' )/g electrip.in > %{buildroot}%{_bindir}/electrip
+mkdir -p  %{buildroot}%{_datadir}/icons/hicolor/128x128/apps && cp electrip/icons/logo_icon_128.png "$_"/electrip.png
+mkdir -p  %{buildroot}%{_datadir}/icons/hicolor/64x64/apps && cp electrip/icons/logo_icon_64.png "$_"/electrip.png
 desktop-file-install --dir %{buildroot}%{_datadir}/applications electrip.desktop
-
 
 %clean
 rm -rf %{buildroot}
 
 %files -f INSTALLED_FILES
-%defattr(-,root,root)
+%defattr(0644,root,root)
+%attr(0755,root,root) %{_bindir}/electrip
+%{_datadir}/applications/electrip.desktop
+%{_datadir}/icons/hicolor/128x128/apps/electrip.png
+%{_datadir}/icons/hicolor/64x64/apps/electrip.png
 
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
