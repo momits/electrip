@@ -1,5 +1,5 @@
 %define name electrip
-%define version 5.3.8
+%define version 5.3.9
 %define release 1
 
 Summary: Model railroad control using Gamepads
