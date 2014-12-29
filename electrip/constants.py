@@ -1,18 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os.path import normpath as _
+from os.path import expanduser, exists, normpath as _
+from os import makedirs
+from sys import platform
 
 # ELECTRIP-Constants
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "5.3.7"
+ELECTRIP_VERSION = "5.3.8"
 
 ICON_PATHS = (_("icons/logo_icon_128.png"),
               _("icons/logo_icon_64.png"))
 
 RELOAD_GRAPH_IMAGE_PATH = _("icons/reload_graph.png")
+
+# path for settings
+CONFIG_DIR = expanduser("~/.config/electrip")
+if not exists(CONFIG_DIR):
+    if platform.startswith("linux"):
+        # create the directory
+        makedirs(CONFIG_DIR, 0700)
+    else:
+        # allow bundles on other OS to save settings locally
+        CONFIG_DIR = ""
 
 # ----------- Configuration -----------
 

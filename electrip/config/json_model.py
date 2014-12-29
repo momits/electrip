@@ -2,11 +2,13 @@
 # -*- coding: UTF 8 -*-
 
 import json
-from os.path import basename, split, exists, sep as os_sep
+import os.path
+from os import sep as os_sep
 import zipfile
 from copy import deepcopy
 
 from electrip.concurrent import locked_print
+from electrip.constants import CONFIG_DIR
 from electrip.config.loco import Loco
 from electrip.config.loco_functions import ToggleMode, DecoderFunction, \
     FunctionSound, EventSound
@@ -242,7 +244,7 @@ class JsonModel:
         self.active_loco = None
         
         try:
-            f = open("last_file.json")
+            f = open(os.path.join(CONFIG_DIR, "last_file.json"))
             self.last_file = json.load(f)["last_file"]
             f.close()
         except IOError:
@@ -279,7 +281,7 @@ class JsonModel:
             # subdirectory '/sound'
         """
         try:
-            file_name = basename(file_path)
+            file_name = os.path.basename(file_path)
             if dest != "":
                 file_name = dest + os_sep + file_name
             if file_name not in zip_file.namelist():
@@ -473,7 +475,7 @@ class JsonModel:
         """
         for attrib in attribs:
             file_name = getattr(config_object, attrib)
-            if file_name is not None and exists(path_prefix + file_name):
+            if file_name is not None and os.path.exists(path_prefix + file_name):
                 setattr(config_object, attrib, path_prefix + file_name)
             else:
                 setattr(config_object, attrib, file_name)
@@ -484,7 +486,7 @@ class JsonModel:
         unpacked from a zip-file-package.
         See :func:`save_loco`.
         """
-        dir_path, file_name = split(file_path)
+        dir_path, file_name = os.path.split(file_path)
         loco_name, ending = file_name.split(".")
         if ending == "zip":
             dir_path += os_sep + loco_name + os_sep
@@ -721,15 +723,15 @@ class JsonModel:
                 # utf-8-bytestrings to avoid ascii-related problems
                 param_list.append(JsonModel.get_utf8_bytestring(value))
         return param_list
-    
+
     def save_opened_file(self, file_path):
         """
         Stores the *file_path* of the currently opened
         file in :file:`last_file.json` which will be placed
-        in the current working directory.
+        in the users ./config directory.
         """
         if self.last_file != file_path:
-            f = open("last_file.json", "w")
+            f = open(os.path.join(CONFIG_DIR, "last_file.json"), "w")
             json.dump({"last_file": file_path}, f, indent=2)
             f.close()
             self.last_file = file_path
