@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 # -*- coding: UTF-8 -*-
+import logging
 
 from gi.repository import GdkPixbuf, GObject
 
@@ -8,17 +9,18 @@ import threading
 import time
 from math import pi
 
-from electrip.concurrent import locked_print
 from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND
 from electrip import config
+
+logger = logging.Logger("electrip.pygame_io")
 
 try:
     import pygame
     from pygame.locals import *
 except ImportError:
-    locked_print("PyGame ist nicht installiert, Gamepads "
-                 "und die Geräuschsimulation können daher nicht "
-                 "verwendet werden.")
+    logging.warning("PyGame ist nicht installiert, Gamepads "
+                    "und die Geräuschsimulation können daher nicht "
+                     "verwendet werden.")
     pygame_installed = False
 else:
     pygame_installed = True
@@ -34,13 +36,15 @@ class Gamepad:
         self.pygame_joystick.init()
         self.pygame_id = pygame_id
         self.name = self.pygame_joystick.get_name()
-        locked_print("--- GAMEPAD ---\n",
-                     "Id:",
-                     str(self.pygame_joystick.get_id()) + "\n",
-                     "Bezeichnung:",
-                     self.name + "\n",
-                     str(self.pygame_joystick.get_numaxes()) + " Achsen\n",
-                     str(self.pygame_joystick.get_numbuttons()) + " Knöpfe\n")
+        logger.info("--- GAMEPAD ---\n"
+                    "Id: {:d}\n"
+                    "Bezeichnung: {}\n"
+                    "{:d} Achsen\n"
+                    "{:d} Knöpfe\n"
+                    .format(self.pygame_joystick.get_id(),
+                            self.name,
+                            self.pygame_joystick.get_numaxes(),
+                            self.pygame_joystick.get_numbuttons()))
         self.scroll_direction = 0
         
     @staticmethod
@@ -50,10 +54,10 @@ class Gamepad:
         until all devices discovered by pygame are in use or *max_nr*
         is reached. Set *max_nr* to -1 if you dont need a limit.
         """
-        for gamepad_id in xrange(pygame.joystick.get_count()):
+        for gamepad_id in range(pygame.joystick.get_count()):
             if gamepad_id == max_nr:
-                locked_print("Maximale Anzahl von Gamepads erreicht,"
-                             "weitere Gamepads werden ignoriert.")
+                logger.warning("Maximale Anzahl von Gamepads erreicht,"
+                               "weitere Gamepads werden ignoriert.")
                 break
             yield Gamepad(gamepad_id)
 
@@ -145,7 +149,7 @@ class EventHandlerThread(threading.Thread):
             
             elif event.type == STOP_EVENT:
                 self.running = False
-                locked_print("EventHandlerThread beendet.")
+                logger.info("EventHandlerThread beendet.")
       
     def add_callback(self, channel_id, callback_func, *args):
         """
@@ -255,7 +259,7 @@ class EventHandlerThread(threading.Thread):
                 return sound
             except pygame.error:
                 pass
-        locked_print("Not a valid sound_file:", sound_file)
+        logger.warning("Not a valid sound_file: {}".format(sound_file))
         return None
     
     def quit(self):
@@ -700,7 +704,7 @@ class SteamSoundController(SoundController):
         self.steam_channel_id = self.mixer.acquire_channel_id()
         self.idle_channel_id = self.mixer.acquire_channel_id()
         self.stroke_channel_ids = [self.mixer.acquire_channel_id()
-                                   for unused_stroke in xrange(loco_engine.nr_strokes)]
+                                   for unused_stroke in range(loco_engine.nr_strokes)]
         
         for segment in self.engine.sound_segments:
             for nr, sound_path in enumerate(segment.stroke_sounds):
@@ -730,7 +734,7 @@ class SteamSoundController(SoundController):
         self.engine_is_running = False
         if hasattr(self, "stroke_stop_event"):
             self.stroke_stop_event.set()
-        for stroke in xrange(self.engine.nr_strokes):
+        for stroke in range(self.engine.nr_strokes):
             self.mixer.stop_channel(self.stroke_channel_ids[stroke])
         self.mixer.stop_channel(self.idle_channel_id)
         self.mixer.stop_channel(self.steam_channel_id)

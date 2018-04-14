@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
+import logging
 
 from gi.repository import GObject, Gtk, Pango, Gdk
 import cairo
 from math import pi
 
-from electrip.concurrent import locked_print
 from electrip.constants import ELECTRIP_VERSION
 from electrip.dialog_templates import FileSetResetDialog, ImageFileFilter, \
     AllFileFilter, SoundFileFilter
+
+logger = logging.Logger("electrip.widgets")
 
 
 class StockImageButton(Gtk.Button):
@@ -1061,7 +1063,7 @@ class ControlPointGraph(Gtk.DrawingArea):
             cr.set_line_width(self.line_width)
 
             cr.set_source_rgb(*self.point_color)
-            for y in xrange(1, int(self.y_max)):
+            for y in range(1, int(self.y_max)):
                 x = self.func.get_x(y)
                 if x is not None:
                     x_abs, y_abs = self.get_pixel_coords(x, y)
@@ -1073,7 +1075,7 @@ class ControlPointGraph(Gtk.DrawingArea):
                     cr.fill()
             cr.stroke()
 
-            for nr in xrange(len(self.func.control_points) - 1):
+            for nr in range(len(self.func.control_points) - 1):
                 x_abs_1, y_abs_1 = self.get_pixel_coords(*self.func.control_points[nr])
                 x_abs_2, y_abs_2 = self.get_pixel_coords(*self.func.control_points[nr + 1])
                 

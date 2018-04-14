@@ -1,8 +1,8 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- coding: UTF 8 -*-
 
-from unsaved_changes import UnsavedChangesHandler
-from linear_segment_function import LinearSegmentFunction
+from electrip.config.unsaved_changes import UnsavedChangesHandler
+from electrip.config.linear_segment_function import LinearSegmentFunction
 import time
 
 
@@ -32,23 +32,23 @@ class Loco(UnsavedChangesHandler):
         # the "functions"-parameter above, because it is
         # a list and will therefore contain pointers to the same objects
         # for all locos, resulting in the same functions for all locos
-        if functions == None:
+        if functions is None:
             self.functions = []
         else:
             self.functions = functions
         
-        if speed_to_step_func == None:
+        if speed_to_step_func is None:
             self.speed_to_step_func = LinearSegmentFunction()
             self.speed_to_step_func.load([(0.0, 0.0), (100.0, 128.0)])
         else:
             self.speed_to_step_func = speed_to_step_func
         
-        if function_sounds == None:
+        if function_sounds is None:
             self.function_sounds = []
         else:
             self.function_sounds = function_sounds
         
-        if event_sounds == None:
+        if event_sounds is None:
             self.event_sounds = []
         else:
             self.event_sounds = event_sounds
@@ -104,9 +104,9 @@ class Loco(UnsavedChangesHandler):
         self.last_speed_step = int(self.speed_step)
         if len(self.functions) > 0:
             toggled = [False for unused_i in range(max([function.nr + 1 for function in self.functions]))]
-            for function in self.functions:
-                if function.state:
-                    toggled[function.nr] = True
+            for func in self.functions:
+                if func.state:
+                    toggled[func.nr] = True
             functions = " " + " ".join(str(int(val)) for val in toggled)
         else:
             functions = ""

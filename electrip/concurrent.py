@@ -1,28 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import logging
 import threading
-import Queue
+import queue
 from socket import timeout
 
-
-def locked_print(*args):
-    """
-    Acquires ``print_lock`` and then prints
-    like the normal print-statement. Calling
-    this method consequently ensures nice output
-    when multiple threads are printing.
-    """
-    strings = map(str, args)
-    string = " ".join(strings)
-    print_lock.acquire()
-    print string
-    print_lock.release()
-
-print_lock = threading.Lock()
+logger = logging.Logger("electrip.concurrent")
 
 
-class SocketThread(threading.Thread):
+class SRCPSocketThread(threading.Thread):
     """
     Thread implementing strictly sequential socket-
     communication from a client-perspective:
@@ -38,7 +24,7 @@ class SocketThread(threading.Thread):
     def __init__(self, socket, timeout=2):
         threading.Thread.__init__(self)
         # we allow at most 20 unhandled srcp-commands at a time
-        self.msg_queue = Queue.Queue(20)
+        self.msg_queue = queue.Queue(20)
         self.socket = socket
         # two seconds without response raise a timeout-error
         socket.settimeout(timeout)
@@ -49,9 +35,9 @@ class SocketThread(threading.Thread):
         of commands to be sent to the server.
         """
         try:
-            self.msg_queue.put(cmd, False)
-        except Queue.Full:
-            locked_print("Socket-Fehler: Mehr als 20 unbeantwortete Befehle.")
+            self.msg_queue.put(cmd.encode("ascii"), False)
+        except queue.Full:
+            logger.error("Socket-Fehler: Mehr als 20 unbeantwortete Befehle.")
     
     def send_and_block_for_answer(self, cmd):
         """
@@ -60,13 +46,12 @@ class SocketThread(threading.Thread):
         Returns an error message if timeout was reached.
         """
         try:
-            self.socket.send(cmd)
+            self.socket.send(cmd.encode("ascii"))
         except timeout:
-            locked_print("Zeitüberschreitung beim "
+            logger.error("Zeitüberschreitung beim "
                          "Senden des Befehls:\n" + cmd)
         else:
-            locked_print("SEND>>: " + cmd,
-                         "RECV<<:" + self.wait_for_answer())
+            logger.info("SEND>>: {} RECV<<: {}".format(cmd, self.wait_for_answer()))
     
     def wait_for_answer(self):
         """
@@ -75,7 +60,7 @@ class SocketThread(threading.Thread):
         timeout was reached.
         """
         try:
-            ans = self.socket.recv(4096)
+            ans = self.socket.recv(4096).decode("ascii")
         except timeout:
             return "Zeitüberschreitung der Server-Antwort."
         else:
@@ -89,11 +74,10 @@ class SocketThread(threading.Thread):
             try:
                 self.socket.send(msg)
             except timeout:
-                locked_print("Zeitüberschreitung beim "
+                logger.error("Zeitüberschreitung beim "
                              "Senden des Befehls:\n" + msg)
             else:
-                locked_print("SEND>>: " + msg,
-                             "RECV<<:" + self.wait_for_answer())
+                logger.info("SEND>>: {}\n  RECV<<: {}".format(msg, self.wait_for_answer()))
             self.msg_queue.task_done()
     
     def quit(self):

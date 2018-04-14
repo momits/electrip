@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 
-from unsaved_changes import UnsavedChangesHandler
-from sound_engines import EngineType
+from .unsaved_changes import UnsavedChangesHandler
+from .sound_engines import EngineType
 
 """
 Classes providing abstractions for different types of sounds.

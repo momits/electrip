@@ -1,5 +1,6 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- coding: UTF 8 -*-
+
 
 class UnsavedChangesHandler(object):
     """
@@ -47,7 +48,7 @@ class UnsavedChangesHandler(object):
         """
         watch_id = self.create_watch_id()
         self.callbacks[watch_id] = (cb, args)
-        if self.attrib_name_to_watch_ids.has_key(attrib_name):
+        if attrib_name in self.attrib_name_to_watch_ids:
             self.attrib_name_to_watch_ids[attrib_name].append(watch_id)
         else:
             self.attrib_name_to_watch_ids[attrib_name] = [watch_id]
@@ -58,7 +59,7 @@ class UnsavedChangesHandler(object):
         using :func:`watch` identified by *watch_id*.
         """
         del self.callbacks[watch_id]
-        for attrib_name, watch_ids in self.attrib_name_to_watch_ids.items():
+        for attrib_name, watch_ids in list(self.attrib_name_to_watch_ids.items()):
             if watch_id in watch_ids:
                 watch_ids.remove(watch_id)
                 # remove empty lists

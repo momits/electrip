@@ -1,5 +1,6 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import logging
 
 from gi.repository.GLib import GError
 from gi.repository import GObject, Gtk, Pango, GdkPixbuf
@@ -8,11 +9,13 @@ import socket
 import threading
 import time
 
-from electrip.concurrent import locked_print, SocketThread
+from electrip.concurrent import SRCPSocketThread
 from electrip import pygame_io
 from electrip import config
 from electrip.constants import SOUND_LEVEL_ANIM_RES
 from electrip.utils import TwoWayDict
+
+logger = logging.Logger("electrip.control_ui")
 
 
 class MainBox(Gtk.Grid):
@@ -54,7 +57,7 @@ class MainBox(Gtk.Grid):
         self.socket_thread.send_and_wait_for_answer("TERM 1 POWER\n")
         self.socket_thread.send_and_wait_for_answer("TERM 0 SESSION\n")
         self.socket_thread.quit()
-        locked_print("Steuerung geschlossen.")
+        logger.info("Steuerung geschlossen.")
         self.destroy()
 
     def socket_init(self):
@@ -68,16 +71,16 @@ class MainBox(Gtk.Grid):
                      "GO\n",
                      "INIT " + bus + " POWER\n"]
 
-        self.socket_thread = SocketThread(socket.create_connection((Config.server.host,
-                                                                    Config.server.port)))
+        self.socket_thread = SRCPSocketThread(socket.create_connection((Config.server.host,
+                                                                        Config.server.port)))
         self.socket_thread.start()
 
         # we will use blocking socket methods to ensure
         # correct sequential order of commands and avoid
         # overflow errors
         # -------- Handshake ----------
-        locked_print("Socket-Verbindung ist aktiv:\n",
-                     self.socket_thread.wait_for_answer())
+        logger.info("Socket-Verbindung ist aktiv:\n {}"
+                    .format(self.socket_thread.wait_for_answer()))
         for msg in handshake:
             self.socket_thread.send_and_block_for_answer(msg)
 
@@ -214,7 +217,7 @@ class ControllerHub(Gtk.Grid):
                 sound_switch.clicked()
 
         elif not configured:
-            locked_print("Nicht konfigurierter Button wurde gedrückt.")
+            logger.info("Nicht konfigurierter Button wurde gedrückt.")
 
     def gamepad_button_released(self, gamepad, button):
         """
@@ -472,7 +475,7 @@ class LocoImage(Gtk.Image):
                             .scale_simple(110, 85, GdkPixbuf.InterpType.BILINEAR)
             except GError:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file("icons/question_mark.svg")
-                locked_print("Dateipfad '" + path + "' für Lokbild ist ungültig.")
+                logger.warning("Dateipfad '" + path + "' für Lokbild ist ungültig.")
             finally:
                 self.set_from_pixbuf(pixbuf)
 
@@ -1106,13 +1109,13 @@ class FunctionBox(Gtk.Grid):
                 buttons_per_column += 1
 
             nr_buttons_left = nr_buttons
-            for col_nr in xrange(nr_columns):
+            for col_nr in range(nr_columns):
                 if nr_buttons_left > buttons_per_column:
                     nr_buttons_to_pack = buttons_per_column
                 else:
                     nr_buttons_to_pack = nr_buttons_left
 
-                for row_nr in xrange(nr_buttons_to_pack):
+                for row_nr in range(nr_buttons_to_pack):
                     button = self.buttons[nr_buttons - nr_buttons_left + row_nr]
                     size_group.add_widget(button)
                     self.attach(button, col_nr, row_nr, 1, 1)

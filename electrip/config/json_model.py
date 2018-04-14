@@ -2,12 +2,13 @@
 # -*- coding: UTF 8 -*-
 
 import json
+import logging
+
 import os.path
 from os import sep as os_sep
 import zipfile
 from copy import deepcopy
 
-from electrip.concurrent import locked_print
 from electrip.constants import CONFIG_DIR
 from electrip.config.loco import Loco
 from electrip.config.loco_functions import ToggleMode, DecoderFunction, \
@@ -18,6 +19,8 @@ from electrip.config.sound import Sound
 from electrip.config.sound_segments import create_sound_segment
 from electrip.config.sound_engines import create_engine, EngineType
 from electrip.config.linear_segment_function import LinearSegmentFunction
+
+logger = logging.Logger("electrip.config.json_model")
 
 
 class DictWrapper:
@@ -249,18 +252,18 @@ class JsonModel:
             f.close()
         except IOError:
             self.last_file = ""
-            locked_print("Noch kein letzter Dateipfad gespeichert.")
+            logger.info("Noch kein letzter Dateipfad gespeichert.")
             
-    @staticmethod
-    def get_utf8_bytestring(value):
-        """
-        Returns a utf8-bytestring made from
-        a unicode-object *value*. If *value* is not
-        a unicode-object, *value* is returned.
-        """
-        if isinstance(value, unicode):
-            value = value.encode("utf-8")
-        return value
+    # @staticmethod
+    # def get_utf8_bytestring(value):
+    #     """
+    #     Returns a utf8-bytestring made from
+    #     a unicode-object *value*. If *value* is not
+    #     a unicode-object, *value* is returned.
+    #     """
+    #     if isinstance(value, str):
+    #         value = value.encode("utf-8")
+    #     return value
             
     @staticmethod
     def add_file_to_zip(zip_file, file_path, dest=""):
@@ -289,7 +292,7 @@ class JsonModel:
         # error occurs if file_path is None (type of error
         # varies on different platforms)
         except:
-            locked_print("Ungültige Datei '" + str(file_path) + 
+            logger.error("Ungültige Datei '" + str(file_path) +
                          "' konnte nicht in Lok-Verzeichnis kopiert werden.")
             return None
         else:
@@ -388,7 +391,7 @@ class JsonModel:
             zip_file.writestr(loco.name + ".loco",
                               json.dumps(self.create_loco_dict(loco),
                                          indent=2))
-            locked_print("Lok wurde gespeichert in", file_path)
+            logger.info("Lok wurde gespeichert in {}.".format(file_path))
             self.new_unsaved_changes_method = save_status_method
             self.notice_unsaved_changes = True
         
@@ -445,7 +448,7 @@ class JsonModel:
             
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
-        locked_print("Einstellungen wurden gespeichert in " + file_path)
+        logger.info("Einstellungen wurden gespeichert in {}.".format(file_path))
         
     @staticmethod
     def create_dict(config_object, attribute_list):
@@ -573,9 +576,9 @@ class JsonModel:
 
         speed_func = LinearSegmentFunction()
         if wrapper == DictWrapper:
-            speed_func.load(map(tuple,
+            speed_func.load(list(map(tuple,
                                 wrapper.get(loco_obj,
-                                            "speed_control_points")))
+                                            "speed_control_points"))))
         else:
             speed_func.load(wrapper.get(wrapper.get(loco_obj,
                                                     "speed_to_step_func"),
@@ -631,8 +634,7 @@ class JsonModel:
                                       for segment_obj in wrapper.get(engine_obj,
                                                                      "sound_segments")]
                 except KeyError:
-                    locked_print("Die Datei besitzt noch keine "
-                                 "Geräusch-Informationen.")
+                    logger.info("Die Datei besitzt noch keine Geräusch-Informationen.")
                     sound_segments = None
             else:
                 sound_segments = None
@@ -680,7 +682,7 @@ class JsonModel:
         
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
-        locked_print("Einstellungen wurden geladen aus " + file_path)
+        logger.info("Einstellungen wurden geladen aus {}.".format(file_path))
         self.notice_unsaved_changes = True
     
     @staticmethod
@@ -713,15 +715,11 @@ class JsonModel:
             except KeyError:
                 param_list.append(standard_value)
                 if not ignore:
-                    locked_print("Dateiformat inkorrekt: Attribut",
-                                 attrib,
-                                 "ist nicht enthalten, es wurde der Standardwert",
-                                 standard_value,
-                                 "verwendet.")
+                    logger.warning("Dateiformat inkorrekt: Attribut {} "
+                                   "ist nicht enthalten, es wurde der Standardwert {}"
+                                   "verwendet.".format(attrib, standard_value))
             else:
-                # convert all unicode-objects into
-                # utf-8-bytestrings to avoid ascii-related problems
-                param_list.append(JsonModel.get_utf8_bytestring(value))
+                param_list.append(value)
         return param_list
 
     def save_opened_file(self, file_path):
@@ -786,8 +784,8 @@ class JsonModel:
         Normally this is done using :class:`UnsavedChangesHandler`.
         """
         if self.notice_unsaved_changes:
-            locked_print("Attribute '" + name + "' of object '" +
-                         str(obj) + "' has new value:", value)
+            logger.info("Attribute '{}' of object '{}' has new value: {}"
+                        .format(name, str(obj), value))
             self.has_unsaved_changes = True
             # if method has been setup, call it
             if self.opened_file is not None \

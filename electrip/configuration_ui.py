@@ -1672,7 +1672,7 @@ class SteamSoundSelectorButton(SoundSelectorButton):
         grid.set_border_width(6)
         self.buttons = []
         self.update_stroke_sounds()
-        for stroke_nr in xrange(self.segment_bar.loco.engine.nr_strokes):
+        for stroke_nr in range(self.segment_bar.loco.engine.nr_strokes):
             button = widgets.EasyFileButton([SoundFileFilter()])
             button.set_tooltip_text("Geräusch für Zylinderschlag " + str(stroke_nr + 1))
             path = self.segment.stroke_sounds[stroke_nr]
@@ -1691,7 +1691,7 @@ class SteamSoundSelectorButton(SoundSelectorButton):
         nr_strokes = self.segment_bar.loco.engine.nr_strokes
         if self.segment.stroke_sounds is None \
         or len(self.segment.stroke_sounds) != nr_strokes:
-            self.segment.stroke_sounds = [None for unused_i in xrange(nr_strokes)]
+            self.segment.stroke_sounds = [None for unused_i in range(nr_strokes)]
         
     def show_popup(self, button):
         self.set_content(self.create_grid())

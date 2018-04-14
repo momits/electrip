@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-
+import logging
 from socket import error as SocketError
 import gc
 import argparse
@@ -9,12 +9,13 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import GObject, Gtk, GdkPixbuf, Gdk, Gio, GLib
 
-from electrip.concurrent import locked_print
 from electrip.constants import ELECTRIP_VERSION, ICON_PATHS
 from electrip.config import JsonModel
 from electrip import configuration_ui
 from electrip import control_ui
 from electrip import dialog_templates
+
+logger = logging.Logger("electrip.main")
 
 
 class Electrip(Gtk.Application):
@@ -131,7 +132,7 @@ class Electrip(Gtk.Application):
             path = file_chooser_dialog.get_filename()
             self.load_file(path)
         elif response == Gtk.ResponseType.CANCEL:
-            locked_print("Laden abgebrochen.")
+            logger.info("Laden abgebrochen.")
         file_chooser_dialog.destroy()
         
     def load_file(self, path):
@@ -228,7 +229,7 @@ class Electrip(Gtk.Application):
                 self.control_box.quit()
             self.quitting = True
             self.quit()
-            locked_print("Electrip wurde beendet.")
+            logger.info("Electrip wurde beendet.")
         else:
             dialog.destroy()
             return True

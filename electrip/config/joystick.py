@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 
-from unsaved_changes import UnsavedChangesHandler
+from .unsaved_changes import UnsavedChangesHandler
 
 class Joystick(UnsavedChangesHandler):
     """

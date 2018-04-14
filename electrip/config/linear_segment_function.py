@@ -135,7 +135,7 @@ class LinearSegmentFunction:
         Returns the number of the function segment belonging
         to the x-coordinate *x*.
         """
-        for nr in xrange(len(self.control_points) - 1):
+        for nr in range(len(self.control_points) - 1):
             if self.control_points[nr][0] <= x <= self.control_points[nr + 1][0]:
                 return nr
                 break
@@ -145,7 +145,7 @@ class LinearSegmentFunction:
         Returns the number of the function segment belonging
         to the y-coordinate *y*.
         """
-        for nr in xrange(len(self.control_points) - 1):
+        for nr in range(len(self.control_points) - 1):
             if self.control_points[nr][1] <= y <= self.control_points[nr + 1][1]:
                 return nr
                 break

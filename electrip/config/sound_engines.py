@@ -5,8 +5,8 @@
 Contains the different sound implementations.
 """
 
-from unsaved_changes import UnsavedChangesHandler
-from sound_function import SoundFunction
+from .unsaved_changes import UnsavedChangesHandler
+from .sound_function import SoundFunction
 
 
 class EngineType:
