@@ -21,7 +21,7 @@
     font-weight: bold;
 }
 
-.loco-controller.has-gamepad .reverser GtkImage.left-arrow {
+.loco-controller.has-gamepad .reverser .left-arrow {
     background-image: url("../icons/arrows/left_light_white.svg");
 }
 
@@ -37,14 +37,14 @@
     background-image: url("../icons/arrows/right_light_white.svg");
 }
 
-.loco-controller.has-gamepad .loco-speed-scale.slider {
+.loco-controller.has-gamepad .loco-speed-scale slider {
     background: -gtk-gradient (linear, 0 0, 0 1,
                                color-stop(0, rgb(135, 135, 135)),
                                color-stop(1, rgb(80, 80, 80)));
     border-color: rgb(63, 63, 63);
 }
 
-.loco-controller.has-gamepad .loco-speed-scale.trough {
+.loco-controller.has-gamepad .loco-speed-scale trough {
     background: rgb(145, 145, 145);
     border-color: rgb(108, 108, 108);
 }

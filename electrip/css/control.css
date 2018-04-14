@@ -2,7 +2,7 @@
 @import url("gamepads.css");
 
 * {
-    -GtkWidget-focus-line-width: 0;
+    outline-width: 0;
 }
 
 /* ----------------------
@@ -13,11 +13,15 @@ Global background        |
     background: rgb(250, 250, 250);
 }
 
+#loco-controller-hub-bg frame > border {
+    border: none
+}
+
 /* ------------------
 LocoLabel            |
 --------------------*/
 
-GtkLabel.loco-label {
+label.loco-label {
     font-size: 13pt;
 }
 
@@ -25,7 +29,7 @@ GtkLabel.loco-label {
 GamepadLabel         |
 --------------------*/
 
-GtkLabel.gamepad-label {
+label.gamepad-label {
     font-weight: 500;
     padding: 0px 5px;
 }
@@ -37,20 +41,19 @@ SpeedScale           |
 
 /* TODO: howto set color of fill-level??  */
 
-GtkScale.loco-speed-scale {
-    -GtkRange-slider-width: 22;
-    -GtkRange-trough-border: 2;
-    -GtkScale-slider-length: 22;
+scale.loco-speed-scale {
     margin: 10px;
 }
 
-GtkScale.loco-speed-scale.trough {
+scale.loco-speed-scale trough {
     border: 1px solid rgb(195, 195, 195);
     background: rgb(220, 220, 220);
     box-shadow: none;
 }
 
-GtkScale.loco-speed-scale.slider {
+scale.loco-speed-scale slider {
+    min-height: 22px;
+    min-width: 22px;
     border-radius: 50%;
     border: 1px solid rgb(165, 165, 165);
     background: -gtk-gradient (linear, 0 0, 0 1,
@@ -58,18 +61,16 @@ GtkScale.loco-speed-scale.slider {
                                      color-stop(1, rgb(200, 200, 200)));
 }
 
-
-
 /* ------------------
 CircleNumber         |
 --------------------*/
 
-GtkLabel.circle-number {
+label.circle-number {
     font-size: 9pt;
     background: center center/100% 100% no-repeat url("../icons/circle.svg");
 }
 
-GtkLabel.circle-number:insensitive {
+label.circle-number:disabled {
     background-image: url("../icons/circle_insensitive.svg");
 }
 
@@ -77,7 +78,7 @@ GtkLabel.circle-number:insensitive {
 FunctionBox          |
 --------------------*/
 
-GtkFrame.function-box-bg {
+frame.function-box-bg {
     padding: 8px;
     border: 2px solid rgba(0, 0, 0, 0);
     background: rgba(0, 0, 0, 0);
@@ -89,7 +90,7 @@ GtkFrame.function-box-bg {
 FunctionButton       |
 --------------------*/
 
-GtkToggleButton.function-button {
+button.function-button {
     background: -gtk-gradient (linear, 0 0, 0 1,
                                color-stop(0, rgb(247, 247, 247)),
                                color-stop(1, rgb(230, 230, 230)));
@@ -98,26 +99,26 @@ GtkToggleButton.function-button {
     color: rgb(0, 0, 0);
 }
 
-GtkToggleButton.function-button:active {
+button.function-button:checked {
     background: rgb(230, 230, 230);
     box-shadow: inset 0px 2px 3px rgb(193, 193, 193);
 }
 
-GtkToggleButton.function-button *:insensitive {
+button.function-button *:disabled {
     color: rgb(100, 100, 100);
 }
 
 
 
 
-GtkToggleButton.engine-switch {
+button.engine-switch {
     background: -gtk-gradient (linear, 0 0, 0 1,
                                color-stop(0, rgb(255, 195, 80)),
                                color-stop(1, rgb(255, 160, 60)));
     border-color: rgb(220, 150, 30);
 }
 
-GtkToggleButton.engine-switch:active {
+button.engine-switch:checked {
     background: rgb(255, 195, 80);
     box-shadow: inset 0px 2px 3px rgb(220, 150, 50);
 }
@@ -125,14 +126,14 @@ GtkToggleButton.engine-switch:active {
 
 
 
-GtkToggleButton.function-sound-button {
+button.function-sound-button {
     background: -gtk-gradient (linear, 0 0, 0 1,
                                color-stop(0, rgb(200, 200, 255)),
                                color-stop(1, rgb(160, 160, 250)));
     border-color: rgb(150, 150, 240);
 }
 
-GtkToggleButton.function-sound-button:active {
+button.function-sound-button:checked {
     background: rgb(200, 200, 245);
     box-shadow: inset 0px 2px 3px rgb(153, 153, 200);
 }
@@ -140,14 +141,14 @@ GtkToggleButton.function-sound-button:active {
 
 
 
-GtkToggleButton.event-sound-button {
+button.event-sound-button {
     background: -gtk-gradient (linear, 0 0, 0 1,
                                color-stop(0, rgb(255, 160, 160)),
                                color-stop(1, rgb(255, 130, 100)));
     border-color: rgb(235, 120, 120);
 }
 
-GtkToggleButton.event-sound-button:active {
+button.event-sound-button:checked {
     background: rgb(255, 160, 150);
     box-shadow: inset 0px 2px 3px rgb(190, 130, 100);
 }
@@ -157,32 +158,32 @@ GtkToggleButton.event-sound-button:active {
 Reverser             |
 --------------------*/
 
-GtkToggleButton.reverser {
+button.reverser {
     background: none;
     border: none;
 }
 
-GtkToggleButton.reverser GtkImage {
+button.reverser image {
     background-repeat: no-repeat;
     background-position: center center;
 }
 
-GtkToggleButton.reverser GtkImage.left-arrow {
+button.reverser image.left-arrow {
     background-image: url("../icons/arrows/left_light.svg");
     transition: 150ms ease;
 }
 
-GtkToggleButton.reverser GtkImage.right-arrow {
+button.reverser image.right-arrow {
     background-image: url("../icons/arrows/right_bold.svg");
     transition: 150ms ease;
 }
 
-GtkToggleButton.reverser.point-left GtkImage.left-arrow {
+button.reverser.point-left image.left-arrow {
     background-image: url("../icons/arrows/left_bold.svg");
     transition: 150ms ease;
 }
 
-GtkToggleButton.reverser.point-left GtkImage.right-arrow {
+button.reverser.point-left image.right-arrow {
     background-image: url("../icons/arrows/right_light.svg");
     transition: 150ms ease;
 }
@@ -193,18 +194,19 @@ GtkToggleButton.reverser.point-left GtkImage.right-arrow {
 EmergencyButton      |
 --------------------*/
 
-GtkButton#emergency-button {
+button#emergency-button {
     background: rgb(230, 230, 230);
     color: rgb(170, 170, 170);
 }
 
-GtkButton#emergency-button GtkLabel {
+button#emergency-button label {
     font-weight: bold;
     font-size: 22px;
 }
 
-GtkButton#emergency-button:active {
+button#emergency-button:checked {
     transition: 550ms ease;
     background: rgb(205, 68, 68);
     color: rgb(105, 0, 0);
 }
+

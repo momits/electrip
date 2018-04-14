@@ -3,18 +3,16 @@
 CustomHandlePaned    |
 --------------------*/
 
-GtkPaned.custom-handle-paned {
-	-GtkPaned-handle-size: 6px;
-}
-
-GtkPaned.custom-handle-paned.pane-separator {
-	background-image: url("../icons/sound_bar_pane_handle3.png");
+.custom-handle-paned > separator {
+    min-width: 6px;
+    background-image: url("../icons/sound_bar_pane_handle3.png");
 }
 
 /* ------------------
 Warning frame        |
 --------------------*/
 
-GtkEventBox#warn-box {
+#warn-box {
 	background: rgb(250, 200, 200);
 }
+
