@@ -10,7 +10,7 @@ setup(name='Electrip',
       author='Moritz Renftle',
       url='http://www.electrip.sourceforge.net',
       license='GPL Version 3',
-      
+
       packages=['electrip', 'electrip.config'],
       package_data={'electrip': ['styles.css',
                                  'electrip.ui',
@@ -22,4 +22,4 @@ setup(name='Electrip',
                                  'icons/question_mark.svg',
                                  'icons/reload_graph.png',
                                  'icons/sound_bar_pane_handle3.png',
-                                 'css/*.css']})
+                                 'css/*.css']}, requires=['pygobject'])
