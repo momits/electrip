@@ -254,17 +254,6 @@ class JsonModel:
             self.last_file = ""
             logger.info("Noch kein letzter Dateipfad gespeichert.")
             
-    # @staticmethod
-    # def get_utf8_bytestring(value):
-    #     """
-    #     Returns a utf8-bytestring made from
-    #     a unicode-object *value*. If *value* is not
-    #     a unicode-object, *value* is returned.
-    #     """
-    #     if isinstance(value, str):
-    #         value = value.encode("utf-8")
-    #     return value
-            
     @staticmethod
     def add_file_to_zip(zip_file, file_path, dest=""):
         """
@@ -576,9 +565,7 @@ class JsonModel:
 
         speed_func = LinearSegmentFunction()
         if wrapper == DictWrapper:
-            speed_func.load(list(map(tuple,
-                                wrapper.get(loco_obj,
-                                            "speed_control_points"))))
+            speed_func.load(list(map(tuple, wrapper.get(loco_obj, "speed_control_points"))))
         else:
             speed_func.load(wrapper.get(wrapper.get(loco_obj,
                                                     "speed_to_step_func"),
