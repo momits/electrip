@@ -19,7 +19,7 @@
         <child>
           // fullscreen_button: toggles fullscreen view
           <object class="GtkToggleButton" id="fullscreen_button">
-            <property name="action-name">app.toggle_fullscreen</property>
+            <property name="action-name">app.toggle-fullscreen</property>
             <child>
               <object class="GtkImage" id="fullscreen_image">
                 <property name="icon-name">view-fullscreen</property>
