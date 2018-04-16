@@ -58,16 +58,15 @@
   <menu id="file_menu_model">
     <item>
       <attribute name="label" translatable="yes">Laden</attribute>
-      <attribute name="action">app.load_file</attribute>
-      
+      <attribute name="action">app.load-file</attribute>
     </item>
     <item>
       <attribute name="label" translatable="yes">Speichern</attribute>
-      <attribute name="action">app.save_file</attribute>
+      <attribute name="action">app.save-file</attribute>
     </item>
     <item>
       <attribute name="label" translatable="yes">Speichern unter</attribute>
-      <attribute name="action">app.save_file_as</attribute>
+      <attribute name="action">app.save-file-as</attribute>
     </item>
   </menu>
 </interface>

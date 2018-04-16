@@ -37,26 +37,27 @@ class Electrip(Gtk.Application):
                                  application_id="apps.momits.electrip",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
         
-        fullscreen = Gio.SimpleAction.new_stateful("toggle_fullscreen",
+        fullscreen = Gio.SimpleAction.new_stateful("toggle-fullscreen",
                                                    None,
                                                    GLib.Variant.new_boolean(False))
         fullscreen.connect("activate", self.toggle_fullscreen)
         self.add_action(fullscreen)
-        self.add_accelerator("F11", "app.toggle_fullscreen", None)
+        self.add_accelerator("F11", "app.toggle-fullscreen", None)
         
-        load = Gio.SimpleAction.new("load_file", None)
+        load = Gio.SimpleAction.new("load-file", None)
         load.connect("activate", self.load_file_with_dialog)
         self.add_action(load)
-        self.add_accelerator("<Control>O", "app.load_file", None)
+        self.add_accelerator("<Control>O", "app.load-file", None)
         
-        save = Gio.SimpleAction.new("save_file", None)
+        save = Gio.SimpleAction.new("save-file", None)
         save.set_enabled(False)
         save.connect("activate", self.save_file)
         self.add_action(save)
-        self.add_accelerator("<Control>S", "app.save_file", None)
+        self.add_accelerator("<Control>S", "app.save-file", None)
         
-        save_as = Gio.SimpleAction.new("save_file_as", None)
+        save_as = Gio.SimpleAction.new("save-file-as", None)
         save_as.connect("activate", self.save_file_as)
+        self.add_accelerator("<Control><Shift>S", "app.save-file-as", None)
         self.add_action(save_as)
         
         self.last_visible_view = "config"
@@ -180,7 +181,7 @@ class Electrip(Gtk.Application):
         at the same location, overwriting the old file.
         """
         Config.save(Config.last_file)
-        self.lookup_action("save_file").set_enabled(False)
+        self.lookup_action("save-file").set_enabled(False)
     
     def save_file_as(self, unused_action, unused_parameter):
         """
@@ -196,15 +197,15 @@ class Electrip(Gtk.Application):
             if path != "" and path[len(path) - 5:len(path)] != ".json":
                 path += ".json"
             Config.save(path)
-            self.lookup_action("save_file").set_enabled(False)
+            self.lookup_action("save-file").set_enabled(False)
             self.window.set_title("Electrip " + ELECTRIP_VERSION + " - " + path)
         file_chooser_dialog.destroy()
         
     def new_unsaved_changes(self):
         """
-        Handler for unsaved changes, enables the "save_file"-action.
+        Handler for unsaved changes, enables the "save-file"-action.
         """
-        self.lookup_action("save_file").set_enabled(True)
+        self.lookup_action("save-file").set_enabled(True)
         
     def prepare_quit(self, window, event):
         response = 1
@@ -221,9 +222,9 @@ class Electrip(Gtk.Application):
             response = dialog.run()
             dialog.destroy()
             if response == 0 and Config.opened_file == None:
-                self.activate_action("save_file_as", None)
+                self.activate_action("save-file-as", None)
             elif response == 0:
-                self.activate_action("save_file", None)
+                self.activate_action("save-file", None)
         if response != 2:
             if self.control_box != None:
                 self.control_box.quit()
@@ -259,22 +260,17 @@ class Electrip(Gtk.Application):
                 else:
                     self.control_wrapper_box.add(self.control_box)
             elif self.control_box != None:
-                self.control_box.quit()
-                self.control_box = None
-                
                 # Collect the objects which have been freed in the "quit"-methods
                 gc.collect()
-                
-                # TODO: enable for Gtk+ 3.11
-#                 self.transition_handler_id = stack.connect("notify::transition-running",
-#                                                            self.quit_control_handler)
+
+                self.transition_handler_id = stack.connect("notify::transition-running",
+                                                           self.quit_control_handler)
             self.last_visible_view = visible_view
-    
-# TODO: enable for Gtk+ 3.11
-#     def quit_control_handler(self, *args):
-#         self.control_box.quit()
-#         self.control_box = None
-#         stack.disconnect(self.transition_handler_id)
+
+    def quit_control_handler(self, stack, *args):
+        self.control_box.quit()
+        self.control_box = None
+        stack.disconnect(self.transition_handler_id)
     
     def error_dialog(self, warning):
         """

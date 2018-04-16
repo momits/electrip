@@ -22,6 +22,7 @@ class MainBox(Gtk.Grid):
     """
     Root container for the control-ui.
     """
+
     def __init__(self, config, main_window):
         Gtk.Grid.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
@@ -94,8 +95,8 @@ class MainBox(Gtk.Grid):
             else:
                 nr_functions_to_send = 0
             loco_srcp_init = "INIT " + bus + " GL " + str(loco.address) + " " + \
-                str(loco.protocol) + " " + str(int(loco.speed_steps)) + \
-                " " + str(nr_functions_to_send) + "\n"
+                             str(loco.protocol) + " " + str(int(loco.speed_steps)) + \
+                             " " + str(nr_functions_to_send) + "\n"
             self.socket_thread.send_and_block_for_answer(loco_srcp_init)
 
             loco_srcp_status = loco.get_srcp_status(Config.server.bus)
@@ -195,7 +196,7 @@ class ControllerHub(Gtk.Grid):
         configured = False
         for function_button in self.controllers[loco_id].function_box.buttons:
             if hasattr(function_button, "function") \
-            and button == function_button.function.button:
+                    and button == function_button.function.button:
                 if function_button.get_sensitive():
                     function_button.clicked()
                 configured = True
@@ -211,7 +212,7 @@ class ControllerHub(Gtk.Grid):
             self.controllers[loco_id].get_style_context().add_class("focus")
 
         elif button == Config.joystick.sound_button \
-        and self.controllers[loco_id].loco.engine:
+                and self.controllers[loco_id].loco.engine:
             sound_switch = self.controllers[loco_id].function_box.sound_switch
             if sound_switch.get_sensitive():
                 sound_switch.clicked()
@@ -233,10 +234,10 @@ class ControllerHub(Gtk.Grid):
         else:
             for function_button in self.controllers[loco_id].function_box.buttons:
                 if hasattr(function_button, "function") \
-                and button == function_button.function.button:
+                        and button == function_button.function.button:
                     if hasattr(function_button.function, "toggle_mode") \
-                    and (function_button.function.toggle_mode == config.ToggleMode.PUSH \
-                         or function_button.function.toggle_mode == config.ToggleMode.PUSH_LIMITED):
+                            and (function_button.function.toggle_mode == config.ToggleMode.PUSH \
+                                 or function_button.function.toggle_mode == config.ToggleMode.PUSH_LIMITED):
                         function_button.clicked()
 
     def horiz_joyhat_moved(self, gamepad, direction):
@@ -271,7 +272,7 @@ class ControllerHub(Gtk.Grid):
                 new_loco_id = loco_id
                 # find next free loco_id
                 while new_loco_id < len(self.controllers) - 1 \
-                and new_loco_id in self.mapping:
+                        and new_loco_id in self.mapping:
                     new_loco_id += 1
                 # check if loco is free (in case all locos are occupied by gamepads)
                 if not new_loco_id in self.mapping:
@@ -377,6 +378,7 @@ class LocoController(Gtk.Frame):
     Also shows a loco-image as well as an image visualizing
     the gamepad which is currently controlling the loco.
     """
+
     def __init__(self,
                  socket_thread,
                  loco,
@@ -464,6 +466,7 @@ class LocoImage(Gtk.Image):
     Image using *path* as file-path, scaling down
     to 110x85 pixels automatically.
     """
+
     def __init__(self, path):
         Gtk.Image.__init__(self)
         self.set_size_request(110, 85)
@@ -472,7 +475,7 @@ class LocoImage(Gtk.Image):
         else:
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file(path) \
-                            .scale_simple(110, 85, GdkPixbuf.InterpType.BILINEAR)
+                    .scale_simple(110, 85, GdkPixbuf.InterpType.BILINEAR)
             except GError:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file("icons/question_mark.svg")
                 logger.warning("Dateipfad '" + path + "' für Lokbild ist ungültig.")
@@ -493,6 +496,7 @@ class SpeedScale(Gtk.Scale):
     """
     A :class:`Gtk.Scale` for controlling the speed of a loco.
     """
+
     def __init__(self, loco, socket_thread, sound_controller=None):
         Gtk.Scale.__init__(self)
         self.get_style_context().add_class("loco-speed-scale")
@@ -564,11 +568,11 @@ class DieselSpeedScale(SpeedScale):
         if real_speed_step != self.loco.last_speed_step:
             if sound_controller.get_engine_is_running():
                 if real_speed_step == 0 \
-                and self.stop_handler_id is None:
+                        and self.stop_handler_id is None:
                     self.stop_handler_id = sound_controller.connect("engine-idle",
                                                                     self.stop_loco)
                 elif self.loco.last_speed_step == 0 \
-                and self.start_handler_id is None:
+                        and self.start_handler_id is None:
                     self.start_handler_id = self.connect("started-driving",
                                                          self.start_loco)
             if self.start_handler_id == self.stop_handler_id is None:
@@ -631,6 +635,7 @@ class SteamSpeedScale(SpeedScale):
     :class:`SteamEngine`. Visualizes the current "sound-position"
     using the 'fill-level'-property of :class:`Gtk.Scale`.
     """
+
     def __init__(self, loco, socket_thread, sound_controller=None):
         SpeedScale.__init__(self, loco, socket_thread, sound_controller)
         if Config.sound.show_level_bar:
@@ -706,6 +711,7 @@ class LocoLabel(Gtk.Label):
     Label whose style-properties are adjusted so it looks
     good in a :class:`LocoController`
     """
+
     def __init__(self, loco_name):
         Gtk.Label.__init__(self)
         self.get_style_context().add_class("loco-label")
@@ -720,6 +726,7 @@ class Reverser(Gtk.ToggleButton):
     """
     Button which toggles the direction of the loco.
     """
+
     def __init__(self, loco, socket_thread, scale):
         Gtk.ToggleButton.__init__(self)
         self.get_style_context().add_class("reverser")
@@ -789,6 +796,7 @@ class EngineSwitch(Gtk.ToggleButton):
     Creates *self.label* (showing a circle in the background if
     ``JsonModel.joystick.show_function_nr == True``).
     """
+
     def __init__(self, sound_controller, speed_scale):
         Gtk.ToggleButton.__init__(self)
         self.get_style_context().add_class("function-button")
@@ -798,7 +806,7 @@ class EngineSwitch(Gtk.ToggleButton):
         name_label.set_ellipsize(Pango.EllipsizeMode.END)
 
         if Config.joystick.show_function_nr \
-        and Config.joystick.sound_button >= 0:
+                and Config.joystick.sound_button >= 0:
             grid = Gtk.Grid()
             grid.set_column_spacing(5)
             self.circle_number = CircleNumber(Config.joystick.sound_button)
@@ -869,14 +877,15 @@ class DieselEngineSwitch(EngineSwitch):
     :class:`EngineSwitch`-implementation for the needs of
     :class:`DieselEngine`.
     """
+
     def __init__(self, sound_controller, speed_scale):
         EngineSwitch.__init__(self,
                               sound_controller,
                               speed_scale)
-#         self.grid = Gtk.Grid()
-#         self.grid.set_orientation(Gtk.Orientation.HORIZONTAL)
-#         self.grid.set_column_spacing(5)
-#         self.grid.add(self.label)
+        #         self.grid = Gtk.Grid()
+        #         self.grid.set_orientation(Gtk.Orientation.HORIZONTAL)
+        #         self.grid.set_column_spacing(5)
+        #         self.grid.add(self.label)
 
         self.spinner = Gtk.Spinner()
         self.spinner.show()
@@ -892,7 +901,7 @@ class DieselEngineSwitch(EngineSwitch):
         # prevent further animations from starting
         self.speed_scale.ignore_sound_changes = True
         if hasattr(self.speed_scale, "animator") \
-        and not self.speed_scale.animator.stop_event.is_set():
+                and not self.speed_scale.animator.stop_event.is_set():
             self.speed_scale.animator.stop_event.set()
         self.speed_scale.set_fill_level(0)
 
@@ -946,6 +955,7 @@ class SteamEngineSwitch(EngineSwitch):
     :class:`EngineSwitch`-implementation for the needs of
     :class:`SteamEngine`.
     """
+
     def __init__(self, sound_controller, speed_scale):
         EngineSwitch.__init__(self,
                               sound_controller,
@@ -984,6 +994,7 @@ class FunctionButton(Gtk.ToggleButton):
     Base class for Buttons which toggle loco functions.
     *function* must be a :class:`LocoFunction`.
     """
+
     def __init__(self, function):
         Gtk.ToggleButton.__init__(self)
         self.get_style_context().add_class("function-button")
@@ -1131,12 +1142,13 @@ class EmergencyButton(Gtk.ToggleButton):
     Button controlling the power on the tracks represented
     by ``JsonModel.server.bus``.
     """
+
     def __init__(self, socket_thread):
         Gtk.ToggleButton.__init__(self)
         self.set_name("emergency-button")
 
         self.set_label("Nothalt")
-        self.set_size_request(-1 , 50)
+        self.set_size_request(-1, 50)
         self.socket_thread = socket_thread
 
         if not Config.server.power:
