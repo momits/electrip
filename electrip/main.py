@@ -28,6 +28,8 @@ class Electrip(Gtk.Application):
     def __init__(self):
         global Config
         Config = JsonModel()
+
+        self.file_name_arg = None
         
         # Needed to start parallel threads later on:
         GObject.threads_init()
