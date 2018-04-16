@@ -12,7 +12,7 @@ from math import pi
 from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND
 from electrip import config
 
-logger = logging.Logger("electrip.pygame_io")
+logger = logging.Logger(__name__)
 
 try:
     import pygame

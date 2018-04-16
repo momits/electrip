@@ -10,11 +10,13 @@ from electrip.constants import ELECTRIP_VERSION
 Starts Electrip.
 """
 
-logger = logging.Logger("electrip.main")
+logging.basicConfig(format='%(message)s', level=logging.INFO)
+logger = logging.getLogger()
 
 if __name__ == "__main__":
     start_msg = " Starting Electrip Version " + ELECTRIP_VERSION + " "
     line = " " + "-" * len(start_msg) + " "
     logger.info(line + "\n|" + start_msg + "|\n" + line)
+
     app = Electrip()
     app.run(sys.argv)

@@ -3,7 +3,6 @@
 import logging
 from socket import error as SocketError
 import gc
-import argparse
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -15,7 +14,7 @@ from electrip import configuration_ui
 from electrip import control_ui
 from electrip import dialog_templates
 
-logger = logging.Logger("electrip.main")
+logger = logging.getLogger(__name__)  # Root logger.
 
 
 class Electrip(Gtk.Application):
@@ -36,6 +35,9 @@ class Electrip(Gtk.Application):
         Gtk.Application.__init__(self,
                                  application_id="apps.momits.electrip",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+
+        self.add_main_option("file", ord("f"), GLib.OptionFlags.NONE,
+                             GLib.OptionArg.FILENAME, "Vorhandene Electrip-Datei laden", None)
         
         fullscreen = Gio.SimpleAction.new_stateful("toggle-fullscreen",
                                                    None,
@@ -73,16 +75,17 @@ class Electrip(Gtk.Application):
                                         css_provider,
                                         Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
-    def do_command_line(self, args):
+    def do_command_line(self, command_line):
         """
         Handler method for command line arguments,
         such as ``--file``.
         """
-        Gtk.Application.do_command_line(self, args)
-        parser = argparse.ArgumentParser(prog='gui')
-        parser.add_argument('-f', '--file', action='store')
-        self.args = parser.parse_args(args.get_arguments()[1:])
-        self.do_activate()
+        options = command_line.get_options_dict()
+        try:
+            self.file_name_arg = options.lookup_value("file").get_bytestring().decode("utf8")
+        except (AttributeError, UnicodeDecodeError):
+            pass
+        self.activate()
         return 0
         
     def do_activate(self):
@@ -115,8 +118,8 @@ class Electrip(Gtk.Application):
         self.window.maximize()
         self.window.show_all()
         
-        if self.args.file:
-            if self.load_file(self.args.file):
+        if self.file_name_arg:
+            if self.load_file(self.file_name_arg):
                 stack.set_visible_child_name("control")
         
         Config.new_unsaved_changes_method = self.new_unsaved_changes

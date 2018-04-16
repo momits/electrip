@@ -20,7 +20,7 @@ from electrip.config.sound_segments import create_sound_segment
 from electrip.config.sound_engines import create_engine, EngineType
 from electrip.config.linear_segment_function import LinearSegmentFunction
 
-logger = logging.Logger("electrip.config.json_model")
+logger = logging.getLogger(__name__)
 
 
 class DictWrapper:

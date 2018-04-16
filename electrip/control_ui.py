@@ -15,7 +15,7 @@ from electrip import config
 from electrip.constants import SOUND_LEVEL_ANIM_RES
 from electrip.utils import TwoWayDict
 
-logger = logging.Logger("electrip.control_ui")
+logger = logging.getLogger(__name__)
 
 
 class MainBox(Gtk.Grid):

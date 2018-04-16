@@ -5,7 +5,7 @@ import threading
 import queue
 from socket import timeout
 
-logger = logging.Logger("electrip.concurrent")
+logger = logging.getLogger(__name__)
 
 
 class SRCPSocketThread(threading.Thread):
@@ -35,7 +35,7 @@ class SRCPSocketThread(threading.Thread):
         of commands to be sent to the server.
         """
         try:
-            self.msg_queue.put(cmd.encode("ascii"), False)
+            self.msg_queue.put(cmd, False)
         except queue.Full:
             logger.error("Socket-Fehler: Mehr als 20 unbeantwortete Befehle.")
     
@@ -72,12 +72,12 @@ class SRCPSocketThread(threading.Thread):
             if msg is None:
                 break
             try:
-                self.socket.send(msg)
+                self.socket.send(msg.encode("ascii"))
             except timeout:
                 logger.error("Zeitüberschreitung beim "
                              "Senden des Befehls:\n" + msg)
             else:
-                logger.info("SEND>>: {}\n  RECV<<: {}".format(msg, self.wait_for_answer()))
+                logger.info("SEND>>: {}  RECV<<: {}".format(msg, self.wait_for_answer()))
             self.msg_queue.task_done()
     
     def quit(self):
