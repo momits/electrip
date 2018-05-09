@@ -5,10 +5,12 @@ from socket import error as SocketError
 import gc
 
 import gi
+import os
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import GObject, Gtk, GdkPixbuf, Gdk, Gio, GLib
 
-from electrip.constants import ELECTRIP_VERSION, ICON_PATHS
+from electrip.constants import ELECTRIP_VERSION, ICON_PATHS, PATH
 from electrip.config import JsonModel
 from electrip import configuration_ui
 from electrip import control_ui
@@ -71,7 +73,7 @@ class Electrip(Gtk.Application):
         
         screen = Gdk.Screen.get_default()
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_path("css/electrip.css")
+        css_provider.load_from_path(os.path.join(PATH, "css/electrip.css"))
         context = Gtk.StyleContext()
         context.add_provider_for_screen(screen,
                                         css_provider,
@@ -94,8 +96,7 @@ class Electrip(Gtk.Application):
         """
         Builds the gui, connects signals and shows it.
         """
-        builder = Gtk.Builder()
-        builder.add_from_file("electrip.ui")
+        builder = Gtk.Builder.new_from_file(os.path.join(PATH, "electrip.ui"))
         builder.connect_signals({"on_delete_event": self.prepare_quit,
                                  "on_view_switched": self.toggle_view})
         
