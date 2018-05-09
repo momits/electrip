@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# start electrip and pass all arguments to it
+python3 -m electrip $*;

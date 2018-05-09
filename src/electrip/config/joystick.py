@@ -3,6 +3,7 @@
 
 from .unsaved_changes import UnsavedChangesHandler
 
+
 class Joystick(UnsavedChangesHandler):
     """
     Input device with knobs and axes, used to

@@ -1,0 +1,82 @@
+{
+    "app-id": "apps.momits.Electrip",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "3.26",
+    "sdk": "org.gnome.Sdk",
+    "command": "electrip",
+    "finish-args": [
+        "--socket=x11",
+        "--share=network"
+    ],
+    "modules": [
+        {
+            "name": "icons",
+            "buildsystem": "simple",
+            "build-commands": [
+                "install -Dm644 logo_icon_64.png /app/share/icons/hicolor/64x64/apps/apps.momits.Electrip.png",
+                "install -Dm644 logo_icon_128.png /app/share/icons/hicolor/128x128/apps/apps.momits.Electrip.png"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "path": "src/electrip/icons/logo_icon_64.png"
+                },
+                {
+                    "type": "file",
+                    "path": "src/electrip/icons/logo_icon_128.png"
+                }
+            ]
+        },
+        {
+            "name": "PyGObject",
+            "buildsystem": "simple",
+            "ensure-writable": [
+                "easy-install.pth"
+            ],
+            "build-commands": [
+                "python3 setup.py install --prefix=/app"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://files.pythonhosted.org/packages/86/c5/70bd78009fcf29c71db615e28f0b487bf7c5b2741237877dc718626a5741/PyGObject-3.28.2.tar.gz",
+                    "sha256": "f704f4be3b4ae3cae70acf82ac64a8c7c44d3acad2d33e9849056ac317345f5e"
+                }
+            ]
+        },
+        {
+            "name": "pycairo",
+            "buildsystem": "simple",
+            "ensure-writable": [
+                "easy-install.pth"
+            ],
+            "build-commands": [
+                "python3 setup.py install --prefix=/app"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://files.pythonhosted.org/packages/60/47/d335364f0ca00e475a40a5a664f17691bf77b3973f999b157d56ee89e04a/pycairo-1.17.0.tar.gz",
+                    "sha256": "cdd4d1d357325dec3a21720b85d273408ef83da5f15c184f2eff3212ff236b9f"
+                }
+            ]
+        },
+        {
+            "name": "electrip",
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "git://git.code.sf.net/p/electrip/git"
+                }
+            ],
+            "buildsystem": "simple",
+            "ensure-writable": [
+              "easy-install.pth"
+            ],
+            "build-commands": [
+                "python3 setup.py install --prefix=/app",
+                "install -Dm544 electrip /app/bin/electrip"
+            ]
+        }
+    ]
+}

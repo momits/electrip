@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from electrip.main import Electrip
+from electrip.electrip import Electrip
 from electrip.constants import ELECTRIP_VERSION
 
 """

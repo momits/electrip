@@ -38,4 +38,3 @@ class SoundFunction:
             for nr, segment in enumerate(self.segments):
                 if segment.start < x <= segment.end:
                     return nr
-                    break

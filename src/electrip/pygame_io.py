@@ -552,6 +552,7 @@ class SoundController(GObject.GObject):
         """
         raise NotImplementedError()
 
+
 class DieselSoundController(SoundController):
     """
     A :class:`SoundController` for :class:`DieselEngine`-instances.

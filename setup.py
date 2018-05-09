@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 # -*- coding: UTF 8 -*-
 
-from distutils.core import setup
+from setuptools import setup
 from electrip.constants import ELECTRIP_VERSION
 
 setup(name='Electrip',
@@ -22,4 +22,5 @@ setup(name='Electrip',
                                  'icons/question_mark.svg',
                                  'icons/reload_graph.png',
                                  'icons/sound_bar_pane_handle3.png',
-                                 'css/*.css']}, requires=['pygobject'])
+                                 'css/*.css']},
+      install_requires=['pygobject', 'pygame'])
