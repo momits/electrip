@@ -74,7 +74,7 @@
               "easy-install.pth"
             ],
             "build-commands": [
-                "python3 setup.py install --prefix=/app",
+                "python3 src/setup.py install --prefix=/app",
                 "install -Dm544 electrip /app/bin/electrip"
             ]
         }

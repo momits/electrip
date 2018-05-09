@@ -11,6 +11,7 @@ setup(name='Electrip',
       url='http://www.electrip.sourceforge.net',
       license='GPL Version 3',
 
+      package_dir={'': 'src'},
       packages=['electrip', 'electrip.config'],
       package_data={'electrip': ['styles.css',
                                  'electrip.ui',
