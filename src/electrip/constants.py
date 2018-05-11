@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-from os.path import expanduser, exists, normpath as _
 from sys import platform
 
 # ELECTRIP-Constants
@@ -20,8 +19,8 @@ ICON_PATHS = (os.path.join(PATH, "icons", "logo_icon_128.png"),
 RELOAD_GRAPH_IMAGE_PATH = os.path.join(PATH, "icons", "reload_graph.png")
 
 # path for settings
-CONFIG_DIR = expanduser("~/.config/electrip")
-if not exists(CONFIG_DIR):
+CONFIG_DIR = os.path.expanduser("~/.config/electrip")
+if not os.path.exists(CONFIG_DIR):
     if platform.startswith("linux"):
         # create the directory
         os.makedirs(CONFIG_DIR, 0o700)
