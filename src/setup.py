@@ -13,8 +13,7 @@ setup(name='Electrip',
 
       package_dir={'': 'src'},
       packages=['electrip', 'electrip.config'],
-      package_data={'electrip': ['styles.css',
-                                 'electrip.ui',
+      package_data={'electrip': ['electrip.ui',
                                  'icons/arrows/*',
                                  'icons/circle.svg',
                                  'icons/circle_insensitive.svg',
@@ -24,4 +23,4 @@ setup(name='Electrip',
                                  'icons/reload_graph.png',
                                  'icons/sound_bar_pane_handle3.png',
                                  'css/*.css']},
-      install_requires=['pycairo', 'PyGObject', 'Pygame'])
+      install_requires=['pycairo', 'PyGObject', 'Pygame=1.9.3'])
