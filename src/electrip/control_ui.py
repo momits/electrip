@@ -440,7 +440,9 @@ class LocoController(Gtk.Frame):
         grid.set_orientation(Gtk.Orientation.VERTICAL)
         grid.add(self.loco_image)
         grid.add(self.speed_scale)
-        grid.add(Gtk.Label.new("km/h"))
+        speed_unit_label = Gtk.Label.new("km/h")
+        speed_unit_label.get_style_context().add_class("unit-label")
+        grid.add(speed_unit_label)
         grid.add(self.reverser)
         grid.add(bg_frame)
 

@@ -117,11 +117,11 @@ class Electrip(Gtk.Application):
         stack = builder.get_object("main_stack")
         stack.add_titled(self.config_box,
                          "config",
-                         "Konfiguration")
+                         "Einstellen")
         
         stack.add_titled(self.control_wrapper_box,
                          "control",
-                         "Steuerung")
+                         "Steuern")
         
         self.window.maximize()
         self.window.show_all()
