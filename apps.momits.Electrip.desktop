@@ -3,6 +3,6 @@ Type=Application
 Name=Electrip
 Comment=SRCP model railroad control using Gamepads
 Comment[de]=SRCP-Modellbahnsteuerung mit Gamepad-Unterstützung
-Exec=apps.momits.Electrip
+Exec=electrip
 Icon=apps.momits.Electrip
 Terminal=false
