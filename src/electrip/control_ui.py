@@ -806,16 +806,16 @@ class EngineSwitch(Gtk.ToggleButton):
         name_label = Gtk.Label("Fahrgeräusch")
         name_label.set_ellipsize(Pango.EllipsizeMode.END)
 
+        self.label = Gtk.Grid()
+        self.label.set_column_spacing(5)
+
         if Config.joystick.show_function_nr \
                 and Config.joystick.sound_button >= 0:
-            grid = Gtk.Grid()
-            grid.set_column_spacing(5)
             self.circle_number = CircleNumber(Config.joystick.sound_button)
-            grid.add(self.circle_number)
-            grid.add(name_label)
-            self.label = grid
-        else:
-            self.label = name_label
+            self.label.add(self.circle_number)
+
+        self.label.add(name_label)
+
         self.add(self.label)
         self.set_active(False)
         self.connect("notify::active", self.engine_toggled)
