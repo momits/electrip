@@ -13,24 +13,6 @@
     ],
     "modules": [
         {
-            "name": "icons",
-            "buildsystem": "simple",
-            "build-commands": [
-                "install -Dm644 logo_icon_64.png /app/share/icons/hicolor/64x64/apps/apps.momits.Electrip.png",
-                "install -Dm644 logo_icon_128.png /app/share/icons/hicolor/128x128/apps/apps.momits.Electrip.png"
-            ],
-            "sources": [
-                {
-                    "type": "file",
-                    "path": "src/electrip/icons/logo_icon_64.png"
-                },
-                {
-                    "type": "file",
-                    "path": "src/electrip/icons/logo_icon_128.png"
-                }
-            ]
-        },
-        {
             "name": "PyGObject",
             "buildsystem": "simple",
             "ensure-writable": [
@@ -140,7 +122,9 @@
             ],
             "build-commands": [
                 "python3 src/setup.py install --prefix=/app",
-                "install -Dm544 electrip /app/bin/electrip"
+                "install -Dm544 electrip /app/bin/electrip",
+                "install -Dm644 src/electrip/icons/logo_icon_64.png /app/share/icons/hicolor/64x64/apps/apps.momits.Electrip.png",
+                "install -Dm644 src/electrip/icons/logo_icon_128.png /app/share/icons/hicolor/128x128/apps/apps.momits.Electrip.png"
             ]
         }
     ]
