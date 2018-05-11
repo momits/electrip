@@ -121,8 +121,11 @@
               "easy-install.pth"
             ],
             "build-commands": [
-                "python3 src/setup.py install --prefix=/app",
+                "python3 src/setup.py install --prefix=/app"
+            ],
+            "post-install": [
                 "install -Dm544 electrip /app/bin/electrip",
+                "install -Dm444 apps.momits.Electrip.desktop /app/share/applications/apps.momits.Electrip.desktop",
                 "install -Dm644 src/electrip/icons/logo_icon_64.png /app/share/icons/hicolor/64x64/apps/apps.momits.Electrip.png",
                 "install -Dm644 src/electrip/icons/logo_icon_128.png /app/share/icons/hicolor/128x128/apps/apps.momits.Electrip.png"
             ]
