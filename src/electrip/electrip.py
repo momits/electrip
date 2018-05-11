@@ -16,7 +16,7 @@ from electrip import configuration_ui
 from electrip import control_ui
 from electrip import dialog_templates
 
-logger = logging.getLogger(__name__)  # Root logger.
+logger = logging.getLogger(__name__)
 
 
 class Electrip(Gtk.Application):
@@ -49,6 +49,11 @@ class Electrip(Gtk.Application):
         fullscreen.connect("activate", self.toggle_fullscreen)
         self.add_action(fullscreen)
         self.add_accelerator("F11", "app.toggle-fullscreen", None)
+
+        unfullscreen = Gio.SimpleAction.new("unfullscreen", None)
+        unfullscreen.connect("activate", self.unfullscreen)
+        self.add_action(unfullscreen)
+        self.add_accelerator("Escape", "app.unfullscreen", None)
         
         load = Gio.SimpleAction.new("load-file", None)
         load.connect("activate", self.load_file_with_dialog)
@@ -240,6 +245,9 @@ class Electrip(Gtk.Application):
         else:
             dialog.destroy()
             return True
+
+    def unfullscreen(self, action, unused_parameter):
+        self.window.unfullscreen()
         
     def toggle_fullscreen(self, action, unused_parameter):
         # toggle the action state and change to fullscreen
