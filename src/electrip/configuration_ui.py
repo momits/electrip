@@ -1,11 +1,10 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-
+import os
 from gi.repository import GObject, Gtk, Gdk
-from os.path import normpath
 from zipfile import BadZipfile
 
-from electrip.constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH
+from electrip.constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH, PATH
 from electrip.widgets import StockImageButton
 from electrip.dialog_templates import SoundFileFilter, WarningDialog, \
     LocoLoadDialog, LocoSaveDialog, SoundLoadDialog
@@ -1476,9 +1475,9 @@ class SoundSegmentBar(Gtk.Grid):
         self.graph = graph
         self.engine_frame = speed_sound_frame
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.left_handle = Gtk.Image.new_from_file(normpath("icons/sound_bar_pane_handle3.png"))
+        self.left_handle = Gtk.Image.new_from_file(os.path.join(PATH, "icons", "sound_segment_bar_handle.png"))
         self.left_handle.set_halign(Gtk.Align.START)
-        self.right_handle = Gtk.Image.new_from_file(normpath("icons/sound_bar_pane_handle3.png"))
+        self.right_handle = Gtk.Image.new_from_file(os.path.join(PATH, "icons", "sound_segment_bar_handle.png"))
         self.right_handle.set_halign(Gtk.Align.END)
         self.add(self.left_handle)
         self.add(self.right_handle)

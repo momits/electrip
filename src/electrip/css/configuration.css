@@ -5,7 +5,7 @@ CustomHandlePaned    |
 
 .custom-handle-paned > separator {
     min-width: 6px;
-    background: url("../icons/sound_bar_pane_handle3.png") no-repeat center;
+    background: url("../icons/sound_segment_bar_handle.png") no-repeat center;
 }
 
 /* ------------------
