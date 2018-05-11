@@ -154,11 +154,11 @@ class TreeViewActionBox(Gtk.ButtonBox):
                 liststore.move_after(row, following_row)
                 self.unsaved_changes()
             else:
-                locked_print("Zeile befindet sich schon am Rand, "
-                             "kann nicht weiter verschoben werden.")
+                logger.info("Zeile befindet sich schon am Rand, "
+                            "kann nicht weiter verschoben werden.")
         else:
-            locked_print("Es ist keine Zeile ausgewählt, "
-                         "es kann nichts verschoben werden.")
+            logger.info("Es ist keine Zeile ausgewählt, "
+                        "es kann nichts verschoben werden.")
                 
     def add_row(self, button, treeview):
         """
@@ -177,8 +177,7 @@ class TreeViewActionBox(Gtk.ButtonBox):
             treeview.set_cursor(liststore.get_path(new_row), None, False)
             self.unsaved_changes()
         else:
-            locked_print("TreeView ist leer, es kann "
-                         "nichts hinzugefügt werden.")
+            logger.info("TreeView ist leer, es kann nichts hinzugefügt werden.")
             
     def remove_row(self, button, treeview):
         """
@@ -191,8 +190,8 @@ class TreeViewActionBox(Gtk.ButtonBox):
             liststore.remove(liststore.get_iter(path))
             self.unsaved_changes()
         else:
-            locked_print("Keine Zeile ausgewählt, "
-                         "es kann nichts gelöscht werden.")
+            logger.info("Keine Zeile ausgewählt, "
+                        "es kann nichts gelöscht werden.")
     
     def add_row_at_start(self):
         """
@@ -307,10 +306,9 @@ class EasyComboBox(Gtk.ComboBox):
         if not model_value_correct:
             self.set_active(0)
             value = self.retrieve_value()
-            locked_print("Dateiformat inkorrekt: Unbekannter Wert '" +
-                         str(model_value) +
-                         "', verwende Standardwert '" +
-                         str(value) + "'")
+            logger.info("Dateiformat inkorrekt: Unbekannter Wert '{}', "
+                        "verwende Standardwert '{}'"
+                        .format(str(model_value), str(value)))
             # report we changed the value to the default
             self.emit("changed")
 
@@ -667,11 +665,10 @@ class EntryTable(Gtk.Grid):
                 try:
                     value = getattr(config_object, config_attribute)
                 except AttributeError:
-                    locked_print("Attribut",
-                                 config_attribute,
-                                 "konnte nicht gefunden werden, "
-                                 "es handelt sich evtl. um eine "
-                                 "veraltete Electrip-Datei.")
+                    logger.warning("Attribut {} konnte nicht gefunden werden,"
+                                   " es handelt sich evtl. um eine "
+                                   "veraltete Electrip-Datei."
+                                   .format(config_attribute))
                 else:
                     self.entry_widgets[nr].set_value(value)
             
@@ -850,9 +847,9 @@ class TreeView(Gtk.TreeView):
             try:
                 new_value = int(new_value)
             except ValueError:
-                locked_print("Falsche Eingabe, "
-                             "Sie haben keinen Wert eingegeben, "
-                             "der in den Typ Integer umgewandelt werden kann.")
+                logger.info("Falsche Eingabe, "
+                            "Sie haben keinen Wert eingegeben, "
+                            "der in den Typ Integer umgewandelt werden kann.")
             else:
                 liststore[path][column_nr] = new_value
                 self.save_changes(path, column_nr, new_value)
@@ -862,9 +859,9 @@ class TreeView(Gtk.TreeView):
                 # dot needed for float-conversion (instead of comma)
                 new_value = float(new_value.replace(",", "."))
             except ValueError:
-                locked_print("Falsche Eingabe: "
-                             "Sie haben keinen Wert eingegeben, "
-                             "der in den Typ Float umgewandelt werden kann.")
+                logger.info("Falsche Eingabe, "
+                            "Sie haben keinen Wert eingegeben, "
+                            "der in den Typ Integer umgewandelt werden kann.")
             else:
                 liststore[path][column_nr] = new_value
                 self.save_changes(path, column_nr, new_value)

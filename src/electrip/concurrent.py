@@ -16,7 +16,7 @@ class SRCPSocketThread(threading.Thread):
     to reply with information about its new state or errors.
     Provides (non-)blocking methods to add commands to the
     internal queue, the reply will be printed in a pretty format
-    using :func:`locked_print` as soon as it was received.
+    as soon as it was received.
     Prints error messages if more than 20 unanswered
     commands are pending in the queue or *timeout* is
     reached.
