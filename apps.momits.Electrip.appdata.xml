@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+	<id>apps.momits.Electrip.desktop</id>
+	<metadata_license>CC0-1.0</metadata_license>
+	<project_license>GPL-3.0+</project_license>
+    ​<update_contact>momits_AT_users.sourceforge.net</update_contact>
+	<name>Electrip</name>
+	<url type="homepage">https://electrip.sourceforge.net</url>
+	<summary>Control your model railroad using gamepads!</summary>
+	<description>
+		<p>Electrip is a SRCP-Client which allows you to control your locos
+with gamepads. Electrip is very configurable and offers some powerful
+features, including the simulation of loco sounds.</p>
+	</description>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://sourceforge.net/p/electrip/screenshot/control_without_gamepads.png</image>
+		</screenshot>
+	</screenshots>
+	<releases>
+		<release version="5.4.3" date="2018-05-11"/>
+    </releases>
+</component>
