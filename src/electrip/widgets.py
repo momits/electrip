@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF 8 -*-
 import logging
+from os.path import basename
 
 from gi.repository import GObject, Gtk, Pango, Gdk
 import cairo
@@ -10,7 +11,7 @@ from electrip.constants import ELECTRIP_VERSION
 from electrip.dialog_templates import FileSetResetDialog, ImageFileFilter, \
     AllFileFilter, SoundFileFilter
 
-logger = logging.Logger("electrip.widgets")
+logger = logging.Logger(__name__)
 
 
 class StockImageButton(Gtk.Button):
@@ -368,7 +369,7 @@ class EasyFileButton(Gtk.Button):
         """
         if path != self.current_path:
             if path:
-                self.label.set_text(path)
+                self.label.set_text(".../" + basename(path))
             else:
                 self.label.set_text("Auswählen...")
             self.current_path = path
@@ -385,6 +386,7 @@ class EasyVolumeButton(Gtk.VolumeButton):
     __gsignals__ = {
         "volume-set": (GObject.SIGNAL_RUN_FIRST, None, ())
     }
+
     def __init__(self, file_filters=[]):
         Gtk.VolumeButton.__init__(self)
         self.retrieve_value = self.get_value
