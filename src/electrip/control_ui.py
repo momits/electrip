@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import os
 from gi.repository.GLib import GError
 from gi.repository import GObject, Gtk, Pango, GdkPixbuf
 
@@ -12,7 +13,7 @@ import time
 from electrip.concurrent import SRCPSocketThread
 from electrip import pygame_io
 from electrip import config
-from electrip.constants import SOUND_LEVEL_ANIM_RES
+from electrip.constants import SOUND_LEVEL_ANIM_RES, PATH
 from electrip.utils import TwoWayDict
 
 logger = logging.getLogger(__name__)
@@ -477,7 +478,7 @@ class LocoImage(Gtk.Image):
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file(path) \
                     .scale_simple(110, 85, GdkPixbuf.InterpType.BILINEAR)
             except GError:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file("icons/question_mark.svg")
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file(os.path.join(PATH, "icons", "question_mark.svg"))
                 logger.warning("Dateipfad '" + path + "' für Lokbild ist ungültig.")
             finally:
                 self.set_from_pixbuf(pixbuf)
