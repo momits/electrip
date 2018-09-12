@@ -213,9 +213,19 @@ button#emergency-button label {
     font-size: 22px;
 }
 
+@keyframes emergency {
+    0% {
+        background: rgb(255, 160, 60);
+        color: rgb(0, 0, 0)
+    }
+
+    100% {
+        background: rgb(205, 68, 68);
+        color: rgb(105, 0, 0);
+    }
+}
+
 button#emergency-button:checked {
-    transition: 550ms ease;
-    background: rgb(205, 68, 68);
-    color: rgb(105, 0, 0);
+    animation: 1s emergency linear infinite alternate;
 }
 
