@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -12,6 +12,8 @@ from sys import platform
 ELECTRIP_VERSION = "5.4.3"
 
 PATH = os.path.dirname(os.path.realpath(__file__))
+
+LOCALE_PATH = os.path.join(PATH, "locale")
 
 ICON_PATHS = (os.path.join(PATH, "icons", "logo_icon_128.png"),
               os.path.join(PATH, "icons", "logo_icon_64.png"))

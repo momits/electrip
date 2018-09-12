@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: UTF 8 -*-
+# -*- coding: utf-8 -*-
+import gettext
+import time
 
 from electrip.config.unsaved_changes import UnsavedChangesHandler
 from electrip.config.linear_segment_function import LinearSegmentFunction
-import time
+from electrip.constants import LOCALE_PATH
+
+_ = gettext.translation("configuration", localedir=LOCALE_PATH).gettext
 
 
 class Loco(UnsavedChangesHandler):
@@ -17,7 +21,7 @@ class Loco(UnsavedChangesHandler):
                  function_sounds=None,
                  event_sounds=None,
                  engine=None,
-                 name="Unbenannte Lok",
+                 name=_("Unnamed loco"),
                  speed_steps=128,
                  max_speed=100.0,
                  address=1,

@@ -1,6 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: UTF 8 -*-
-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import gettext
 import json
 import logging
 
@@ -9,7 +9,7 @@ from os import sep as os_sep
 import zipfile
 from copy import deepcopy
 
-from electrip.constants import CONFIG_DIR
+from electrip.constants import CONFIG_DIR, LOCALE_PATH
 from electrip.config.loco import Loco
 from electrip.config.loco_functions import ToggleMode, DecoderFunction, \
     FunctionSound, EventSound
@@ -21,6 +21,8 @@ from electrip.config.sound_engines import create_engine, EngineType
 from electrip.config.linear_segment_function import LinearSegmentFunction
 
 logger = logging.getLogger(__name__)
+
+_ = gettext.translation("configuration", localedir=LOCALE_PATH).gettext
 
 
 class DictWrapper:
@@ -148,7 +150,7 @@ class JsonModel:
         self.has_unsaved_changes = False
         self.opened_file = None
         
-        self.loco_attributes = [("name", "Unbenannte Lok"),
+        self.loco_attributes = [("name", _("Unnamed loco")),
                                 ("speed_steps", 128),
                                 ("max_speed", 100.0),
                                 ("address", 1),
@@ -252,8 +254,8 @@ class JsonModel:
             f.close()
         except IOError:
             self.last_file = ""
-            logger.info("Noch kein letzter Dateipfad gespeichert.")
-            
+            logger.info(_("No path to last opened file was found."))
+
     @staticmethod
     def add_file_to_zip(zip_file, file_path, dest=""):
         """
@@ -281,8 +283,8 @@ class JsonModel:
         # error occurs if file_path is None (type of error
         # varies on different platforms)
         except:
-            logger.error("Ungültige Datei '" + str(file_path) +
-                         "' konnte nicht in Lok-Verzeichnis kopiert werden.")
+            logger.error(_("Invalid file '{}' could not be copied to loco"
+                           " archive.").format(str(file_path)))
             return None
         else:
             return file_name
@@ -380,7 +382,7 @@ class JsonModel:
             zip_file.writestr(loco.name + ".loco",
                               json.dumps(self.create_loco_dict(loco),
                                          indent=2))
-            logger.info("Lok wurde gespeichert in {}.".format(file_path))
+            logger.info(_("Loco was saved in {}.").format(file_path))
             self.new_unsaved_changes_method = save_status_method
             self.notice_unsaved_changes = True
         
@@ -437,7 +439,7 @@ class JsonModel:
             
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
-        logger.info("Einstellungen wurden gespeichert in {}.".format(file_path))
+        logger.info(_("Configuration was saved in {}.").format(file_path))
         
     @staticmethod
     def create_dict(config_object, attribute_list):
@@ -621,7 +623,7 @@ class JsonModel:
                                       for segment_obj in wrapper.get(engine_obj,
                                                                      "sound_segments")]
                 except KeyError:
-                    logger.info("Die Datei besitzt noch keine Geräusch-Informationen.")
+                    logger.info(_("File does not yet have any sound information."))
                     sound_segments = None
             else:
                 sound_segments = None
@@ -669,7 +671,7 @@ class JsonModel:
         
         self.has_unsaved_changes = False
         self.save_opened_file(file_path)
-        logger.info("Einstellungen wurden geladen aus {}.".format(file_path))
+        logger.info(_("Configuration was loaded from {}.").format(file_path))
         self.notice_unsaved_changes = True
     
     @staticmethod
@@ -702,9 +704,9 @@ class JsonModel:
             except KeyError:
                 param_list.append(standard_value)
                 if not ignore:
-                    logger.warning("Dateiformat inkorrekt: Attribut {} "
-                                   "ist nicht enthalten, es wurde der Standardwert {}"
-                                   "verwendet.".format(attrib, standard_value))
+                    logger.warning(_("Invalid file format: Attribute {} "
+                                     "was not found, default value {} "
+                                     "was used.").format(attrib, standard_value))
             else:
                 param_list.append(value)
         return param_list
@@ -771,7 +773,7 @@ class JsonModel:
         Normally this is done using :class:`UnsavedChangesHandler`.
         """
         if self.notice_unsaved_changes:
-            logger.info("Attribute '{}' of object '{}' has new value: {}"
+            logger.info(_("Attribute '{}' of object '{}' has new value: {}")
                         .format(name, str(obj), value))
             self.has_unsaved_changes = True
             # if method has been setup, call it

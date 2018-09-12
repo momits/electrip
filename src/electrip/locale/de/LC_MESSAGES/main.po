@@ -1,0 +1,103 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-05-14 16:48+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: electrip.ui
+msgid "File..."
+msgstr "Datei..."
+
+#: electrip.ui
+msgid "Load"
+msgstr "Laden"
+
+#: electrip.ui
+msgid "Save"
+msgstr "Speichern"
+
+#: electrip.ui
+msgid "Save as"
+msgstr "Speichern unter"
+
+#: __main__.py:20
+msgid " Starting Electrip Version {} "
+msgstr "Electrip wird gestartet. Version: {}"
+
+#: electrip.py:46
+msgid "Open existing configuration"
+msgstr "Einstellungen laden"
+
+#: electrip.py:122
+msgid "Configure"
+msgstr "Einstellen"
+
+#: electrip.py:126
+msgid "Control"
+msgstr "Steuern"
+
+#: electrip.py:160
+#: electrip.py:164
+msgid "File is invalid! Could not load configuration."
+msgstr "Ungültige Datei! Einstellungen konnten nicht geladen werden."
+
+#: electrip.py:168
+msgid ""
+"A parameter is missing in the configuration. Maybe you loaded an outdated "
+"Electrip file."
+msgstr ""
+"Ein Parameter fehlt in der Datei, wahrscheinlich hat die Datei ein altes Format."
+
+#: electrip.py:172
+msgid ""
+"An unknown error occurred while loading the chosen file. It is not a valid "
+"Electrip file."
+msgstr ""
+"Ein unbekannter Fehler ist beim Laden aufgetreten."
+"Die Datei hat kein gültiges Electrip-Format."
+
+#: electrip.py:229
+msgid ""
+"The file has unsaved changes.\n"
+"Do you want to save them?"
+msgstr ""
+"Die Einstellungen wurden geändert. Sollen die Änderungen gespeichert werden"
+
+#: electrip.py:231
+msgid "Save and exit"
+msgstr "Speichern und beenden"
+
+#: electrip.py:232
+msgid "Discard and exit"
+msgstr "Verwerfen und beenden"
+
+#: electrip.py:233
+msgid "Back to Electrip"
+msgstr "Zurück zu Electrip"
+
+#: electrip.py:245
+msgid "Electrip was quit."
+msgstr "Electrip wurde beendet."
+
+#: electrip.py:270
+msgid ""
+"Electrip cannot connect to the SRCP server.\n"
+"Please check the server configuration (host and port).\n"
+"Is the SRCP server running?"
+msgstr ""
+"Electrip kann nicht zum SRCP-Server verbinden.\n"
+"Überprüfe die Einstellungen für Host und Port.\n"
+"Läuft der Server?"

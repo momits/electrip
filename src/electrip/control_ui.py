@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import gettext
 import logging
 
 import os
@@ -13,10 +14,12 @@ import time
 from electrip.concurrent import SRCPSocketThread
 from electrip import pygame_io
 from electrip import config
-from electrip.constants import SOUND_LEVEL_ANIM_RES, PATH
+from electrip.constants import SOUND_LEVEL_ANIM_RES, PATH, LOCALE_PATH
 from electrip.utils import TwoWayDict
 
 logger = logging.getLogger(__name__)
+
+_ = gettext.translation("control", localedir=LOCALE_PATH).gettext
 
 
 class MainBox(Gtk.Grid):
@@ -37,10 +40,9 @@ class MainBox(Gtk.Grid):
                                        0,
                                        Gtk.MessageType.WARNING,
                                        Gtk.ButtonsType.OK,
-                                       "Die Bibliothek PyGame ist nicht "
-                                       "installiert.\nGamepads und die "
-                                       "Geräuschsimulation können daher "
-                                       "nicht verwendet werden.")
+                                       _("The pygame library is not "
+                                         "installed.\nGamepads and the sound "
+                                         "simulation can thus not be used."))
             dialog.run()
             dialog.destroy()
 
@@ -59,7 +61,7 @@ class MainBox(Gtk.Grid):
         self.socket_thread.send_and_wait_for_answer("TERM 1 POWER\n")
         self.socket_thread.send_and_wait_for_answer("TERM 0 SESSION\n")
         self.socket_thread.quit()
-        logger.info("Steuerung geschlossen.")
+        logger.info(_("Control was quit."))
         self.destroy()
 
     def socket_init(self):
@@ -81,7 +83,7 @@ class MainBox(Gtk.Grid):
         # correct sequential order of commands and avoid
         # overflow errors
         # -------- Handshake ----------
-        logger.info("Socket-Verbindung ist aktiv:\n {}"
+        logger.info(_("Socket connection is active:\n {}")
                     .format(self.socket_thread.wait_for_answer()))
         for msg in handshake:
             self.socket_thread.send_and_block_for_answer(msg)
@@ -219,7 +221,7 @@ class ControllerHub(Gtk.Grid):
                 sound_switch.clicked()
 
         elif not configured:
-            logger.info("Nicht konfigurierter Button wurde gedrückt.")
+            logger.info(_("Pressed button is not configured."))
 
     def gamepad_button_released(self, gamepad, button):
         """
@@ -481,7 +483,7 @@ class LocoImage(Gtk.Image):
                     .scale_simple(110, 85, GdkPixbuf.InterpType.BILINEAR)
             except GError:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file(os.path.join(PATH, "icons", "question_mark.svg"))
-                logger.warning("Dateipfad '" + path + "' für Lokbild ist ungültig.")
+                logger.warning(_("File path '{}' of loco image is invalid.".format(path)))
             finally:
                 self.set_from_pixbuf(pixbuf)
 
@@ -679,7 +681,7 @@ class Animator(GObject.GObject, threading.Thread):
         self.end_val = end_val
         self.step = step
         if self.start_val == self.end_val:
-            raise ValueError("Fehler bei Animation: Start- und End-Werte identisch.")
+            raise ValueError(_("Animation error: end value equals start value."))
         else:
             # calculate sleep time for the animation
             self.sleep_time = duration / (abs(start_val - end_val) / step)
@@ -805,7 +807,7 @@ class EngineSwitch(Gtk.ToggleButton):
         self.get_style_context().add_class("function-button")
         self.get_style_context().add_class("engine-switch")
 
-        name_label = Gtk.Label("Fahrgeräusch")
+        name_label = Gtk.Label(_("Driving sound"))
         name_label.set_ellipsize(Pango.EllipsizeMode.END)
 
         self.label = Gtk.Grid()
@@ -1150,7 +1152,7 @@ class EmergencyButton(Gtk.ToggleButton):
         Gtk.ToggleButton.__init__(self)
         self.set_name("emergency-button")
 
-        self.set_label("Nothalt")
+        self.set_label(_("Emergency stop"))
         self.set_size_request(-1, 50)
         self.socket_thread = socket_thread
 

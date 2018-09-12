@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Handmade GtkBuilder file-->
-<interface>
+<interface domain="main">
   <requires lib="gtk+" version="3.10"/>
   <object class="GtkApplicationWindow" id="electrip_main_window">
     <property name="width_request">600</property>
@@ -37,7 +37,7 @@
             <child>
               <object class="GtkLabel" id="file_button_label">
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Datei...</property>
+                <property name="label" translatable="yes">File...</property>
               </object>
             </child>
           </object>
@@ -57,15 +57,15 @@
   // file_menu_model: associates the menu with electrips file actions (save, open ...)
   <menu id="file_menu_model">
     <item>
-      <attribute name="label" translatable="yes">Laden</attribute>
+      <attribute name="label" translatable="yes">Load</attribute>
       <attribute name="action">app.load-file</attribute>
     </item>
     <item>
-      <attribute name="label" translatable="yes">Speichern</attribute>
+      <attribute name="label" translatable="yes">Save</attribute>
       <attribute name="action">app.save-file</attribute>
     </item>
     <item>
-      <attribute name="label" translatable="yes">Speichern unter</attribute>
+      <attribute name="label" translatable="yes">Save as</attribute>
       <attribute name="action">app.save-file-as</attribute>
     </item>
   </menu>

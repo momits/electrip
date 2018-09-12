@@ -1,22 +1,26 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import gettext
+import locale
 import logging
 from socket import error as SocketError
 import gc
-
-import gi
 import os
+import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import GObject, Gtk, GdkPixbuf, Gdk, Gio, GLib
 
-from electrip.constants import ELECTRIP_VERSION, ICON_PATHS, PATH
+from electrip.constants import ELECTRIP_VERSION, ICON_PATHS, PATH, LOCALE_PATH
 from electrip.config import JsonModel
 from electrip import configuration_ui
 from electrip import control_ui
 from electrip import dialog_templates
 
 logger = logging.getLogger(__name__)
+
+_ = gettext.translation("main", localedir=LOCALE_PATH).gettext
+locale.bindtextdomain("main", LOCALE_PATH)  # set the global textdomain for GtkBuilder
 
 
 class Electrip(Gtk.Application):
@@ -32,17 +36,17 @@ class Electrip(Gtk.Application):
         Config = JsonModel()
 
         self.file_name_arg = None
-        
+
         # Needed to start parallel threads later on:
         GObject.threads_init()
-        
+
         Gtk.Application.__init__(self,
                                  application_id="apps.momits.Electrip",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
         self.add_main_option("file", ord("f"), GLib.OptionFlags.NONE,
-                             GLib.OptionArg.FILENAME, "Vorhandene Electrip-Datei laden", None)
-        
+                             GLib.OptionArg.FILENAME, _("Open existing configuration"), None)
+
         fullscreen = Gio.SimpleAction.new_stateful("toggle-fullscreen",
                                                    None,
                                                    GLib.Variant.new_boolean(False))
@@ -54,28 +58,28 @@ class Electrip(Gtk.Application):
         unfullscreen.connect("activate", self.unfullscreen)
         self.add_action(unfullscreen)
         self.add_accelerator("Escape", "app.unfullscreen", None)
-        
+
         load = Gio.SimpleAction.new("load-file", None)
         load.connect("activate", self.load_file_with_dialog)
         self.add_action(load)
         self.add_accelerator("<Control>O", "app.load-file", None)
-        
+
         save = Gio.SimpleAction.new("save-file", None)
         save.set_enabled(False)
         save.connect("activate", self.save_file)
         self.add_action(save)
         self.add_accelerator("<Control>S", "app.save-file", None)
-        
+
         save_as = Gio.SimpleAction.new("save-file-as", None)
         save_as.connect("activate", self.save_file_as)
         self.add_accelerator("<Control><Shift>S", "app.save-file-as", None)
         self.add_action(save_as)
-        
+
         self.last_visible_view = "config"
         # flag to indicate whether electrip is supposed to quit
         self.quitting = False
         self.control_box = None
-        
+
         screen = Gdk.Screen.get_default()
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path(os.path.join(PATH, "css/electrip.css"))
@@ -96,7 +100,7 @@ class Electrip(Gtk.Application):
             pass
         self.activate()
         return 0
-        
+
     def do_activate(self):
         """
         Builds the gui, connects signals and shows it.
@@ -104,35 +108,35 @@ class Electrip(Gtk.Application):
         builder = Gtk.Builder.new_from_file(os.path.join(PATH, "electrip.ui"))
         builder.connect_signals({"on_delete_event": self.prepare_quit,
                                  "on_view_switched": self.toggle_view})
-        
+
         self.window = builder.get_object("electrip_main_window")
         self.window.set_title("Electrip " + ELECTRIP_VERSION)
         self.window.set_icon_list([GdkPixbuf.Pixbuf.new_from_file(path)
                                    for path in ICON_PATHS])
         self.add_window(self.window)
-        
+
         self.config_box = configuration_ui.MainBox(Config, self.window)
         self.control_wrapper_box = Gtk.EventBox()
-        
+
         stack = builder.get_object("main_stack")
         stack.add_titled(self.config_box,
                          "config",
-                         "Einstellen")
-        
+                         _("Configure"))
+
         stack.add_titled(self.control_wrapper_box,
                          "control",
-                         "Steuern")
-        
+                         _("Control"))
+
         self.window.maximize()
         self.window.show_all()
-        
+
         if self.file_name_arg:
             if self.load_file(self.file_name_arg):
                 stack.set_visible_child_name("control")
-        
+
         Config.new_unsaved_changes_method = self.new_unsaved_changes
         Config.notice_unsaved_changes = True
-        
+
     def load_file_with_dialog(self, unused_action, unused_parameter):
         """
         Shows a file-chooser dialog to select a file to load.
@@ -146,7 +150,7 @@ class Electrip(Gtk.Application):
         elif response == Gtk.ResponseType.CANCEL:
             logger.info("Laden abgebrochen.")
         file_chooser_dialog.destroy()
-        
+
     def load_file(self, path):
         """
         Tries to load the configuration from *path*.
@@ -155,28 +159,27 @@ class Electrip(Gtk.Application):
         try:
             Config.load(path)
         except ValueError:
-            self.error_dialog("Die Datei ist ungültig! "
-                              "Konnte Konfiguration nicht laden.")
+            self.error_dialog(_("File is invalid! "
+                                "Could not load configuration."))
             return False
         except IOError:
-            self.error_dialog("Der Dateipfad ist ungültig! "
-                              "Konnte Konfiguration nicht laden.")
+            self.error_dialog(_("File is invalid! "
+                                "Could not load configuration."))
             return False
         except KeyError:
-            self.error_dialog("Ein Parameter konnte nicht geladen werden, "
-                              "eventuell handelt es ich um eine ältere Electrip-Datei.")
+            self.error_dialog(_("A parameter is missing in the configuration. "
+                                "Maybe you loaded an outdated Electrip file."))
             return False
         except:
-            self.error_dialog("Beim Laden der Datei ist ein unbekannter "
-                              "Fehler aufgetreten - es handelt sich nicht "
-                              "um eine gültige Electrip-Datei.")
+            self.error_dialog(_("An unknown error occurred while loading the chosen file. "
+                                "It is not a valid Electrip file."))
             return False
         else:
             self.config_box.loco_scrolled_window.treeview.load()
             self.config_box.joystick_table.load(Config.joystick)
             self.config_box.server_table.load(Config.server)
             self.config_box.sound_table.load(Config.sound)
-            
+
             if self.last_visible_view == "control":
                 self.control_box.quit()
                 gc.collect()
@@ -185,7 +188,7 @@ class Electrip(Gtk.Application):
 
             self.window.set_title("Electrip " + ELECTRIP_VERSION + " - " + path)
             return True
-    
+
     def save_file(self, unused_action, unused_parameter):
         """
         Saves the currently opened configuration
@@ -193,7 +196,7 @@ class Electrip(Gtk.Application):
         """
         Config.save(Config.last_file)
         self.lookup_action("save-file").set_enabled(False)
-    
+
     def save_file_as(self, unused_action, unused_parameter):
         """
         Opens a :class:`FileSaveDialog`, allowing the user
@@ -211,13 +214,13 @@ class Electrip(Gtk.Application):
             self.lookup_action("save-file").set_enabled(False)
             self.window.set_title("Electrip " + ELECTRIP_VERSION + " - " + path)
         file_chooser_dialog.destroy()
-        
+
     def new_unsaved_changes(self):
         """
         Handler for unsaved changes, enables the "save-file"-action.
         """
         self.lookup_action("save-file").set_enabled(True)
-        
+
     def prepare_quit(self, window, event):
         response = 1
         if Config.has_unsaved_changes:
@@ -225,11 +228,11 @@ class Electrip(Gtk.Application):
                                        0,
                                        Gtk.MessageType.QUESTION,
                                        Gtk.ButtonsType.NONE,
-                                       "Die Datei besitzt ungespeicherte Änderungen.\n"
-                                       "Wollen Sie diese speichern?")
-            dialog.add_buttons("Speichern", 0,
-                               "Verwerfen und Electrip beenden", 1,
-                               "Abbrechen", 2)
+                                       _("The file has unsaved changes.\n"
+                                         "Do you want to save them?"))
+            dialog.add_buttons(_("Save and exit"), 0,
+                               _("Discard and exit"), 1,
+                               _("Back to Electrip"), 2)
             response = dialog.run()
             dialog.destroy()
             if response == 0 and Config.opened_file == None:
@@ -241,14 +244,14 @@ class Electrip(Gtk.Application):
                 self.control_box.quit()
             self.quitting = True
             self.quit()
-            logger.info("Electrip wurde beendet.")
+            logger.info(_("Electrip was quit."))
         else:
             dialog.destroy()
             return True
 
     def unfullscreen(self, action, unused_parameter):
         self.window.unfullscreen()
-        
+
     def toggle_fullscreen(self, action, unused_parameter):
         # toggle the action state and change to fullscreen
         action.set_state(GLib.Variant.new_boolean(not action.get_state()))
@@ -256,7 +259,7 @@ class Electrip(Gtk.Application):
             self.window.fullscreen()
         else:
             self.window.unfullscreen()
-            
+
     def toggle_view(self, stack, unused_propinfo):
         visible_view = stack.get_visible_child_name()
         if None != visible_view != self.last_visible_view \
@@ -266,14 +269,14 @@ class Electrip(Gtk.Application):
                     self.control_box = control_ui.MainBox(Config,
                                                           self.window)
                 except SocketError:
-                    self.error_dialog("Es konnte keine Verbindung zum "
-                                      "SRCP-Server aufgebaut werden.\n"
-                                      "Überprüfen Sie die Server-Einstellungen "
-                                      "(Host, Port ...).\nIst der SRCP-Server aktiv?")
+                    self.error_dialog(_("Electrip cannot connect to the "
+                                        "SRCP server.\n"
+                                        "Please check the server configuration "
+                                        "(host and port).\nIs the SRCP server running?"))
                     stack.set_visible_child_name("config")
                 else:
                     self.control_wrapper_box.add(self.control_box)
-            elif self.control_box != None:
+            elif self.control_box is not None:
                 # Collect the objects which have been freed in the "quit"-methods
                 gc.collect()
 
@@ -285,7 +288,7 @@ class Electrip(Gtk.Application):
         self.control_box.quit()
         self.control_box = None
         stack.disconnect(self.transition_handler_id)
-    
+
     def error_dialog(self, warning):
         """
         Shows an error-dialog displaying *warning*.

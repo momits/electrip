@@ -1,0 +1,794 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-05-14 16:48+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: configuration_ui.py:73
+msgid "Locos"
+msgstr "Loks"
+
+#: configuration_ui.py:77
+msgid "SRCP server"
+msgstr "SRCP-Server"
+
+#: configuration_ui.py:81
+msgid "Gamepad"
+msgstr "Gamepad"
+
+#: configuration_ui.py:85
+#: configuration_ui.py:904
+msgid "Sound"
+msgstr "Geräusch"
+
+#: configuration_ui.py:98
+#: configuration_ui.py:717
+msgid "Functions"
+msgstr "Funktionen"
+
+#: configuration_ui.py:113
+#: configuration_ui.py:410
+#: configuration_ui.py:429
+msgid "Sound events"
+msgstr "Geräuschereignisse"
+
+#: configuration_ui.py:127
+#: configuration_ui.py:405
+#: configuration_ui.py:423
+msgid "Sound functions"
+msgstr "Geräuschfunktionen"
+
+#: configuration_ui.py:151
+msgid "Add control point"
+msgstr "Kontrollpunkt hinzufügen"
+
+#: configuration_ui.py:158
+#: configuration_ui.py:226
+#: configuration_ui.py:1275
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: configuration_ui.py:162
+msgid "Add"
+msgstr "Hinzufügen"
+
+#: configuration_ui.py:213
+msgid "Speed mapping"
+msgstr "Geschwindigkeitskennlinie"
+
+#: configuration_ui.py:217
+msgid "Add control points with exact coordinates"
+msgstr "Kontrollpunkt mit exakten Koordinaten hinzufügen"
+
+#: configuration_ui.py:228
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+#: configuration_ui.py:235
+msgid "Reset speed mapping?"
+msgstr "Kennlinie zurücksetzen?"
+
+#: configuration_ui.py:319
+msgid "Load loco"
+msgstr "Lok laden"
+
+#: configuration_ui.py:336
+msgid "A file path is invalid! Could not import loco."
+msgstr "Ein Dateipfad ist ungültig! Die Lok konnte nicht importiert werden."
+
+#: configuration_ui.py:339
+msgid "A parameter is missing! Could not import loco."
+msgstr "Ein Parameter fehlt! Die Lok konnte nicht importiert werden."
+
+#: configuration_ui.py:342
+msgid "The *.zip file has errors! Could not import loco."
+msgstr "Die zip-Datei hat Fehler! Die Lok konnte nicht importiert werden."
+
+#: configuration_ui.py:345
+msgid ""
+"An unexpected error has occured:\n"
+" {}"
+msgstr ""
+"Ein unerwarteter Fehler ist aufgetreten:\n"
+" {}"
+
+#: configuration_ui.py:357
+msgid "Save loco"
+msgstr "Lok speichern"
+
+#: configuration_ui.py:378
+msgid "General properties"
+msgstr "Allgemeine Eigenschaften"
+
+#: configuration_ui.py:382
+msgid "Maximum speed"
+msgstr "Höchstgeschwindigkeit"
+
+#: configuration_ui.py:383
+msgid "Real maximum speed of the loco in km/h"
+msgstr "Die reale Höchstgeschwindigkeit der Lok in km/h"
+
+#: configuration_ui.py:386
+msgid "Accel. duration"
+msgstr "Beschleunigungsdauer"
+
+#: configuration_ui.py:387
+msgid ""
+"Time in s needed to accelerate from 0 to maximum speed with maximum "
+"acceleration"
+msgstr ""
+"Benötigte Zeit in s um aus dem Stand auf die Höchstgeschwindigkeit zu beschleunigen"
+
+#: configuration_ui.py:391
+msgid "Braking duration"
+msgstr "Bremsdauer"
+
+#: configuration_ui.py:392
+msgid ""
+"Time in s needed to decelerate from maximum speed to 0 doing a full braking"
+msgstr "Benötigte Zeit in s für eine Vollbremsung von der Höchstgeschwindigkeit auf 0."
+
+#: configuration_ui.py:396
+#: configuration_ui.py:1069
+msgid "Travel direction"
+msgstr "Fahrtrichtung"
+
+#: configuration_ui.py:397
+msgid "Initial travel direction of the loco"
+msgstr "Voreingestellte Fahrtrichtung der Lok"
+
+#: configuration_ui.py:402
+msgid "Image"
+msgstr "Bild"
+
+#: configuration_ui.py:403
+msgid "An image showing the loco"
+msgstr "Ein Bild der Lok"
+
+#: configuration_ui.py:406
+msgid "Configure sounds that can be played as loco functions"
+msgstr "Lokgeräusche einstellen, die wie Funktionen geschaltet werden"
+
+#: configuration_ui.py:408
+#: configuration_ui.py:413
+msgid "Configure"
+msgstr "Einstellen"
+
+#: configuration_ui.py:411
+msgid "Configure sounds to be played in the case of specific events"
+msgstr "Lokgeräusche einstellen, die bei bestimmten Ereignissen abgespielt werden"
+
+#: configuration_ui.py:415
+msgid "Sound volume"
+msgstr "Lautstärke"
+
+#: configuration_ui.py:416
+msgid "Sound volume of the loco"
+msgstr "Die Lautstärke der Geräusche der Lokomotive"
+
+#: configuration_ui.py:449
+msgid ""
+"Changing the maximum speed to {} km/h will cause a reset of the speed mapping!"
+msgstr ""
+
+#: configuration_ui.py:472
+msgid "Digital decoder"
+msgstr "Digitaldekoder"
+
+#: configuration_ui.py:502
+msgid "Add loco"
+msgstr "Neue Lok"
+
+#: configuration_ui.py:503
+msgid "Remove loco"
+msgstr "Lok löschen"
+
+#: configuration_ui.py:550
+msgid "Add function"
+msgstr "Neue Funktion"
+
+#: configuration_ui.py:551
+msgid "Remove function"
+msgstr "Funktion löschen"
+
+#: configuration_ui.py:597
+#: configuration_ui.py:652
+msgid "Add sound"
+msgstr "Neues Geräusch"
+
+#: configuration_ui.py:598
+#: configuration_ui.py:653
+msgid "Remove sound"
+msgstr "Geräusch löschen"
+
+#: configuration_ui.py:698
+msgid "Protocol"
+msgstr "Protokoll"
+
+#: configuration_ui.py:699
+msgid "Digital protocol of the decoder"
+msgstr "Digitalprotokoll des Dekoders"
+
+#: configuration_ui.py:707
+msgid "Address"
+msgstr "Adresse"
+
+#: configuration_ui.py:708
+msgid "Address of the decoder"
+msgstr "Digitaladresse des Dekoders"
+
+#: configuration_ui.py:711
+msgid "Speed steps"
+msgstr "Fahrstufen"
+
+#: configuration_ui.py:712
+msgid "Number of speed steps supported by the decoder"
+msgstr "Anzahl Fahrstufen die vom Dekoder unterstützt werden"
+
+#: configuration_ui.py:718
+msgid "Total number of functions supported by the digital protocol"
+msgstr "Maximalzahl von Lokfunktionen die vom Protokoll unterstützt werden"
+
+#: configuration_ui.py:772
+msgid ""
+"Changing the number of speed steps to {}\n"
+" will cause a reset of the speed mapping!"
+msgstr ""
+"Wenn die Anzahl Fahrstufen zu {} geändert wird\n"
+"muss die Geschwindigkeitskennlinie zurückgesetzt werden!"
+
+#: configuration_ui.py:796
+msgid ""
+"Changing the protocol to \"{}\" requires\n"
+"- setting the number of speed steps to {}\n"
+"- restricting the address space to 1-{}\n"
+"The speed mapping will be reset!"
+msgstr ""
+"Wenn das Protokoll zu \"{}\" geändert wird, müssen\n"
+"- die Anzahl Fahrstufen auf {}, und\n"
+"- der Adressbereich auf 1-{}\n"
+"gesetzt werden. "
+"Zudem wird die Kennlinie zurückgesetzt!"
+
+#: configuration_ui.py:864
+msgid "Host"
+msgstr "Host"
+
+#: configuration_ui.py:865
+msgid "IP address of the server"
+msgstr "IP-Adresse des SRCP-Servers"
+
+#: configuration_ui.py:867
+msgid "Port"
+msgstr "Port"
+
+#: configuration_ui.py:868
+msgid "Port used by the server"
+msgstr "Port des SRCP-Servers"
+
+#: configuration_ui.py:870
+msgid "Bus"
+msgstr "Bus"
+
+#: configuration_ui.py:871
+msgid "SRCP bus used to send control commands"
+msgstr "SRCP-Bus auf dem die Steuerbefehle gesendet werden"
+
+#: configuration_ui.py:873
+msgid "Power on"
+msgstr "Strom einschalten"
+
+#: configuration_ui.py:874
+msgid "Power on automatically when control mode is started"
+msgstr "Automatisch Strom einschalten sobald die Steuerung gestartet wird"
+
+#: configuration_ui.py:887
+msgid "Emergency stop"
+msgstr "Nothalt"
+
+#: configuration_ui.py:888
+msgid "Button to power off the tracks"
+msgstr "Taste um den Strom abzuschalten"
+
+#: configuration_ui.py:890
+msgid "Reverser"
+msgstr "Richtungswender"
+
+#: configuration_ui.py:891
+msgid "Button to reverse travel direction"
+msgstr "Taste um die Fahrtrichtung der Loks zu ändern"
+
+#: configuration_ui.py:893
+msgid "Acceleration"
+msgstr "Beschleunigung"
+
+#: configuration_ui.py:894
+msgid "Axis to control loco acceleration"
+msgstr "Achse um die Beschleunigung der Loks zu steuern"
+
+#: configuration_ui.py:896
+msgid "Axis threshold"
+msgstr "Achsenschwellwert"
+
+#: configuration_ui.py:897
+msgid "Axis deviations below this threshold will be ignored"
+msgstr "Achsenauslenkungen unter dem Schwellwert werden ignoriert"
+
+#: configuration_ui.py:900
+msgid "Focus"
+msgstr "Fokus"
+
+#: configuration_ui.py:901
+msgid "Button to scroll to the currently selected loco"
+msgstr "Taste um zur momentan gewählten Lok zu scrollen"
+
+#: configuration_ui.py:905
+msgid "Button to turn on and off the loco sound"
+msgstr "Taste um das Fahrgeräusch zu schalten"
+
+#: configuration_ui.py:907
+msgid "Auto focus"
+msgstr "Autofokus"
+
+#: configuration_ui.py:908
+msgid "Always focus on new loco when switching locos"
+msgstr "Beim Wechsel zwischen Loks gleich zur neuen Lok scrollen"
+
+#: configuration_ui.py:910
+msgid "Button numbers"
+msgstr "Tastennummern"
+
+#: configuration_ui.py:911
+msgid ""
+"Display the number of the configured gamepad button for each loco "
+"function"
+msgstr ""
+"Nummern der eingestellten Gamepadtasten auf den Lokfunktionen anzeigen"
+
+#: configuration_ui.py:924
+msgid "Sampling rate"
+msgstr "Abtastrate"
+
+#: configuration_ui.py:925
+msgid "Sampling rate of the used audio files"
+msgstr "Abtastrate der verwendeten Geräuschdateien"
+
+#: configuration_ui.py:931
+msgid "Sound level"
+msgstr "Geräuschstufe"
+
+#: configuration_ui.py:932
+msgid "Show current sound level in the speed scale"
+msgstr "Momentane Geräuschstufe im Geschwindigkeitsregler anzeigen"
+
+#: configuration_ui.py:954
+msgid "Select loco to configure"
+msgstr "Lok auswählen"
+
+#: configuration_ui.py:955
+msgid "Select loco"
+msgstr "Eine Lok zum Einstellen auswählen"
+
+#: configuration_ui.py:999
+#: configuration_ui.py:1053
+#: configuration_ui.py:1175
+msgid "Designation"
+msgstr "Bezeichnung"
+
+#: configuration_ui.py:1000
+msgid "Name of the function (e.g. 'Light', 'Horn')"
+msgstr "Name der Funktion (z.B. 'Licht', 'Hupe')"
+
+#: configuration_ui.py:1002
+msgid "Function"
+msgstr "Funktion"
+
+#: configuration_ui.py:1003
+msgid "Number of the function used by the digital decoder"
+msgstr "Nummer der Funktion für den Digitaldekoder"
+
+#: configuration_ui.py:1006
+#: configuration_ui.py:1057
+#: configuration_ui.py:1182
+msgid "State"
+msgstr "Zustand"
+
+#: configuration_ui.py:1007
+msgid "Initial state of the function (On/Off)"
+msgstr "Voreingestellter Zustand der Funktion (An/Aus)"
+
+#: configuration_ui.py:1010
+#: configuration_ui.py:1061
+#: configuration_ui.py:1186
+msgid "Button"
+msgstr "Taste"
+
+#: configuration_ui.py:1011
+msgid "Gamepad button to trigger the function"
+msgstr "Gamepadtaste um die Funktion zu schalten"
+
+#: configuration_ui.py:1013
+#: configuration_ui.py:1189
+msgid "Trigger mode"
+msgstr "Schaltart"
+
+#: configuration_ui.py:1014
+msgid "How the function is triggered (push-button/switch)"
+msgstr "Wie die Funktion geschaltet wird (Taster/Umschalter)"
+
+#: configuration_ui.py:1054
+#: configuration_ui.py:1176
+msgid "Name of the sound (e.g. 'brake squeaking')"
+msgstr "Bezeichnung des Geräuschs (z.B. 'Bremsenquietschen')"
+
+#: configuration_ui.py:1058
+#: configuration_ui.py:1183
+msgid "Initial state of the event (On/Off)"
+msgstr "Voreingestellter Zustand des Ereignisses (An/Aus)"
+
+#: configuration_ui.py:1062
+msgid "Gamepad button to (de)activate watching for the event"
+msgstr "Gamepadtaste um die Aufmerksamkeit für das Ereignis zu (de-)aktivieren"
+
+#: configuration_ui.py:1066
+msgid "Sound to play at the event (.wav or .ogg)"
+msgstr "Geräusch das bei Eintreten des Ereignisse gespielt wird (.wav oder .ogg)"
+
+#: configuration_ui.py:1070
+msgid "Travel direction of the loco"
+msgstr "Fahrtrichtung der Lokomotive"
+
+#: configuration_ui.py:1075
+msgid "v<sub>min</sub>"
+msgstr ""
+
+#: configuration_ui.py:1076
+msgid "Minimum speed in km/h"
+msgstr "Minimalgeschwindigkeit in km/h"
+
+#: configuration_ui.py:1078
+msgid "v<sub>max</sub>"
+msgstr ""
+
+#: configuration_ui.py:1079
+msgid "Maximum speed in km/h"
+msgstr "Maximalgeschwindigkeit in km/h"
+
+#: configuration_ui.py:1081
+msgid "a<sub>min</sub>"
+msgstr ""
+
+#: configuration_ui.py:1082
+msgid "Minimum acceleration in km/h/s (may be negative)"
+msgstr "Minimalbeschleunigung in km/h/s (kann negativ sein)"
+
+#: configuration_ui.py:1085
+msgid "a<sub>max</sub>"
+msgstr ""
+
+#: configuration_ui.py:1086
+msgid "Maximum acceleration in km/h/s (may be negative)"
+msgstr "Maximalbeschleunigung in km/h/s (kann negativ sein)"
+
+#: configuration_ui.py:1089
+msgid "Fade-in"
+msgstr "Einblenden"
+
+#: configuration_ui.py:1090
+msgid "Duration of gentle fade-in in s"
+msgstr "Dauer für sanftes Einblenden in s"
+
+#: configuration_ui.py:1092
+msgid "Fade-out"
+msgstr "Ausblenden"
+
+#: configuration_ui.py:1093
+msgid "Duration of gentle fade-out in s"
+msgstr "Dauer für sanftes Einblenden in s"
+
+#: configuration_ui.py:1095
+msgid "Play completely"
+msgstr "Komplett abspielen"
+
+#: configuration_ui.py:1096
+msgid ""
+"Whether the sound should be played until its end even when the conditions "
+"are no longer met"
+msgstr ""
+"Ob das Geräusch zu Ende gespielt wird, obwohl die Bedingungen nicht mehr "
+"erfüllt sind"
+
+#: configuration_ui.py:1180
+msgid "Sound to play (.wav or .ogg)"
+msgstr "Geräusch das gespielt wird (.wav oder .ogg)"
+
+#: configuration_ui.py:1187
+msgid "Gamepad button to trigger the sound"
+msgstr "Gamepadtaste um das Geräusch zu schalten"
+
+#: configuration_ui.py:1190
+msgid "How the function is triggered"
+msgstr "Wie die Funktion geschaltet wird"
+
+#: configuration_ui.py:1242
+msgid "v"
+msgstr ""
+
+#: configuration_ui.py:1242
+msgid "Speed in km/h"
+msgstr "Geschwindigkeit in km/h"
+
+#: configuration_ui.py:1243
+msgid "f"
+msgstr ""
+
+#: configuration_ui.py:1243
+msgid "Speed step"
+msgstr "Fahrstufe"
+
+#: configuration_ui.py:1266
+#: configuration_ui.py:1298
+msgid "Combustion engine"
+msgstr "Verbrennungsmotor"
+
+#: configuration_ui.py:1267
+#: configuration_ui.py:1297
+msgid "Steam engine"
+msgstr "Dampfmaschine"
+
+#: configuration_ui.py:1268
+#: configuration_ui.py:1296
+msgid "No sound"
+msgstr "Kein Geräusch"
+
+#: configuration_ui.py:1271
+msgid ""
+"Changing the sound model to \"{}\" will cause a reset of currently "
+"configured sounds!"
+msgstr ""
+"Wenn das Geräuschmodell zu \"{}\" geändert wird, gehen alle momentan "
+"eingestellten Geräusche verloren!"
+
+#: configuration_ui.py:1275
+msgid "Change sound model"
+msgstr "Geräuschmodell ändern"
+
+#: configuration_ui.py:1332
+msgid "Startup sound"
+msgstr "Anlassgeräusch"
+
+#: configuration_ui.py:1333
+msgid "Sound during engine startup"
+msgstr "Geräusch während des Anlassens des Motors"
+
+#: configuration_ui.py:1336
+#: configuration_ui.py:1345
+msgid "Idle sound"
+msgstr "Leerlaufgeräusch"
+
+#: configuration_ui.py:1337
+#: configuration_ui.py:1346
+msgid "Sound when the engine runs idle"
+msgstr "Geräusch während der Motor leer dreht"
+
+#: configuration_ui.py:1340
+msgid "Shutdown sound"
+msgstr "Abstellgeräusch"
+
+#: configuration_ui.py:1341
+msgid "Sound to play during engine shutdown"
+msgstr "Geräusch während der Motor ausgeht"
+
+#: configuration_ui.py:1349
+msgid "Steam blow sound"
+msgstr "Dampfablassgeräusch"
+
+#: configuration_ui.py:1350
+msgid "Sound when steam leaves the cylinders"
+msgstr "Geräusch wenn Dampf die Zylinder verlässt"
+
+#: configuration_ui.py:1353
+msgid "Strokes"
+msgstr "Takte"
+
+#: configuration_ui.py:1354
+msgid "Number of cylinder strokes performed during one wheel rotation"
+msgstr "Anzahl Zylindertakte während einer Radumdrehung"
+
+#: configuration_ui.py:1357
+msgid "First stroke delay"
+msgstr "Dampfablassdauer"
+
+#: configuration_ui.py:1358
+msgid "Delay in s between letting off steam and the first cylinder stroke"
+msgstr "Verzögerung in s zwischen Dampfablassen und dem ersten Zylinderschlag"
+
+#: configuration_ui.py:1361
+msgid "Driving wheel diameter"
+msgstr "Treibraddurchmesser"
+
+#: configuration_ui.py:1362
+msgid "Diameter of a driving wheel in m"
+msgstr "Durchmesser eines Treibrades in m"
+
+#: configuration_ui.py:1365
+msgid "Minimum stroke frequency"
+msgstr "Minimale Taktfrequenz"
+
+#: configuration_ui.py:1366
+msgid "Lowest used frequency in strokes per s"
+msgstr "Untere Grenze für die Taktfrequenz"
+
+#: configuration_ui.py:1495
+msgid "Sound "
+msgstr "Geräusch"
+
+#: configuration_ui.py:1550
+msgid "Delete sound"
+msgstr "Geräusch löschen"
+
+#: configuration_ui.py:1556
+msgid "Add sound segment"
+msgstr "Geräuschabschnitt hinzufügen"
+
+#: configuration_ui.py:1562
+msgid "Close"
+msgstr "Schließen"
+
+#: configuration_ui.py:1640
+msgid "On-load:"
+msgstr "Unter Last:"
+
+#: configuration_ui.py:1641
+msgid "Sound to play in the chosen speed segment when engine is under load"
+msgstr "Geräusch unter Last im gewählten Geschwindigkeitsabschnitt"
+
+#: configuration_ui.py:1645
+msgid "Acceleration:"
+msgstr "Beschleunigung:"
+
+#: configuration_ui.py:1646
+msgid "Sound to play during acceleration from the prior to this speed segment"
+msgstr "Geräusch bei der Beschleunigung vom vorherigen zu diesem "
+"Geschwindigkeitsabschnitt"
+
+#: configuration_ui.py:1651
+msgid "Idle:"
+msgstr "Leerlauf:"
+
+#: configuration_ui.py:1652
+msgid "Sound to play in the chosen speed segment when engine is idle"
+msgstr "Geräusch bei Leerlauf im gewählten Geschwindigkeitsabschnitt"
+
+#: configuration_ui.py:1656
+msgid "Braking:"
+msgstr "Bremsen:"
+
+#: configuration_ui.py:1657
+msgid "Sound to play during deceleration from this to the prior speed segment"
+msgstr "Geräusch beim Bremsen von diesem zum vorherigen "
+"Geschwindigkeitsabschnitt"
+
+#: configuration_ui.py:1693
+msgid "Sound for cylinder stroke {}"
+msgstr "Geräusch für Takt {}"
+
+#: configuration_ui.py:1699
+msgid "Stroke "
+msgstr "Takt"
+
+#: config/loco.py:24
+#: config/json_model.py:153
+msgid "Unnamed loco"
+msgstr "Unbenannte Lok"
+
+#: config/json_model.py:257
+msgid "No path to last opened file was found."
+msgstr "Keine zuletzt geöffnete Datei bekannt."
+
+#: config/json_model.py:286
+msgid "Invalid file '{}' could not be copied to loco archive."
+msgstr "Ungültige Datei '{}' konnte nicht in das Lokpaket kopiert werden."
+
+#: config/json_model.py:385
+msgid "Loco was saved in {}."
+msgstr "Lok wurde gespeichert in {}."
+
+#: config/json_model.py:442
+msgid "Configuration was saved in {}."
+msgstr "Konfiguration wurde in {} gespeichert."
+
+#: config/json_model.py:626
+msgid "File does not yet have any sound information."
+msgstr "Die Datei enthält noch keine Informationen über Lokgeräusche."
+
+#: config/json_model.py:674
+msgid "Configuration was loaded from {}."
+msgstr "Konfiguration wurde aus {} geladen."
+
+#: config/json_model.py:707
+msgid ""
+"Invalid file format: Attribute {} was not found, default value {} was used."
+msgstr "Ungültiges Dateiformat: Attribut {} fehlt, übernehme Vorgabewert {}."
+
+#: config/json_model.py:776
+msgid "Attribute '{}' of object '{}' has new value: {}"
+msgstr "Attribut '{}' des Objekts '{}' wurde gesetzt auf: {}"
+
+#: config/vocab.py:11
+msgid "On"
+msgstr "An"
+
+#: config/vocab.py:12
+msgid "Off"
+msgstr "Aus"
+
+#: config/vocab.py:15
+msgid "Yes"
+msgstr "Ja"
+
+#: config/vocab.py:16
+msgid "No"
+msgstr "Nein"
+
+#: config/vocab.py:19
+#: config/vocab.py:23
+msgid "Switch"
+msgstr "Umschalter"
+
+#: config/vocab.py:20
+msgid "Push-button"
+msgstr "Taster"
+
+#: config/vocab.py:24
+msgid "Push-button (play repeatedly)"
+msgstr "Taster (wiederholt abspielen)"
+
+#: config/vocab.py:25
+msgid "Push-button (play once)"
+msgstr "Taster (einmalig abspielen)"
+
+#: config/vocab.py:26
+msgid "Tap (play until end)"
+msgstr "Antippen (einmal komplett abspielen)"
+
+#: config/vocab.py:29
+msgid "Forward"
+msgstr "Vorwärts"
+
+#: config/vocab.py:30
+msgid "Backward"
+msgstr "Rückwärts"
+
+#: config/vocab.py:33
+msgid "Märklin Motorola Version 1"
+msgstr ""
+
+#: config/vocab.py:34
+msgid "Märklin Motorola Version 2"
+msgstr ""
+
+#: config/vocab.py:35
+msgid "DCC with short adresses"
+msgstr "DCC mit kurzen Adressen"
+
+#: config/vocab.py:36
+msgid "DCC with long adresses"
+msgstr "DCC mit langen Adressen"
+
+#: config/vocab.py:38
+msgid "Any"
+msgstr "Egal"

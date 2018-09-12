@@ -1,8 +1,9 @@
-#!/usr/bin/env python2.7
-# -*- coding: UTF 8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 from setuptools import setup
 from electrip.constants import ELECTRIP_VERSION
+
 
 setup(name='Electrip',
       version=ELECTRIP_VERSION,
@@ -14,6 +15,7 @@ setup(name='Electrip',
       package_dir={'': 'src'},
       packages=['electrip', 'electrip.config'],
       package_data={'electrip': ['electrip.ui',
+                                 'locale/*/*.mo',
                                  'icons/arrows/*',
                                  'icons/circle.svg',
                                  'icons/circle_insensitive.svg',

@@ -1,16 +1,20 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import gettext
+
 import os
 from gi.repository import GObject, Gtk, Gdk
 from zipfile import BadZipfile
 
-from electrip.constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH, PATH
+from electrip.constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH, PATH, LOCALE_PATH
 from electrip.widgets import StockImageButton
 from electrip.dialog_templates import SoundFileFilter, WarningDialog, \
     LocoLoadDialog, LocoSaveDialog, SoundLoadDialog
 from electrip import config
 from electrip import widgets
 from electrip.config import vocab
+
+_ = gettext.translation("configuration", localedir=LOCALE_PATH).gettext
 
 
 class MainBox(Gtk.Notebook):
@@ -67,19 +71,19 @@ class MainBox(Gtk.Notebook):
         paned.set_orientation(Gtk.Orientation.HORIZONTAL)
         paned.add1(self.loco_grid)
         paned.add2(self.scrolled_window_loco_properties)
-        self.append_page(paned, Gtk.Label("Lokomotiven"))
+        self.append_page(paned, Gtk.Label(_("Locos")))
 
         self.server_table = ServerTable()
         self.append_page(widgets.TopAlignment(self.server_table),
-                         Gtk.Label("SRCP-Server"))
+                         Gtk.Label(_("SRCP server")))
 
         self.joystick_table = JoystickTable()
         self.append_page(widgets.TopAlignment(self.joystick_table),
-                         Gtk.Label("Gamepad"))
+                         Gtk.Label(_("Gamepad")))
 
         self.sound_table = SoundTable()
         self.append_page(widgets.TopAlignment(self.sound_table),
-                         Gtk.Label("Geräusch"))
+                         Gtk.Label(_("Sound")))
         self.show_all()
 
 
@@ -92,7 +96,7 @@ class FunctionFrame(widgets.TreeViewFrame):
         self.treeview = FunctionTreeView()
         self.action_box = FunctionActionBox(self.treeview)
         widgets.TreeViewFrame.__init__(self,
-                                       "Funktionen",
+                                       _("Functions"),
                                        self.treeview,
                                        self.action_box)
         self.set_sensitive(False)
@@ -107,7 +111,7 @@ class EventSoundFrame(widgets.TreeViewFrame):
         self.treeview = EventSoundTreeView(popup)
         self.action_box = EventSoundActionBox(self.treeview)
         widgets.TreeViewFrame.__init__(self,
-                                       "Geräusch-Ereignisse",
+                                       _("Sound events"),
                                        self.treeview,
                                        self.action_box)
 
@@ -121,7 +125,7 @@ class FunctionSoundFrame(widgets.TreeViewFrame):
         self.treeview = FunctionSoundTreeView(popup)
         self.action_box = FunctionSoundActionBox(self.treeview)
         widgets.TreeViewFrame.__init__(self,
-                                       "Geräusch-Funktionen",
+                                       _("Sound functions"),
                                        self.treeview,
                                        self.action_box)
 
@@ -145,18 +149,18 @@ class ControlPointPopup(Gtk.Window):
         self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
         self.set_transient_for(main_window)
         self.set_modal(True)
-        self.set_title("Kontrollpunkt hinzufügen")
+        self.set_title(_("Add control point"))
 
         x_label = Gtk.Label.new(x_var_name)
         y_label = Gtk.Label.new(y_var_name)
         self.x_spin_button = Gtk.SpinButton.new_with_range(0.1, 10, 0.1)
         self.y_spin_button = Gtk.SpinButton.new_with_range(0.1, 10, 0.1)
 
-        cancel_button = StockImageButton("Abbrechen",
+        cancel_button = StockImageButton(_("Cancel"),
                                          Gtk.STOCK_CANCEL)
         cancel_button.connect("clicked", self.close)
 
-        add_button = StockImageButton("Hinzufügen",
+        add_button = StockImageButton(_("Add"),
                                       Gtk.STOCK_CLOSE)
         add_button.connect("clicked", self.add_point)
 
@@ -207,12 +211,12 @@ class SpeedGraphFrame(Gtk.Overlay):
 
     def __init__(self, main_window):
         Gtk.Overlay.__init__(self)
-        frame = widgets.Frame("Geschwindigkeitsverlauf")
+        frame = widgets.Frame(_("Speed mapping"))
         self.graph = SpeedGraph()
         self.engine_frame = EngineFrame(self.graph, main_window)
 
-        control_point_button = StockImageButton("Kontrollpunkt mit exakten "
-                                                "Koordinaten hinzufügen",
+        control_point_button = StockImageButton(_("Add control points with "
+                                                  "exact coordinates"),
                                                 Gtk.STOCK_ADD)
         control_point_button.connect("clicked", self.show_control_point_popup)
         self.control_point_popup = ControlPointPopup(main_window,
@@ -220,16 +224,16 @@ class SpeedGraphFrame(Gtk.Overlay):
                                                      self.graph.y_var_name)
         self.control_point_popup.connect("add-control-point", self.add_control_point)
 
-        self.cancel_button = StockImageButton("Abbrechen", Gtk.STOCK_CANCEL)
+        self.cancel_button = StockImageButton(_("Cancel"), Gtk.STOCK_CANCEL)
         self.cancel_button.connect("clicked", self.change_axis, False)
-        self.accept_button = StockImageButton("Zurücksetzen", Gtk.STOCK_OK)
+        self.accept_button = StockImageButton(_("Reset"), Gtk.STOCK_OK)
         self.accept_button.connect("clicked", self.change_axis, True)
         self.warn_image = Gtk.Image.new_from_file(RELOAD_GRAPH_IMAGE_PATH)
         self.warn_image.set_margin_right(7)
         self.warn_label = Gtk.Label()
         self.warn_label.set_vexpand(True)
 
-        warn_frame = widgets.Frame("Kennlinie zurücksetzen?")
+        warn_frame = widgets.Frame(_("Reset speed mapping?"))
         warn_grid = Gtk.Grid()
         warn_grid.set_column_spacing(11)
         warn_grid.set_row_spacing(11)
@@ -313,7 +317,7 @@ class LoadLocoButton(Gtk.Button):
     """
 
     def __init__(self, main_window, loco_treeview):
-        Gtk.Button.__init__(self, "Lok laden")
+        Gtk.Button.__init__(self, _("Load loco"))
         self.set_valign(Gtk.Align.END)
         self.connect("clicked",
                      self.import_loco,
@@ -330,17 +334,17 @@ class LoadLocoButton(Gtk.Button):
                 Config.locos.append(Config.load_loco(file_path))
                 loco_treeview.load()
             except IOError:
-                main_window.error_dialog("Ein Dateipfad ist ungültig! "
-                                         "Konnte Lok nicht importieren.")
+                main_window.error_dialog(_("A file path is invalid! "
+                                           "Could not import loco."))
             except KeyError:
-                main_window.error_dialog("Ein Parameter konnte nicht geladen werden! "
-                                         "Konnte Lok nicht importieren.")
+                main_window.error_dialog(_("A parameter is missing! "
+                                           "Could not import loco."))
             except BadZipfile:
-                main_window.error_dialog("Die *.zip-Datei ist fehlerhaft! "
-                                         "Konnte Lok nicht importieren.")
+                main_window.error_dialog(_("The *.zip file has errors! "
+                                           "Could not import loco."))
             except Exception as e:
-                main_window.error_dialog("Ein unvorhergesehener Fehler "
-                                         "trat auf:\n" + str(e))
+                main_window.error_dialog(_("An unexpected error has occured:\n {}")
+                                           .format(e))
         file_chooser_dialog.destroy()
 
 
@@ -351,7 +355,7 @@ class SaveLocoButton(Gtk.Button):
     """
 
     def __init__(self, main_window):
-        Gtk.Button.__init__(self, "Lok speichern")
+        Gtk.Button.__init__(self, _("Save loco"))
         self.set_valign(Gtk.Align.END)
         self.connect("clicked", self.export_loco, main_window)
 
@@ -372,58 +376,58 @@ class LocoPropertiesFrame(widgets.Frame):
     """
 
     def __init__(self, speed_graph_frame, main_window):
-        widgets.Frame.__init__(self, "Allgemeine Eigenschaften")
+        widgets.Frame.__init__(self, _("General properties"))
         self.speed_graph_frame = speed_graph_frame
 
         self.table = widgets.EntryTable(True, False)
-        self.table.add_float_entry("Höchstgeschwindigkeit",
-                                   "Die reale Höchstgeschwindigkeit der Lokomotive in km/h",
+        self.table.add_float_entry(_("Maximum speed"),
+                                   _("Real maximum speed of the loco in km/h"),
                                    "max_speed",
                                    1.0, 999.0, 0.1)
-        self.table.add_float_entry("Beschleunigungsdauer",
-                                   "Zeit in s für die Beschleunigung von 0 "
-                                   "auf Höchstgeschw. bei voller Auslenkung des Gamepads",
+        self.table.add_float_entry(_("Accel. duration"),
+                                   _("Time in s needed to accelerate from 0 to "
+                                     "maximum speed with maximum acceleration"),
                                    "accel_duration",
                                    1.0, 9999.0, 0.1)
-        self.table.add_float_entry("Bremsdauer",
-                                   "Zeit in s für den Bremsvorgang von Höchstgeschw. "
-                                   "auf 0 bei voller Auslenkung des Gamepads",
+        self.table.add_float_entry(_("Braking duration"),
+                                   _("Time in s needed to decelerate from maximum "
+                                     "speed to 0 doing a full braking"),
                                    "decel_duration",
                                    1.0, 9999.0, 0.1)
-        self.table.add_combo_entry("Fahrtrichtung",
-                                   "Voreingestellte Fahrtrichtung der Lokomotive",
+        self.table.add_combo_entry(_("Travel direction"),
+                                   _("Initial travel direction of the loco"),
                                    "direction",
                                    GObject.TYPE_STRING,
                                    ((True, vocab.direction[True]),
                                     (False, vocab.direction[False])))
-        self.table.add_image_file_entry("Bild",
-                                        "Pfad an dem das passende Lokbild abgelegt ist",
+        self.table.add_image_file_entry(_("Image"),
+                                        _("An image showing the loco"),
                                         "img_path")
-        self.table.add_action_button("Geräusch-Funktionen",
-                                     "Wiedergabe von Geräuschdateien als "
-                                     "Lok-Funktionen konfigurieren",
-                                     "Bearbeiten",
+        self.table.add_action_button(_("Sound functions"),
+                                     _("Configure sounds that can be played "
+                                       "as loco functions"),
+                                     _("Configure"),
                                      self.edit_function_sounds)
-        self.table.add_action_button("Geräusch-Ereignisse",
-                                     "Wiedergabe von Geräuschdateien anhand "
-                                     "bestimmter Ereignisse festlegen",
-                                     "Bearbeiten",
+        self.table.add_action_button(_("Sound events"),
+                                     _("Configure sounds to be played "
+                                       "in the case of specific events"),
+                                     _("Configure"),
                                      self.edit_event_sounds)
-        self.table.add_volume_entry("Lautstärke",
-                                    "Lautstärke der Lokomotive",
+        self.table.add_volume_entry(_("Sound volume"),
+                                    _("Sound volume of the loco"),
                                     "sound_volume")
 
         self.table.entry_widgets[0].connect("value-changed", self.confirm_axis_change)
         self.add(self.table)
         self.set_sensitive(False)
         self.function_sound_popup = widgets.Popup(main_window,
-                                                  "Geräusch-Funktionen",
+                                                  _("Sound functions"),
                                                   Gdk.WindowTypeHint.NORMAL)
         self.function_sound_frame = FunctionSoundFrame(self.function_sound_popup)
         self.function_sound_popup.set_content(self.function_sound_frame)
 
         self.event_sound_popup = widgets.Popup(main_window,
-                                               "Geräusch-Ereignisse",
+                                               _("Sound events"),
                                                Gdk.WindowTypeHint.NORMAL)
         self.event_sound_frame = EventSoundFrame(self.event_sound_popup)
         self.event_sound_popup.set_content(self.event_sound_frame)
@@ -443,11 +447,10 @@ class LocoPropertiesFrame(widgets.Frame):
 
     def confirm_axis_change(self, entry):
         if not self.loading:
-            self.speed_graph_frame.confirm_axis_change("Durch die Änderung der "
-                                                       "Höchstgeschwindigkeit zu " +
-                                                       str(entry.retrieve_value()) +
-                                                       "\nwird die Geschwindigkeitskennlinie "
-                                                       "zurückgesetzt!",
+            self.speed_graph_frame.confirm_axis_change(_("Changing the maximum speed to "
+                                                         "{} km/h will cause a reset of "
+                                                         "the speed mapping!")
+                                                         .format(str(entry.retrieve_value())),
                                                        self.confirm_max_speed,
                                                        self.reset_max_speed)
         else:
@@ -467,7 +470,7 @@ class DecoderFrame(widgets.Frame):
     """
 
     def __init__(self, speed_graph_frame, main_window):
-        widgets.Frame.__init__(self, "Digitaldecoder")
+        widgets.Frame.__init__(self, _("Digital decoder"))
         self.table = DecoderTable(speed_graph_frame, main_window)
         self.add(self.table)
         self.set_sensitive(False)
@@ -497,8 +500,8 @@ class LocoActionBox(widgets.TreeViewActionBox):
         self.speed_frame = speed_frame
         widgets.TreeViewActionBox.__init__(self,
                                            loco_treeview,
-                                           "Neue Lok",
-                                           "Lok löschen")
+                                           _("Add loco"),
+                                           _("Remove loco"))
 
     def add_row_at_start(self):
         new_loco = config.Loco(Config.unsaved_changes)
@@ -545,8 +548,8 @@ class FunctionActionBox(widgets.TreeViewActionBox):
     def __init__(self, function_treeview):
         widgets.TreeViewActionBox.__init__(self,
                                            function_treeview,
-                                           "Neue Funktion",
-                                           "Funktion löschen")
+                                           _("Add function"),
+                                           _("Remove function"))
 
     @staticmethod
     def get_liststore_row(function):
@@ -592,8 +595,8 @@ class EventSoundActionBox(widgets.TreeViewActionBox):
     def __init__(self, event_sound_treeview):
         widgets.TreeViewActionBox.__init__(self,
                                            event_sound_treeview,
-                                           "Neues Geräusch",
-                                           "Geräusch löschen")
+                                           _("Add sound"),
+                                           _("Remove sound"))
 
     @staticmethod
     def get_liststore_row(event_sound):
@@ -647,8 +650,8 @@ class FunctionSoundActionBox(widgets.TreeViewActionBox):
     def __init__(self, event_sound_treeview):
         widgets.TreeViewActionBox.__init__(self,
                                            event_sound_treeview,
-                                           "Neues Geräusch",
-                                           "Geräusch löschen")
+                                           _("Add sound"),
+                                           _("Remove sound"))
 
     @staticmethod
     def get_liststore_row(func_sound):
@@ -693,8 +696,8 @@ class DecoderTable(widgets.EntryTable):
 
     def __init__(self, speed_graph_frame, main_window):
         widgets.EntryTable.__init__(self, True, False)
-        self.add_combo_entry("Protokoll",
-                             "Digitalprotokoll des Decoders",
+        self.add_combo_entry(_("Protocol"),
+                             _("Digital protocol of the decoder"),
                              "protocol",
                              GObject.TYPE_STRING,
                              (("M 1", vocab.protocols["M 1"]),
@@ -702,19 +705,19 @@ class DecoderTable(widgets.EntryTable):
                               ("N 1", vocab.protocols["N 1"]),
                               ("N 2", vocab.protocols["N 2"])))
 
-        self.add_int_entry("Adresse",
-                           "Adresse des Decoders",
+        self.add_int_entry(_("Address"),
+                           _("Address of the decoder"),
                            "address", 1, 10239, 1)
 
-        self.add_combo_entry("Fahrstufen",
-                             "Anzahl Fahrstufen die der Decoder unterstützt",
+        self.add_combo_entry(_("Speed steps"),
+                             _("Number of speed steps supported by the decoder"),
                              "speed_steps",
                              GObject.TYPE_INT,
                              ((14, 14),))
 
-        self.add_label("Funktionen",
-                       "Maximale Anzahl Funktionen die "
-                       "das Protokoll unterstützt",
+        self.add_label(_("Functions"),
+                       _("Total number of functions supported "
+                         "by the digital protocol"),
                        "1")
 
         self.speed_graph_frame = speed_graph_frame
@@ -767,10 +770,10 @@ class DecoderTable(widgets.EntryTable):
 
     def speed_steps_changed(self, combo):
         if not self.loading and not self.restoring_speed_steps:
-            self.speed_graph_frame.confirm_axis_change("Durch Änderung der Anzahl Fahrstufen zu " +
-                                                       str(combo.retrieve_value()) + \
-                                                       "\nwird die Geschwindigkeitskennlinie "
-                                                       "zurückgesetzt!",
+            self.speed_graph_frame.confirm_axis_change(_("Changing the number of speed steps "
+                                                         "to {}\n will cause a reset of the "
+                                                         "speed mapping!")
+                                                         .format(str(combo.retrieve_value())),
                                                        self.confirm_speed_steps,
                                                        self.reset_speed_steps)
             self.set_sensitive(False)
@@ -791,14 +794,14 @@ class DecoderTable(widgets.EntryTable):
             protocol = combo.retrieve_value()
             protocol_options = PROTOCOLS[protocol]
             if not self.loading:
-                self.speed_graph_frame.confirm_axis_change("Durch die Änderung des Protokolls zu \"" +
-                                                           combo.retrieve_disp_value() + "\" wird\n" + \
-                                                           "- die Anzahl Fahrstufen auf " +
-                                                           str(protocol_options[2][-1]) +
-                                                           " gesetzt\n" + "- der Adressraum auf 1-" +
-                                                           str(protocol_options[0]) + " beschränkt\n" + \
-                                                           "Dadurch wird die "
-                                                           "Geschwindigkeitskennlinie zurückgesetzt!",
+                self.speed_graph_frame.confirm_axis_change(_("Changing the protocol to \"{}\" "
+                                                             "requires\n"
+                                                             "- setting the number of speed steps to {}\n"
+                                                             "- restricting the address space to 1-{}\n"
+                                                             "The speed mapping will be reset!")
+                                                             .format(combo.retrieve_disp_value(),
+                                                                     str(protocol_options[2][-1]),
+                                                                     str(protocol_options[0])),
                                                            self.confirm_protocol,
                                                            self.reset_protocol)
                 self.set_sensitive(False)
@@ -859,15 +862,17 @@ class ServerTable(widgets.EntryTable):
 
     def __init__(self):
         widgets.EntryTable.__init__(self, False, True)
-        self.add_string_entry("Host", "IP-Adresse des Servers", "host")
-        self.add_int_entry("Port",
-                           "Port unter dem der Server erreichbar ist",
+        self.add_string_entry(_("Host"),
+                              _("IP address of the server"),
+                              "host")
+        self.add_int_entry(_("Port"),
+                           _("Port used by the server"),
                            "port")
-        self.add_int_entry("Bus",
-                           "Bus auf dem Steuerungsbefehle gesendet werden sollen",
+        self.add_int_entry(_("Bus"),
+                           _("SRCP bus used to send control commands"),
                            "bus")
-        self.add_bool_entry("Strom",
-                            "Strom beim Starten der Steuerung einschalten",
+        self.add_bool_entry(_("Power on"),
+                            _("Power on automatically when control mode is started"),
                             "power")
         self.load(Config.server)
 
@@ -880,37 +885,31 @@ class JoystickTable(widgets.EntryTable):
 
     def __init__(self):
         widgets.EntryTable.__init__(self, False, True)
-        self.add_int_entry("Nothalt",
-                           "Button am Gamepad über den die "
-                           "Gleisspannung ausgeschaltet werden kann",
+        self.add_int_entry(_("Emergency stop"),
+                           _("Button to power off the tracks"),
                            "emergency_button")
-        self.add_int_entry("Richtungswender",
-                           "Button am Gamepad für Richtungswechsel",
+        self.add_int_entry(_("Reverser"),
+                           _("Button to reverse travel direction"),
                            "reverse_button")
-        self.add_int_entry("Beschleunigung",
-                           "Achse am Gamepad für Geschwindigkeitsregelung",
+        self.add_int_entry(_("Acceleration"),
+                           _("Axis to control loco acceleration"),
                            "accel_axis")
-        self.add_float_entry("Achsen-Schwellwert",
-                             "Alle Achsen-Auslenkungswerte unter "
-                             "diesem Toleranzwert werden ignoriert",
+        self.add_float_entry(_("Axis threshold"),
+                             _("Axis deviations below this threshold will be ignored"),
                              "axis_threshold",
                              0, 0.75, 0.01)
-        self.add_int_entry("Fokus",
-                           "Button am Gamepad, der die zurzeit "
-                           "ausgewählte Lok in den im Fenster "
-                           "sichtbaren Bereich holt",
+        self.add_int_entry(_("Focus"),
+                           _("Button to scroll to the currently selected loco"),
                            "focus_button")
-        self.add_int_entry("Geräusch",
-                           "Button am Gamepad zum Ein-"
-                           "/Ausschalten des Lok-Geräuschs",
+        self.add_int_entry(_("Sound"),
+                           _("Button to turn on and off the loco sound"),
                            "sound_button")
-        self.add_bool_entry("Auto-Fokus",
-                            "Beim Lok-Wechsel mit dem Gamepad "
-                            "die neue Lok fokussieren",
+        self.add_bool_entry(_("Auto focus"),
+                            _("Always focus on new loco when switching locos"),
                             "use_auto_focus")
-        self.add_bool_entry("Button-Nr",
-                            "Nummer des zugehörigen Gamepad-Buttons "
-                            "auf den Funktions-Buttons anzeigen",
+        self.add_bool_entry(_("Button numbers"),
+                            _("Display the number of the configured "
+                              "gamepad button for each loco function"),
                             "show_function_nr")
         self.load(Config.joystick)
 
@@ -922,17 +921,15 @@ class SoundTable(widgets.EntryTable):
 
     def __init__(self):
         widgets.EntryTable.__init__(self, False, True)
-        self.add_combo_entry("Abtastrate",
-                             "Die Abtastrate (Sampling Rate) der "
-                             "verwendeten Geräuschdateien",
+        self.add_combo_entry(_("Sampling rate"),
+                             _("Sampling rate of the used audio files"),
                              "sampling_rate",
                              GObject.TYPE_INT,
                              ((44800, 44800),
                               (44100, 44100),
                               (22050, 22050)))
-        self.add_bool_entry("Geräuschlevel",
-                            "Balken für das momentane Geräuschlevel "
-                            "im Geschwindigkeitsregler anzeigen",
+        self.add_bool_entry(_("Sound level"),
+                            _("Show current sound level in the speed scale"),
                             "show_level_bar")
         self.load(Config.sound)
 
@@ -954,8 +951,8 @@ class LocoTreeView(widgets.TreeView):
         self.speed_frame = speed_frame
 
         widgets.TreeView.__init__(self, "LocoTreeView")
-        self.add_text_column("Zu konfigurierende Lok wählen",
-                             "Lok auswählen",
+        self.add_text_column(_("Select loco to configure"),
+                             _("Select loco"),
                              GObject.TYPE_STRING)
         self.update_model()
 
@@ -999,22 +996,22 @@ class FunctionTreeView(widgets.TreeView):
 
     def __init__(self):
         widgets.TreeView.__init__(self, "FunctionTreeView")
-        self.add_text_column("Bezeichnung",
-                             "Name der Funktion ('Licht', 'Hupe' ...)",
+        self.add_text_column(_("Designation"),
+                             _("Name of the function (e.g. 'Light', 'Horn')"),
                              GObject.TYPE_STRING)
-        self.add_text_column("Funktion",
-                             "Die Nummer der Funktion im Lokdecoder",
+        self.add_text_column(_("Function"),
+                             _("Number of the function used by the "
+                               "digital decoder"),
                              GObject.TYPE_INT)
-        self.add_combo_column("Wert",
-                              "Voreingestellter Zustand der Funktion: "
-                              "An oder Aus",
+        self.add_combo_column(_("State"),
+                              _("Initial state of the function (On/Off)"),
                               GObject.TYPE_STRING,
                               (vocab.on_off[True], vocab.on_off[False]))
-        self.add_text_column("Gamepad-Button",
-                             "Button am Gamepad zum Schalten der Funktion",
+        self.add_text_column(_("Button"),
+                             _("Gamepad button to trigger the function"),
                              GObject.TYPE_INT)
-        self.add_combo_column("Schaltart",
-                              "Taster oder Umschalter",
+        self.add_combo_column(_("Trigger mode"),
+                              _("How the function is triggered (push-button/switch)"),
                               GObject.TYPE_STRING,
                               (vocab.toggle_mode[config.ToggleMode.SWITCH],
                                vocab.toggle_mode[config.ToggleMode.PUSH]))
@@ -1053,58 +1050,52 @@ class EventSoundTreeView(widgets.TreeView):
     def __init__(self, popup):
         self.popup = popup
         widgets.TreeView.__init__(self, "EventSoundTreeView")
-        self.add_text_column("Bezeichnung",
-                             "Name des Geräusches "
-                             "(Bremsenquietschen ...)",
+        self.add_text_column(_("Designation"),
+                             _("Name of the sound "
+                               "(e.g. 'brake squeaking')"),
                              GObject.TYPE_STRING)
-        self.add_combo_column("Wert",
-                              "Voreingestellter Zustand "
-                              "des Ereignisses: "
-                              "An oder Aus",
+        self.add_combo_column(_("State"),
+                              _("Initial state of the event (On/Off)"),
                               GObject.TYPE_STRING,
                               (vocab.on_off[True], vocab.on_off[False]))
-        self.add_text_column("Gamepad-Button",
-                             "Button am Gamepad mit dem "
-                             "das Geräusch aktiviert "
-                             "werden kann",
+        self.add_text_column(_("Gamepad button"),
+                             _("Gamepad button to (de)activate watching for "
+                               "the event."),
                              GObject.TYPE_INT)
-        self.add_non_editable_text_column("Geräuschdatei",
-                                          "Datei für die Wiedergabe "
-                                          "(wav oder ogg)",
+        self.add_non_editable_text_column(_("Sound"),
+                                          _("Sound to play at the event "
+                                            ".(wav or .ogg)"),
                                           GObject.TYPE_STRING)
-        self.add_combo_column("Fahrtrichtung",
-                              "Fahrtrichtung der Lokomotive",
+        self.add_combo_column(_("Travel direction"),
+                              _("Travel direction of the loco"),
                               GObject.TYPE_STRING,
                               (vocab.doesnt_matter,
                                vocab.direction[True],
                                vocab.direction[False]))
-        self.add_text_column("v<sub>min</sub>",
-                             "Mindestgeschwindigkeit in km/h",
+        self.add_text_column(_("v<sub>min</sub>"),
+                             _("Minimum speed in km/h"),
                              GObject.TYPE_STRING)
-        self.add_text_column("v<sub>max</sub>",
-                             "Maximalgeschwindigkeit in km/h",
+        self.add_text_column(_("v<sub>max</sub>"),
+                             _("Maximum speed in km/h"),
                              GObject.TYPE_STRING)
-        self.add_text_column("a<sub>min</sub>",
-                             "Mindestbeschleunigung "
-                             "in km/h/s (kann negativ sein)",
+        self.add_text_column(_("a<sub>min</sub>"),
+                             _("Minimum acceleration "
+                               "in km/h/s (may be negative)"),
                              GObject.TYPE_STRING)
-        self.add_text_column("a<sub>max</sub>",
-                             "Maximalbeschleunigung "
-                             "in km/h/s (kann negativ sein)",
+        self.add_text_column(_("a<sub>max</sub>"),
+                             _("Maximum acceleration "
+                               "in km/h/s (may be negative)"),
                              GObject.TYPE_STRING)
-        self.add_text_column("Fade-In",
-                             "Dauer für sanftes "
-                             "Einblenden in s",
+        self.add_text_column(_("Fade-in"),
+                             _("Duration of gentle fade-in in s"),
                              GObject.TYPE_FLOAT)
-        self.add_text_column("Fade-Out",
-                             "Dauer für sanftes "
-                             "Ausblenden in s",
+        self.add_text_column(_("Fade-out"),
+                             _("Duration of gentle fade-out in s"),
                              GObject.TYPE_FLOAT)
-        self.add_combo_column("Komplett abspielen",
-                              "Ob das Geräusch "
-                              "bis zum Ende gespielt werden soll,\n"
-                              "auch wenn die Bedindungen nicht mehr "
-                              "erfüllt sind.",
+        self.add_combo_column(_("Play completely"),
+                              _("Whether the sound should be played "
+                                "until its end even when the conditions "
+                                "are no longer met"),
                               GObject.TYPE_STRING,
                               (vocab.yes_no[True],
                                vocab.yes_no[False]))
@@ -1181,30 +1172,22 @@ class FunctionSoundTreeView(widgets.TreeView):
         self.popup = popup
         widgets.TreeView.__init__(self, "FunctionSoundTreeView")
 
-        self.add_text_column("Bezeichnung",
-                             "Name des Geräusches "
-                             "(Hupe ...)",
+        self.add_text_column(_("Designation"),
+                             _("Name of the sound "
+                               "(e.g. 'brake squeaking')"),
                              GObject.TYPE_STRING)
-        self.add_non_editable_text_column("Geräuschdatei",
-                                          "Datei für die Wiedergabe "
-                                          "(wav oder ogg)",
+        self.add_non_editable_text_column(_("Sound"),
+                                          _("Sound to play (.wav or .ogg)"),
                                           GObject.TYPE_STRING)
-        self.add_combo_column("Wert",
-                              "Voreingestellter Zustand "
-                              "der Funktion: "
-                              "An oder Aus",
+        self.add_combo_column(_("State"),
+                              _("Initial state of the event (On/Off)"),
                               GObject.TYPE_STRING,
                               (vocab.on_off[True], vocab.on_off[False]))
-        self.add_text_column("Gamepad-Button",
-                             "Button am Gamepad mit dem "
-                             "das Geräusch aktiviert "
-                             "werden kann",
+        self.add_text_column(_("Gamepad button"),
+                             _("Gamepad button to trigger the sound"),
                              GObject.TYPE_INT)
-        self.add_combo_column("Schaltart",
-                              "Art und Weise auf die die "
-                              "Funktion durch einen "
-                              "Gamepad-Button geschaltet wird: "
-                              "Taster, Umschalter oder Anschalter",
+        self.add_combo_column(_("Trigger mode"),
+                              _("How the function is triggered"),
                               GObject.TYPE_STRING,
                               (vocab.sound_toggle_mode[config.ToggleMode.SWITCH],
                                vocab.sound_toggle_mode[config.ToggleMode.PUSH],
@@ -1256,8 +1239,8 @@ class SpeedGraph(widgets.ControlPointGraph):
 
     def __init__(self):
         widgets.ControlPointGraph.__init__(self,
-                                           ("v", "Geschwindigkeit in km/h"),
-                                           ("f", "Fahrstufe"),
+                                           (_("v"), _("Speed in km/h")),
+                                           (_("f"), _("Speed step")),
                                            (0.05, 0.1, 0.2, 0.25, 0.5,
                                             1, 2.5, 5, 10, 20, 50),
                                            (1, 2, 10))
@@ -1280,16 +1263,16 @@ class EngineDialog(WarningDialog):
     """
 
     def __init__(self, engine_type, main_window):
-        sound_labels = {config.EngineType.DIESEL: "Verbrennungsmotor",
-                        config.EngineType.STEAM: "Dampf",
-                        None: "Kein Geräusch"}
+        sound_labels = {config.EngineType.DIESEL: _("Combustion engine"),
+                        config.EngineType.STEAM: _("Steam engine"),
+                        None: _("No sound")}
         WarningDialog.__init__(self,
                                main_window,
-                               "Durch Änderung des Geräuschmodells zu \"" +
-                               sound_labels[engine_type] +
-                               "\" werden die momentan festgelegten "
-                               "Geräuschdateien zurückgesetzt!",
-                               ["Abbrechen", 0, "Geräuschmodell ändern", 1])
+                               _("Changing the sound model to \"{}\" "
+                                 "will cause a reset of currently "
+                                 "configured sounds!")
+                                 .format(sound_labels[engine_type]),
+                               [_("Cancel"), 0, _("Change sound model"), 1])
 
 
 class EngineFrame(Gtk.Frame):
@@ -1310,9 +1293,9 @@ class EngineFrame(Gtk.Frame):
         self.inner_margin = 10
 
         self.type_combo = widgets.EasyComboBox(GObject.TYPE_STRING,
-                                               ((None, "Kein Geräusch"),
-                                                ("steam", "Dampf"),
-                                                ("diesel", "Verbrennungsmotor")))
+                                               ((None, _("No sound")),
+                                                ("steam", _("Steam engine")),
+                                                ("diesel", _("Combustion engine"))))
         self.type_combo.set_valign(Gtk.Align.START)
         self.type_combo.set_halign(Gtk.Align.START)
         self.type_combo.connect("changed", self.engine_type_changed)
@@ -1346,38 +1329,38 @@ class EngineFrame(Gtk.Frame):
                                         Gtk.Orientation.HORIZONTAL,
                                         3)
         if self.loco.engine.type == config.EngineType.DIESEL:
-            self.table.add_sound_file_entry("Start-Geräusch",
-                                            "Geräusch für das Starten der Lokomotive",
+            self.table.add_sound_file_entry(_("Startup sound"),
+                                            _("Sound during engine startup"),
                                             "start_sound")
-            self.table.add_sound_file_entry("Leerlaufgeräusch",
-                                            "Geräusch im Leerlauf",
+            self.table.add_sound_file_entry(_("Idle sound"),
+                                            _("Sound when the engine runs idle"),
                                             "idle_sound")
-            self.table.add_sound_file_entry("Abstellgeräusch",
-                                            "Geräusch für das Herunterfahren "
-                                            "/ Abstellen der Lokomotive",
+            self.table.add_sound_file_entry(_("Shutdown sound"),
+                                            _("Sound during engine shutdown"),
                                             "quit_sound")
         else:
-            self.table.add_sound_file_entry("Leerlaufgeräusch",
-                                            "Geräusch im Leerlauf",
+            self.table.add_sound_file_entry(_("Idle sound"),
+                                            _("Sound when the engine runs idle"),
                                             "idle_sound")
-            self.table.add_sound_file_entry("Dampfablass-Geräusch",
-                                            "Geräusch beim Ausströmen von Dampf "
-                                            "aus den Zylindern",
+            self.table.add_sound_file_entry(_("Steam blow sound"),
+                                            _("Sound when steam leaves "
+                                              "the cylinders"),
                                             "cylinder_steam_sound")
-            self.table.add_int_entry("Schläge",
-                                     "Anzahl der Zylinderschläge der Dampflok",
+            self.table.add_int_entry(_("Strokes"),
+                                     _("Number of cylinder strokes performed "
+                                       "during one wheel rotation"),
                                      "nr_strokes")
-            self.table.add_float_entry("Dampfablass-Dauer",
-                                       "Zeit in der Dampf aus den Zylindern strömt "
-                                       "bevor der erste Zylinderschlag ertönt in s",
+            self.table.add_float_entry(_("First stroke delay"),
+                                       _("Time in s between letting off steam "
+                                         "and the first cylinder stroke"),
                                        "stroke_start_delay")
-            self.table.add_float_entry("Treibrad-Durchmesser",
-                                       "Durchmesser eines Antriebsrades in m",
+            self.table.add_float_entry(_("Driving wheel diameter"),
+                                       _("Diameter of a driving wheel in m"),
                                        "wheel_diameter",
                                        0.1, 99, 0.001)
-            self.table.add_float_entry("Minimale Schlagfrequenz",
-                                       "Die kleinstmögliche Frequenz in "
-                                       "Schlägen pro s",
+            self.table.add_float_entry(_("Minimum stroke frequency"),
+                                       _("Lowest used frequency in strokes"
+                                         " per s"),
                                        "min_freq")
 
         self.table.set_halign(Gtk.Align.END)
@@ -1505,7 +1488,7 @@ class SoundSegmentBar(Gtk.Grid):
         Config.notice_unsaved_changes = True
         for nr, segment in enumerate(loco.engine.sound_segments):
             button = create_sound_selector_button(loco.engine.type,
-                                                  "Geräusch " + str(nr + 1),
+                                                  _("Sound ") + str(nr + 1),
                                                   self.popup, segment, self)
             self.paned.pack1(button, False, False)
             max_width = self.graph.get_allocated_width() - self.graph.border_left_bottom - \
@@ -1560,19 +1543,19 @@ class SoundSelectorButton(widgets.PopupButton):
 
         self.grid = Gtk.Grid()
 
-        delete_sound_button = StockImageButton("Geräusch löschen",
+        delete_sound_button = StockImageButton(_("Delete sound"),
                                                Gtk.STOCK_DELETE)
         delete_sound_button.set_halign(Gtk.Align.START)
         delete_sound_button.connect("clicked", self.delete_sound)
         self.grid.attach(delete_sound_button, 0, 1, 1, 1)
 
-        insert_sound_button = StockImageButton("Geräusch rechts einfügen",
+        insert_sound_button = StockImageButton(_("Add sound segment"),
                                                Gtk.STOCK_ADD)
         insert_sound_button.set_halign(Gtk.Align.END)
         insert_sound_button.connect("clicked", self.insert_sound)
         self.grid.attach(insert_sound_button, 1, 1, 1, 1)
 
-        self.close_button = StockImageButton("Schließen",
+        self.close_button = StockImageButton(_("Close"),
                                              Gtk.STOCK_CLOSE)
         self.close_button.connect("clicked", self.hide_popup)
         self.close_button.set_halign(Gtk.Align.END)
@@ -1650,24 +1633,26 @@ class DieselSoundSelectorButton(SoundSelectorButton):
     def __init__(self, text, popup, segment, sound_bar):
         SoundSelectorButton.__init__(self, text, popup, segment, sound_bar)
         self.table = widgets.EntryTable(True, False)
-        self.table.add_sound_file_entry("Unter Last:",
-                                        "Geräusch das im gewählten "
-                                        "Geschwindigkeitsbereich \nunter "
-                                        "Last abgespielt wird",
+        self.table.add_sound_file_entry(_("On-load:"),
+                                        _("Sound to play in the chosen "
+                                          "speed segment when engine "
+                                          "is under load"),
                                         "load_sound")
-        self.table.add_sound_file_entry("Beschleunigungsvorgang:",
-                                        "Beschleunigungsvorgang zu dieser "
-                                        "Geräusch-Stufe",
+        self.table.add_sound_file_entry(_("Acceleration:"),
+                                        _("Sound to play during acceleration "
+                                          "from the prior to this speed "
+                                          "segment"),
                                         "accel_sound")
         if not segment.position == config.SegmentPosition.UPPER:
-            self.table.add_sound_file_entry("Im Leerlauf:",
-                                            "Geräusch das im gewählten "
-                                            "Geschwindigkeitsbereich\nim "
-                                            "Leerlauf abgespielt wird",
+            self.table.add_sound_file_entry(_("Idle:"),
+                                            _("Sound to play in the chosen "
+                                              "speed segment when engine is "
+                                              "idle"),
                                             "idle_sound")
-        self.table.add_sound_file_entry("Bremsvorgang:",
-                                        "Bremsvorgang zur vorherigen "
-                                        "Geräusch-Stufe",
+        self.table.add_sound_file_entry(_("Braking:"),
+                                        _("Sound to play during deceleration "
+                                          "from this to the prior speed "
+                                          "segment"),
                                         "decel_sound")
         self.set_content(self.table)
 
@@ -1701,13 +1686,13 @@ class SteamSoundSelectorButton(SoundSelectorButton):
         self.update_stroke_sounds()
         for stroke_nr in range(self.segment_bar.loco.engine.nr_strokes):
             button = widgets.EasyFileButton([SoundFileFilter()])
-            button.set_tooltip_text("Geräusch für Zylinderschlag " + str(stroke_nr + 1))
+            button.set_tooltip_text(_("Sound for cylinder stroke {}").format(str(stroke_nr + 1)))
             path = self.segment.stroke_sounds[stroke_nr]
             if path:
                 button.set_value(path)
 
             button.connect("file-set", self.file_set, stroke_nr)
-            label = Gtk.Label("Schlag " + str(stroke_nr + 1))
+            label = Gtk.Label(_("Stroke ") + str(stroke_nr + 1))
             label.set_halign(Gtk.Align.CENTER)
             grid.attach(label, 0, stroke_nr, 1, 1)
             grid.attach(button, 1, stroke_nr, 1, 1)
