@@ -119,7 +119,7 @@
                     "type": "git",
                     "url": "git://git.code.sf.net/p/electrip/git",
                     "tag": "5.5.1",
-                    "commit": "ebfc39e540e789a5c5618bbba9c3f12860e910ac"
+                    "commit": "fbfe626446fe5e4fcd94f6ed028e02d68606ad3a"
                 }
             ],
             "buildsystem": "simple",
