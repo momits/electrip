@@ -117,7 +117,9 @@
             "sources": [
                 {
                     "type": "git",
-                    "url": "git://git.code.sf.net/p/electrip/git"
+                    "url": "git://git.code.sf.net/p/electrip/git",
+                    "tag": "5.5.0",
+                    "commit": "ebfc39e540e789a5c5618bbba9c3f12860e910ac"
                 }
             ],
             "buildsystem": "simple",
