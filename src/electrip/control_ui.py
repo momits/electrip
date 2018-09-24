@@ -257,7 +257,7 @@ class ControllerHub(Gtk.Grid):
                                                       self.set_auto_scroll,
                                                       direction,
                                                       gamepad)
-        else:
+        elif self.timeout_handle:
             # remove auto-scrolling attempts
             GObject.source_remove(self.timeout_handle)
 
@@ -320,6 +320,7 @@ class ControllerHub(Gtk.Grid):
         # if the joyhat is still pushed in the same direction
         if gamepad.scroll_direction == direction:
             GObject.timeout_add(60, self.scroll, direction, gamepad)
+        self.timeout_handle = None
         return False
 
     def axis_released(self, gamepad, axis):
