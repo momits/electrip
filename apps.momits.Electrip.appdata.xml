@@ -8,9 +8,15 @@
 	<url type="homepage">https://electrip.sourceforge.net</url>
 	<summary>Control your model railroad using gamepads!</summary>
 	<description>
-		<p>Electrip is a SRCP-Client which allows you to control your locos
-with gamepads. Electrip is very configurable and offers some powerful
-features, including the simulation of loco sounds.</p>
+		<p>Electrip is an easy-to-use, small software that lets
+you control your model railroad with gamepads via the SRCP protocol.
+Electrip is very easy to use and well-documented.
+It supports a sophisticated simulation of loco sounds,
+including driving sounds, sound functions and event-triggered sounds.
+Electrip allows to control the speed of locos to scale in the model
+world with a clever visual speed mapping.
+Locos can also be exported and imported as archives together
+with their configured sounds.</p>
 	</description>
 	<screenshots>
 		<screenshot type="default">
