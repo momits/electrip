@@ -21,6 +21,6 @@ features, including the simulation of loco sounds.</p>
 	<translation type="gettext">control</translation>
 	<translation type="gettext">main</translation>
 	<releases>
-		<release version="5.5.3" date="2018-11-02"/>
+		<release version="5.5.4" date="2018-11-03"/>
     </releases>
 </component>

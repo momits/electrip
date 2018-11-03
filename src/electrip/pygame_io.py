@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 # -*- coding: UTF-8 -*-
+import gettext
 import logging
 
 from gi.repository import GdkPixbuf, GObject
@@ -9,10 +10,12 @@ import threading
 import time
 from math import pi
 
-from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND
+from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND, LOCALE_PATH
 from electrip import config
 
 logger = logging.Logger(__name__)
+
+_ = gettext.translation("control", localedir=LOCALE_PATH).gettext
 
 try:
     import pygame
@@ -259,7 +262,7 @@ class EventHandlerThread(threading.Thread):
                 return sound
             except pygame.error:
                 pass
-        logger.warning("Not a valid sound_file: {}".format(sound_file))
+        logger.warning(_("Not a valid sound file: {}").format(sound_file))
         return None
     
     def quit(self):
