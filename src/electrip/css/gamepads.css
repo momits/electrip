@@ -12,7 +12,7 @@
 
 /* Any Gamepad */
 
-.loco-controller.has-gamepad {
+.loco-controller.has-gamepad .gamepad-label {
     color: white;
 }
 
@@ -42,6 +42,11 @@
                                color-stop(0, rgb(135, 135, 135)),
                                color-stop(1, rgb(80, 80, 80)));
     border-color: rgb(63, 63, 63);
+}
+
+.loco-controller.has-gamepad .loco-speed-scale value,
+.loco-controller.has-gamepad .unit-label {
+    color: white;
 }
 
 .loco-controller.has-gamepad .loco-speed-scale trough {
