@@ -66,8 +66,12 @@ scale.loco-speed-scale slider {
     box-shadow: none;
 }
 
-scale.loco-speed-scale > value {
-    color: rgb(30, 30, 30);
+scale.loco-speed-scale value {
+    color: rgb(56, 52, 54);
+}
+
+scale.loco-speed-scale:backdrop value {
+    color: rgb(139, 142, 143);
 }
 
 
