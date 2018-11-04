@@ -27,6 +27,6 @@ with their configured sounds.</p>
 	<translation type="gettext">control</translation>
 	<translation type="gettext">main</translation>
 	<releases>
-		<release version="5.5.6" date="2018-11-04"/>
+		<release version="5.5.7" date="2018-11-04"/>
     </releases>
 </component>

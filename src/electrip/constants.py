@@ -9,7 +9,7 @@ from sys import platform
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "5.5.6"
+ELECTRIP_VERSION = "5.5.7"
 
 PATH = os.path.dirname(os.path.realpath(__file__))
 
