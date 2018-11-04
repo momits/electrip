@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop">
-	<id>apps.momits.Electrip.desktop</id>
+	<id>net.sourceforge.electrip.Electrip.desktop</id>
 	<metadata_license>CC0-1.0</metadata_license>
 	<project_license>GPL-3.0+</project_license>
     ​<update_contact>momits_AT_users.sourceforge.net</update_contact>
@@ -27,6 +27,6 @@ with their configured sounds.</p>
 	<translation type="gettext">control</translation>
 	<translation type="gettext">main</translation>
 	<releases>
-		<release version="5.5.7" date="2018-11-04"/>
+		<release version="5.5.8" date="2018-11-04"/>
     </releases>
 </component>

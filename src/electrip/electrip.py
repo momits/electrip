@@ -41,7 +41,7 @@ class Electrip(Gtk.Application):
         GObject.threads_init()
 
         Gtk.Application.__init__(self,
-                                 application_id="apps.momits.Electrip",
+                                 application_id="net.sourceforge.electrip.Electrip",
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
         self.add_main_option("file", ord("f"), GLib.OptionFlags.NONE,
