@@ -11,7 +11,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import GObject, Gtk, GdkPixbuf, Gdk, Gio, GLib
 
-from electrip.constants import ELECTRIP_VERSION, ICON_PATHS, PATH, LOCALE_PATH
+from electrip.constants import ELECTRIP_VERSION, ICON_PATHS, PATH, LOCALE_PATH, APP_ID
 from electrip.config import JsonModel
 from electrip import configuration_ui
 from electrip import control_ui
@@ -19,8 +19,8 @@ from electrip import dialog_templates
 
 logger = logging.getLogger(__name__)
 
-_ = gettext.translation("main", localedir=LOCALE_PATH).gettext
-locale.bindtextdomain("main", LOCALE_PATH)  # set the global textdomain for GtkBuilder
+_ = gettext.translation(APP_ID + "-main", localedir=LOCALE_PATH).gettext
+locale.bindtextdomain(APP_ID + "-main", LOCALE_PATH)  # set the global textdomain for GtkBuilder
 
 
 class Electrip(Gtk.Application):
@@ -41,7 +41,7 @@ class Electrip(Gtk.Application):
         GObject.threads_init()
 
         Gtk.Application.__init__(self,
-                                 application_id="net.sourceforge.electrip.Electrip",
+                                 application_id=APP_ID,
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 
         self.add_main_option("file", ord("f"), GLib.OptionFlags.NONE,

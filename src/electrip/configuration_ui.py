@@ -6,7 +6,7 @@ import os
 from gi.repository import GObject, Gtk, Gdk
 from zipfile import BadZipfile
 
-from electrip.constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH, PATH, LOCALE_PATH
+from electrip.constants import PROTOCOLS, RELOAD_GRAPH_IMAGE_PATH, PATH, LOCALE_PATH, APP_ID
 from electrip.widgets import StockImageButton
 from electrip.dialog_templates import SoundFileFilter, WarningDialog, \
     LocoLoadDialog, LocoSaveDialog, SoundLoadDialog
@@ -14,7 +14,7 @@ from electrip import config
 from electrip import widgets
 from electrip.config import vocab
 
-_ = gettext.translation("configuration", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-configuration", localedir=LOCALE_PATH).gettext
 
 
 class MainBox(Gtk.Notebook):

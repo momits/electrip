@@ -14,12 +14,12 @@ import time
 from electrip.concurrent import SRCPSocketThread
 from electrip import pygame_io
 from electrip import config
-from electrip.constants import SOUND_LEVEL_ANIM_RES, PATH, LOCALE_PATH
+from electrip.constants import SOUND_LEVEL_ANIM_RES, PATH, LOCALE_PATH, APP_ID
 from electrip.utils import TwoWayDict
 
 logger = logging.getLogger(__name__)
 
-_ = gettext.translation("control", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-control", localedir=LOCALE_PATH).gettext
 
 
 class MainBox(Gtk.Grid):

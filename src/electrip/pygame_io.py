@@ -10,12 +10,12 @@ import threading
 import time
 from math import pi
 
-from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND, LOCALE_PATH
+from electrip.constants import STOP_EVENT, END_EVENT_LOWER_BOUND, LOCALE_PATH, APP_ID
 from electrip import config
 
 logger = logging.Logger(__name__)
 
-_ = gettext.translation("control", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-control", localedir=LOCALE_PATH).gettext
 
 try:
     import pygame

@@ -11,6 +11,8 @@ from sys import platform
 
 ELECTRIP_VERSION = "5.5.8"
 
+APP_ID = "net.sourceforge.electrip.Electrip"
+
 PATH = os.path.dirname(os.path.realpath(__file__))
 
 LOCALE_PATH = os.path.join(PATH, "locale")

@@ -9,7 +9,7 @@ from os import sep as os_sep
 import zipfile
 from copy import deepcopy
 
-from electrip.constants import CONFIG_DIR, LOCALE_PATH
+from electrip.constants import CONFIG_DIR, LOCALE_PATH, APP_ID
 from electrip.config.loco import Loco
 from electrip.config.loco_functions import ToggleMode, DecoderFunction, \
     FunctionSound, EventSound
@@ -22,7 +22,7 @@ from electrip.config.linear_segment_function import LinearSegmentFunction
 
 logger = logging.getLogger(__name__)
 
-_ = gettext.translation("configuration", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-configuration", localedir=LOCALE_PATH).gettext
 
 
 class DictWrapper:

@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 import gettext
 
-from electrip.constants import LOCALE_PATH
+from electrip.constants import LOCALE_PATH, APP_ID
 from electrip.utils import TwoWayDict
 from electrip import config
 
-_ = gettext.translation("configuration", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-configuration", localedir=LOCALE_PATH).gettext
 
 on_off = TwoWayDict()
 on_off[_("On")] = True
