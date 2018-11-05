@@ -29,6 +29,7 @@
 			<image>https://sourceforge.net/p/electrip/screenshot/control_without_gamepads.png</image>
 		</screenshot>
 	</screenshots>
+  <content_rating type="oars-1.1"/>
 	<translation type="gettext">net.sourceforge.electrip.Electrip-configuration</translation>
 	<translation type="gettext">net.sourceforge.electrip.Electrip-control</translation>
 	<translation type="gettext">net.sourceforge.electrip.Electrip-main</translation>
