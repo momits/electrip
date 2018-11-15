@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2012-2018 Moritz Renftle -->
+<component type="desktop">
+	<id>net.sourceforge.electrip.Electrip.desktop</id>
+	<metadata_license>CC0-1.0</metadata_license>
+	<project_license>GPL-3.0+</project_license>
+    ​<update_contact>momits_AT_users.sourceforge.net</update_contact>
+	<name>Electrip</name>
+	<url type="homepage">https://electrip.sourceforge.net</url>
+	<summary>Control your model railroad using gamepads!</summary>
+	<description>
+		<p>
+			Electrip is an easy-to-use, small software that lets
+			you control your model railroad with gamepads via the SRCP protocol.
+			Therefore, a SRCP-compatible command station is required, e.g. the
+			srcpd.
+		</p>
+		<p>
+			Electrip supports a sophisticated simulation of loco sounds,
+			including driving sounds, sound functions and event-triggered sounds.
+			It allows to control the speed of locos to scale in the model
+			world with a clever visual speed mapping.
+			Locos can also be exported and imported as archives together
+			with their configured sounds.
+		</p>
+	</description>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://sourceforge.net/p/electrip/screenshot/control_without_gamepads.png</image>
+		</screenshot>
+	</screenshots>
+  <content_rating type="oars-1.1"/>
+	<translation type="gettext">net.sourceforge.electrip.Electrip-configuration</translation>
+	<translation type="gettext">net.sourceforge.electrip.Electrip-control</translation>
+	<translation type="gettext">net.sourceforge.electrip.Electrip-main</translation>
+	<releases>
+		<release version="5.5.8" date="2018-11-04">
+			<description>
+				<p>
+					This is the first version of Electrip that is packaged in
+					the Flatpak format.
+					Using Flatpak, Electrip now runs in a clearly defined
+					environment, which results in a consistent and tested
+					user experience on all distributions supporting Flatpak.
+				</p>
+				<p>
+					New features of this version of Electrip:
+				</p>
+				<ul>
+					<li>
+						Electrip is now translatable with gettext.
+						There are translations available for
+						English and German
+					</li>
+					<li>
+						Details of the visual appearance have been
+						improved, e.g. the emergency button and
+						text colors
+					</li>
+				</ul>
+			</description>
+		</release>
+    </releases>
+</component>
