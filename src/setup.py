@@ -25,4 +25,4 @@ setup(name='Electrip',
                                  'icons/reload_graph.png',
                                  'icons/sound_segment_bar_handle.png',
                                  'css/*.css']},
-      install_requires=['pycairo', 'PyGObject', 'Pygame==1.9.3'])
+      install_requires=['pycairo', 'PyGObject', 'Pygame==1.9.4'])
