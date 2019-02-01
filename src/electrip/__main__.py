@@ -7,8 +7,9 @@ import sys
 from electrip.electrip import Electrip
 from electrip.constants import ELECTRIP_VERSION, LOCALE_PATH, APP_ID
 
-_ = gettext.translation(APP_ID + "-main", localedir=LOCALE_PATH).gettext
-
+_ = gettext.translation(APP_ID + "-main",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 
 """
 Starts Electrip.

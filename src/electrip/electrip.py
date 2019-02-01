@@ -19,7 +19,9 @@ from electrip import dialog_templates
 
 logger = logging.getLogger(__name__)
 
-_ = gettext.translation(APP_ID + "-main", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-main",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 locale.bindtextdomain(APP_ID + "-main", LOCALE_PATH)  # set the global textdomain for GtkBuilder
 
 

@@ -15,7 +15,9 @@ from electrip import config
 
 logger = logging.Logger(__name__)
 
-_ = gettext.translation(APP_ID + "-control", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-control",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 
 try:
     import pygame

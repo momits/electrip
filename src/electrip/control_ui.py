@@ -19,7 +19,9 @@ from electrip.utils import TwoWayDict
 
 logger = logging.getLogger(__name__)
 
-_ = gettext.translation(APP_ID + "-control", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-control",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 
 
 class MainBox(Gtk.Grid):

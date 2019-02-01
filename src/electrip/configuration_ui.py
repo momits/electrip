@@ -14,7 +14,9 @@ from electrip import config
 from electrip import widgets
 from electrip.config import vocab
 
-_ = gettext.translation(APP_ID + "-configuration", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-configuration",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 
 
 class MainBox(Gtk.Notebook):

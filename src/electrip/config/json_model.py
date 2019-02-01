@@ -22,7 +22,9 @@ from electrip.config.linear_segment_function import LinearSegmentFunction
 
 logger = logging.getLogger(__name__)
 
-_ = gettext.translation(APP_ID + "-configuration", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-configuration",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 
 
 class DictWrapper:

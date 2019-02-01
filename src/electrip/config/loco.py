@@ -7,7 +7,9 @@ from electrip.config.unsaved_changes import UnsavedChangesHandler
 from electrip.config.linear_segment_function import LinearSegmentFunction
 from electrip.constants import LOCALE_PATH, APP_ID
 
-_ = gettext.translation(APP_ID + "-configuration", localedir=LOCALE_PATH).gettext
+_ = gettext.translation(APP_ID + "-configuration",
+                        localedir=LOCALE_PATH,
+                        fallback=True).gettext
 
 
 class Loco(UnsavedChangesHandler):
