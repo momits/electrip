@@ -9,7 +9,7 @@ from sys import platform
 
 # ----------- General -----------
 
-ELECTRIP_VERSION = "5.5.8"
+ELECTRIP_VERSION = "5.6"
 
 APP_ID = "net.sourceforge.electrip.Electrip"
 
