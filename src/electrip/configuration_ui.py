@@ -1060,7 +1060,7 @@ class EventSoundTreeView(widgets.TreeView):
                               _("Initial state of the event (On/Off)"),
                               GObject.TYPE_STRING,
                               (vocab.on_off[True], vocab.on_off[False]))
-        self.add_text_column(_("Gamepad button"),
+        self.add_text_column(_("Button"),
                              _("Gamepad button to (de)activate watching for "
                                "the event."),
                              GObject.TYPE_INT)
@@ -1185,7 +1185,7 @@ class FunctionSoundTreeView(widgets.TreeView):
                               _("Initial state of the event (On/Off)"),
                               GObject.TYPE_STRING,
                               (vocab.on_off[True], vocab.on_off[False]))
-        self.add_text_column(_("Gamepad button"),
+        self.add_text_column(_("Button"),
                              _("Gamepad button to trigger the sound"),
                              GObject.TYPE_INT)
         self.add_combo_column(_("Trigger mode"),
