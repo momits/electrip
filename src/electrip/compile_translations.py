@@ -4,15 +4,16 @@ import subprocess
 import os
 import argparse
 
+from electrip.constants import APP_ID
 
 PATH = os.path.dirname(os.path.realpath(__file__))
 
 LOCALE_PATH = os.path.join(PATH, "locale")
 
 translation_domains = {
-    'main': '{__main__,electrip}.py',
-    'configuration': '{configuration_ui,config/{loco,json_model,vocab}}.py',
-    'control': 'control_ui.py'
+    APP_ID + '-main': '{__main__,electrip}.py',
+    APP_ID + '-configuration': '{configuration_ui,config/{loco,json_model,vocab}}.py',
+    APP_ID + '-control': 'control_ui.py'
 }
 
 po_paths = [os.path.join(LOCALE_PATH, l, 'LC_MESSAGES')
