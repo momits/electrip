@@ -634,7 +634,7 @@ msgstr "Untere Grenze für die Taktfrequenz"
 
 #: configuration_ui.py:1495
 msgid "Sound "
-msgstr "Geräusch"
+msgstr "Geräusch "
 
 #: configuration_ui.py:1550
 msgid "Delete sound"
