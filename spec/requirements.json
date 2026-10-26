@@ -1,0 +1,768 @@
+{
+  "$comment": "Paritätskatalog Electrip 2. Agenten dürfen nur die Felder unter 'status' ändern. Änderungen an Anforderungen nur durch Mo.",
+  "version": 1,
+  "verification_kinds": {
+    "unit": "Unit-Test im Rust-Code",
+    "golden": "Vergleich mit aufgezeichnetem Verhalten von Alt-Electrip (legacy/)",
+    "srcpd-loopback": "Test gegen srcpd mit Loopback-Bus im Container",
+    "z21-sim": "Test gegen den Z21-Simulator",
+    "virtual-gamepad": "Eingaben über virtuelle Gamepads",
+    "audio-log": "Audio-Ereignis-Log des AudioSink im Testmodus",
+    "control-channel": "Bedienung und Zustandsprüfung über den Steuerkanal",
+    "screenshot": "Screenshot über den Steuerkanal, geprüft vom Agenten",
+    "corpus": "Import echter Alt-Dateien aus dem Korpus",
+    "multi-client": "docker-compose-Szenario mit mehreren Instanzen",
+    "ci": "CI-Matrix",
+    "hw": "Hardware-Test durch Mo"
+  },
+  "status_levels": {
+    "wired": "Befehl/Funktion existiert und ist angebunden",
+    "verified": "alle automatischen Prüffälle grün",
+    "accepted": "Hardware-Abnahme durch Mo bestanden (bei hw=false: Review durch Mo)"
+  },
+  "requirements": [
+    {
+      "id": "B-01",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.1"
+      },
+      "title": "Verbindung zum SRCP-Server",
+      "description": "Electrip verbindet sich per TCP mit einem SRCP-Server über Host, Port und Bus.",
+      "acceptance": [
+        "Host, Port (Standard 4303) und Bus sind konfigurierbar und werden gespeichert",
+        "Verbindungsaufbau gegen srcpd-Loopback gelingt; Fehler (Host nicht erreichbar, falscher Bus) werden verständlich gemeldet",
+        "Verbindungsabbruch wird erkannt und angezeigt; erneuter Verbindungsversuch ohne Neustart möglich"
+      ],
+      "verification": [
+        "srcpd-loopback",
+        "control-channel"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-02",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.2"
+      },
+      "title": "Globale Gamepad-Belegung",
+      "description": "Allgemeine Aktionen werden Achsen und Knöpfen zugeordnet: Fahrachse, Richtungswender, Nothalt, Lokwechsel/Fokus, Fahrgeräusch.",
+      "acceptance": [
+        "Jede Aktion ist einem Knopf oder einer Achse zuordenbar",
+        "Achsen-Totzone (Alt: axis_threshold = 0.06) ist konfigurierbar",
+        "Knöpfe werden mit ihrem echten Namen angezeigt, nicht als 0-basierte Nummer (kein „–1“-Versatz mehr)"
+      ],
+      "verification": [
+        "virtual-gamepad",
+        "unit"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      },
+      "notes": "Wird durch N-01 auf Profile pro Gerätetyp erweitert. Alt-Felder: emergency_button, reverse_button, accel_axis, axis_threshold, focus_button, sound_button, use_auto_focus, show_function_nr."
+    },
+    {
+      "id": "B-03",
+      "source": {
+        "type": "handbuch",
+        "ref": "Features 2, 3.1"
+      },
+      "title": "Mehrere Gamepads gleichzeitig",
+      "description": "Bis zu 12 Gamepads steuern gleichzeitig verschiedene Loks; jedes Gamepad hat ein eigenes Farbsymbol.",
+      "acceptance": [
+        "12 virtuelle Gamepads gleichzeitig angeschlossen, jedes steuert eine eigene Lok",
+        "Jedes Gamepad hat eine eindeutige Farbe/ein Symbol, das unter der gesteuerten Lok angezeigt wird",
+        "An- und Abstecken während des Betriebs wird ohne Neustart erkannt"
+      ],
+      "verification": [
+        "virtual-gamepad",
+        "screenshot"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-04",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4"
+      },
+      "title": "Lokverwaltung",
+      "description": "Loks anlegen, umbenennen, löschen und in einer Liste anzeigen.",
+      "acceptance": [
+        "Neue Lok heißt standardmäßig „Unbenannte Lok“",
+        "Umbenennen und Löschen über Befehle und UI",
+        "Reihenfolge der Lokliste ist änderbar und wird gespeichert"
+      ],
+      "verification": [
+        "control-channel",
+        "unit"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-05",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.1"
+      },
+      "title": "Allgemeine Lok-Eigenschaften",
+      "description": "Höchstgeschwindigkeit in km/h, Beschleunigungs- und Bremsdauer, Lokbild, Lautstärke.",
+      "acceptance": [
+        "Standardwerte wie Alt-Code: Vmax 100 km/h, Beschleunigung 11,5 s, Bremsen 8,5 s",
+        "Lokbild wird angezeigt (Referenzformat 110×85 px, andere Größen werden skaliert)",
+        "Lautstärke pro Lok einstellbar"
+      ],
+      "verification": [
+        "unit",
+        "control-channel"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-06",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.1"
+      },
+      "title": "Decoder-Einstellungen",
+      "description": "Protokoll, Adresse und Fahrstufen des Lokdecoders.",
+      "acceptance": [
+        "Protokolle wie Alt-Code: M 1, M 2 (Märklin Motorola), N 1, N 2 (DCC kurze/lange Adresse)",
+        "Ungültige Kombinationen aus Protokoll, Adresse und Fahrstufen werden verhindert",
+        "Protokollwechsel setzt die Standard-Fahrstufen des Protokolls (z. B. 128 bei DCC) und erfordert Bestätigung, da die Kennlinie zurückgesetzt wird"
+      ],
+      "verification": [
+        "unit",
+        "srcpd-loopback"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      },
+      "notes": "Gültige Adress- und Fahrstufenbereiche je Protokoll aus legacy/ und SRCP-Spezifikation ableiten; Unklarheiten nach spec/questions.md."
+    },
+    {
+      "id": "B-07",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.2"
+      },
+      "title": "Lokfunktionen",
+      "description": "Digitalfunktionen des Decoders (F0…) mit Gamepad-Knopf, Umschalter- oder Tastermodus und Standardzustand.",
+      "acceptance": [
+        "Funktion mit Decoder-Nummer, Name, optionalem Knopf (kein Knopf möglich)",
+        "Umschalter: erster Druck an, zweiter aus. Taster: an, solange gedrückt",
+        "Standardzustand „An“ kehrt Umschalter und Taster um",
+        "Funktionen anlegen, löschen, umsortieren"
+      ],
+      "verification": [
+        "srcpd-loopback",
+        "virtual-gamepad"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-08",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.3"
+      },
+      "title": "Geschwindigkeitskennlinie",
+      "description": "Zuordnung angezeigter Geschwindigkeit (km/h) zu Decoder-Fahrstufe über Kontrollpunkte.",
+      "acceptance": [
+        "Erster Punkt = Anfahrfahrstufe, letzter Punkt = Fahrstufe bei Vmax; beide nicht löschbar",
+        "Punkte per Klick anlegen, per Rechtsklick löschen, per Ziehen verschieben",
+        "Interpolation zwischen den Punkten liefert für dieselben Punkte und Eingaben dieselben Fahrstufen wie Alt-Electrip (Golden-Test)"
+      ],
+      "verification": [
+        "golden",
+        "unit",
+        "control-channel"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-09",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.3"
+      },
+      "title": "Kennlinie zurücksetzen",
+      "description": "Änderung von Vmax oder Fahrstufenzahl ändert die Achsen der Kennlinie.",
+      "acceptance": [
+        "Vor dem Zurücksetzen erscheint eine Warnung mit Bestätigung",
+        "Bei Abbruch bleibt alles unverändert"
+      ],
+      "verification": [
+        "control-channel"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-10",
+      "source": {
+        "type": "handbuch",
+        "ref": "3.1"
+      },
+      "title": "Fahren mit der Gamepad-Achse",
+      "description": "Achsauslenkung steuert Beschleunigung bzw. Bremsung, nicht die Geschwindigkeit direkt.",
+      "acceptance": [
+        "Vollausschlag nach vorn beschleunigt in der eingestellten Dauer von 0 auf Vmax",
+        "Leichter Ausschlag = leichte Beschleunigung; Vollausschlag zurück = Bremsung in der Bremsdauer",
+        "Die an die Zentrale gesendeten Fahrstufen über die Zeit stimmen mit Alt-Electrip überein (Golden-Test, Toleranz im Test festgelegt)"
+      ],
+      "verification": [
+        "golden",
+        "srcpd-loopback",
+        "virtual-gamepad"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-11",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.4a"
+      },
+      "title": "Fahrgeräusch Verbrennungsmotor",
+      "description": "Segmentiertes Fahrgeräusch für Diesel- und E-Loks.",
+      "acceptance": [
+        "Jedes Segment hat Last-, Leerlauf-, Beschleunigungs- und Bremsgeräusch",
+        "Erreicht die Lok beschleunigend ein Segment, läuft das Lastgeräusch, bremsend das Leerlaufgeräusch – lückenlos geloopt",
+        "Segmentwechsel spielt das passende Übergangsgeräusch",
+        "Audio-Ereignis-Log stimmt mit Alt-Electrip überein (Golden-Test)"
+      ],
+      "verification": [
+        "audio-log",
+        "golden"
+      ],
+      "phase": 2,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-12",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.4a, 3"
+      },
+      "title": "Anlassen und Abstellen",
+      "description": "Zusatzgeräusche für Verbrennungsmotoren.",
+      "acceptance": [
+        "Anlass-, Leerlauf- und Abstellgeräusch konfigurierbar",
+        "Während Anlassen und Abstellen ist der Geschwindigkeitsregler gesperrt"
+      ],
+      "verification": [
+        "audio-log",
+        "control-channel"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-13",
+      "source": {
+        "type": "handbuch",
+        "ref": "3"
+      },
+      "title": "Anfahren synchron zum Sound",
+      "description": "Diesel- und E-Loks fahren erst los, wenn der Übergang Leerlauf → Segment 1 spielt, und halten erst beim Übergang Segment 1 → Leerlauf.",
+      "acceptance": [
+        "Erste Fahrstufe > 0 wird erst mit Beginn des Übergangsgeräuschs gesendet",
+        "Fahrstufe 0 wird erst mit dem Bremsübergang zum Leerlauf gesendet"
+      ],
+      "verification": [
+        "srcpd-loopback",
+        "audio-log"
+      ],
+      "phase": 2,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-14",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.4a"
+      },
+      "title": "Fahrgeräusch Dampf",
+      "description": "Taktgeräusche, deren Frequenz aus Geschwindigkeit und Lokdaten berechnet wird.",
+      "acceptance": [
+        "Taktfrequenz aus Treibrad-Durchmesser (Standard 1,2 m), Geschwindigkeit und Takten pro Umdrehung (Standard 4)",
+        "Minimale Taktfrequenz (Standard 0,2 Hz) begrenzt Pausen bei sehr kleiner Geschwindigkeit",
+        "Dampfablassgeräusch beim Anfahren mit Verzögerung (Standard 2,0 s) bis zum ersten Takt",
+        "Taktzeitpunkte stimmen mit Alt-Electrip überein (Golden-Test)"
+      ],
+      "verification": [
+        "golden",
+        "audio-log"
+      ],
+      "phase": 2,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-15",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.4a"
+      },
+      "title": "Geräuschsegmente bearbeiten",
+      "description": "Segmente einfügen, löschen und ihre Grenzen verschieben.",
+      "acceptance": [
+        "„Neues Geräusch rechts einfügen“ und „Geräusch löschen“",
+        "Segmentgrenzen per Ziehen veränderbar",
+        "Löschen des letzten Segments setzt das Modell nach Bestätigung auf „Kein Geräusch“"
+      ],
+      "verification": [
+        "control-channel",
+        "unit"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-16",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.4b"
+      },
+      "title": "Geräusch-Funktionen",
+      "description": "Geräusche, die wie Lokfunktionen per Knopf geschaltet werden.",
+      "acceptance": [
+        "Vier Modi: Umschalter (Loop bis zum zweiten Druck), Taster einmal (höchstens einmal, Abbruch beim Loslassen), Taster wiederholt (Loop solange gedrückt), Anschalter (bis Dateiende, kein Eingriff)",
+        "Anlegen, löschen, umsortieren wie Lokfunktionen"
+      ],
+      "verification": [
+        "audio-log",
+        "virtual-gamepad"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-17",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.4c"
+      },
+      "title": "Geräusch-Ereignisse",
+      "description": "Geräusche, die bei bestimmten Fahrzuständen automatisch ausgelöst werden (z. B. Bremsenquietschen).",
+      "acceptance": [
+        "Auslösung bei vmin ≤ v ≤ vmax und amin ≤ a ≤ amax; leere Grenze = beliebig",
+        "Ereignis per Knopf aktivierbar/deaktivierbar",
+        "Nur verfügbar, wenn ein Fahrgeräusch konfiguriert ist",
+        "Auslösezeitpunkte stimmen mit Alt-Electrip überein (Golden-Test)"
+      ],
+      "verification": [
+        "golden",
+        "audio-log"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      },
+      "notes": "Alt-Code kennt zusätzlich Fahrtrichtung, fade_in, fade_out und play_to_end (nicht im Handbuch) – übernehmen."
+    },
+    {
+      "id": "B-18",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.3"
+      },
+      "title": "Audioformate und Abtastrate",
+      "description": "Geräuschdateien als WAV oder OGG.",
+      "acceptance": [
+        "WAV und OGG werden abgespielt",
+        "Abtastrate wird aus der Datei gelesen; die manuelle Einstellung (Alt: 44.100 Hz) entfällt"
+      ],
+      "verification": [
+        "unit"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-19",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.5, 3"
+      },
+      "title": "Reihenfolge der Bedienknöpfe",
+      "description": "Knöpfe pro Lok erscheinen in fester Reihenfolge und farblich unterschieden.",
+      "acceptance": [
+        "Reihenfolge: Fahrgeräusch, Geräusch-Funktionen, Geräusch-Ereignisse, Lokfunktionen",
+        "Jede Gruppe hat eine eigene Farbe"
+      ],
+      "verification": [
+        "screenshot"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-20",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.4.6"
+      },
+      "title": "Lok-Export und -Import",
+      "description": "Eine Lok mit Konfiguration, Bild und Sounds als ZIP-Archiv.",
+      "acceptance": [
+        "Export erzeugt ein ZIP mit allen referenzierten Dateien",
+        "Import von Alt-ZIPs (z. B. SourceForge-Paket „BR 216“) ist verlustfrei",
+        "Import entpackt in die Lok-Bibliothek, nicht neben das Archiv"
+      ],
+      "verification": [
+        "corpus",
+        "unit"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-21",
+      "source": {
+        "type": "handbuch",
+        "ref": "2.5"
+      },
+      "title": "Konfiguration speichern und laden",
+      "description": "Gesamtkonfiguration (Loks, Server, Gamepad, Sound).",
+      "acceptance": [
+        "Alt-JSON-Dateien aus Electrip 1 werden verlustfrei importiert",
+        "Neue Datenhaltung ist die CRDT-Bibliothek (N-04); JSON-Export bleibt möglich"
+      ],
+      "verification": [
+        "corpus",
+        "unit"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-22",
+      "source": {
+        "type": "handbuch",
+        "ref": "3"
+      },
+      "title": "Steuerungsansicht",
+      "description": "Regler pro Lok nebeneinander.",
+      "acceptance": [
+        "Pro Lok: Name, Bild, vertikaler Geschwindigkeitsregler, optional Geräuschpegel-Balken, Richtungsknopf, Funktionsknöpfe, Symbol des steuernden Gamepads",
+        "Nothalt-Knopf am unteren Rand"
+      ],
+      "verification": [
+        "screenshot",
+        "control-channel"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-23",
+      "source": {
+        "type": "handbuch",
+        "ref": "3, 3.1"
+      },
+      "title": "Lokwechsel und Nothalt",
+      "description": "Mit dem Hat-Switch zwischen Loks wechseln; Nothalt schaltet den Gleisstrom ab.",
+      "acceptance": [
+        "Hat links/rechts wechselt zur vorherigen/nächsten Lok; Dauerdruck scrollt",
+        "Nothalt schaltet den Gleisstrom aus (SRCP: POWER OFF) und wird sofort angezeigt"
+      ],
+      "verification": [
+        "virtual-gamepad",
+        "srcpd-loopback"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "B-24",
+      "source": {
+        "type": "handbuch",
+        "ref": "3.2, 3.3"
+      },
+      "title": "Maussteuerung und Direktstart",
+      "description": "Bedienung per Maus als Fallback; Start direkt im Steuerungsmodus.",
+      "acceptance": [
+        "Alle Steuerfunktionen per Maus erreichbar",
+        "Start mit -f/--file <datei> öffnet direkt die Steuerung"
+      ],
+      "verification": [
+        "control-channel"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "N-01",
+      "source": {
+        "type": "neu",
+        "ref": "Konzept 2026-10"
+      },
+      "title": "Gamepad-Profile für verschiedene Geräte",
+      "description": "Mehrere Eingabegeräte mit unterschiedlichen Knöpfen und Layouts gleichzeitig; Belegung pro Gerätetyp als Profil.",
+      "acceptance": [
+        "Drei virtuelle Gamepads mit Xbox-, PlayStation- und Generic-Layout steuern gleichzeitig drei Loks",
+        "UI zeigt die Knopfnamen des jeweiligen Geräts",
+        "Unbekannte Geräte bekommen ein editierbares Standardprofil"
+      ],
+      "verification": [
+        "virtual-gamepad"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "N-02",
+      "source": {
+        "type": "neu",
+        "ref": "Konzept 2026-10"
+      },
+      "title": "Austauschbare Zentralen-Schnittstelle",
+      "description": "Trait CommandStation mit Treibern für srcpd und Roco Z21.",
+      "acceptance": [
+        "Dieselbe Szenario-Testsuite läuft grün gegen srcpd-Loopback und Z21-Simulator",
+        "Z21-Treiber ist in 2.0 als experimentell gekennzeichnet (keine echte Z21 verfügbar)"
+      ],
+      "verification": [
+        "srcpd-loopback",
+        "z21-sim"
+      ],
+      "phase": 1,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      },
+      "notes": "srcpd-Treiber in Phase 1, Z21-Treiber in Phase 2. Z21-Simulator und Z21-Treiber in getrennten Sitzungen bauen."
+    },
+    {
+      "id": "N-03",
+      "source": {
+        "type": "neu",
+        "ref": "Konzept 2026-10"
+      },
+      "title": "Multi-Client an derselben Zentrale",
+      "description": "Mehrere Instanzen an derselben Zentrale lauschen auf Zustandsänderungen und bleiben synchron.",
+      "acceptance": [
+        "Drei Instanzen: eine Änderung in einer ist in den anderen innerhalb 300 ms sichtbar",
+        "Konkurrierende Steuerung derselben Lok wird gesperrt (SRCP LOCK) oder deutlich angezeigt",
+        "Auch Änderungen fremder Programme an der Zentrale werden übernommen"
+      ],
+      "verification": [
+        "multi-client",
+        "srcpd-loopback",
+        "z21-sim"
+      ],
+      "phase": 2,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "N-04",
+      "source": {
+        "type": "neu",
+        "ref": "Konzept 2026-10"
+      },
+      "title": "Gemeinsame Lok-Datenbank",
+      "description": "Instanzen auf verschiedenen Geräten teilen Loks inklusive Bildern und Sounds (Automerge-CRDT, Sync-Rolle in jeder Instanz).",
+      "acceptance": [
+        "Lok auf Gerät A angelegt erscheint auf Gerät B",
+        "Gleichzeitige Offline-Änderungen gehen nach dem Wiederverbinden nicht verloren",
+        "Partner im LAN werden per mDNS gefunden; Medien per SHA-256 adressiert übertragen"
+      ],
+      "verification": [
+        "multi-client",
+        "unit"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "N-05",
+      "source": {
+        "type": "neu",
+        "ref": "Konzept 2026-10"
+      },
+      "title": "Audio-Ziel pro Lok",
+      "description": "Jede Lok bekommt ein eigenes Audio-Ziel. In 2.0 nur ein Zieltyp: ein vom Betriebssystem bereitgestelltes Audiogerät.",
+      "acceptance": [
+        "Zwei Loks spielen gleichzeitig verschiedene Geräusche auf zwei verschiedenen Audiogeräten",
+        "Trait AudioSink erlaubt weitere Zieltypen (Bluetooth direkt, WLAN-Empfänger) ohne Änderung der Sound-Modelle",
+        "Latenz pro Ziel wird gemessen und dokumentiert"
+      ],
+      "verification": [
+        "audio-log",
+        "hw"
+      ],
+      "phase": 2,
+      "hw": true,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "N-06",
+      "source": {
+        "type": "neu",
+        "ref": "Konzept 2026-10"
+      },
+      "title": "Plattformunabhängigkeit",
+      "description": "Electrip 2 läuft auf Linux, macOS, Windows und Raspberry Pi.",
+      "acceptance": [
+        "CI baut und testet auf Linux, macOS und Windows",
+        "Build für Raspberry Pi (aarch64 Linux) läuft"
+      ],
+      "verification": [
+        "ci"
+      ],
+      "phase": 0,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    }
+  ]
+}
