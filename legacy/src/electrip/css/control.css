@@ -1,0 +1,236 @@
+
+@import url("gamepads.css");
+
+* {
+    outline-width: 0;
+}
+
+/* ----------------------
+Global background        |
+------------------------*/
+
+#loco-controller-hub-bg {
+    background: rgb(250, 250, 250);
+}
+
+#loco-controller-hub-bg frame > border {
+    border: none
+}
+
+.loco-controller:backdrop {
+    opacity: 0.6;
+}
+
+/* ------------------
+LocoLabel            |
+--------------------*/
+
+label.loco-label {
+    font-size: 13pt;
+}
+
+/* ------------------
+GamepadLabel         |
+--------------------*/
+
+label.gamepad-label {
+    font-weight: 500;
+    padding: 0px 5px;
+}
+
+
+/* ------------------
+SpeedScale           |
+--------------------*/
+
+/* TODO: howto set color of fill-level??  */
+
+scale.loco-speed-scale {
+    margin: 10px;
+}
+
+scale.loco-speed-scale trough {
+    border: 1px solid rgb(195, 195, 195);
+    background: rgb(220, 220, 220);
+    box-shadow: none;
+}
+
+scale.loco-speed-scale slider {
+    min-height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    border: 1px solid rgb(165, 165, 165);
+    background: -gtk-gradient (linear, 0 0, 0 1,
+                                     color-stop(0, rgb(250, 250, 250)),
+                                     color-stop(1, rgb(200, 200, 200)));
+    box-shadow: none;
+}
+
+scale.loco-speed-scale value {
+    color: rgb(56, 52, 54);
+}
+
+scale.loco-speed-scale:backdrop value {
+    color: rgb(139, 142, 143);
+}
+
+
+/* ------------------
+CircleNumber         |
+--------------------*/
+
+label.circle-number {
+    font-size: 9pt;
+    background: center center/100% 100% no-repeat url("../icons/circle.svg");
+}
+
+label.circle-number:disabled {
+    background-image: url("../icons/circle_insensitive.svg");
+}
+
+/* ------------------
+FunctionBox          |
+--------------------*/
+
+frame.function-box-bg {
+    padding: 8px;
+    border: 2px solid rgba(0, 0, 0, 0);
+    background: rgba(0, 0, 0, 0);
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+/* ------------------
+FunctionButton       |
+--------------------*/
+
+button.function-button {
+    background: -gtk-gradient (linear, 0 0, 0 1,
+                               color-stop(0, rgb(247, 247, 247)),
+                               color-stop(1, rgb(230, 230, 230)));
+    border: 1px solid rgb(180, 180, 180);
+    border-radius: 3px;
+    color: rgb(0, 0, 0);
+}
+
+button.function-button:checked {
+    background: rgb(230, 230, 230);
+    box-shadow: inset 0px 2px 3px rgb(193, 193, 193);
+}
+
+button.function-button *:disabled {
+    color: rgb(100, 100, 100);
+}
+
+
+
+
+button.engine-switch {
+    background: -gtk-gradient (linear, 0 0, 0 1,
+                               color-stop(0, rgb(255, 195, 80)),
+                               color-stop(1, rgb(255, 160, 60)));
+    border-color: rgb(220, 150, 30);
+}
+
+button.engine-switch:checked {
+    background: rgb(255, 195, 80);
+    box-shadow: inset 0px 2px 3px rgb(220, 150, 50);
+}
+
+
+
+
+button.function-sound-button {
+    background: -gtk-gradient (linear, 0 0, 0 1,
+                               color-stop(0, rgb(200, 200, 255)),
+                               color-stop(1, rgb(160, 160, 250)));
+    border-color: rgb(150, 150, 240);
+}
+
+button.function-sound-button:checked {
+    background: rgb(200, 200, 245);
+    box-shadow: inset 0px 2px 3px rgb(153, 153, 200);
+}
+
+
+
+
+button.event-sound-button {
+    background: -gtk-gradient (linear, 0 0, 0 1,
+                               color-stop(0, rgb(255, 160, 160)),
+                               color-stop(1, rgb(255, 130, 100)));
+    border-color: rgb(235, 120, 120);
+}
+
+button.event-sound-button:checked {
+    background: rgb(255, 160, 150);
+    box-shadow: inset 0px 2px 3px rgb(190, 130, 100);
+}
+
+
+/* ------------------
+Reverser             |
+--------------------*/
+
+button.reverser {
+    background: none;
+    border: none;
+}
+
+button.reverser image {
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+button.reverser image.left-arrow {
+    background-image: url("../icons/arrows/left_light.svg");
+    transition: 150ms ease;
+}
+
+button.reverser image.right-arrow {
+    background-image: url("../icons/arrows/right_bold.svg");
+    transition: 150ms ease;
+}
+
+button.reverser.point-left image.left-arrow {
+    background-image: url("../icons/arrows/left_bold.svg");
+    transition: 150ms ease;
+}
+
+button.reverser.point-left image.right-arrow {
+    background-image: url("../icons/arrows/right_light.svg");
+    transition: 150ms ease;
+}
+
+
+
+/* ------------------
+EmergencyButton      |
+--------------------*/
+
+button#emergency-button {
+    background: rgb(230, 230, 230);
+    color: rgb(170, 170, 170);
+}
+
+button#emergency-button label {
+    font-weight: bold;
+    font-size: 22px;
+}
+
+@keyframes emergency {
+    0% {
+        background: rgb(255, 160, 60);
+        color: rgb(0, 0, 0)
+    }
+
+    100% {
+        background: rgb(205, 68, 68);
+        color: rgb(105, 0, 0);
+    }
+}
+
+button#emergency-button:checked {
+    animation: 1s emergency linear infinite alternate;
+}
+

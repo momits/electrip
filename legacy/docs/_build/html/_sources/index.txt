@@ -1,0 +1,27 @@
+.. Electrip documentation master file, created by
+   sphinx-quickstart on Sun Jan 12 20:38:14 2014.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Electrip's developer documentation!
+==============================================
+
+Here you find a **complete documentation** of the python modules, classes
+and functions used by *Electrip*.
+If you want to contribute to the project, this is the right
+place to get started!
+
+.. toctree::
+   :maxdepth: 2
+   
+   electrip
+
+==================
+
+* :ref:`modindex`
+  Module Overview
+* :ref:`genindex`
+  Modules, classes, functions from A-Z
+* :ref:`search`
+  Search for something
+

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Electrip
+Comment=Control your model railroad with gamepads
+Comment[de]=Deine Modellbahn mit Gamepads steuern
+Exec=electrip
+Icon=net.sourceforge.electrip.Electrip
+Terminal=false

@@ -1,0 +1,18 @@
+
+/* ------------------
+CustomHandlePaned    |
+--------------------*/
+
+.custom-handle-paned > separator {
+    min-width: 6px;
+    background: url("../icons/sound_segment_bar_handle.png") no-repeat center;
+}
+
+/* ------------------
+Warning frame        |
+--------------------*/
+
+#warn-box {
+	background: rgb(250, 200, 200);
+}
+

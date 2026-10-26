@@ -1,0 +1,316 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>electrip.config.linear_segment_function &mdash; Electrip 5.0.0 beta documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Electrip 5.0.0 beta documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../../index.html" class="fa fa-home"> Electrip</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../electrip.html">electrip Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.configuration_ui"><tt class="docutils literal"><span class="pre">configuration_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.constants"><tt class="docutils literal"><span class="pre">constants</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.control_ui"><tt class="docutils literal"><span class="pre">control_ui</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.dialog_templates"><tt class="docutils literal"><span class="pre">dialog_templates</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.main"><tt class="docutils literal"><span class="pre">main</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.concurrent"><tt class="docutils literal"><span class="pre">concurrent</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.pygame_io"><tt class="docutils literal"><span class="pre">pygame_io</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.srcpd_setup_assistant"><tt class="docutils literal"><span class="pre">srcpd_setup_assistant</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.utils"><tt class="docutils literal"><span class="pre">utils</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#module-electrip.widgets"><tt class="docutils literal"><span class="pre">widgets</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../electrip.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Electrip</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>electrip.config.linear_segment_function</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for electrip.config.linear_segment_function</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># -*- coding: UTF 8 -*-</span>
+
+<div class="viewcode-block" id="LinearSegmentFunction"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction">[docs]</a><span class="k">class</span> <span class="nc">LinearSegmentFunction</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function consisting of linear segments which build a</span>
+<span class="sd">    continuous line connecting certain control points.</span>
+<span class="sd">    The function increases monotonically.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="LinearSegmentFunction.load"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_points</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the function from the control points, building</span>
+<span class="sd">        the linear function segments between the control-points.</span>
+<span class="sd">        *control_points* are a list of ``(x, y)``-point-tuples</span>
+<span class="sd">        defining the control-points of the function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">control_points</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">control_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">control_points</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">control_points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_control_point</span><span class="p">(</span><span class="o">*</span><span class="n">point</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="LinearSegmentFunction.add_control_point"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.add_control_point">[docs]</a>    <span class="k">def</span> <span class="nf">add_control_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a control point at ``(x, y)``, updating the function.</span>
+<span class="sd">        If the resulting function after inserting ``(x, y)`` would</span>
+<span class="sd">        not be monotonically increasing, nothing will happen. If *x*</span>
+<span class="sd">        lies outside the existing segments, behaviour is undefined.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># no good to have two points at one spot:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">:</span>
+            <span class="n">nr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_segment_nr_from_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nr</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                           <span class="p">(</span><span class="n">x</span><span class="p">,</span>
+                                            <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="p">,</span>
+                                            <span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]))))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">],</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                                                                 <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]))</span>
+                </div>
+<div class="viewcode-block" id="LinearSegmentFunction.remove_control_point"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.remove_control_point">[docs]</a>    <span class="k">def</span> <span class="nf">remove_control_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes the *nr*-th control point from the function.</span>
+<span class="sd">        Attempting to delete the first or last control point</span>
+<span class="sd">        will result in nothing happening, because they are</span>
+<span class="sd">        necessary for the function to exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">nr</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">nr</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">nr</span><span class="p">)</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span> <span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">]))</span>
+        </div>
+<div class="viewcode-block" id="LinearSegmentFunction.move_control_point"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.move_control_point">[docs]</a>    <span class="k">def</span> <span class="nf">move_control_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nr</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Moves the *nr*-th control point to the point ``(x, y)``.</span>
+<span class="sd">        If ``x &gt; x of the next point``, nothing will happen, to ensure</span>
+<span class="sd">        a monotonic increase (Same for ``y &gt; y of next point``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">nr</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">point_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">point_left</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="n">point_left</span><span class="p">,</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">nr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">point_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">point_right</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">],</span>
+                                                            <span class="n">point_right</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">point_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">point_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="n">point_left</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">point_right</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span>
+                                           <span class="nb">min</span><span class="p">(</span><span class="n">point_right</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                           <span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">point_left</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">],</span>
+                                                                <span class="n">point_right</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">nr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_func_segment</span><span class="p">(</span><span class="n">point_left</span><span class="p">,</span>
+                                                                    <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span>
+                        </div>
+<div class="viewcode-block" id="LinearSegmentFunction.calc_func_segment"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.calc_func_segment">[docs]</a>    <span class="k">def</span> <span class="nf">calc_func_segment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Solves the equation y=a*x+b using the</span>
+<span class="sd">        two points ``(x1, y1)`` and ``(x2, y2)``.</span>
+<span class="sd">        Returns ``(a, b)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">point1</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">point2</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">x2</span> <span class="o">*</span> <span class="n">a</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+            </div>
+<div class="viewcode-block" id="LinearSegmentFunction.get_y"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.get_y">[docs]</a>    <span class="k">def</span> <span class="nf">get_y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the functions y-value at *x*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">seg_nr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_segment_nr_from_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">seg_nr</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">seg_nr</span><span class="p">]</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">b</span>
+                <span class="k">return</span> <span class="n">y</span>
+    </div>
+<div class="viewcode-block" id="LinearSegmentFunction.get_x"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.get_x">[docs]</a>    <span class="k">def</span> <span class="nf">get_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the functions x-value matching *y*.</span>
+<span class="sd">        (Possible due to the functions injectivity).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">seg_nr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_segment_nr_from_y</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">seg_nr</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_segments</span><span class="p">[</span><span class="n">seg_nr</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">a</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">seg_nr</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="k">return</span> <span class="n">x</span>
+    </div>
+<div class="viewcode-block" id="LinearSegmentFunction.get_segment_nr_from_x"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.get_segment_nr_from_x">[docs]</a>    <span class="k">def</span> <span class="nf">get_segment_nr_from_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the number of the function segment belonging</span>
+<span class="sd">        to the x-coordinate *x*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">nr</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">nr</span>
+                <span class="k">break</span>
+            </div>
+<div class="viewcode-block" id="LinearSegmentFunction.get_segment_nr_from_y"><a class="viewcode-back" href="../../../electrip.config.html#electrip.config.linear_segment_function.LinearSegmentFunction.get_segment_nr_from_y">[docs]</a>    <span class="k">def</span> <span class="nf">get_segment_nr_from_y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the number of the function segment belonging</span>
+<span class="sd">        to the y-coordinate *y*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">nr</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_points</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">nr</span>
+                <span class="k">break</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Moritz Renftle.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'5.0.0 beta',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

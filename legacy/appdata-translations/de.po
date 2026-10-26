@@ -1,0 +1,35 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2018-11-04 22:27+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. (itstool) path: component/name
+#: net.sourceforge.electrip.Electrip.appdata.xml:8
+msgid "Electrip"
+msgstr "Electrip"
+
+#. (itstool) path: component/summary
+#: net.sourceforge.electrip.Electrip.appdata.xml:10
+msgid "Control your model railroad using gamepads!"
+msgstr "Steuere deine Modellbahn mit dem Gamepad!"
+
+#. (itstool) path: description/p
+#: net.sourceforge.electrip.Electrip.appdata.xml:12
+msgid "Electrip is an easy-to-use, small software that lets you control your model railroad with gamepads via the SRCP protocol. Therefore, a SRCP-compatible command station is required, e.g. the srcpd."
+msgstr "Mit Electrip kannst du deine Modellbahnloks über das SRCP-Protokoll mit Gamepads steuern. Dafür brauchst du eine SRCP-kompatible Digitalzentrale, z.B. den srcpd."
+
+#. (itstool) path: description/p
+#: net.sourceforge.electrip.Electrip.appdata.xml:18
+msgid "Electrip supports a sophisticated simulation of loco sounds, including driving sounds, sound functions and event-triggered sounds. It allows to control the speed of locos to scale in the model world with a clever visual speed mapping. Locos can also be exported and imported as archives together with their configured sounds."
+msgstr "Electrip kann die Geräusche deiner Lokomotiven simulieren und über "
+"Lautsprecher abspielen: Neben dem Fahrgeräusch kannst du auch Geräuschfunktionen "
+"und ereignisgesteuerte Geräusche einstellen."
+"Mithilfe einer Geschwindigkeitskennlinie kannst du deine Loks in maßstabsgetreuer Geschwindigkeit fahren lassen."
+"Zudem kannst du Loks mit allen zugehörigen Geräuschen und Einstellungen importieren und exportieren."
+

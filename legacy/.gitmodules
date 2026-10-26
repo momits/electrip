@@ -1,0 +1,3 @@
+[submodule "itstool"]
+	path = itstool
+	url = https://github.com/itstool/itstool.git
