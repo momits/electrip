@@ -1,6 +1,16 @@
 # Fortschritt
 
-Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis, offene Punkte.
+Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis, Einfachheits-Review (ok/refactored), offene Punkte.
+
+## Aufräumkandidaten
+
+_Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
+
+- (noch keine)
+
+## 2026-10-27 – Einfachheits-Review eingeführt (Mo + Claude)
+
+- `AGENTS.md`: Pflicht-Review auf DRY, YAGNI, KISS nach jedem Inkrement, Commit-Trailer `Simplicity-Review`, ADR 0008.
 
 ## 2026-10-26 – Phase 0, Schritt 2: Spezifikation (Mo + Claude, interaktiv)
 

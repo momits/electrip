@@ -11,7 +11,7 @@ Electrip 2 wird von KI-Agenten in einer vorbereiteten Umgebung neu geschrieben; 
 - **Befehl zuerst, Knopf danach.** Jede Nutzeraktion ist ein Befehl im Kern; Gamepad, GUI, Tests und Agenten benutzen dieselbe Schnittstelle.
 - **Jede Anforderung ist prüfbar.** Eine Anforderung ohne automatischen Test oder ohne definierten Hardware-Test gilt nicht als erfüllt.
 - **Ehrliche Parität.** Fortschritt wird getrennt gemessen: angebunden, Verhalten getestet, an echter Anlage abgenommen.
-- **Klein halten.** Höchstens 12.000 Zeilen Produktcode; fertige Bibliotheken statt Eigenbau.
+- **Klein halten.** Höchstens 12.000 Zeilen Produktcode; fertige Bibliotheken statt Eigenbau; nach jedem Inkrement ein Review auf DRY, YAGNI und KISS mit sofortigem Refactoring.
 - **Der Mensch entscheidet an Toren.** Architektur, Abnahme der Spezifikation und Hardware-Tests bleiben bei Mo.
 
 ## Anforderungsquellen
@@ -131,7 +131,8 @@ Kein eigenes Agenten-Framework: Claude Code (headless) in Containern, gesteuert 
 2. `cargo xtask sim up` und Rauchtest; ist etwas rot, zuerst reparieren.
 3. Eine offene Anforderung wählen und per Sperrdatei beanspruchen.
 4. Umsetzen, Prüffälle schreiben bzw. grün machen, App über Steuerkanal selbst bedienen.
-5. Committen, Status in `requirements.json` setzen, `PROGRESS.md` ergänzen, Sperre lösen, pushen.
+5. Einfachheits-Review des Diffs gegen DRY, YAGNI und KISS (möglichst durch frischen Sub-Agenten); Befunde sofort refactoren, Tests wieder grün.
+6. Committen, Status in `requirements.json` setzen, `PROGRESS.md` ergänzen, Sperre lösen, pushen.
 
 **Loop und Laufzeit:** Ein Skript startet Sitzungen in Folge (`while`-Loop mit `claude -p`), jede in einem Devcontainer mit allen Simulatoren und vollen Rechten nur im Container. Wegen des gemeinsamen Nutzungslimits läuft standardmäßig ein Agent; die Struktur (eigener Klon pro Container, gemeinsames Upstream-Repo, Sperrdateien, Merge über Pull Requests) erlaubt trotzdem jederzeit einen zweiten. Die CI (Linux, macOS, Windows) muss grün sein, bevor gemergt wird.
 
@@ -170,6 +171,7 @@ Phase 0 ist die wichtigste: Ohne Simulatoren, Golden-Tests und Katalog produzier
 - [x] Budget: ein Claude-Team-Premium-Platz, keine zusätzlichen API-Kosten
 - [x] Z21: Umsetzung ohne Hardware, Treiber in 2.0 experimentell
 - [x] Zeilenbudget: höchstens 12.000 Zeilen Produktcode; kein MCP-Server in 2.0
+- [x] Einfachheits-Review (DRY, YAGNI, KISS) nach jedem Inkrement, Befunde werden sofort refactort
 
 ## Budget und Laufzeit
 

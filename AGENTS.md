@@ -14,10 +14,39 @@ Electrip 2 ist die Neuentwicklung von Electrip (Modellbahnsteuerung mit Gamepads
 
 1. Stand lesen (siehe oben). Ab Phase 0 Schritt 3: `cargo xtask parity` und `cargo xtask test`.
 2. Ist etwas rot, das zuerst reparieren – vor jeder neuen Arbeit.
-3. **Eine** offene Aufgabe wählen (niedrigste Phase zuerst) und beanspruchen: Datei `current_tasks/<ID>.md` mit Datum und Kurzplan anlegen, committen, pushen. Existiert die Datei schon, andere Aufgabe wählen.
+3. **Eine** offene Aufgabe wählen (niedrigste Phase zuerst) und beanspruchen: Datei `current_tasks/<ID>.md` mit Datum, Kurzplan und **Basis-Commit** (`git rev-parse HEAD`) anlegen, committen, pushen. Existiert die Datei schon, andere Aufgabe wählen.
 4. Umsetzen. Prüffälle aus `verification` der Anforderung schreiben bzw. grün machen. Wo möglich die App über den Steuerkanal selbst bedienen.
-5. Abschluss: Status in `spec/requirements.json` setzen, Eintrag in `PROGRESS.md` ergänzen, `current_tasks/<ID>.md` löschen, committen, pushen.
-6. Wenn die Sitzung vorher endet (Limit, Kontext voll): Zwischenstand committen und in `PROGRESS.md` beschreiben, was fehlt.
+5. **Einfachheits-Review (Pflicht nach jedem Inkrement – Feature, Bugfix, Refactoring, Testwerkzeug):** siehe Abschnitt unten. Befunde sofort refactoren, Tests wieder grün.
+6. Abschluss: Status in `spec/requirements.json` setzen, Eintrag in `PROGRESS.md` ergänzen (inkl. Review-Ergebnis), `current_tasks/<ID>.md` löschen, committen, pushen.
+7. Wenn die Sitzung vorher endet (Limit, Kontext voll): Zwischenstand committen und in `PROGRESS.md` beschreiben, was fehlt. Ein unfertiges Inkrement wird erst nach seinem Review als fertig markiert.
+
+## Einfachheits-Review: DRY, YAGNI, KISS
+
+Jedes Inkrement wird vor dem Abschluss einmal gegen diese Liste geprüft. Grundlage ist der Diff seit dem Basis-Commit: `git diff <basis>..HEAD`.
+
+**Wer prüft:** möglichst ein frischer Sub-Agent (Task/Agent-Tool) mit nur dem Diff, dieser Liste und `AGENTS.md` als Kontext – wer den Code gerade geschrieben hat, übersieht eigene Umwege. Fehlt dafür das Kontingent, prüft der Agent selbst und liest den Diff dabei komplett neu.
+
+**DRY – nichts doppelt**
+- Dieselbe Logik oder dasselbe Fachwissen (Formel, Mapping, Konstante, Protokoll-Detail) steht nur an einer Stelle.
+- Kopierte Blöcke (ab ca. 5 ähnlichen Zeilen) werden zusammengeführt.
+- Aber: zwei Stellen, die nur zufällig ähnlich aussehen, bleiben getrennt. Abstrahieren erst beim dritten echten Vorkommen (Rule of Three).
+
+**YAGNI – nichts auf Vorrat**
+- Jede neue Funktion, jeder Parameter, jede Option ist durch eine Anforderung in `spec/requirements.json` oder einen Test begründet.
+- Keine Erweiterungspunkte „für später“, keine Traits/Generics mit nur einer Implementierung – außer per ADR vorgesehen (`CommandStation`, `AudioSink`).
+- Kein toter Code, keine auskommentierten Reste, keine ungenutzten Abhängigkeiten oder Feature-Flags.
+
+**KISS – die einfachste Lösung, die die Tests besteht**
+- Klarer, direkter Code vor cleverem Code: keine Makros, Typ-Tricks oder Indirektionen, wo eine einfache Funktion reicht.
+- Funktionen kurz (Richtwert < 40 Zeilen), Verschachtelung flach, sprechende Namen.
+- Standardbibliothek und bereits genutzte Bibliotheken vor eigenem Code.
+- Gegenfrage: Ginge dasselbe mit spürbar weniger Zeilen? Dann so.
+
+**Bei Befunden**
+- Refactoring ändert kein Verhalten: Tests vorher und nachher grün, Golden Files unverändert.
+- Eigener Commit: `<ID>: refactor after simplicity review`.
+- Jeder Abschluss-Commit eines Inkrements trägt den Trailer `Simplicity-Review: ok` oder `Simplicity-Review: refactored` (sobald `xtask` existiert, prüft die CI das).
+- Befunde, die über das Inkrement hinausgehen (älterer Code), nicht nebenbei umbauen, sondern in `PROGRESS.md` unter „Aufräumkandidaten“ notieren; der Aufräum-Agent arbeitet sie je Phase ab.
 
 ## Spezifikation
 
