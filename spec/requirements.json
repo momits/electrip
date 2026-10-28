@@ -150,15 +150,15 @@
     {
       "id": "B-06",
       "source": {
-        "type": "handbuch",
-        "ref": "2.4.1"
+        "type": "handbuch+legacy",
+        "ref": "Hb. 2.4.1, legacy/src/electrip/constants.py"
       },
       "title": "Decoder-Einstellungen",
       "description": "Protokoll, Adresse und Fahrstufen des Lokdecoders.",
       "acceptance": [
-        "Protokolle wie Alt-Code: M 1, M 2 (Märklin Motorola), N 1, N 2 (DCC kurze/lange Adresse)",
-        "Ungültige Kombinationen aus Protokoll, Adresse und Fahrstufen werden verhindert",
-        "Protokollwechsel setzt die Standard-Fahrstufen des Protokolls (z. B. 128 bei DCC) und erfordert Bestätigung, da die Kennlinie zurückgesetzt wird"
+        "Protokolle, Adressbereiche und Fahrstufen wie Electrip 1 (legacy/src/electrip/constants.py, PROTOCOLS): M 1 = Adresse 1–80, 14 Fahrstufen; M 2 = 1–255, 14/28; N 1 und N 2 (DCC) = 1–10239, 14/28/128",
+        "Ungültige Kombinationen aus Protokoll, Adresse und Fahrstufen werden verhindert; beim Protokollwechsel wird eine zu große Adresse auf das Maximum gesetzt (wie Electrip 1)",
+        "Protokollwechsel setzt die höchste Fahrstufenzahl des Protokolls (z. B. 128 bei DCC) und erfordert Bestätigung, da die Kennlinie zurückgesetzt wird"
       ],
       "verification": [
         "unit",
@@ -171,7 +171,7 @@
         "verified": false,
         "accepted": false
       },
-      "notes": "Gültige Adress- und Fahrstufenbereiche je Protokoll aus legacy/ und SRCP-Spezifikation ableiten; Unklarheiten nach spec/questions.md."
+      "notes": "Electrip 1 zeigt zusätzlich die maximale Funktionszahl je Protokoll an (M 1: 1, M 2: 5, DCC: 32) – nur als Hinweis anzeigen, nicht erzwingen (siehe out_of_scope). Offene Detailfrage Q-012: N 1 („kurze Adressen“) erlaubt in Electrip 1 ebenfalls bis 10239."
     },
     {
       "id": "B-07",

@@ -4,7 +4,7 @@ Agenten tragen hier Widersprüche und Lücken ein; Mo beantwortet sie. Format: I
 
 ## Q-001 – 2026-10-26 – B-06
 **Frage:** Welche Adress- und Fahrstufenbereiche sollen pro Protokoll (M 1, M 2, N 1, N 2) gelten? Werden weitere Protokolle (z. B. mfx, Selectrix) gebraucht?
-**Antwort:** _offen_
+**Antwort:** Bereiche wie Electrip 1 (`legacy/src/electrip/constants.py`, `PROTOCOLS`), übernommen in B-06. Weitere Protokolle: nicht in 2.0 (Annahme, Mo bitte bestätigen).
 
 ## Q-002 – 2026-10-26 – B-21, N-04
 **Frage:** Welche echten Electrip-1-Konfigurationen und Lokpakete kann Mo für den Korpus beisteuern?
@@ -53,4 +53,9 @@ Agenten tragen hier Widersprüche und Lücken ein; Mo beantwortet sie. Format: I
 ## Q-011 – 2026-10-28 – N-05, N-03
 **Frage:** Zwei Konfigurationen enthalten dieselbe Lok-Adresse und weisen ihr verschiedene Audio-Ziele bzw. Sounds zu. Sollen beide spielen?
 **Vorschlag:** Ja, beide spielen – das ist Sache der Konfiguration. Die UI warnt, wenn eine Lok-Adresse in mehreren aktiven Konfigurationen ein Audio-Ziel hat.
+**Antwort:** _offen_
+
+## Q-012 – 2026-10-28 – B-06
+**Frage:** In Electrip 1 erlaubt „N 1 – DCC mit kurzen Adressen“ dieselben Adressen wie „N 2“ (1–10239). Kurze DCC-Adressen gehen nach NMRA-Norm nur bis 127. Übernehmen oder korrigieren?
+**Vorschlag:** Korrigieren: N 1 = 1–127, N 2 = 1–10239. Alt-Konfigurationen mit N 1 und Adresse > 127 werden beim Import auf N 2 umgestellt.
 **Antwort:** _offen_
