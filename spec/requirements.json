@@ -129,15 +129,18 @@
         "ref": "2.4.1"
       },
       "title": "Allgemeine Lok-Eigenschaften",
-      "description": "Höchstgeschwindigkeit in km/h, Beschleunigungs- und Bremsdauer, Lokbild, Lautstärke.",
+      "description": "Höchstgeschwindigkeit in km/h, Beschleunigungs- und Bremsdauer, Lokbild („Profilbild“), Lautstärke.",
       "acceptance": [
         "Standardwerte wie Alt-Code: Vmax 100 km/h, Beschleunigung 11,5 s, Bremsen 8,5 s",
-        "Lokbild wird angezeigt (Referenzformat 110×85 px, andere Größen werden skaliert)",
+        "Lokbild: beliebiges Bild (PNG, JPEG) laden und daraus wie bei Profilbildern von Online-Konten einen Ausschnitt im festen Seitenverhältnis 22:17 (wie 110×85 px in Electrip 1) wählen – verschieben und zoomen",
+        "Gespeichert wird nur der Ausschnitt in fester Auflösung (440×340 px, für hochauflösende Bildschirme); Ausschnitt jederzeit neu wählbar durch erneutes Laden eines Bildes",
+        "Beim Import aus Electrip 1 wird ein Bild mit abweichendem Seitenverhältnis mittig zugeschnitten",
         "Lautstärke pro Lok einstellbar"
       ],
       "verification": [
         "unit",
-        "control-channel"
+        "control-channel",
+        "screenshot"
       ],
       "phase": 1,
       "hw": false,
