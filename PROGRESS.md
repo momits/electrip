@@ -11,7 +11,8 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 ## 2026-10-28 – Alle offenen Fragen beantwortet (Mo)
 
 - Q-001 bis Q-012 beantwortet und in B-06, B-10, B-20, B-21, B-22, B-23, N-02, N-03, N-05 übernommen.
-- **Wartet auf Mo:** ADRs 0001–0010 freigeben, pushen. Danach Schritt 3a.
+- ADRs 0001–0010 von Mo angenommen (2026-10-28).
+- **Wartet auf Mo:** pushen. Danach Schritt 3a.
 
 ## 2026-10-28 – Sitzungs-Host und Discovery (Mo + Claude)
 

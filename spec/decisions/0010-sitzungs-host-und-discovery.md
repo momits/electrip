@@ -1,5 +1,5 @@
 # 0010 – Sitzungs-Host pro Zentrale und Discovery per mDNS
-**Status:** Vorschlag · 2026-10-28
+**Status:** Angenommen · 2026-10-28 (Vorschlag vom 2026-10-28)
 
 **Kontext:** Electrip rechnet Beschleunigungsrampen, Sound-Modelle und das soundsynchrone Anfahren (B-13) selbst; die Zentrale meldet nur Fahrstufen zurück. Steuern mehrere Instanzen dieselbe Lok, würden getrennt gerechnete Rampen gegeneinander arbeiten und Sounds aus ungenauen Rückmeldungen geraten werden. Geprüfte Optionen: A) kein Server, Abgleich über die Zentrale; B) eigener Server; C) wechselnder Lok-Besitzer; D) Host-Rolle in jeder Instanz; E) Rampe im Decoder (verworfen: Electrip kennt dann die echte Geschwindigkeit nicht).
 **Entscheidung:** Option D.

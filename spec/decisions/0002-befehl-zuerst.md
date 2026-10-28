@@ -1,5 +1,5 @@
 # 0002 – Befehl zuerst, GUI-freier Kern
-**Status:** Vorschlag · 2026-10-26
+**Status:** Angenommen · 2026-10-28 (Vorschlag vom 2026-10-26)
 
 **Kontext:** Agenten und Tests müssen die App ohne Oberfläche bedienen können.
 **Entscheidung:** Jede Nutzeraktion ist ein Befehl in `core`. UI, Gamepad, Steuerkanal und Tests rufen nur Befehle auf. Ein lokaler JSON-Steuerkanal (`control`) erlaubt Zustand lesen, Befehle senden, virtuelle Eingaben und Screenshots.

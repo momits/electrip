@@ -1,5 +1,5 @@
 # 0003 – Konfigurationen als CRDT, Lok-Zustand über die Zentrale
-**Status:** Vorschlag · 2026-10-28 (überarbeitet)
+**Status:** Angenommen · 2026-10-28 (Vorschlag vom 2026-10-28)
 
 **Kontext:** Es gibt mehrere Konfigurationen; mehrere Instanzen sollen dieselbe Konfiguration gleichzeitig nutzen und bearbeiten (N-04). Dieselbe Lok-Adresse kann in mehreren Konfigurationen vorkommen. Z21-Nutzer haben oft keinen dauerhaft laufenden Rechner.
 **Entscheidung:**

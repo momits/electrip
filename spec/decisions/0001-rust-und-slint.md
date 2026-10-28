@@ -1,5 +1,5 @@
 # 0001 – Rust und Slint
-**Status:** Vorschlag · 2026-10-26
+**Status:** Angenommen · 2026-10-28 (Vorschlag vom 2026-10-26)
 
 **Kontext:** Electrip 1 ist Python/GTK. Electrip 2 soll plattformunabhängig sein und von Agenten gebaut werden.
 **Entscheidung:** Rust (stable) als Sprache, Slint für die Oberfläche, Cargo-Workspace mit `xtask`.

@@ -1,5 +1,5 @@
 # 0009 – Logische Aktionen statt Knopfnummern
-**Status:** Vorschlag · 2026-10-28
+**Status:** Angenommen · 2026-10-28 (Vorschlag vom 2026-10-28)
 
 **Kontext:** Electrip 1 speichert pro Lokfunktion eine Knopfnummer. Mit verschiedenen Gamepads und Joysticks (N-01) bedeutet dieselbe Nummer unterschiedliche physische Knöpfe.
 **Entscheidung:** Zwei getrennte Abbildungen:
