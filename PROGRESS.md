@@ -8,6 +8,11 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-28 – Alle offenen Fragen beantwortet (Mo)
+
+- Q-001 bis Q-012 beantwortet und in B-06, B-10, B-20, B-21, B-22, B-23, N-02, N-03, N-05 übernommen.
+- **Wartet auf Mo:** ADRs 0001–0010 freigeben, pushen. Danach Schritt 3a.
+
 ## 2026-10-28 – Sitzungs-Host und Discovery (Mo + Claude)
 
 - ADR 0010: Host-Rolle in jeder Instanz, ein Host pro Zentrale, Discovery per mDNS (`_electrip._tcp`), Doppel-Host- und Ausfallregeln, manuelle Host-Adresse als Rückfall.

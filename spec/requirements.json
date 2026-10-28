@@ -159,9 +159,11 @@
       "title": "Decoder-Einstellungen",
       "description": "Protokoll, Adresse und Fahrstufen des Lokdecoders.",
       "acceptance": [
-        "Protokolle, Adressbereiche und Fahrstufen wie Electrip 1 (legacy/src/electrip/constants.py, PROTOCOLS): M 1 = Adresse 1–80, 14 Fahrstufen; M 2 = 1–255, 14/28; N 1 und N 2 (DCC) = 1–10239, 14/28/128",
+        "Protokolle, Adressbereiche und Fahrstufen wie Electrip 1 (legacy/src/electrip/constants.py, PROTOCOLS), mit einer Korrektur: M 1 = Adresse 1–80, 14 Fahrstufen; M 2 = 1–255, 14/28; N 1 (DCC kurz) = 1–127; N 2 (DCC lang) = 1–10239; DCC jeweils 14/28/128",
         "Ungültige Kombinationen aus Protokoll, Adresse und Fahrstufen werden verhindert; beim Protokollwechsel wird eine zu große Adresse auf das Maximum gesetzt (wie Electrip 1)",
-        "Protokollwechsel setzt die höchste Fahrstufenzahl des Protokolls (z. B. 128 bei DCC) und erfordert Bestätigung, da die Kennlinie zurückgesetzt wird"
+        "Protokollwechsel setzt die höchste Fahrstufenzahl des Protokolls (z. B. 128 bei DCC) und erfordert Bestätigung, da die Kennlinie zurückgesetzt wird",
+        "Import aus Electrip 1: Loks mit N 1 und Adresse > 127 werden auf N 2 umgestellt und im Importbericht genannt",
+        "Protokoll wird intern neutral geführt (Motorola 1, Motorola 2, DCC kurz, DCC lang); jeder Zentralen-Treiber übersetzt; nicht unterstützte Kombinationen meldet der Treiber als Fehler"
       ],
       "verification": [
         "unit",
@@ -174,7 +176,7 @@
         "verified": false,
         "accepted": false
       },
-      "notes": "Electrip 1 zeigt zusätzlich die maximale Funktionszahl je Protokoll an (M 1: 1, M 2: 5, DCC: 32) – nur als Hinweis anzeigen, nicht erzwingen (siehe out_of_scope). Offene Detailfrage Q-012: N 1 („kurze Adressen“) erlaubt in Electrip 1 ebenfalls bis 10239."
+      "notes": "Electrip 1 zeigt zusätzlich die maximale Funktionszahl je Protokoll an (M 1: 1, M 2: 5, DCC: 32) – nur als Hinweis anzeigen, nicht erzwingen (siehe out_of_scope)."
     },
     {
       "id": "B-07",
@@ -261,13 +263,13 @@
       "title": "Fahren mit der Gamepad-Achse",
       "description": "Achsauslenkung steuert Beschleunigung bzw. Bremsung, nicht die Geschwindigkeit direkt.",
       "acceptance": [
-        "Vollausschlag nach vorn beschleunigt in der eingestellten Dauer von 0 auf Vmax",
-        "Leichter Ausschlag = leichte Beschleunigung; Vollausschlag zurück = Bremsung in der Bremsdauer",
-        "Die an die Zentrale gesendeten Fahrstufen über die Zeit stimmen mit Alt-Electrip überein (Golden-Test, Toleranz im Test festgelegt)",
+        "Vollausschlag nach vorn beschleunigt von 0 auf Vmax ungefähr in der eingestellten Beschleunigungsdauer (Toleranz ±10 %)",
+        "Die Beschleunigung ist proportional zur Achsauslenkung außerhalb der Totzone; Achse in Ruhelage hält die Geschwindigkeit",
+        "Vollausschlag zurück bremst von Vmax auf 0 ungefähr in der eingestellten Bremsdauer (±10 %)",
         "Richtungswender: setzt die Geschwindigkeit sofort auf 0 und wechselt dann die Fahrtrichtung"
       ],
       "verification": [
-        "golden",
+        "unit",
         "srcpd-loopback",
         "virtual-gamepad"
       ],
@@ -277,7 +279,8 @@
         "wired": false,
         "verified": false,
         "accepted": false
-      }
+      },
+      "notes": "Kein Golden-Test gegen Electrip 1 nötig; legacy/ dient nur als Referenz für das Verhalten (Mo, Q-003)."
     },
     {
       "id": "B-11",
@@ -514,7 +517,7 @@
       "description": "Eine Lok mit Konfiguration, Bild und Sounds als ZIP-Archiv.",
       "acceptance": [
         "Export erzeugt ein ZIP mit allen referenzierten Dateien",
-        "Import von Alt-ZIPs (z. B. SourceForge-Paket „BR 216“) ist verlustfrei",
+        "Import der Lokpakete von der SourceForge-Projektseite (Abschnitt Files, z. B. „BR 216“) ist verlustfrei; diese Pakete bilden den Korpus",
         "Import entpackt in die Lok-Bibliothek, nicht neben das Archiv"
       ],
       "verification": [
@@ -539,7 +542,7 @@
       "description": "Es kann mehrere Konfigurationen geben (siehe Glossar). Alt-JSON-Dateien aus Electrip 1 werden als Konfiguration importiert.",
       "acceptance": [
         "Konfigurationen anlegen, umbenennen, löschen, wechseln",
-        "Alt-JSON-Dateien aus Electrip 1 werden verlustfrei als neue Konfiguration importiert",
+        "Alt-JSON-Dateien aus Electrip 1 werden verlustfrei als neue Konfiguration importiert; Testdateien erzeugt der Agent mit dem Alt-Code (legacy/) selbst, da es keine echten Nutzerkonfigurationen im Korpus gibt",
         "Export einer Konfiguration als Datei bleibt möglich"
       ],
       "verification": [
@@ -566,7 +569,11 @@
         "Ausgangsbasis wie Electrip 1: Regler aller Loks fest nebeneinander in der Reihenfolge der Konfiguration, horizontal scrollbar",
         "Pro Lok: Name, Bild, vertikaler Geschwindigkeitsregler, optional Geräuschpegel-Balken, Richtungsknopf, Funktionsknöpfe, Symbol des steuernden Eingabegeräts",
         "Aktion „Fokus“ holt die vom Gerät gesteuerte Lok in den sichtbaren Bereich; Option „Auto-Fokus“ tut das bei jedem Lokwechsel",
-        "Nothalt-/Gleisstrom-Knopf am unteren Rand"
+        "Nothalt-/Gleisstrom-Knopf am unteren Rand",
+        "Auto-Fokus ist standardmäßig an",
+        "Loks, die gerade von einem Eingabegerät gesteuert werden, sind deutlich hervorgehoben",
+        "Reicht der Platz nicht, werden die Regler kompakter dargestellt, bevor gescrollt werden muss",
+        "Filter „nur gesteuerte oder fahrende Loks“"
       ],
       "verification": [
         "screenshot",
@@ -579,7 +586,7 @@
         "verified": false,
         "accepted": false
       },
-      "notes": "Mo ist offen für Verbesserungen der Ansicht; Vorschläge als Frage in spec/questions.md, nicht eigenmächtig umsetzen."
+      "notes": "Verbesserungen gegenüber Electrip 1 von Mo freigegeben (Q-009); weitere Vorschläge als Frage in spec/questions.md."
     },
     {
       "id": "B-23",
@@ -690,6 +697,7 @@
       "description": "Trait CommandStation mit Treibern für srcpd und Roco Z21.",
       "acceptance": [
         "Dieselbe Szenario-Testsuite läuft grün gegen srcpd-Loopback und Z21-Simulator",
+        "Szenario-Testsuite: Verbinden und Trennen, Gleisstrom an/aus, Lok fahren (Geschwindigkeit, Richtung), Funktionen F0–F28 schalten, Nothalt (Anlage und Lok), Änderung eines fremden Programms empfangen",
         "Z21-Treiber ist in 2.0 als experimentell gekennzeichnet (keine echte Z21 verfügbar)"
       ],
       "verification": [
@@ -714,7 +722,7 @@
       "title": "Gemeinsame Fahrsitzung über einen Sitzungs-Host",
       "description": "Steuern mehrere Instanzen dieselbe Zentrale, gibt es genau einen Sitzungs-Host (ADR 0010). Clients senden nur Eingaben (Achsauslenkung, Aktionen); der Host hält den Lok-Zustand inklusive laufender Rampen und verteilt ihn. Mappings, Aktionen, Sounds und Ansicht dürfen pro Konfiguration verschieden sein.",
       "acceptance": [
-        "Drei Instanzen an derselben Zentrale, davon zwei mit verschiedenen Konfigurationen, die dieselbe Lok-Adresse enthalten: eine Änderung in einer Instanz ist in allen anderen innerhalb 300 ms sichtbar",
+        "Drei Instanzen an derselben Zentrale, davon zwei mit verschiedenen Konfigurationen, die dieselbe Lok-Adresse enthalten: eine Änderung in einer Instanz ist in allen anderen innerhalb 300 ms sichtbar (gilt in Kabel-LAN oder WLAN mit < 20 ms Roundtrip; Test lokal mit 20 ms künstlicher Verzögerung)",
         "Konfliktregel im Host: die zuletzt aktive Eingabe gewinnt; eine ausgelenkte Achse rampt vom aktuellen Wert weiter. Die Ansicht zeigt bei der Lok die Symbole aller Eingabegeräte, die sie gerade steuern",
         "Keine Sperren (kein SRCP LOCK); jede Instanz darf jede Lok fahren",
         "Änderungen fremder Programme an der Zentrale übernimmt der Host als neuen Ausgangswert",
@@ -777,7 +785,7 @@
         "Zwei Loks mit verschiedenen Zielen spielen gleichzeitig verschiedene Geräusche; mehrere Loks dürfen dasselbe Ziel teilen (Mischung wie in Electrip 1)",
         "Enthalten zwei Konfigurationen dieselbe Lok-Adresse mit verschiedenen Audio-Zielen, bekommen beide Ziele Ereignisse; die UI warnt darüber",
         "Trait AudioSink erlaubt weitere Zieltypen (Bluetooth direkt, WLAN-Empfänger) ohne Änderung der Sound-Modelle",
-        "Latenz pro Ziel wird gemessen und dokumentiert"
+        "Latenz pro Ziel wird gemessen und dokumentiert; Zielwert ≤ 150 ms zwischen Fahrbefehl und hörbarem Sound, Hinweis in der UI bei > 300 ms"
       ],
       "verification": [
         "audio-log",
