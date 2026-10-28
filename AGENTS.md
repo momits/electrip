@@ -8,7 +8,8 @@ Electrip 2 ist die Neuentwicklung von Electrip (Modellbahnsteuerung mit Gamepads
 2. `git log --oneline -20`
 3. `spec/requirements.json` – Paritätskatalog; nur hier steht, was gebaut wird
 4. `spec/decisions/` – verbindliche Architekturentscheidungen
-5. Bei Bedarf: `spec/konzept.md` (Gesamtkonzept), `spec/benutzerhandbuch.pdf` (Handbuch Electrip 1), `legacy/` (Code Electrip 1)
+5. In Phase 0: `spec/phase0-plan.md`
+6. Bei Bedarf: `spec/konzept.md` (Gesamtkonzept), `spec/benutzerhandbuch.pdf` (Handbuch Electrip 1), `legacy/` (Code Electrip 1)
 
 ## Ablauf einer Sitzung
 

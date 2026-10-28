@@ -38,6 +38,8 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 ## Nächste Schritte (Phase 0)
 
+Details zu jedem Schritt: `spec/phase0-plan.md`.
+
 - [ ] Schritt 3a: Cargo-Workspace mit leeren Crates, `xtask` (`test`, `loc`, `parity`, Check des Trailers `Simplicity-Review`), CI auf Linux/macOS/Windows
 - [ ] Schritt 3b: srcpd mit Loopback-Bus in Docker, `cargo xtask sim up`
 - [ ] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
