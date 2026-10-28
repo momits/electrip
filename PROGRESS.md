@@ -8,6 +8,11 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-28 – Sitzungs-Host und Discovery (Mo + Claude)
+
+- ADR 0010: Host-Rolle in jeder Instanz, ein Host pro Zentrale, Discovery per mDNS (`_electrip._tcp`), Doppel-Host- und Ausfallregeln, manuelle Host-Adresse als Rückfall.
+- N-03, N-04, N-05, B-13 und Glossar angepasst; Q-010 und Q-011 beantwortet; B-05 Lokbild als Profilbild-Ausschnitt (22:17).
+
 ## 2026-10-28 – Anforderungen nach Review durch Mo überarbeitet
 
 - Glossar und `out_of_scope` in `spec/requirements.json` ergänzt (Weichen/Signale raus).

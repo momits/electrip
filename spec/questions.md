@@ -48,12 +48,12 @@ Agenten tragen hier Widersprüche und Lücken ein; Mo beantwortet sie. Format: I
 ## Q-010 – 2026-10-28 – N-03, B-10
 **Frage:** Instanz A beschleunigt eine Lok mit Rampe, Instanz B setzt währenddessen eine andere Geschwindigkeit. Was passiert mit der Rampe in A?
 **Vorschlag:** A übernimmt den von der Zentrale gemeldeten Wert als neuen Ausgangspunkt und rampt von dort weiter, solange die Achse in A ausgelenkt ist (die Achse gibt die Beschleunigung vor, nicht die Zielgeschwindigkeit).
-**Antwort:** _offen_
+**Antwort:** Gelöst durch ADR 0010 (Sitzungs-Host): Rampen laufen nur im Host; zuletzt aktive Eingabe gewinnt, ausgelenkte Achse rampt vom aktuellen Wert weiter. (Mo, 2026-10-28)
 
 ## Q-011 – 2026-10-28 – N-05, N-03
 **Frage:** Zwei Konfigurationen enthalten dieselbe Lok-Adresse und weisen ihr verschiedene Audio-Ziele bzw. Sounds zu. Sollen beide spielen?
 **Vorschlag:** Ja, beide spielen – das ist Sache der Konfiguration. Die UI warnt, wenn eine Lok-Adresse in mehreren aktiven Konfigurationen ein Audio-Ziel hat.
-**Antwort:** _offen_
+**Antwort:** Ja, wie vorgeschlagen; der Host schickt Ereignisse an beide Ziele (N-05). (Mo, 2026-10-28)
 
 ## Q-012 – 2026-10-28 – B-06
 **Frage:** In Electrip 1 erlaubt „N 1 – DCC mit kurzen Adressen“ dieselben Adressen wie „N 2“ (1–10239). Kurze DCC-Adressen gehen nach NMRA-Norm nur bis 127. Übernehmen oder korrigieren?

@@ -60,6 +60,7 @@ Jedes Inkrement wird vor dem Abschluss einmal gegen diese Liste geprüft. Grundl
 - **Befehl zuerst.** Jede Nutzeraktion ist ein Befehl im Kern (`core`). Gamepad, UI, Steuerkanal und Tests rufen nur Befehle auf. Keine Fachlogik in `ui`.
 - **Schichten:** `core` hängt von keinem anderen Crate des Workspace ab. Treiber (`station-*`), `input`, `audio`, `library`, `sync` hängen nur von `core` ab. `ui` und `control` dürfen alles nutzen. Die Regel wird per `cargo xtask` geprüft.
 - **Zentralen** nur über den Trait `CommandStation`. **Audio** nur über den Trait `AudioSink`.
+- **Sitzungs-Host (ADR 0010):** Rampen, Sound-Modelle und Konfliktregeln laufen nur im Host. Steuerkanal und Client-Host-Verbindung sind **dasselbe** JSON-Protokoll – kein zweites Protokoll bauen.
 - **Bibliotheken statt Eigenbau:** Automerge (Sync), SDL3 (Gamepads), rodio/symphonia (Audio), Slint (UI). Neue Abhängigkeiten nur mit Begründung in der Commit-Nachricht; keine Abhängigkeit für ein paar Zeilen Code.
 
 ## Code-Regeln

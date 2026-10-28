@@ -340,7 +340,7 @@
       "acceptance": [
         "Erste Fahrstufe > 0 wird erst mit Beginn des Übergangsgeräuschs Leerlauf → Segment 1 gesendet",
         "Fahrstufe 0 wird erst mit dem Bremsübergang Segment 1 → Leerlauf gesendet",
-        "Die Verzögerung ergibt sich aus der Länge der Übergangsdatei, nicht aus der tatsächlichen Wiedergabe – sie gilt also auch, wenn das Audio-Ziel der Lok an einer anderen Instanz hängt"
+        "Die Verzögerung rechnet der Sitzungs-Host aus der Länge der Übergangsdatei, nicht aus der tatsächlichen Wiedergabe – sie gilt also auch, wenn das Audio-Ziel an einer anderen Instanz hängt"
       ],
       "verification": [
         "srcpd-loopback",
@@ -710,18 +710,23 @@
         "type": "neu",
         "ref": "Konzept 2026-10"
       },
-      "title": "Synchroner Lok-Zustand über alle Instanzen",
-      "description": "Der Lok-Zustand (siehe Glossar) einer Lok-Adresse ist in allen Instanzen synchron – auch wenn sie unterschiedliche Konfigurationen nutzen. Alles andere (Mappings, Aktionen, Sounds, Ansicht) darf pro Konfiguration verschieden sein.",
+      "title": "Gemeinsame Fahrsitzung über einen Sitzungs-Host",
+      "description": "Steuern mehrere Instanzen dieselbe Zentrale, gibt es genau einen Sitzungs-Host (ADR 0010). Clients senden nur Eingaben (Achsauslenkung, Aktionen); der Host hält den Lok-Zustand inklusive laufender Rampen und verteilt ihn. Mappings, Aktionen, Sounds und Ansicht dürfen pro Konfiguration verschieden sein.",
       "acceptance": [
         "Drei Instanzen an derselben Zentrale, davon zwei mit verschiedenen Konfigurationen, die dieselbe Lok-Adresse enthalten: eine Änderung in einer Instanz ist in allen anderen innerhalb 300 ms sichtbar",
-        "Widersprüchliche Befehle: Der zuletzt an der Zentrale angekommene Befehl gilt; alle Instanzen zeigen den von der Zentrale zurückgemeldeten Zustand",
+        "Konfliktregel im Host: die zuletzt aktive Eingabe gewinnt; eine ausgelenkte Achse rampt vom aktuellen Wert weiter. Die Ansicht zeigt bei der Lok die Symbole aller Eingabegeräte, die sie gerade steuern",
         "Keine Sperren (kein SRCP LOCK); jede Instanz darf jede Lok fahren",
-        "Änderungen fremder Programme an der Zentrale werden ebenso übernommen"
+        "Änderungen fremder Programme an der Zentrale übernimmt der Host als neuen Ausgangswert",
+        "Start: eine Instanz sucht ca. 2 s per mDNS nach einem Host für ihre Zentralen-ID und verbindet sich; findet sie keinen, wird sie selbst Host",
+        "Gleichzeitiger Start: entdecken sich zwei Hosts für dieselbe Zentrale, bleibt der mit der kleineren Instanz-ID Host, der andere wird Client",
+        "Host-Ausfall: Clients erkennen das Fehlen des Lebenszeichens innerhalb weniger Sekunden; ein Client wird neuer Host und liest Geschwindigkeit, Richtung und Funktionen von der Zentrale zurück (laufende Rampen und Sound-Phase dürfen dabei neu starten)",
+        "Rückfall ohne mDNS: Host-Adresse manuell eintragbar; ist Netzwerkzugriff verweigert, läuft die Instanz allein weiter und erklärt das in der UI"
       ],
       "verification": [
         "multi-client",
         "srcpd-loopback",
-        "z21-sim"
+        "z21-sim",
+        "unit"
       ],
       "phase": 2,
       "hw": true,
@@ -742,7 +747,8 @@
       "acceptance": [
         "Lok auf Gerät A in Konfiguration K angelegt erscheint auf Gerät B, das ebenfalls K nutzt, inklusive Bild und Sounds",
         "Offline-Änderungen werden nach dem Wiederverbinden zusammengeführt; ändern zwei Geräte dasselbe Feld, gilt die zuletzt synchronisierte Änderung (akzeptiert)",
-        "Partner im LAN werden per mDNS gefunden; Medien per SHA-256 adressiert übertragen"
+        "Instanzen finden sich über denselben mDNS-Dienst wie in N-03 (_electrip._tcp), tauschen nach dem Verbinden ihre Konfigurations-IDs aus und gleichen gemeinsame ab – auch ohne Host und ohne Zentrale",
+        "Medien werden per SHA-256 adressiert übertragen"
       ],
       "verification": [
         "multi-client",
@@ -763,11 +769,12 @@
         "ref": "Konzept 2026-10"
       },
       "title": "Ein Audio-Ziel pro Lok",
-      "description": "Jeder Lok ist genau ein Audio-Ziel (AudioSink) zugeordnet. Das kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht. In 2.0 gibt es nur diesen einen Zieltyp; die Instanz auf diesem Rechner spielt den Sound der Lok.",
+      "description": "Jeder Lok ist in der Konfiguration genau ein Audio-Ziel (AudioSink) zugeordnet. Das kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht. Der Sitzungs-Host rechnet die Sound-Modelle und schickt fertige Audio-Ereignisse an das Ziel. In 2.0 gibt es nur einen Zieltyp: ein Ausgabegerät eines Rechners mit Electrip-Instanz.",
       "acceptance": [
-        "Das Audio-Ziel ist Teil der Lok in der Konfiguration und benennt Rechner/Instanz und Ausgabegerät eindeutig",
-        "Die Instanz, an der das Ziel hängt, spielt den Sound aus dem synchronen Lok-Zustand (N-03) – auch wenn eine andere Instanz oder ein fremdes Programm die Lok fährt",
+        "Das Audio-Ziel ist Teil der Lok in der Konfiguration und benennt Instanz und Ausgabegerät eindeutig",
+        "Der Host erzeugt die Audio-Ereignisse (Datei starten, loopen, ein-/ausblenden, stoppen) aus dem Lok-Zustand; die Ziel-Instanz spielt sie nur ab – egal welche Instanz oder welches fremde Programm die Lok fährt",
         "Zwei Loks mit verschiedenen Zielen spielen gleichzeitig verschiedene Geräusche; mehrere Loks dürfen dasselbe Ziel teilen (Mischung wie in Electrip 1)",
+        "Enthalten zwei Konfigurationen dieselbe Lok-Adresse mit verschiedenen Audio-Zielen, bekommen beide Ziele Ereignisse; die UI warnt darüber",
         "Trait AudioSink erlaubt weitere Zieltypen (Bluetooth direkt, WLAN-Empfänger) ohne Änderung der Sound-Modelle",
         "Latenz pro Ziel wird gemessen und dokumentiert"
       ],
@@ -837,10 +844,12 @@
   "glossary": {
     "Konfiguration": "Ein Satz aus Loks, logischen Aktionen, Eingabegeräte-Mappings, Zentralen-Verbindung und Audio-Zielen. Es kann mehrere Konfigurationen geben; mehrere Instanzen können dieselbe Konfiguration gleichzeitig nutzen und bearbeiten.",
     "Lok-Adresse": "Tupel aus Zentrale, Bus, Protokoll und Decoder-Adresse. Identifiziert eine physische Lok unabhängig von der Konfiguration.",
-    "Lok-Zustand": "Logischer Fahrzustand einer Lok-Adresse: Geschwindigkeit, Fahrtrichtung, Zustand jeder Decoder-Funktion. Ist über alle Instanzen und Konfigurationen hinweg synchron (Quelle: Rückmeldungen der Zentrale).",
+    "Lok-Zustand": "Laufzeit-Zustand einer Lok-Adresse: Geschwindigkeit, Fahrtrichtung, Funktionszustände, laufende Rampe, Sound-Phase. Gehört dem Sitzungs-Host der Zentrale und ist dadurch in allen Instanzen und Konfigurationen synchron. Nicht Teil der Konfiguration.",
     "Logische Aktion": "Vom Nutzer benannte, lokübergreifende Aktion (z. B. „Licht“, „Pfeife“). Eingabegeräte lösen Aktionen aus; jede Lok bildet Aktionen auf ihre Decoder-Funktionen und Geräusche ab.",
     "Eingebaute Aktion": "Fest vorhandene logische Aktion: Fahren (Achse), Richtungswender, Nothalt/Gleisstrom, vorige Lok, nächste Lok, Fokus, Fahrgeräusch an/aus.",
-    "Audio-Ziel": "Genau ein Abspielgerät pro Lok (AudioSink). Kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht."
+    "Audio-Ziel": "Genau ein Abspielgerät pro Lok (AudioSink). Kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht.",
+    "Zentralen-ID": "Eindeutige Kennung einer Zentrale: bei Z21 die Seriennummer, bei srcpd aufgelöste LAN-IP + Port + Bus.",
+    "Sitzungs-Host": "Rolle, die jede Instanz übernehmen kann: genau eine Instanz pro Zentrale ist mit der Zentrale verbunden, rechnet Rampen, Sound-Modelle und B-13 und verteilt den Lok-Zustand. Alle anderen Instanzen sind Clients. Eine einzelne Instanz ist Host und Client in einem Prozess."
   },
   "out_of_scope": [
     "Weichen, Signale und sonstiges Zubehör (SRCP-Gerätegruppe GA, Z21-Zubehördecoder)",
