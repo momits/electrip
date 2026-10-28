@@ -76,6 +76,9 @@ Jedes Inkrement wird vor dem Abschluss einmal gegen diese Liste geprüft. Grundl
 ## Tests
 
 - Jede Anforderung braucht die in `verification` genannten Prüfarten, bevor `verified` gesetzt wird.
+- Unit-Tests stehen in eigenen Dateien `tests.rs` (eingebunden mit `#[cfg(test)] mod tests;`) oder in `tests/`-Verzeichnissen – nie inline in Produktdateien. Nur so zählt `cargo xtask loc` sie nicht zum Zeilenbudget.
+- Befehle: `cargo xtask test` (fmt, Clippy, Schichtenregel, Tests), `cargo xtask loc`, `cargo xtask parity`, `cargo xtask review-check <basis>`.
+- Neue Crates heißen `electrip-<name>` unter `crates/<name>/` und müssen in `LAYERS` in `xtask/src/main.rs` eingetragen sein.
 - Tests geben kurz aus; Details gehen in Logdateien unter `target/test-logs/`. Fehlerzeilen beginnen mit `ERROR`.
 - Golden Files (Verhalten von Alt-Electrip) liegen unter `tests/golden/` und werden nur mit `cargo xtask golden --record` neu erzeugt – nie von Hand angepasst, damit ein Test grün wird.
 - Hardware gibt es in der Sitzung nicht. Hardware-Tests (`hw: true`) bereitet der Agent als Checkliste in `spec/hw-checklist.md` vor; durchführen tut sie Mo.
