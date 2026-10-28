@@ -4,7 +4,7 @@ Agenten tragen hier Widersprüche und Lücken ein; Mo beantwortet sie. Format: I
 
 ## Q-001 – 2026-10-26 – B-06
 **Frage:** Welche Adress- und Fahrstufenbereiche sollen pro Protokoll (M 1, M 2, N 1, N 2) gelten? Werden weitere Protokolle (z. B. mfx, Selectrix) gebraucht?
-**Antwort:** Bereiche wie Electrip 1 (`legacy/src/electrip/constants.py`, `PROTOCOLS`), übernommen in B-06. Weitere Protokolle: nicht in 2.0 (Annahme, Mo bitte bestätigen).
+**Antwort:** Bereiche wie Electrip 1 (`legacy/src/electrip/constants.py`, `PROTOCOLS`), übernommen in B-06. Weitere Protokolle (mfx, Selectrix): nicht in 2.0 (Mo, 2026-10-28).
 
 ## Q-002 – 2026-10-26 – B-21, N-04
 **Frage:** Welche echten Electrip-1-Konfigurationen und Lokpakete kann Mo für den Korpus beisteuern?
@@ -38,7 +38,7 @@ Agenten tragen hier Widersprüche und Lücken ein; Mo beantwortet sie. Format: I
 ## Q-008 – 2026-10-28 – B-23
 **Frage:** Braucht es zusätzlich zum anlagenweiten Nothalt (Gleisstrom aus) einen Nothalt für eine einzelne Lok?
 **Vorschlag:** Ja, als eingebaute Aktion „Lok-Nothalt“ (SRCP: Nothalt-Fahrmodus, Z21: Fahrstufe Nothalt); Gleisstrom bleibt an.
-**Antwort:** _offen_
+**Antwort:** Ja, Nothalt für die aktuell gesteuerte Lok zusätzlich zum anlagenweiten Nothalt; übernommen in B-23. (Mo, 2026-10-28)
 
 ## Q-009 – 2026-10-28 – B-22
 **Frage:** Welche Verbesserungen der Steuerungsansicht gegenüber Electrip 1 sind gewünscht?

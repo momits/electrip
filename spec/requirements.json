@@ -588,12 +588,13 @@
         "ref": "3, 3.1"
       },
       "title": "Lokwechsel, Nothalt und Gleisstrom",
-      "description": "Wechsel der gesteuerten Lok; Nothalt schaltet den Gleisstrom aus und wieder ein wie in Electrip 1.",
+      "description": "Wechsel der gesteuerten Lok; anlagenweiter Nothalt schaltet den Gleisstrom aus und wieder ein wie in Electrip 1; zusätzlich Nothalt nur für die eigene Lok.",
       "acceptance": [
         "Aktionen „vorige Lok“/„nächste Lok“ (Standard: Hat links/rechts) wechseln die gesteuerte Lok; gehalten nach 500 ms Auto-Scroll alle 60 ms (wie Electrip 1)",
         "Nothalt-Aktion bzw. -Knopf schaltet um: Gleisstrom aus (SRCP: SET <bus> POWER OFF), erneute Auslösung wieder an (POWER ON)",
         "Option „Gleisstrom beim Start der Steuerung automatisch einschalten“ (Standard an)",
-        "Zustand des Gleisstroms wird sofort angezeigt und ist über alle Instanzen an derselben Zentrale synchron"
+        "Zustand des Gleisstroms wird sofort angezeigt und ist über alle Instanzen an derselben Zentrale synchron",
+        "Eingebaute Aktion „Lok-Nothalt“: hält nur die Lok an, die das auslösende Eingabegerät gerade steuert (SRCP: Nothalt-Fahrmodus, Z21: Fahrstufe Nothalt); Gleisstrom bleibt an"
       ],
       "verification": [
         "virtual-gamepad",
@@ -846,7 +847,7 @@
     "Lok-Adresse": "Tupel aus Zentrale, Bus, Protokoll und Decoder-Adresse. Identifiziert eine physische Lok unabhängig von der Konfiguration.",
     "Lok-Zustand": "Laufzeit-Zustand einer Lok-Adresse: Geschwindigkeit, Fahrtrichtung, Funktionszustände, laufende Rampe, Sound-Phase. Gehört dem Sitzungs-Host der Zentrale und ist dadurch in allen Instanzen und Konfigurationen synchron. Nicht Teil der Konfiguration.",
     "Logische Aktion": "Vom Nutzer benannte, lokübergreifende Aktion (z. B. „Licht“, „Pfeife“). Eingabegeräte lösen Aktionen aus; jede Lok bildet Aktionen auf ihre Decoder-Funktionen und Geräusche ab.",
-    "Eingebaute Aktion": "Fest vorhandene logische Aktion: Fahren (Achse), Richtungswender, Nothalt/Gleisstrom, vorige Lok, nächste Lok, Fokus, Fahrgeräusch an/aus.",
+    "Eingebaute Aktion": "Fest vorhandene logische Aktion: Fahren (Achse), Richtungswender, Nothalt/Gleisstrom, Lok-Nothalt, vorige Lok, nächste Lok, Fokus, Fahrgeräusch an/aus.",
     "Audio-Ziel": "Genau ein Abspielgerät pro Lok (AudioSink). Kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht.",
     "Zentralen-ID": "Eindeutige Kennung einer Zentrale: bei Z21 die Seriennummer, bei srcpd aufgelöste LAN-IP + Port + Bus.",
     "Sitzungs-Host": "Rolle, die jede Instanz übernehmen kann: genau eine Instanz pro Zentrale ist mit der Zentrale verbunden, rechnet Rampen, Sound-Modelle und B-13 und verteilt den Lok-Zustand. Alle anderen Instanzen sind Clients. Eine einzelne Instanz ist Host und Client in einem Prozess."
