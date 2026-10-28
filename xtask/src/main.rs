@@ -1,5 +1,7 @@
 //! Project automation: `cargo xtask <command>`. See AGENTS.md.
 
+mod sim;
+
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -32,7 +34,10 @@ fn main() -> ExitCode {
         Some("loc") => loc(),
         Some("parity") => parity(),
         Some("review-check") => review_check(args.get(1).map(String::as_str)),
-        _ => Err("usage: cargo xtask <test | loc | parity | review-check [base]>".into()),
+        Some("sim") => sim::sim(args.get(1).map(String::as_str)),
+        _ => Err(
+            "usage: cargo xtask <test | loc | parity | review-check [base] | sim up|down>".into(),
+        ),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

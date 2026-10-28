@@ -8,6 +8,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-28 – Phase 0, Schritt 3b: srcpd-Simulator (Claude)
+
+- CI von Schritt 3a ist auf allen Plattformen grün.
+  Der macOS-Job war im ersten Lauf ohne Runner abgebrochen und lief beim Neustart durch.
+  N-06 steht deshalb auf `wired` und `verified`.
+- `sim/srcpd/`: Docker-Image mit srcpd 2.1.7 aus Debian trixie, Bus 1 ist ein Loopback-Bus wie in Electrip 1.
+- `cargo xtask sim up` baut und startet den Container auf `127.0.0.1:4303` und führt den Rauchtest aus.
+  Eine COMMAND-Sitzung setzt Lok 3, eine INFO-Sitzung muss die Meldung empfangen.
+  `cargo xtask sim down` entfernt den Container.
+- Neuer CI-Job „srcpd simulator“ auf Linux.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Gesamtfrist für den Rauchtest, Port nur an localhost, ein Stream statt zwei, Fehlerpräfix an einer Stelle.
+- Hinweis für lokale Sitzungen: Die Toolchain muss Edition 2024 können (Rust ≥ 1.85), sonst `rustup update stable`.
+
 ## 2026-10-28 – Phase 0, Schritt 3a: Workspace, xtask, CI (Claude)
 
 - Cargo-Workspace (Edition 2024) mit `crates/core` (`electrip-core`), `crates/electrip` (Binary) und `xtask`; Clippy verbietet `unwrap`/`expect`/`panic` im Produktcode.
@@ -49,7 +63,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 Details zu jedem Schritt: `spec/phase0-plan.md`.
 
 - [x] Schritt 3a: Cargo-Workspace mit leeren Crates, `xtask` (`test`, `loc`, `parity`, Check des Trailers `Simplicity-Review`), CI auf Linux/macOS/Windows
-- [ ] Schritt 3b: srcpd mit Loopback-Bus in Docker, `cargo xtask sim up`
+- [x] Schritt 3b: srcpd mit Loopback-Bus in Docker, `cargo xtask sim up`
 - [ ] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
 - [ ] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
 - [ ] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
