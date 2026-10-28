@@ -18,9 +18,12 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Eine COMMAND-Sitzung setzt Lok 3, eine INFO-Sitzung muss die Meldung empfangen.
   `cargo xtask sim down` entfernt den Container.
 - Neuer CI-Job „srcpd simulator“ auf Linux.
+  CI für `faa52ba` ist in allen sechs Jobs grün.
 - Einfachheits-Review: refactored (Sub-Agent).
   Übernommen: Gesamtfrist für den Rauchtest, Port nur an localhost, ein Stream statt zwei, Fehlerpräfix an einer Stelle.
 - Hinweis für lokale Sitzungen: Die Toolchain muss Edition 2024 können (Rust ≥ 1.85), sonst `rustup update stable`.
+- **Offen:** GitHub warnt, dass `actions/checkout@v4` noch Node 20 nutzt; bei Gelegenheit auf v5 umstellen.
+- **Nächster Schritt:** 3c, Golden-Harness für Electrip 1.
 
 ## 2026-10-28 – Phase 0, Schritt 3a: Workspace, xtask, CI (Claude)
 
