@@ -52,12 +52,12 @@
         "type": "handbuch",
         "ref": "2.2"
       },
-      "title": "Globale Gamepad-Belegung",
-      "description": "Allgemeine Aktionen werden Achsen und Knöpfen zugeordnet: Fahrachse, Richtungswender, Nothalt, Lokwechsel/Fokus, Fahrgeräusch.",
+      "title": "Eingebaute Aktionen",
+      "description": "Die eingebauten Aktionen (Fahren, Richtungswender, Nothalt/Gleisstrom, vorige/nächste Lok, Fokus, Fahrgeräusch an/aus) sind wie logische Aktionen über das Mapping des Eingabegeräts (N-01) belegbar.",
       "acceptance": [
-        "Jede Aktion ist einem Knopf oder einer Achse zuordenbar",
-        "Achsen-Totzone (Alt: axis_threshold = 0.06) ist konfigurierbar",
-        "Knöpfe werden mit ihrem echten Namen angezeigt, nicht als 0-basierte Nummer (kein „–1“-Versatz mehr)"
+        "Jede eingebaute Aktion ist einem Knopf, einer Achse oder einer Hat-Richtung zuordenbar",
+        "Achsen-Totzone ist pro Achse konfigurierbar (Alt-Standard 0.06)",
+        "Knöpfe werden mit dem Namen angezeigt, den das Gerät bzw. die Mapping-Datenbank liefert, nicht als Nummer"
       ],
       "verification": [
         "virtual-gamepad",
@@ -70,7 +70,7 @@
         "verified": false,
         "accepted": false
       },
-      "notes": "Wird durch N-01 auf Profile pro Gerätetyp erweitert. Alt-Felder: emergency_button, reverse_button, accel_axis, axis_threshold, focus_button, sound_button, use_auto_focus, show_function_nr."
+      "notes": "Alt-Felder: emergency_button, reverse_button, accel_axis, axis_threshold, focus_button, sound_button, use_auto_focus, show_function_nr."
     },
     {
       "id": "B-03",
@@ -81,8 +81,8 @@
       "title": "Mehrere Gamepads gleichzeitig",
       "description": "Bis zu 12 Gamepads steuern gleichzeitig verschiedene Loks; jedes Gamepad hat ein eigenes Farbsymbol.",
       "acceptance": [
-        "12 virtuelle Gamepads gleichzeitig angeschlossen, jedes steuert eine eigene Lok",
-        "Jedes Gamepad hat eine eindeutige Farbe/ein Symbol, das unter der gesteuerten Lok angezeigt wird",
+        "12 virtuelle Eingabegeräte gleichzeitig angeschlossen, jedes steuert eine eigene Lok",
+        "Jedes Eingabegerät hat eine eindeutige Farbe/ein Symbol, das unter der gesteuerten Lok angezeigt wird",
         "An- und Abstecken während des Betriebs wird ohne Neustart erkannt"
       ],
       "verification": [
@@ -179,13 +179,14 @@
         "type": "handbuch",
         "ref": "2.4.2"
       },
-      "title": "Lokfunktionen",
-      "description": "Digitalfunktionen des Decoders (F0…) mit Gamepad-Knopf, Umschalter- oder Tastermodus und Standardzustand.",
+      "title": "Lokfunktionen über logische Aktionen",
+      "description": "Jede Lok bildet logische Aktionen (N-07) auf Decoder-Funktionen (F0…) ab, mit Umschalter- oder Tastermodus und Standardzustand.",
       "acceptance": [
-        "Funktion mit Decoder-Nummer, Name, optionalem Knopf (kein Knopf möglich)",
-        "Umschalter: erster Druck an, zweiter aus. Taster: an, solange gedrückt",
+        "Pro Lok: Zuordnung logische Aktion → Funktionsnummer, Name, Modus, Standardzustand",
+        "Umschalter: erste Auslösung an, zweite aus. Taster: an, solange die Aktion gehalten wird",
         "Standardzustand „An“ kehrt Umschalter und Taster um",
-        "Funktionen anlegen, löschen, umsortieren"
+        "Zuordnungen anlegen, löschen, umsortieren; eine Aktion ohne Zuordnung bei der aktuellen Lok tut nichts",
+        "Funktionsnummern werden nicht gegen die Grenzen der Zentrale geprüft (siehe out_of_scope)"
       ],
       "verification": [
         "srcpd-loopback",
@@ -259,7 +260,8 @@
       "acceptance": [
         "Vollausschlag nach vorn beschleunigt in der eingestellten Dauer von 0 auf Vmax",
         "Leichter Ausschlag = leichte Beschleunigung; Vollausschlag zurück = Bremsung in der Bremsdauer",
-        "Die an die Zentrale gesendeten Fahrstufen über die Zeit stimmen mit Alt-Electrip überein (Golden-Test, Toleranz im Test festgelegt)"
+        "Die an die Zentrale gesendeten Fahrstufen über die Zeit stimmen mit Alt-Electrip überein (Golden-Test, Toleranz im Test festgelegt)",
+        "Richtungswender: setzt die Geschwindigkeit sofort auf 0 und wechselt dann die Fahrtrichtung"
       ],
       "verification": [
         "golden",
@@ -333,8 +335,9 @@
       "title": "Anfahren synchron zum Sound",
       "description": "Diesel- und E-Loks fahren erst los, wenn der Übergang Leerlauf → Segment 1 spielt, und halten erst beim Übergang Segment 1 → Leerlauf.",
       "acceptance": [
-        "Erste Fahrstufe > 0 wird erst mit Beginn des Übergangsgeräuschs gesendet",
-        "Fahrstufe 0 wird erst mit dem Bremsübergang zum Leerlauf gesendet"
+        "Erste Fahrstufe > 0 wird erst mit Beginn des Übergangsgeräuschs Leerlauf → Segment 1 gesendet",
+        "Fahrstufe 0 wird erst mit dem Bremsübergang Segment 1 → Leerlauf gesendet",
+        "Die Verzögerung ergibt sich aus der Länge der Übergangsdatei, nicht aus der tatsächlichen Wiedergabe – sie gilt also auch, wenn das Audio-Ziel der Lok an einer anderen Instanz hängt"
       ],
       "verification": [
         "srcpd-loopback",
@@ -408,7 +411,8 @@
       "title": "Geräusch-Funktionen",
       "description": "Geräusche, die wie Lokfunktionen per Knopf geschaltet werden.",
       "acceptance": [
-        "Vier Modi: Umschalter (Loop bis zum zweiten Druck), Taster einmal (höchstens einmal, Abbruch beim Loslassen), Taster wiederholt (Loop solange gedrückt), Anschalter (bis Dateiende, kein Eingriff)",
+        "Geräusch-Funktionen werden über logische Aktionen ausgelöst",
+        "Vier Modi: Umschalter (Loop bis zur zweiten Auslösung), Taster einmal (höchstens einmal, Abbruch beim Loslassen), Taster wiederholt (Loop solange gehalten), Anschalter (bis Dateiende, kein Eingriff)",
         "Anlegen, löschen, umsortieren wie Lokfunktionen"
       ],
       "verification": [
@@ -426,16 +430,17 @@
     {
       "id": "B-17",
       "source": {
-        "type": "handbuch",
-        "ref": "2.4.4c"
+        "type": "handbuch+legacy",
+        "ref": "Hb. 2.4.4c, legacy/src/electrip/config/json_model.py (event_sound_attributes)"
       },
       "title": "Geräusch-Ereignisse",
       "description": "Geräusche, die bei bestimmten Fahrzuständen automatisch ausgelöst werden (z. B. Bremsenquietschen).",
       "acceptance": [
-        "Auslösung bei vmin ≤ v ≤ vmax und amin ≤ a ≤ amax; leere Grenze = beliebig",
-        "Ereignis per Knopf aktivierbar/deaktivierbar",
+        "Funktionsumfang von Electrip 1 vollständig: Name, aktiv/inaktiv, Datei, Fahrtrichtung (vorwärts/rückwärts/beliebig), vmin, vmax, amin, amax, Einblenden (s), Ausblenden (s), bis zum Ende spielen",
+        "Auslösung bei passender Richtung und vmin ≤ v ≤ vmax und amin ≤ a ≤ amax; leere Grenze = beliebig",
+        "Ereignis per logischer Aktion aktivierbar/deaktivierbar",
         "Nur verfügbar, wenn ein Fahrgeräusch konfiguriert ist",
-        "Auslösezeitpunkte stimmen mit Alt-Electrip überein (Golden-Test)"
+        "Auslösezeitpunkte und Ein-/Ausblendverhalten stimmen mit Alt-Electrip überein (Golden-Test)"
       ],
       "verification": [
         "golden",
@@ -448,7 +453,7 @@
         "verified": false,
         "accepted": false
       },
-      "notes": "Alt-Code kennt zusätzlich Fahrtrichtung, fade_in, fade_out und play_to_end (nicht im Handbuch) – übernehmen."
+      "notes": "Verhalten im Zweifel aus legacy/ ableiten (control_ui.py, pygame_io.py)."
     },
     {
       "id": "B-18",
@@ -527,11 +532,12 @@
         "type": "handbuch",
         "ref": "2.5"
       },
-      "title": "Konfiguration speichern und laden",
-      "description": "Gesamtkonfiguration (Loks, Server, Gamepad, Sound).",
+      "title": "Mehrere Konfigurationen, Import aus Electrip 1",
+      "description": "Es kann mehrere Konfigurationen geben (siehe Glossar). Alt-JSON-Dateien aus Electrip 1 werden als Konfiguration importiert.",
       "acceptance": [
-        "Alt-JSON-Dateien aus Electrip 1 werden verlustfrei importiert",
-        "Neue Datenhaltung ist die CRDT-Bibliothek (N-04); JSON-Export bleibt möglich"
+        "Konfigurationen anlegen, umbenennen, löschen, wechseln",
+        "Alt-JSON-Dateien aus Electrip 1 werden verlustfrei als neue Konfiguration importiert",
+        "Export einer Konfiguration als Datei bleibt möglich"
       ],
       "verification": [
         "corpus",
@@ -554,8 +560,10 @@
       "title": "Steuerungsansicht",
       "description": "Regler pro Lok nebeneinander.",
       "acceptance": [
-        "Pro Lok: Name, Bild, vertikaler Geschwindigkeitsregler, optional Geräuschpegel-Balken, Richtungsknopf, Funktionsknöpfe, Symbol des steuernden Gamepads",
-        "Nothalt-Knopf am unteren Rand"
+        "Ausgangsbasis wie Electrip 1: Regler aller Loks fest nebeneinander in der Reihenfolge der Konfiguration, horizontal scrollbar",
+        "Pro Lok: Name, Bild, vertikaler Geschwindigkeitsregler, optional Geräuschpegel-Balken, Richtungsknopf, Funktionsknöpfe, Symbol des steuernden Eingabegeräts",
+        "Aktion „Fokus“ holt die vom Gerät gesteuerte Lok in den sichtbaren Bereich; Option „Auto-Fokus“ tut das bei jedem Lokwechsel",
+        "Nothalt-/Gleisstrom-Knopf am unteren Rand"
       ],
       "verification": [
         "screenshot",
@@ -567,7 +575,8 @@
         "wired": false,
         "verified": false,
         "accepted": false
-      }
+      },
+      "notes": "Mo ist offen für Verbesserungen der Ansicht; Vorschläge als Frage in spec/questions.md, nicht eigenmächtig umsetzen."
     },
     {
       "id": "B-23",
@@ -575,11 +584,13 @@
         "type": "handbuch",
         "ref": "3, 3.1"
       },
-      "title": "Lokwechsel und Nothalt",
-      "description": "Mit dem Hat-Switch zwischen Loks wechseln; Nothalt schaltet den Gleisstrom ab.",
+      "title": "Lokwechsel, Nothalt und Gleisstrom",
+      "description": "Wechsel der gesteuerten Lok; Nothalt schaltet den Gleisstrom aus und wieder ein wie in Electrip 1.",
       "acceptance": [
-        "Hat links/rechts wechselt zur vorherigen/nächsten Lok; Dauerdruck scrollt",
-        "Nothalt schaltet den Gleisstrom aus (SRCP: POWER OFF) und wird sofort angezeigt"
+        "Aktionen „vorige Lok“/„nächste Lok“ (Standard: Hat links/rechts) wechseln die gesteuerte Lok; gehalten nach 500 ms Auto-Scroll alle 60 ms (wie Electrip 1)",
+        "Nothalt-Aktion bzw. -Knopf schaltet um: Gleisstrom aus (SRCP: SET <bus> POWER OFF), erneute Auslösung wieder an (POWER ON)",
+        "Option „Gleisstrom beim Start der Steuerung automatisch einschalten“ (Standard an)",
+        "Zustand des Gleisstroms wird sofort angezeigt und ist über alle Instanzen an derselben Zentrale synchron"
       ],
       "verification": [
         "virtual-gamepad",
@@ -603,7 +614,7 @@
       "description": "Bedienung per Maus als Fallback; Start direkt im Steuerungsmodus.",
       "acceptance": [
         "Alle Steuerfunktionen per Maus erreichbar",
-        "Start mit -f/--file <datei> öffnet direkt die Steuerung"
+        "Start mit -f/--file <konfiguration> öffnet direkt die Steuerung dieser Konfiguration"
       ],
       "verification": [
         "control-channel"
@@ -617,17 +628,42 @@
       }
     },
     {
+      "id": "B-25",
+      "source": {
+        "type": "legacy",
+        "ref": "legacy/src/electrip/locale"
+      },
+      "title": "Sprachen Deutsch und Englisch",
+      "description": "Oberfläche wie in Electrip 1 auf Deutsch und Englisch.",
+      "acceptance": [
+        "Alle UI-Texte in Deutsch und Englisch",
+        "Sprache folgt der Systemsprache, Englisch als Rückfall"
+      ],
+      "verification": [
+        "unit",
+        "screenshot"
+      ],
+      "phase": 2,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
+    },
+    {
       "id": "N-01",
       "source": {
         "type": "neu",
         "ref": "Konzept 2026-10"
       },
-      "title": "Gamepad-Profile für verschiedene Geräte",
-      "description": "Mehrere Eingabegeräte mit unterschiedlichen Knöpfen und Layouts gleichzeitig; Belegung pro Gerätetyp als Profil.",
+      "title": "Eingabegeräte-Mappings",
+      "description": "Gamepads und Joysticks mit unterschiedlichen Knöpfen und Layouts. Pro Gerät(etyp) gibt es ein Mapping von Knöpfen, Achsen und Hat-Richtungen auf logische und eingebaute Aktionen.",
       "acceptance": [
-        "Drei virtuelle Gamepads mit Xbox-, PlayStation- und Generic-Layout steuern gleichzeitig drei Loks",
+        "Drei virtuelle Geräte (Xbox-Gamepad, PlayStation-Gamepad, Joystick) steuern gleichzeitig drei Loks mit je eigenem Mapping",
         "UI zeigt die Knopfnamen des jeweiligen Geräts",
-        "Unbekannte Geräte bekommen ein editierbares Standardprofil"
+        "Unbekannte Geräte bekommen ein editierbares Standard-Mapping",
+        "Andere Eingabegeräte (Tastatur, MIDI usw.) sind nicht Teil von 2.0"
       ],
       "verification": [
         "virtual-gamepad"
@@ -671,12 +707,13 @@
         "type": "neu",
         "ref": "Konzept 2026-10"
       },
-      "title": "Multi-Client an derselben Zentrale",
-      "description": "Mehrere Instanzen an derselben Zentrale lauschen auf Zustandsänderungen und bleiben synchron.",
+      "title": "Synchroner Lok-Zustand über alle Instanzen",
+      "description": "Der Lok-Zustand (siehe Glossar) einer Lok-Adresse ist in allen Instanzen synchron – auch wenn sie unterschiedliche Konfigurationen nutzen. Alles andere (Mappings, Aktionen, Sounds, Ansicht) darf pro Konfiguration verschieden sein.",
       "acceptance": [
-        "Drei Instanzen: eine Änderung in einer ist in den anderen innerhalb 300 ms sichtbar",
-        "Konkurrierende Steuerung derselben Lok wird gesperrt (SRCP LOCK) oder deutlich angezeigt",
-        "Auch Änderungen fremder Programme an der Zentrale werden übernommen"
+        "Drei Instanzen an derselben Zentrale, davon zwei mit verschiedenen Konfigurationen, die dieselbe Lok-Adresse enthalten: eine Änderung in einer Instanz ist in allen anderen innerhalb 300 ms sichtbar",
+        "Widersprüchliche Befehle: Der zuletzt an der Zentrale angekommene Befehl gilt; alle Instanzen zeigen den von der Zentrale zurückgemeldeten Zustand",
+        "Keine Sperren (kein SRCP LOCK); jede Instanz darf jede Lok fahren",
+        "Änderungen fremder Programme an der Zentrale werden ebenso übernommen"
       ],
       "verification": [
         "multi-client",
@@ -697,11 +734,11 @@
         "type": "neu",
         "ref": "Konzept 2026-10"
       },
-      "title": "Gemeinsame Lok-Datenbank",
-      "description": "Instanzen auf verschiedenen Geräten teilen Loks inklusive Bildern und Sounds (Automerge-CRDT, Sync-Rolle in jeder Instanz).",
+      "title": "Gemeinsam genutzte Konfiguration",
+      "description": "Mehrere Instanzen auf verschiedenen Geräten können dieselbe Konfiguration gleichzeitig nutzen und bearbeiten (Automerge-CRDT je Konfiguration, Sync-Rolle in jeder Instanz).",
       "acceptance": [
-        "Lok auf Gerät A angelegt erscheint auf Gerät B",
-        "Gleichzeitige Offline-Änderungen gehen nach dem Wiederverbinden nicht verloren",
+        "Lok auf Gerät A in Konfiguration K angelegt erscheint auf Gerät B, das ebenfalls K nutzt, inklusive Bild und Sounds",
+        "Offline-Änderungen werden nach dem Wiederverbinden zusammengeführt; ändern zwei Geräte dasselbe Feld, gilt die zuletzt synchronisierte Änderung (akzeptiert)",
         "Partner im LAN werden per mDNS gefunden; Medien per SHA-256 adressiert übertragen"
       ],
       "verification": [
@@ -722,10 +759,12 @@
         "type": "neu",
         "ref": "Konzept 2026-10"
       },
-      "title": "Audio-Ziel pro Lok",
-      "description": "Jede Lok bekommt ein eigenes Audio-Ziel. In 2.0 nur ein Zieltyp: ein vom Betriebssystem bereitgestelltes Audiogerät.",
+      "title": "Ein Audio-Ziel pro Lok",
+      "description": "Jeder Lok ist genau ein Audio-Ziel (AudioSink) zugeordnet. Das kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht. In 2.0 gibt es nur diesen einen Zieltyp; die Instanz auf diesem Rechner spielt den Sound der Lok.",
       "acceptance": [
-        "Zwei Loks spielen gleichzeitig verschiedene Geräusche auf zwei verschiedenen Audiogeräten",
+        "Das Audio-Ziel ist Teil der Lok in der Konfiguration und benennt Rechner/Instanz und Ausgabegerät eindeutig",
+        "Die Instanz, an der das Ziel hängt, spielt den Sound aus dem synchronen Lok-Zustand (N-03) – auch wenn eine andere Instanz oder ein fremdes Programm die Lok fährt",
+        "Zwei Loks mit verschiedenen Zielen spielen gleichzeitig verschiedene Geräusche; mehrere Loks dürfen dasselbe Ziel teilen (Mischung wie in Electrip 1)",
         "Trait AudioSink erlaubt weitere Zieltypen (Bluetooth direkt, WLAN-Empfänger) ohne Änderung der Sound-Modelle",
         "Latenz pro Ziel wird gemessen und dokumentiert"
       ],
@@ -763,6 +802,45 @@
         "verified": false,
         "accepted": false
       }
+    },
+    {
+      "id": "N-07",
+      "source": {
+        "type": "neu",
+        "ref": "Mo 2026-10-28"
+      },
+      "title": "Logische Aktionen",
+      "description": "Nutzer definieren beliebig viele benannte, lokübergreifende Aktionen (z. B. „Licht“). Eingabegeräte lösen Aktionen aus (N-01); jede Lok bildet Aktionen auf Decoder-Funktionen (B-07), Geräusch-Funktionen (B-16) und Geräusch-Ereignisse (B-17) ab.",
+      "acceptance": [
+        "Aktionen anlegen, umbenennen, löschen; Anzahl unbegrenzt",
+        "Eine Aktion wirkt auf die aktuell vom Eingabegerät gesteuerte Lok",
+        "Dieselbe Aktion kann bei verschiedenen Loks auf verschiedene Funktionsnummern zeigen",
+        "Aktionen gehören zur Konfiguration"
+      ],
+      "verification": [
+        "unit",
+        "virtual-gamepad",
+        "srcpd-loopback"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
     }
+  ],
+  "glossary": {
+    "Konfiguration": "Ein Satz aus Loks, logischen Aktionen, Eingabegeräte-Mappings, Zentralen-Verbindung und Audio-Zielen. Es kann mehrere Konfigurationen geben; mehrere Instanzen können dieselbe Konfiguration gleichzeitig nutzen und bearbeiten.",
+    "Lok-Adresse": "Tupel aus Zentrale, Bus, Protokoll und Decoder-Adresse. Identifiziert eine physische Lok unabhängig von der Konfiguration.",
+    "Lok-Zustand": "Logischer Fahrzustand einer Lok-Adresse: Geschwindigkeit, Fahrtrichtung, Zustand jeder Decoder-Funktion. Ist über alle Instanzen und Konfigurationen hinweg synchron (Quelle: Rückmeldungen der Zentrale).",
+    "Logische Aktion": "Vom Nutzer benannte, lokübergreifende Aktion (z. B. „Licht“, „Pfeife“). Eingabegeräte lösen Aktionen aus; jede Lok bildet Aktionen auf ihre Decoder-Funktionen und Geräusche ab.",
+    "Eingebaute Aktion": "Fest vorhandene logische Aktion: Fahren (Achse), Richtungswender, Nothalt/Gleisstrom, vorige Lok, nächste Lok, Fokus, Fahrgeräusch an/aus.",
+    "Audio-Ziel": "Genau ein Abspielgerät pro Lok (AudioSink). Kann die Soundkarte eines Rechners sein, auf dem eine Electrip-Instanz läuft, muss es aber nicht."
+  },
+  "out_of_scope": [
+    "Weichen, Signale und sonstiges Zubehör (SRCP-Gerätegruppe GA, Z21-Zubehördecoder)",
+    "Prüfung von Funktionsnummern gegen die Grenzen der Zentrale (falsche Nummer = Konfigurationsfehler des Nutzers)"
   ]
 }

@@ -1,7 +1,7 @@
 # Electrip 2 – Gesamtkonzept agentische Migration
 
 **Status:** Entwurf · Stand 26.10.2026 · Autor: Moritz Renftle
-Lebende Fassung: Claude Doc „Electrip 2 – Gesamtkonzept agentische Migration“. Diese Datei ist die Arbeitsgrundlage für die Agenten; Änderungen nur per Pull Request mit Freigabe durch Mo.
+Lebende Fassung: Claude Doc „Electrip 2 – Gesamtkonzept agentische Migration“. Diese Datei ist die Arbeitsgrundlage für die Agenten; Änderungen nur per Pull Request mit Freigabe durch Mo. **Bei Abweichungen gelten `spec/requirements.json` und `spec/decisions/` vor diesem Dokument.**
 
 ## Ziel & Leitprinzipien
 

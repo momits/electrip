@@ -8,6 +8,13 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-28 – Anforderungen nach Review durch Mo überarbeitet
+
+- Glossar und `out_of_scope` in `spec/requirements.json` ergänzt (Weichen/Signale raus).
+- Geändert: B-02, B-03, B-07, B-10 (Richtungswender), B-13, B-16, B-17 (voller Alt-Umfang), B-21 (mehrere Konfigurationen), B-22, B-23 (Gleisstrom wie Electrip 1), B-24, N-01 (Gamepads + Joysticks), N-03 (synchroner Lok-Zustand, keine Sperren), N-04 (gemeinsame Konfiguration), N-05 (ein Audio-Ziel pro Lok).
+- Neu: B-25 (Deutsch/Englisch), N-07 (logische Aktionen), ADR 0009; ADR 0003 und 0004 überarbeitet.
+- Offene Fragen Q-003 bis Q-011 mit Vorschlägen in `spec/questions.md`.
+
 ## 2026-10-27 – Einfachheits-Review eingeführt (Mo + Claude)
 
 - `AGENTS.md`: Pflicht-Review auf DRY, YAGNI, KISS nach jedem Inkrement, Commit-Trailer `Simplicity-Review`, ADR 0008.
