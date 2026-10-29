@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs agent sessions one after another with prompts/session.md (spec/phase0-plan.md, step 4).
-# Sessions run without permission checks, so the loop only starts inside the devcontainer.
+# Sessions run without permission checks, so the loop only starts behind the
+# devcontainer firewall, which allows outgoing traffic only through its proxy.
 # Each session logs to logs/. The loop ends when the file STOP exists.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -10,8 +11,8 @@ FAILURE_WAIT=60
 MAX_FAILURES=3
 RESUME_PROMPT="Das Nutzungslimit ist zurückgesetzt. Mach dort weiter, wo du aufgehört hast."
 
-if [ ! -f /.dockerenv ]; then
-  echo "ERROR loop.sh only runs inside the devcontainer" >&2
+if curl -s -o /dev/null --max-time 5 --noproxy '*' https://api.anthropic.com; then
+  echo "ERROR loop.sh only runs behind the devcontainer firewall" >&2
   exit 1
 fi
 mkdir -p logs

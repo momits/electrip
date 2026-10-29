@@ -59,8 +59,10 @@ Er folgt allein der Spezifikation.
 `crosscheck.py` spielt die Szenarien mit der unabhängigen Python-Bibliothek [z21aio](https://pypi.org/project/z21aio/) 1.0.7 durch.
 Ein Client schaltet, ein zweiter muss die Änderungen als Broadcast sehen.
 Der CI-Job „Z21 simulator“ führt die Gegenprobe aus.
+`requirements.txt` pinnt z21aio per SHA-256.
 
 ```sh
 cargo run -p electrip-sim-z21 &
-uv run --no-project --with z21aio==1.0.7 python sim/z21/crosscheck.py
+python3 -m venv /tmp/z21 && /tmp/z21/bin/pip install --require-hashes -r sim/z21/requirements.txt
+/tmp/z21/bin/python sim/z21/crosscheck.py
 ```

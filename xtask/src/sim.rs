@@ -1,5 +1,6 @@
-//! `cargo xtask sim up|down`: srcpd with a loopback bus in Docker
-//! (`sim/srcpd/`), checked by a smoke test over SRCP.
+//! `cargo xtask sim up|down`: srcpd with a loopback bus (`sim/srcpd/`),
+//! checked by a smoke test over SRCP. srcpd runs directly where it is
+//! installed, as in the devcontainer, which has no Docker; else in Docker.
 
 use crate::{Result, root};
 use std::io::{BufRead, BufReader, Write};
@@ -14,31 +15,62 @@ const ADDR: &str = "127.0.0.1:4303";
 pub fn sim(action: Option<&str>) -> Result {
     match action {
         Some("up") => up(),
-        Some("down") => docker(&["rm", "-f", NAME]),
+        Some("down") => stop(native()),
         _ => Err("usage: cargo xtask sim <up | down>".into()),
     }
 }
 
-/// Builds and (re)starts the container, then runs the smoke test.
+/// (Re)starts srcpd, then runs the smoke test.
 fn up() -> Result {
+    let native = native();
+    stop(native)?;
     let dir = root().join("sim/srcpd");
-    docker(&["build", "-q", "-t", NAME, &dir.to_string_lossy()])?;
-    docker(&["rm", "-f", NAME])?;
-    let port = format!("{ADDR}:4303");
-    docker(&["run", "-d", "--name", NAME, "-p", &port, NAME])?;
+    if native {
+        run("srcpd", &["-f", &dir.join("srcpd.conf").to_string_lossy()])?;
+    } else {
+        run(
+            "docker",
+            &["build", "-q", "-t", NAME, &dir.to_string_lossy()],
+        )?;
+        let port = format!("{ADDR}:4303");
+        run("docker", &["run", "-d", "--name", NAME, "-p", &port, NAME])?;
+    }
     smoke_test().map_err(|e| format!("smoke test: {e}"))?;
     println!("ok    sim up (srcpd on {ADDR}, loopback bus 1)");
     Ok(())
 }
 
-fn docker(args: &[&str]) -> Result {
-    let out = Command::new("docker")
+fn stop(native: bool) -> Result {
+    if !native {
+        return run("docker", &["rm", "-f", NAME]);
+    }
+    // srcpd may linger after SIGTERM, so kill it. pkill fails when no srcpd
+    // runs, which is fine.
+    let _ = Command::new("pkill")
+        .args(["-KILL", "-x", "srcpd"])
+        .status();
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while TcpStream::connect(ADDR).is_ok() {
+        if Instant::now() > deadline {
+            return Err("srcpd still running after pkill".into());
+        }
+        sleep(Duration::from_millis(100));
+    }
+    Ok(())
+}
+
+fn native() -> bool {
+    Command::new("srcpd").arg("-v").output().is_ok()
+}
+
+fn run(program: &str, args: &[&str]) -> Result {
+    let out = Command::new(program)
         .args(args)
         .output()
-        .map_err(|e| format!("docker: {e}"))?;
+        .map_err(|e| format!("{program}: {e}"))?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(format!("docker {}: {}", args.join(" "), err.trim()));
+        return Err(format!("{program} {}: {}", args.join(" "), err.trim()));
     }
     Ok(())
 }
@@ -64,8 +96,8 @@ fn smoke_test() -> Result {
 struct Session(BufReader<TcpStream>);
 
 impl Session {
-    /// Retries while srcpd starts up: until then, Docker's port proxy accepts
-    /// connections but closes them at once.
+    /// Retries while srcpd starts up. Until then, connections fail, or
+    /// Docker's port proxy accepts them but closes them at once.
     fn connect(mode: &str) -> Result<Self> {
         let deadline = Instant::now() + Duration::from_secs(10);
         loop {
