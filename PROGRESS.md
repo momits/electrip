@@ -8,6 +8,33 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-29 – Phase 0, Schritt 4: Loop und Devcontainer (Claude)
+
+- `.devcontainer/`: Image `devcontainers/rust:2-1-trixie` mit Claude Code, dazu die Features Docker-in-Docker und GitHub-CLI.
+  Python und jq bringt das Image schon mit.
+  Tokens `CLAUDE_CODE_OAUTH_TOKEN` und `GH_TOKEN` kommen aus der Umgebung des Rechners, Git pusht im Container über HTTPS mit `GH_TOKEN`.
+  Commits aus dem Container tragen den Autor „Claude (Electrip-Loop)“.
+  Anleitung in `.devcontainer/README.md`.
+- `loop.sh`: startet Sitzungen mit `prompts/session.md`, schreibt jede nach `logs/` und läuft nur im Container.
+  Beim Nutzungslimit wartet es 30 Minuten und setzt dieselbe Sitzung mit `--resume` fort.
+  Nach drei Fehlschlägen in Folge bricht es ab, die Datei `STOP` beendet es.
+- `prompts/session.md`: verweist auf `AGENTS.md` und ergänzt nur den Loop: abgebrochene Sitzung aufräumen, CI prüfen, Phasentore beachten, eine Aufgabe je Sitzung, `STOP` anlegen, wenn nur Mo weiterhelfen kann.
+- Entscheidung von Mo: Es arbeitet immer nur ein Agent, Sitzungen laufen nacheinander.
+  Die Sperrdateien in `current_tasks/` entfallen, ebenso das eigene `CARGO_TARGET_DIR` je Agent.
+  `AGENTS.md`, `spec/konzept.md` und ADR 0007 sind angepasst.
+- Ebenfalls von Mo: Jede Aufgabe kommt über einen eigenen, aussagekräftigen Pull Request nach `main`.
+  Der Agent merged ihn selbst mit Rebase, sobald die CI grün ist.
+  Die Regeln dazu stehen in `AGENTS.md` unter „Git“.
+- Getestet: Das Image baut, im Container sind `cargo xtask test`, `golden`, `corpus` und `loc` grün.
+  `loop.sh` lief im Container mit einem simulierten `claude` für Erfolg, Limit mit Fortsetzen, Fehlschläge und fehlende Ergebniszeile; außerhalb des Containers bricht es ab.
+  Format von `stream-json` und `--resume` mit dem echten `claude -p` geprüft.
+- **Nicht getestet:** `devcontainer up` mit den Features, also Docker-in-Docker mit `cargo xtask sim up`, GitHub-CLI, Push und Pull Requests aus dem Container.
+  Das prüft Mo beim Tor A.
+  Der genaue Wortlaut der Limit-Meldung ist nicht beobachtet; `loop.sh` erkennt „hit your … limit“ und „usage limit“.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Reihenfolge im Prompt, damit `git pull` nicht an einem schmutzigen Arbeitsbaum scheitert, Einträge in `.gitignore` an die Wurzel gebunden, fehlende Ergebniszeile ausdrücklich als Fehlschlag.
+- **Nächster Schritt:** Tor A, Freigabe durch Mo.
+
 ## 2026-10-29 – Phase 0, Schritt 3e: Z21-Simulator (Claude)
 
 - `sim/z21/`: Crate `electrip-sim-z21`, ein UDP-Server nach Roco „Z21 LAN Protokoll“ V1.13.
@@ -131,5 +158,5 @@ Details zu jedem Schritt: `spec/phase0-plan.md`.
 - [x] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
 - [x] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
 - [x] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
-- [ ] Schritt 4: `loop.sh` und Devcontainer
+- [x] Schritt 4: `loop.sh` und Devcontainer
 - [ ] Tor A: Freigabe durch Mo

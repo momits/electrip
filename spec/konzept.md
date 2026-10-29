@@ -118,25 +118,24 @@ Kein eigenes Agenten-Framework: Claude Code (headless) in Containern, gesteuert 
 
 **Steuerdateien im Repo:**
 
-- `AGENTS.md` – Regeln: Schichten nicht verletzen; jede Aktion zuerst als Befehl; kein `panic` außerhalb von Tests; Clippy ohne Warnungen; eigenes `CARGO_TARGET_DIR` pro Agent; neue Module statt wachsender Sammeldateien; Zeilenbudget von höchstens 12.000 Zeilen Produktcode, geprüft per `cargo xtask loc` in der CI – liegt der Code darüber, muss der nächste Pull Request zuerst Code abbauen; Abweichungen vom Handbuch als Frage in `spec/questions.md`.
+- `AGENTS.md` – Regeln: Schichten nicht verletzen; jede Aktion zuerst als Befehl; kein `panic` außerhalb von Tests; Clippy ohne Warnungen; neue Module statt wachsender Sammeldateien; Zeilenbudget von höchstens 12.000 Zeilen Produktcode, geprüft per `cargo xtask loc` in der CI – liegt der Code darüber, muss der nächste Pull Request zuerst Code abbauen; Abweichungen vom Handbuch als Frage in `spec/questions.md`.
 - `spec/requirements.json` – Paritätskatalog (B-xx, N-xx) mit Prüffällen und den drei Statusstufen; Agenten dürfen nur den Status ändern, nicht die Anforderung.
 - `spec/decisions/` – Architekturentscheidungen (ADRs), von Mo freigegeben.
 - `PROGRESS.md` – Fortschrittsprotokoll; jede Sitzung liest es zuerst und ergänzt es zuletzt.
-- `current_tasks/` – Sperrdateien, mit denen parallele Agenten eine Aufgabe beanspruchen.
 - `xtask` – `init`, `test`, `sim up`, `parity`, `corpus`, `golden`, `loc` als einheitliche Einstiegspunkte.
 
 **Ablauf einer Agenten-Sitzung:**
 
 1. Git-Log, `PROGRESS.md` und `cargo xtask parity` lesen.
 2. `cargo xtask sim up` und Rauchtest; ist etwas rot, zuerst reparieren.
-3. Eine offene Anforderung wählen und per Sperrdatei beanspruchen.
+3. Eine offene Anforderung wählen und dafür einen Branch anlegen.
 4. Umsetzen, Prüffälle schreiben bzw. grün machen, App über Steuerkanal selbst bedienen.
 5. Einfachheits-Review des Diffs gegen DRY, YAGNI und KISS (möglichst durch frischen Sub-Agenten); Befunde sofort refactoren, Tests wieder grün.
-6. Committen, Status in `requirements.json` setzen, `PROGRESS.md` ergänzen, Sperre lösen, pushen.
+6. Committen, Status in `requirements.json` setzen, `PROGRESS.md` ergänzen, Pull Request erstellen und nach grüner CI selbst mergen.
 
-**Loop und Laufzeit:** Ein Skript startet Sitzungen in Folge (`while`-Loop mit `claude -p`), jede in einem Devcontainer mit allen Simulatoren und vollen Rechten nur im Container. Wegen des gemeinsamen Nutzungslimits läuft standardmäßig ein Agent; die Struktur (eigener Klon pro Container, gemeinsames Upstream-Repo, Sperrdateien, Merge über Pull Requests) erlaubt trotzdem jederzeit einen zweiten. Die CI (Linux, macOS, Windows) muss grün sein, bevor gemergt wird.
+**Loop und Laufzeit:** Ein Skript startet Sitzungen in Folge (`while`-Loop mit `claude -p`), jede in einem Devcontainer mit allen Simulatoren und vollen Rechten nur im Container. Es arbeitet immer nur ein Agent, die Sitzungen laufen streng nacheinander; Sperren gegen parallele Agenten sind deshalb nicht nötig. Jede Aufgabe kommt über einen eigenen Pull Request nach `main`, den der Agent ohne Mo merged. Die CI (Linux, macOS, Windows) muss grün sein, bevor gemergt wird.
 
-**Rollen:** Programmier-Agent (bei Bedarf ein zweiter); ein Prüf-Agent je Phase bzw. für größere Pull Requests (Architekturregeln, Duplikate, Testqualität); ein Aufräum-Agent je Phase mit dem Ziel „weniger Zeilen bei gleich grünen Tests“; ein Doku-Agent pflegt das neue Benutzerhandbuch aus `requirements.json`.
+**Rollen:** Programmier-Agent; ein Prüf-Agent je Phase bzw. für größere Pull Requests (Architekturregeln, Duplikate, Testqualität); ein Aufräum-Agent je Phase mit dem Ziel „weniger Zeilen bei gleich grünen Tests“; ein Doku-Agent pflegt das neue Benutzerhandbuch aus `requirements.json`.
 
 ## Phasenplan
 
@@ -146,7 +145,7 @@ Die Agenten arbeiten autonom innerhalb einer Phase; zwischen den Phasen gibt Mo 
 | --- | --- | --- | --- |
 | 0 · Fundament | Mo + 1 Agent, interaktiv | Anforderungskatalog, ADRs, `AGENTS.md`, `xtask`, CI auf 3 Plattformen; srcpd-Loopback, Z21-Simulator, Golden-Tests aus Alt-Electrip, Korpus, Loop-Skript | A: Mo gibt Spezifikation und Prüfmittel frei |
 | 1 · Kern | 1 Agent im Loop | Befehls-Engine, Steuerkanal, srcpd-Treiber, Gamepad-Profile, Kennlinie, Beschleunigung, Import alter JSON- und ZIP-Dateien | B: B-01 bis B-10 verifiziert, Fahrtest an der echten Anlage |
-| 2 · Ausbau | 1 Agent, ggf. ein zweiter | Z21-Treiber, Sound-Modelle, Multi-Client, CRDT-Lok-Sync, Oberfläche, Audio-Ziel System-Audiogerät pro Lok | C: alle B- und N-Anforderungen im Paritätsbericht verifiziert |
+| 2 · Ausbau | 1 Agent im Loop | Z21-Treiber, Sound-Modelle, Multi-Client, CRDT-Lok-Sync, Oberfläche, Audio-Ziel System-Audiogerät pro Lok | C: alle B- und N-Anforderungen im Paritätsbericht verifiziert |
 | 3 · Abnahme | Mo + Loop für Fixes | Hardware-Checkliste je Release, Befunde als Issues zurück in den Loop; neues Benutzerhandbuch | D: Release Electrip 2.0 |
 
 Phase 0 ist die wichtigste: Ohne Simulatoren, Golden-Tests und Katalog produziert der Loop schnell Code, dessen Richtigkeit niemand prüfen kann.
@@ -175,9 +174,9 @@ Phase 0 ist die wichtigste: Ohne Simulatoren, Golden-Tests und Katalog produzier
 
 ## Budget und Laufzeit
 
-Der Loop läuft ausschließlich über Mos Claude-Team-Premium-Platz (Claude Code mit Abo-Login, auch headless mit `claude -p`). Begrenzend ist damit nicht Geld, sondern das Nutzungslimit des Platzes; alle Agenten teilen sich dasselbe Limit.
+Der Loop läuft ausschließlich über Mos Claude-Team-Premium-Platz (Claude Code mit Abo-Login, auch headless mit `claude -p`). Begrenzend ist damit nicht Geld, sondern das Nutzungslimit des Platzes; auch Prüf- und Aufräum-Agenten zählen darauf.
 
-- Standard ist **ein** Agent im Loop; ein zweiter nur, wenn das Limit es trägt.
+- Es läuft **ein** Agent im Loop, Sitzungen nacheinander.
 - Der Loop-Runner erkennt das Erreichen des Limits, beendet die Sitzung sauber (Commit, `PROGRESS.md`) und setzt nach dem Zurücksetzen des Limits fort.
 - Sitzungen bleiben kurz und fokussiert (eine Anforderung), Tests liefern knappe Ausgaben, Logs gehen in Dateien – das spart Kontext.
 - Prüf- und Aufräum-Agent laufen je Phase statt je Pull Request.
