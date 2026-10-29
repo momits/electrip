@@ -1,5 +1,6 @@
 //! Project automation: `cargo xtask <command>`. See AGENTS.md.
 
+mod golden;
 mod sim;
 
 use serde_json::Value;
@@ -35,9 +36,8 @@ fn main() -> ExitCode {
         Some("parity") => parity(),
         Some("review-check") => review_check(args.get(1).map(String::as_str)),
         Some("sim") => sim::sim(args.get(1).map(String::as_str)),
-        _ => Err(
-            "usage: cargo xtask <test | loc | parity | review-check [base] | sim up|down>".into(),
-        ),
+        Some("golden") => golden::golden(args.get(1).map(String::as_str)),
+        _ => Err("usage: cargo xtask <test | loc | parity | review-check [base] | sim up|down | golden [--record]>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

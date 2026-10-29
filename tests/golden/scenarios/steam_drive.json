@@ -1,0 +1,140 @@
+{
+ "requirements": [
+  "B-14"
+ ],
+ "config": {
+  "locos": [
+   {
+    "name": "BR 01",
+    "speed_steps": 128,
+    "max_speed": 100.0,
+    "address": 5,
+    "protocol": "N 1",
+    "accel_duration": 10.0,
+    "decel_duration": 7.0,
+    "direction": true,
+    "img_path": null,
+    "sound_volume": 0.8,
+    "speed_control_points": [
+     [
+      0,
+      1
+     ],
+     [
+      100,
+      128
+     ]
+    ],
+    "function_sounds": [],
+    "event_sounds": [],
+    "engine": {
+     "type": "steam",
+     "idle_sound": "steam/idle.wav",
+     "cylinder_steam_sound": "steam/cylinder.wav",
+     "nr_strokes": 4,
+     "stroke_start_delay": 2.0,
+     "wheel_diameter": 1.2,
+     "min_freq": 0.2,
+     "sound_segments": [
+      {
+       "start": 0,
+       "end": 40,
+       "stroke_sounds": [
+        "steam/slow1.wav",
+        "steam/slow2.wav",
+        "steam/slow3.wav",
+        "steam/slow4.wav"
+       ]
+      },
+      {
+       "start": 40,
+       "end": 100,
+       "stroke_sounds": [
+        "steam/fast1.wav",
+        "steam/fast2.wav",
+        "steam/fast3.wav",
+        "steam/fast4.wav"
+       ]
+      }
+     ]
+    },
+    "functions": []
+   }
+  ],
+  "server": {
+   "host": "localhost",
+   "port": 4303,
+   "bus": 1,
+   "power": true
+  },
+  "joystick": {
+   "emergency_button": 0,
+   "reverse_button": 1,
+   "accel_axis": 2,
+   "axis_threshold": 0.06,
+   "focus_button": 3,
+   "sound_button": 4,
+   "use_auto_focus": false,
+   "show_function_nr": false
+  },
+  "sound": {
+   "sampling_rate": 44100,
+   "show_level_bar": true
+  }
+ },
+ "sound_lengths": {
+  "steam/idle.wav": 2.0,
+  "steam/cylinder.wav": 1.6,
+  "steam/slow1.wav": 0.25,
+  "steam/slow2.wav": 0.25,
+  "steam/slow3.wav": 0.25,
+  "steam/slow4.wav": 0.25,
+  "steam/fast1.wav": 0.15,
+  "steam/fast2.wav": 0.15,
+  "steam/fast3.wav": 0.15,
+  "steam/fast4.wav": 0.15
+ },
+ "input": [
+  {
+   "t": 0.5,
+   "press": 4
+  },
+  {
+   "t": 0.6,
+   "release": 4
+  },
+  {
+   "t": 1.0,
+   "axis": -0.07
+  },
+  {
+   "t": 1.5,
+   "axis": 0.0
+  },
+  {
+   "t": 9.0,
+   "axis": -1.0
+  },
+  {
+   "t": 16.0,
+   "axis": 0.0
+  },
+  {
+   "t": 18.0,
+   "axis": 1.0
+  },
+  {
+   "t": 26.0,
+   "axis": 0.0
+  },
+  {
+   "t": 27.0,
+   "press": 4
+  },
+  {
+   "t": 27.1,
+   "release": 4
+  }
+ ],
+ "until": 30.0
+}

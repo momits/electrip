@@ -1,0 +1,194 @@
+{
+ "requirements": [
+  "B-17"
+ ],
+ "config": {
+  "locos": [
+   {
+    "name": "BR 01",
+    "speed_steps": 128,
+    "max_speed": 100.0,
+    "address": 5,
+    "protocol": "N 1",
+    "accel_duration": 10.0,
+    "decel_duration": 5.0,
+    "direction": true,
+    "img_path": null,
+    "sound_volume": 0.8,
+    "speed_control_points": [
+     [
+      0,
+      1
+     ],
+     [
+      100,
+      128
+     ]
+    ],
+    "function_sounds": [],
+    "event_sounds": [
+     {
+      "name": "Bremsenquietschen",
+      "state": true,
+      "button": 6,
+      "file_path": "event/squeal.wav",
+      "direction": null,
+      "min_speed": null,
+      "max_speed": 30.0,
+      "min_accel": null,
+      "max_accel": -2.0,
+      "fade_in": 0,
+      "fade_out": 0.5,
+      "play_to_end": false
+     },
+     {
+      "name": "Anfahrpfiff",
+      "state": true,
+      "button": 8,
+      "file_path": "event/whistle.wav",
+      "direction": true,
+      "min_speed": null,
+      "max_speed": 10.0,
+      "min_accel": 1.0,
+      "max_accel": null,
+      "fade_in": 0.3,
+      "fade_out": 0,
+      "play_to_end": true
+     },
+     {
+      "name": "Rollen",
+      "state": false,
+      "button": 7,
+      "file_path": "event/rolling.wav",
+      "direction": null,
+      "min_speed": 20.0,
+      "max_speed": null,
+      "min_accel": null,
+      "max_accel": null,
+      "fade_in": 1.0,
+      "fade_out": 1.0,
+      "play_to_end": false
+     }
+    ],
+    "engine": {
+     "type": "steam",
+     "idle_sound": "steam/idle.wav",
+     "cylinder_steam_sound": "steam/cylinder.wav",
+     "nr_strokes": 4,
+     "stroke_start_delay": 2.0,
+     "wheel_diameter": 1.2,
+     "min_freq": 0.2,
+     "sound_segments": [
+      {
+       "start": 0,
+       "end": 40,
+       "stroke_sounds": [
+        "steam/slow1.wav",
+        "steam/slow2.wav",
+        "steam/slow3.wav",
+        "steam/slow4.wav"
+       ]
+      },
+      {
+       "start": 40,
+       "end": 100,
+       "stroke_sounds": [
+        "steam/fast1.wav",
+        "steam/fast2.wav",
+        "steam/fast3.wav",
+        "steam/fast4.wav"
+       ]
+      }
+     ]
+    },
+    "functions": []
+   }
+  ],
+  "server": {
+   "host": "localhost",
+   "port": 4303,
+   "bus": 1,
+   "power": true
+  },
+  "joystick": {
+   "emergency_button": 0,
+   "reverse_button": 1,
+   "accel_axis": 2,
+   "axis_threshold": 0.06,
+   "focus_button": 3,
+   "sound_button": 4,
+   "use_auto_focus": false,
+   "show_function_nr": false
+  },
+  "sound": {
+   "sampling_rate": 44100,
+   "show_level_bar": true
+  }
+ },
+ "sound_lengths": {
+  "steam/idle.wav": 2.0,
+  "steam/cylinder.wav": 1.6,
+  "steam/slow1.wav": 0.25,
+  "steam/slow2.wav": 0.25,
+  "steam/slow3.wav": 0.25,
+  "steam/slow4.wav": 0.25,
+  "steam/fast1.wav": 0.15,
+  "steam/fast2.wav": 0.15,
+  "steam/fast3.wav": 0.15,
+  "steam/fast4.wav": 0.15,
+  "event/squeal.wav": 3.0,
+  "event/whistle.wav": 2.5,
+  "event/rolling.wav": 4.0
+ },
+ "input": [
+  {
+   "t": 0.5,
+   "axis": -1.0
+  },
+  {
+   "t": 4.0,
+   "axis": 0.0
+  },
+  {
+   "t": 5.0,
+   "press": 7
+  },
+  {
+   "t": 5.1,
+   "release": 7
+  },
+  {
+   "t": 6.0,
+   "press": 7
+  },
+  {
+   "t": 6.1,
+   "release": 7
+  },
+  {
+   "t": 8.0,
+   "axis": 1.0
+  },
+  {
+   "t": 12.0,
+   "axis": 0.0
+  },
+  {
+   "t": 13.0,
+   "press": 1
+  },
+  {
+   "t": 13.1,
+   "release": 1
+  },
+  {
+   "t": 14.0,
+   "axis": -1.0
+  },
+  {
+   "t": 16.0,
+   "axis": 0.0
+  }
+ ],
+ "until": 20.0
+}

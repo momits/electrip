@@ -1,0 +1,134 @@
+{"t": 0.0, "srcp": "SET CONNECTIONMODE SRCP COMMAND"}
+{"t": 0.0, "srcp": "GO"}
+{"t": 0.0, "srcp": "INIT 1 POWER"}
+{"t": 0.0, "srcp": "INIT 1 GL 5 N 1 128 0"}
+{"t": 0.0, "srcp": "SET 1 GL 5 1 0 128"}
+{"t": 0.0, "srcp": "SET 1 POWER ON"}
+{"t": 0.5, "input": {"axis": -1.0}}
+{"t": 0.5, "srcp": "SET 1 GL 5 1 1 128"}
+{"t": 0.55, "srcp": "SET 1 GL 5 1 2 128"}
+{"t": 0.6, "ch": 7, "sound": "event/whistle.wav", "ev": "start", "fade_in_ms": 300}
+{"t": 0.65, "srcp": "SET 1 GL 5 1 3 128"}
+{"t": 0.7, "srcp": "SET 1 GL 5 1 4 128"}
+{"t": 0.8, "srcp": "SET 1 GL 5 1 5 128"}
+{"t": 0.85, "srcp": "SET 1 GL 5 1 6 128"}
+{"t": 0.95, "srcp": "SET 1 GL 5 1 7 128"}
+{"t": 1.05, "srcp": "SET 1 GL 5 1 8 128"}
+{"t": 1.1, "srcp": "SET 1 GL 5 1 9 128"}
+{"t": 1.2, "srcp": "SET 1 GL 5 1 10 128"}
+{"t": 1.25, "srcp": "SET 1 GL 5 1 11 128"}
+{"t": 1.35, "srcp": "SET 1 GL 5 1 12 128"}
+{"t": 1.4, "srcp": "SET 1 GL 5 1 13 128"}
+{"t": 1.5, "srcp": "SET 1 GL 5 1 14 128"}
+{"t": 1.6, "srcp": "SET 1 GL 5 1 15 128"}
+{"t": 1.65, "srcp": "SET 1 GL 5 1 16 128"}
+{"t": 1.75, "srcp": "SET 1 GL 5 1 17 128"}
+{"t": 1.8, "srcp": "SET 1 GL 5 1 18 128"}
+{"t": 1.9, "srcp": "SET 1 GL 5 1 19 128"}
+{"t": 1.95, "srcp": "SET 1 GL 5 1 20 128"}
+{"t": 2.05, "srcp": "SET 1 GL 5 1 21 128"}
+{"t": 2.15, "srcp": "SET 1 GL 5 1 22 128"}
+{"t": 2.2, "srcp": "SET 1 GL 5 1 23 128"}
+{"t": 2.3, "srcp": "SET 1 GL 5 1 24 128"}
+{"t": 2.35, "srcp": "SET 1 GL 5 1 25 128"}
+{"t": 2.45, "srcp": "SET 1 GL 5 1 26 128"}
+{"t": 2.5, "srcp": "SET 1 GL 5 1 27 128"}
+{"t": 2.6, "srcp": "SET 1 GL 5 1 28 128"}
+{"t": 2.7, "srcp": "SET 1 GL 5 1 29 128"}
+{"t": 2.75, "srcp": "SET 1 GL 5 1 30 128"}
+{"t": 2.85, "srcp": "SET 1 GL 5 1 31 128"}
+{"t": 2.9, "srcp": "SET 1 GL 5 1 32 128"}
+{"t": 3.0, "srcp": "SET 1 GL 5 1 33 128"}
+{"t": 3.05, "srcp": "SET 1 GL 5 1 34 128"}
+{"t": 3.1, "ch": 7, "sound": "event/whistle.wav", "ev": "end"}
+{"t": 3.15, "srcp": "SET 1 GL 5 1 35 128"}
+{"t": 3.25, "srcp": "SET 1 GL 5 1 36 128"}
+{"t": 3.3, "srcp": "SET 1 GL 5 1 37 128"}
+{"t": 3.4, "srcp": "SET 1 GL 5 1 38 128"}
+{"t": 3.45, "srcp": "SET 1 GL 5 1 39 128"}
+{"t": 3.55, "srcp": "SET 1 GL 5 1 40 128"}
+{"t": 3.6, "srcp": "SET 1 GL 5 1 41 128"}
+{"t": 3.7, "srcp": "SET 1 GL 5 1 42 128"}
+{"t": 3.8, "srcp": "SET 1 GL 5 1 43 128"}
+{"t": 3.85, "srcp": "SET 1 GL 5 1 44 128"}
+{"t": 3.95, "srcp": "SET 1 GL 5 1 45 128"}
+{"t": 4.0, "input": {"axis": 0.0}}
+{"t": 5.0, "input": {"press": 7}}
+{"t": 5.1, "input": {"release": 7}}
+{"t": 6.0, "input": {"press": 7}}
+{"t": 6.0, "ch": 8, "sound": "event/rolling.wav", "ev": "start", "fade_in_ms": 1000}
+{"t": 6.1, "input": {"release": 7}}
+{"t": 8.0, "input": {"axis": 1.0}}
+{"t": 8.0, "srcp": "SET 1 GL 5 1 44 128"}
+{"t": 8.05, "srcp": "SET 1 GL 5 1 42 128"}
+{"t": 8.1, "srcp": "SET 1 GL 5 1 41 128"}
+{"t": 8.15, "srcp": "SET 1 GL 5 1 40 128"}
+{"t": 8.2, "ch": 6, "sound": "event/squeal.wav", "ev": "start"}
+{"t": 8.2, "srcp": "SET 1 GL 5 1 39 128"}
+{"t": 8.25, "srcp": "SET 1 GL 5 1 37 128"}
+{"t": 8.3, "srcp": "SET 1 GL 5 1 36 128"}
+{"t": 8.35, "srcp": "SET 1 GL 5 1 35 128"}
+{"t": 8.4, "srcp": "SET 1 GL 5 1 34 128"}
+{"t": 8.45, "srcp": "SET 1 GL 5 1 32 128"}
+{"t": 8.5, "srcp": "SET 1 GL 5 1 31 128"}
+{"t": 8.55, "srcp": "SET 1 GL 5 1 30 128"}
+{"t": 8.6, "srcp": "SET 1 GL 5 1 28 128"}
+{"t": 8.65, "srcp": "SET 1 GL 5 1 27 128"}
+{"t": 8.7, "srcp": "SET 1 GL 5 1 26 128"}
+{"t": 8.75, "srcp": "SET 1 GL 5 1 25 128"}
+{"t": 8.8, "srcp": "SET 1 GL 5 1 23 128"}
+{"t": 8.85, "srcp": "SET 1 GL 5 1 22 128"}
+{"t": 8.9, "srcp": "SET 1 GL 5 1 21 128"}
+{"t": 8.95, "srcp": "SET 1 GL 5 1 20 128"}
+{"t": 9.0, "srcp": "SET 1 GL 5 1 18 128"}
+{"t": 9.05, "srcp": "SET 1 GL 5 1 17 128"}
+{"t": 9.1, "srcp": "SET 1 GL 5 1 16 128"}
+{"t": 9.15, "srcp": "SET 1 GL 5 1 14 128"}
+{"t": 9.2, "srcp": "SET 1 GL 5 1 13 128"}
+{"t": 9.25, "srcp": "SET 1 GL 5 1 12 128"}
+{"t": 9.3, "srcp": "SET 1 GL 5 1 11 128"}
+{"t": 9.35, "srcp": "SET 1 GL 5 1 9 128"}
+{"t": 9.4, "srcp": "SET 1 GL 5 1 8 128"}
+{"t": 9.45, "srcp": "SET 1 GL 5 1 7 128"}
+{"t": 9.5, "srcp": "SET 1 GL 5 1 6 128"}
+{"t": 9.55, "srcp": "SET 1 GL 5 1 4 128"}
+{"t": 9.6, "srcp": "SET 1 GL 5 1 3 128"}
+{"t": 9.65, "srcp": "SET 1 GL 5 1 2 128"}
+{"t": 9.7, "srcp": "SET 1 GL 5 1 0 128"}
+{"t": 10.0, "ch": 8, "sound": "event/rolling.wav", "ev": "end"}
+{"t": 11.2, "ch": 6, "sound": "event/squeal.wav", "ev": "end"}
+{"t": 11.2, "ch": 6, "sound": "event/squeal.wav", "ev": "start"}
+{"t": 12.0, "input": {"axis": 0.0}}
+{"t": 13.0, "input": {"press": 1}}
+{"t": 13.0, "srcp": "SET 1 GL 5 0 0 128"}
+{"t": 13.1, "input": {"release": 1}}
+{"t": 14.0, "input": {"axis": -1.0}}
+{"t": 14.0, "ch": 6, "sound": "event/squeal.wav", "ev": "fade_out", "ms": 500}
+{"t": 14.0, "srcp": "SET 1 GL 5 0 1 128"}
+{"t": 14.05, "srcp": "SET 1 GL 5 0 2 128"}
+{"t": 14.15, "srcp": "SET 1 GL 5 0 3 128"}
+{"t": 14.2, "ch": 6, "sound": "event/squeal.wav", "ev": "end"}
+{"t": 14.2, "srcp": "SET 1 GL 5 0 4 128"}
+{"t": 14.3, "srcp": "SET 1 GL 5 0 5 128"}
+{"t": 14.35, "srcp": "SET 1 GL 5 0 6 128"}
+{"t": 14.45, "srcp": "SET 1 GL 5 0 7 128"}
+{"t": 14.55, "srcp": "SET 1 GL 5 0 8 128"}
+{"t": 14.6, "srcp": "SET 1 GL 5 0 9 128"}
+{"t": 14.7, "srcp": "SET 1 GL 5 0 10 128"}
+{"t": 14.75, "srcp": "SET 1 GL 5 0 11 128"}
+{"t": 14.85, "srcp": "SET 1 GL 5 0 12 128"}
+{"t": 14.9, "srcp": "SET 1 GL 5 0 13 128"}
+{"t": 15.0, "srcp": "SET 1 GL 5 0 14 128"}
+{"t": 15.1, "srcp": "SET 1 GL 5 0 15 128"}
+{"t": 15.15, "srcp": "SET 1 GL 5 0 16 128"}
+{"t": 15.25, "srcp": "SET 1 GL 5 0 17 128"}
+{"t": 15.3, "srcp": "SET 1 GL 5 0 18 128"}
+{"t": 15.4, "srcp": "SET 1 GL 5 0 19 128"}
+{"t": 15.45, "srcp": "SET 1 GL 5 0 20 128"}
+{"t": 15.55, "srcp": "SET 1 GL 5 0 21 128"}
+{"t": 15.65, "srcp": "SET 1 GL 5 0 22 128"}
+{"t": 15.7, "srcp": "SET 1 GL 5 0 23 128"}
+{"t": 15.8, "srcp": "SET 1 GL 5 0 24 128"}
+{"t": 15.85, "srcp": "SET 1 GL 5 0 25 128"}
+{"t": 15.95, "srcp": "SET 1 GL 5 0 26 128"}
+{"t": 16.0, "input": {"axis": 0.0}}

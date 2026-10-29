@@ -8,6 +8,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-28 – Phase 0, Schritt 3c: Golden-Harness für Electrip 1 (Claude)
+
+- `tools/legacy-harness/`: startet den unveränderten Code aus `legacy/` mit Fakes für GTK, pygame und Threads auf einer virtuellen Uhr.
+  Er zeichnet SRCP-Befehle, Eingaben und Sound-Ereignisse als JSON Lines auf.
+  Der Mixer folgt pygame 1.9.4 und SDL_mixer, Details in `tools/legacy-harness/README.md`.
+- Szenarien unter `tests/golden/scenarios/`, Golden Files unter `tests/golden/`:
+  `speed_curve` (B-08), `diesel_drive` (B-11, B-13), `steam_drive` (B-14), `event_sounds` (B-17).
+- `cargo xtask golden --record` zeichnet auf, `cargo xtask golden` prüft; der CI-Job „checks“ führt die Prüfung aus.
+  Die Ausgabe ist über mehrere Läufe und unter Python 3.9 und 3.12 identisch.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Thread- und Event-Fakes auf das Genutzte reduziert, No-op-Helfer zusammengelegt, Ereignis-Pumpe direkt, `STOP_EVENT` aus `legacy/` statt Kopie, klare Meldung bei fehlender Golden-Datei.
+  Golden Files nach dem Refactoring unverändert.
+- Neue Frage Q-013: Geräusch-Ereignisse in Electrip 1 prüfen alte Werte und beobachten die Geschwindigkeit nicht.
+  Soll Electrip 2 das nachbilden?
+- **Offen:** Q-013 (Mo); CI-Lauf nach dem Push.
+- **Nächster Schritt:** 3d, Korpus.
+
 ## 2026-10-28 – Phase 0, Schritt 3b: srcpd-Simulator (Claude)
 
 - CI von Schritt 3a ist auf allen Plattformen grün.
@@ -67,7 +84,7 @@ Details zu jedem Schritt: `spec/phase0-plan.md`.
 
 - [x] Schritt 3a: Cargo-Workspace mit leeren Crates, `xtask` (`test`, `loc`, `parity`, Check des Trailers `Simplicity-Review`), CI auf Linux/macOS/Windows
 - [x] Schritt 3b: srcpd mit Loopback-Bus in Docker, `cargo xtask sim up`
-- [ ] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
+- [x] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
 - [ ] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
 - [ ] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
 - [ ] Schritt 4: `loop.sh` und Devcontainer

@@ -59,3 +59,21 @@ Agenten tragen hier Widersprüche und Lücken ein; Mo beantwortet sie. Format: I
 **Frage:** In Electrip 1 erlaubt „N 1 – DCC mit kurzen Adressen“ dieselben Adressen wie „N 2“ (1–10239). Kurze DCC-Adressen gehen nach NMRA-Norm nur bis 127. Übernehmen oder korrigieren?
 **Vorschlag:** Korrigieren: N 1 = 1–127, N 2 = 1–10239. Alt-Konfigurationen mit N 1 und Adresse > 127 werden beim Import auf N 2 umgestellt.
 **Antwort:** Wie vorgeschlagen: N 1 = 1–127, Umstellung beim Import (B-06). (Mo, 2026-10-28)
+
+## Q-013 – 2026-10-28 – B-17
+**Frage:** Der Golden-Harness zeigt drei Eigenheiten der Geräusch-Ereignisse in Electrip 1 (`pygame_io.EventSoundPlayer`, `config/unsaved_changes.py`).
+Sie widersprechen dem Akzeptanzkriterium „Auslösung bei passender Richtung und vmin ≤ v ≤ vmax und amin ≤ a ≤ amax“.
+Soll Electrip 2 sie nachbilden, damit der Golden-Test `tests/golden/event_sounds.jsonl` grün wird?
+1. Beobachter laufen vor der Zuweisung und prüfen daher den alten Wert.
+   Beim Einschalten eines Ereignisses per Knopf zählt noch „aus“, beim Ausschalten noch „an“.
+   Im Golden-Test startet „Rollen“ erst beim Ausschalten.
+2. Aus demselben Grund prüft die Bedingung die Beschleunigung des vorigen Takts (50 ms zu spät).
+3. Die Geschwindigkeit wird nicht beobachtet.
+   Ein Ereignis nur mit vmin/vmax prüft seine Bedingung nur beim Start, bei Richtungs- oder Zustandswechsel und am Ende jeder Wiedergabe.
+   Außerdem gilt eine Grenze von 0 als „beliebig“.
+
+**Vorschlag:** Nicht nachbilden.
+Electrip 2 prüft die Bedingungen mit den aktuellen Werten bei jeder Änderung von Zustand, Richtung, v und a.
+Der Golden-Test für B-17 vergleicht dann nur Szenarien, in denen beide Verhalten übereinstimmen.
+Der Harness bleibt unverändert und zeichnet weiter das echte Alt-Verhalten auf.
+**Antwort:** _offen_

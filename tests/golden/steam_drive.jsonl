@@ -1,0 +1,516 @@
+{"t": 0.0, "srcp": "SET CONNECTIONMODE SRCP COMMAND"}
+{"t": 0.0, "srcp": "GO"}
+{"t": 0.0, "srcp": "INIT 1 POWER"}
+{"t": 0.0, "srcp": "INIT 1 GL 5 N 1 128 0"}
+{"t": 0.0, "srcp": "SET 1 GL 5 1 0 128"}
+{"t": 0.0, "srcp": "SET 1 POWER ON"}
+{"t": 0.5, "input": {"press": 4}}
+{"t": 0.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 0.6, "input": {"release": 4}}
+{"t": 1.0, "input": {"axis": -0.07}}
+{"t": 1.0, "srcp": "SET 1 GL 5 1 1 128"}
+{"t": 1.0, "ch": 0, "sound": "steam/cylinder.wav", "ev": "start"}
+{"t": 1.5, "input": {"axis": 0.0}}
+{"t": 2.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 2.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 2.6, "ch": 0, "sound": "steam/cylinder.wav", "ev": "end"}
+{"t": 3.0, "ch": 2, "sound": "steam/slow1.wav", "ev": "start"}
+{"t": 3.25, "ch": 2, "sound": "steam/slow1.wav", "ev": "end"}
+{"t": 4.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 4.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 6.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 6.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 8.0, "ch": 3, "sound": "steam/slow2.wav", "ev": "start"}
+{"t": 8.25, "ch": 3, "sound": "steam/slow2.wav", "ev": "end"}
+{"t": 8.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 8.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 9.0, "input": {"axis": -1.0}}
+{"t": 9.0, "srcp": "SET 1 GL 5 1 2 128"}
+{"t": 9.1, "srcp": "SET 1 GL 5 1 3 128"}
+{"t": 9.2, "srcp": "SET 1 GL 5 1 4 128"}
+{"t": 9.25, "srcp": "SET 1 GL 5 1 5 128"}
+{"t": 9.35, "srcp": "SET 1 GL 5 1 6 128"}
+{"t": 9.4, "srcp": "SET 1 GL 5 1 7 128"}
+{"t": 9.5, "srcp": "SET 1 GL 5 1 8 128"}
+{"t": 9.55, "srcp": "SET 1 GL 5 1 9 128"}
+{"t": 9.65, "srcp": "SET 1 GL 5 1 10 128"}
+{"t": 9.75, "srcp": "SET 1 GL 5 1 11 128"}
+{"t": 9.8, "srcp": "SET 1 GL 5 1 12 128"}
+{"t": 9.9, "srcp": "SET 1 GL 5 1 13 128"}
+{"t": 9.95, "srcp": "SET 1 GL 5 1 14 128"}
+{"t": 10.05, "srcp": "SET 1 GL 5 1 15 128"}
+{"t": 10.1, "srcp": "SET 1 GL 5 1 16 128"}
+{"t": 10.2, "srcp": "SET 1 GL 5 1 17 128"}
+{"t": 10.3, "srcp": "SET 1 GL 5 1 18 128"}
+{"t": 10.35, "srcp": "SET 1 GL 5 1 19 128"}
+{"t": 10.45, "srcp": "SET 1 GL 5 1 20 128"}
+{"t": 10.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 10.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 10.5, "srcp": "SET 1 GL 5 1 21 128"}
+{"t": 10.6, "srcp": "SET 1 GL 5 1 22 128"}
+{"t": 10.65, "srcp": "SET 1 GL 5 1 23 128"}
+{"t": 10.75, "srcp": "SET 1 GL 5 1 24 128"}
+{"t": 10.85, "srcp": "SET 1 GL 5 1 25 128"}
+{"t": 10.9, "srcp": "SET 1 GL 5 1 26 128"}
+{"t": 11.0, "srcp": "SET 1 GL 5 1 27 128"}
+{"t": 11.05, "srcp": "SET 1 GL 5 1 28 128"}
+{"t": 11.15, "srcp": "SET 1 GL 5 1 29 128"}
+{"t": 11.2, "srcp": "SET 1 GL 5 1 30 128"}
+{"t": 11.3, "srcp": "SET 1 GL 5 1 31 128"}
+{"t": 11.4, "srcp": "SET 1 GL 5 1 32 128"}
+{"t": 11.45, "srcp": "SET 1 GL 5 1 33 128"}
+{"t": 11.55, "srcp": "SET 1 GL 5 1 34 128"}
+{"t": 11.6, "srcp": "SET 1 GL 5 1 35 128"}
+{"t": 11.7, "srcp": "SET 1 GL 5 1 36 128"}
+{"t": 11.75, "srcp": "SET 1 GL 5 1 37 128"}
+{"t": 11.85, "srcp": "SET 1 GL 5 1 38 128"}
+{"t": 11.95, "srcp": "SET 1 GL 5 1 39 128"}
+{"t": 12.0, "srcp": "SET 1 GL 5 1 40 128"}
+{"t": 12.1, "srcp": "SET 1 GL 5 1 41 128"}
+{"t": 12.15, "srcp": "SET 1 GL 5 1 42 128"}
+{"t": 12.25, "srcp": "SET 1 GL 5 1 43 128"}
+{"t": 12.35, "srcp": "SET 1 GL 5 1 44 128"}
+{"t": 12.4, "srcp": "SET 1 GL 5 1 45 128"}
+{"t": 12.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 12.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 12.5, "srcp": "SET 1 GL 5 1 46 128"}
+{"t": 12.55, "srcp": "SET 1 GL 5 1 47 128"}
+{"t": 12.65, "srcp": "SET 1 GL 5 1 48 128"}
+{"t": 12.7, "srcp": "SET 1 GL 5 1 49 128"}
+{"t": 12.8, "srcp": "SET 1 GL 5 1 50 128"}
+{"t": 12.9, "srcp": "SET 1 GL 5 1 51 128"}
+{"t": 12.95, "srcp": "SET 1 GL 5 1 52 128"}
+{"t": 13.0, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 13.05, "srcp": "SET 1 GL 5 1 53 128"}
+{"t": 13.084087, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 13.1, "srcp": "SET 1 GL 5 1 54 128"}
+{"t": 13.15, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 13.166141, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 13.2, "srcp": "SET 1 GL 5 1 55 128"}
+{"t": 13.234087, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 13.246257, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 13.25, "srcp": "SET 1 GL 5 1 56 128"}
+{"t": 13.316141, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 13.325438, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 13.35, "srcp": "SET 1 GL 5 1 57 128"}
+{"t": 13.396257, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 13.402814, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 13.45, "srcp": "SET 1 GL 5 1 58 128"}
+{"t": 13.475438, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 13.478464, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 13.5, "srcp": "SET 1 GL 5 1 59 128"}
+{"t": 13.552814, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 13.55328, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 13.6, "srcp": "SET 1 GL 5 1 60 128"}
+{"t": 13.626482, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 13.628464, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 13.65, "srcp": "SET 1 GL 5 1 61 128"}
+{"t": 13.698903, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 13.70328, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 13.75, "srcp": "SET 1 GL 5 1 62 128"}
+{"t": 13.770559, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 13.776482, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 13.8, "srcp": "SET 1 GL 5 1 63 128"}
+{"t": 13.840733, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 13.848903, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 13.9, "srcp": "SET 1 GL 5 1 64 128"}
+{"t": 13.910189, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 13.920559, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 13.978252, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 13.990733, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 14.0, "srcp": "SET 1 GL 5 1 65 128"}
+{"t": 14.045639, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 14.05, "srcp": "SET 1 GL 5 1 66 128"}
+{"t": 14.060189, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 14.112363, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 14.128252, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 14.15, "srcp": "SET 1 GL 5 1 67 128"}
+{"t": 14.1778, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 14.195639, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 14.2, "srcp": "SET 1 GL 5 1 68 128"}
+{"t": 14.242612, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 14.262363, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 14.3, "srcp": "SET 1 GL 5 1 69 128"}
+{"t": 14.306811, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 14.3278, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 14.35, "srcp": "SET 1 GL 5 1 70 128"}
+{"t": 14.369818, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 14.392612, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 14.432245, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 14.45, "srcp": "SET 1 GL 5 1 71 128"}
+{"t": 14.456811, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 14.494103, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 14.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 14.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 14.519818, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 14.55, "srcp": "SET 1 GL 5 1 72 128"}
+{"t": 14.555402, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 14.582245, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 14.6, "srcp": "SET 1 GL 5 1 73 128"}
+{"t": 14.615614, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 14.644103, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 14.675296, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 14.7, "srcp": "SET 1 GL 5 1 74 128"}
+{"t": 14.705402, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 14.734458, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 14.75, "srcp": "SET 1 GL 5 1 75 128"}
+{"t": 14.765614, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 14.793108, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 14.825296, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 14.85, "srcp": "SET 1 GL 5 1 76 128"}
+{"t": 14.851256, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 14.884458, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 14.9, "srcp": "SET 1 GL 5 1 77 128"}
+{"t": 14.908424, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 14.943108, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 14.965114, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 15.0, "srcp": "SET 1 GL 5 1 78 128"}
+{"t": 15.001256, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 15.021335, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 15.058424, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 15.077094, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 15.1, "srcp": "SET 1 GL 5 1 79 128"}
+{"t": 15.115114, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 15.132398, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 15.15, "srcp": "SET 1 GL 5 1 80 128"}
+{"t": 15.171335, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 15.187255, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 15.227094, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 15.241672, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 15.25, "srcp": "SET 1 GL 5 1 81 128"}
+{"t": 15.282398, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 15.295656, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 15.3, "srcp": "SET 1 GL 5 1 82 128"}
+{"t": 15.337255, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 15.349214, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 15.391672, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 15.4, "srcp": "SET 1 GL 5 1 83 128"}
+{"t": 15.402353, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 15.445656, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 15.454673, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 15.499214, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 15.5, "srcp": "SET 1 GL 5 1 84 128"}
+{"t": 15.506592, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 15.55, "srcp": "SET 1 GL 5 1 85 128"}
+{"t": 15.552353, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 15.558117, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 15.604673, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 15.609254, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 15.65, "srcp": "SET 1 GL 5 1 86 128"}
+{"t": 15.656592, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 15.660008, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 15.7, "srcp": "SET 1 GL 5 1 87 128"}
+{"t": 15.708117, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 15.710385, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 15.759254, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 15.760391, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 15.8, "srcp": "SET 1 GL 5 1 88 128"}
+{"t": 15.810008, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 15.810031, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 15.85, "srcp": "SET 1 GL 5 1 89 128"}
+{"t": 15.859311, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 15.860385, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 15.908236, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 15.910391, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 15.95, "srcp": "SET 1 GL 5 1 90 128"}
+{"t": 15.95681, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 15.960031, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 16.0, "input": {"axis": 0.0}}
+{"t": 16.005039, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 16.009311, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 16.053268, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 16.058236, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 16.101497, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 16.10681, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 16.149726, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 16.155039, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 16.197955, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 16.203268, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 16.246184, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 16.251497, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 16.294413, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 16.299726, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 16.342642, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 16.347955, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 16.390871, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 16.396184, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 16.4391, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 16.444413, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 16.487329, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 16.492642, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 16.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 16.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 16.535558, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 16.540871, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 16.583787, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 16.5891, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 16.632016, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 16.637329, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 16.680245, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 16.685558, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 16.728474, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 16.733787, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 16.776703, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 16.782016, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 16.824932, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 16.830245, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 16.873161, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 16.878474, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 16.92139, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 16.926703, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 16.969619, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 16.974932, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 17.017848, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 17.023161, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 17.066077, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 17.07139, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 17.114306, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 17.119619, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 17.162535, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 17.167848, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 17.210764, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 17.216077, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 17.258993, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 17.264306, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 17.307222, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 17.312535, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 17.355451, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 17.360764, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 17.40368, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 17.408993, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 17.451909, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 17.457222, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 17.500138, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 17.505451, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 17.548367, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 17.55368, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 17.596596, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 17.601909, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 17.644825, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 17.650138, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 17.693054, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 17.698367, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 17.741283, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 17.746596, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 17.789512, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 17.794825, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 17.837741, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 17.843054, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 17.88597, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 17.891283, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 17.934199, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 17.939512, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 17.982428, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 17.987741, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 18.0, "input": {"axis": 1.0}}
+{"t": 18.0, "srcp": "SET 1 GL 5 1 89 128"}
+{"t": 18.030657, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 18.03597, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 18.05, "srcp": "SET 1 GL 5 1 88 128"}
+{"t": 18.079381, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 18.084199, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 18.1, "srcp": "SET 1 GL 5 1 87 128"}
+{"t": 18.12861, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 18.132428, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 18.15, "srcp": "SET 1 GL 5 1 86 128"}
+{"t": 18.178354, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 18.180657, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 18.2, "srcp": "SET 1 GL 5 1 85 128"}
+{"t": 18.228625, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 18.229381, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 18.25, "srcp": "SET 1 GL 5 1 84 128"}
+{"t": 18.27861, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 18.279434, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 18.3, "srcp": "SET 1 GL 5 1 83 128"}
+{"t": 18.328354, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 18.330792, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 18.378625, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 18.382711, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 18.4, "srcp": "SET 1 GL 5 1 82 128"}
+{"t": 18.429434, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 18.435204, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 18.45, "srcp": "SET 1 GL 5 1 81 128"}
+{"t": 18.480792, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 18.488284, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 18.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 18.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 18.5, "srcp": "SET 1 GL 5 1 80 128"}
+{"t": 18.532711, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 18.541963, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 18.55, "srcp": "SET 1 GL 5 1 79 128"}
+{"t": 18.585204, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 18.596256, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 18.6, "srcp": "SET 1 GL 5 1 78 128"}
+{"t": 18.638284, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 18.65, "srcp": "SET 1 GL 5 1 77 128"}
+{"t": 18.651177, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 18.691963, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 18.7, "srcp": "SET 1 GL 5 1 76 128"}
+{"t": 18.707398, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 18.746256, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 18.75, "srcp": "SET 1 GL 5 1 75 128"}
+{"t": 18.764292, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 18.8, "srcp": "SET 1 GL 5 1 74 128"}
+{"t": 18.801177, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 18.821876, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 18.857398, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 18.880166, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 18.9, "srcp": "SET 1 GL 5 1 73 128"}
+{"t": 18.914292, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 18.939181, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 18.95, "srcp": "SET 1 GL 5 1 72 128"}
+{"t": 18.971876, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 18.998938, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 19.0, "srcp": "SET 1 GL 5 1 71 128"}
+{"t": 19.030166, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 19.05, "srcp": "SET 1 GL 5 1 70 128"}
+{"t": 19.059456, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 19.089181, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 19.1, "srcp": "SET 1 GL 5 1 69 128"}
+{"t": 19.121557, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 19.148938, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 19.15, "srcp": "SET 1 GL 5 1 68 128"}
+{"t": 19.18448, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 19.2, "srcp": "SET 1 GL 5 1 67 128"}
+{"t": 19.209456, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 19.248248, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 19.25, "srcp": "SET 1 GL 5 1 66 128"}
+{"t": 19.271557, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 19.3, "srcp": "SET 1 GL 5 1 65 128"}
+{"t": 19.312884, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 19.33448, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 19.35, "srcp": "SET 1 GL 5 1 64 128"}
+{"t": 19.379328, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 19.398248, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 19.446715, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 19.45, "srcp": "SET 1 GL 5 1 63 128"}
+{"t": 19.462884, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 19.5, "srcp": "SET 1 GL 5 1 62 128"}
+{"t": 19.515071, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 19.529328, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 19.55, "srcp": "SET 1 GL 5 1 61 128"}
+{"t": 19.585453, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 19.596715, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 19.6, "srcp": "SET 1 GL 5 1 60 128"}
+{"t": 19.65, "srcp": "SET 1 GL 5 1 59 128"}
+{"t": 19.656894, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 19.665071, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 19.7, "srcp": "SET 1 GL 5 1 58 128"}
+{"t": 19.73055, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 19.735453, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 19.75, "srcp": "SET 1 GL 5 1 57 128"}
+{"t": 19.8, "srcp": "SET 1 GL 5 1 56 128"}
+{"t": 19.805366, "ch": 5, "sound": "steam/fast4.wav", "ev": "start"}
+{"t": 19.806894, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 19.85, "srcp": "SET 1 GL 5 1 55 128"}
+{"t": 19.88055, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 19.882616, "ch": 2, "sound": "steam/fast1.wav", "ev": "start"}
+{"t": 19.9, "srcp": "SET 1 GL 5 1 54 128"}
+{"t": 19.955366, "ch": 5, "sound": "steam/fast4.wav", "ev": "end"}
+{"t": 19.961143, "ch": 3, "sound": "steam/fast2.wav", "ev": "start"}
+{"t": 20.0, "srcp": "SET 1 GL 5 1 53 128"}
+{"t": 20.032616, "ch": 2, "sound": "steam/fast1.wav", "ev": "end"}
+{"t": 20.042355, "ch": 4, "sound": "steam/fast3.wav", "ev": "start"}
+{"t": 20.05, "srcp": "SET 1 GL 5 1 52 128"}
+{"t": 20.1, "srcp": "SET 1 GL 5 1 51 128"}
+{"t": 20.111143, "ch": 3, "sound": "steam/fast2.wav", "ev": "end"}
+{"t": 20.12498, "ch": 5, "sound": "steam/slow4.wav", "ev": "start"}
+{"t": 20.15, "srcp": "SET 1 GL 5 1 50 128"}
+{"t": 20.192355, "ch": 4, "sound": "steam/fast3.wav", "ev": "end"}
+{"t": 20.2, "srcp": "SET 1 GL 5 1 49 128"}
+{"t": 20.210583, "ch": 2, "sound": "steam/slow1.wav", "ev": "start"}
+{"t": 20.25, "srcp": "SET 1 GL 5 1 48 128"}
+{"t": 20.299386, "ch": 3, "sound": "steam/slow2.wav", "ev": "start"}
+{"t": 20.3, "srcp": "SET 1 GL 5 1 47 128"}
+{"t": 20.35, "srcp": "SET 1 GL 5 1 46 128"}
+{"t": 20.37498, "ch": 5, "sound": "steam/slow4.wav", "ev": "end"}
+{"t": 20.389881, "ch": 4, "sound": "steam/slow3.wav", "ev": "start"}
+{"t": 20.4, "srcp": "SET 1 GL 5 1 45 128"}
+{"t": 20.45, "srcp": "SET 1 GL 5 1 44 128"}
+{"t": 20.460583, "ch": 2, "sound": "steam/slow1.wav", "ev": "end"}
+{"t": 20.483961, "ch": 5, "sound": "steam/slow4.wav", "ev": "start"}
+{"t": 20.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 20.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 20.549386, "ch": 3, "sound": "steam/slow2.wav", "ev": "end"}
+{"t": 20.55, "srcp": "SET 1 GL 5 1 43 128"}
+{"t": 20.581921, "ch": 2, "sound": "steam/slow1.wav", "ev": "start"}
+{"t": 20.6, "srcp": "SET 1 GL 5 1 42 128"}
+{"t": 20.639881, "ch": 4, "sound": "steam/slow3.wav", "ev": "end"}
+{"t": 20.65, "srcp": "SET 1 GL 5 1 41 128"}
+{"t": 20.684095, "ch": 3, "sound": "steam/slow2.wav", "ev": "start"}
+{"t": 20.7, "srcp": "SET 1 GL 5 1 40 128"}
+{"t": 20.733961, "ch": 5, "sound": "steam/slow4.wav", "ev": "end"}
+{"t": 20.75, "srcp": "SET 1 GL 5 1 39 128"}
+{"t": 20.790863, "ch": 4, "sound": "steam/slow3.wav", "ev": "start"}
+{"t": 20.8, "srcp": "SET 1 GL 5 1 38 128"}
+{"t": 20.831921, "ch": 2, "sound": "steam/slow1.wav", "ev": "end"}
+{"t": 20.85, "srcp": "SET 1 GL 5 1 37 128"}
+{"t": 20.9, "srcp": "SET 1 GL 5 1 36 128"}
+{"t": 20.902656, "ch": 5, "sound": "steam/slow4.wav", "ev": "start"}
+{"t": 20.934095, "ch": 3, "sound": "steam/slow2.wav", "ev": "end"}
+{"t": 20.95, "srcp": "SET 1 GL 5 1 35 128"}
+{"t": 21.022942, "ch": 2, "sound": "steam/slow1.wav", "ev": "start"}
+{"t": 21.040863, "ch": 4, "sound": "steam/slow3.wav", "ev": "end"}
+{"t": 21.05, "srcp": "SET 1 GL 5 1 34 128"}
+{"t": 21.1, "srcp": "SET 1 GL 5 1 33 128"}
+{"t": 21.149645, "ch": 3, "sound": "steam/slow2.wav", "ev": "start"}
+{"t": 21.15, "srcp": "SET 1 GL 5 1 32 128"}
+{"t": 21.152656, "ch": 5, "sound": "steam/slow4.wav", "ev": "end"}
+{"t": 21.2, "srcp": "SET 1 GL 5 1 31 128"}
+{"t": 21.25, "srcp": "SET 1 GL 5 1 30 128"}
+{"t": 21.272942, "ch": 2, "sound": "steam/slow1.wav", "ev": "end"}
+{"t": 21.283488, "ch": 4, "sound": "steam/slow3.wav", "ev": "start"}
+{"t": 21.3, "srcp": "SET 1 GL 5 1 29 128"}
+{"t": 21.35, "srcp": "SET 1 GL 5 1 28 128"}
+{"t": 21.399645, "ch": 3, "sound": "steam/slow2.wav", "ev": "end"}
+{"t": 21.4, "srcp": "SET 1 GL 5 1 27 128"}
+{"t": 21.42969, "ch": 5, "sound": "steam/slow4.wav", "ev": "start"}
+{"t": 21.45, "srcp": "SET 1 GL 5 1 26 128"}
+{"t": 21.5, "srcp": "SET 1 GL 5 1 25 128"}
+{"t": 21.533488, "ch": 4, "sound": "steam/slow3.wav", "ev": "end"}
+{"t": 21.590765, "ch": 2, "sound": "steam/slow1.wav", "ev": "start"}
+{"t": 21.6, "srcp": "SET 1 GL 5 1 24 128"}
+{"t": 21.65, "srcp": "SET 1 GL 5 1 23 128"}
+{"t": 21.67969, "ch": 5, "sound": "steam/slow4.wav", "ev": "end"}
+{"t": 21.7, "srcp": "SET 1 GL 5 1 22 128"}
+{"t": 21.75, "srcp": "SET 1 GL 5 1 21 128"}
+{"t": 21.770081, "ch": 3, "sound": "steam/slow2.wav", "ev": "start"}
+{"t": 21.8, "srcp": "SET 1 GL 5 1 20 128"}
+{"t": 21.840765, "ch": 2, "sound": "steam/slow1.wav", "ev": "end"}
+{"t": 21.85, "srcp": "SET 1 GL 5 1 19 128"}
+{"t": 21.9, "srcp": "SET 1 GL 5 1 18 128"}
+{"t": 21.95, "srcp": "SET 1 GL 5 1 17 128"}
+{"t": 21.98129, "ch": 4, "sound": "steam/slow3.wav", "ev": "start"}
+{"t": 22.0, "srcp": "SET 1 GL 5 1 16 128"}
+{"t": 22.020081, "ch": 3, "sound": "steam/slow2.wav", "ev": "end"}
+{"t": 22.05, "srcp": "SET 1 GL 5 1 15 128"}
+{"t": 22.15, "srcp": "SET 1 GL 5 1 14 128"}
+{"t": 22.2, "srcp": "SET 1 GL 5 1 13 128"}
+{"t": 22.23129, "ch": 4, "sound": "steam/slow3.wav", "ev": "end"}
+{"t": 22.23819, "ch": 5, "sound": "steam/slow4.wav", "ev": "start"}
+{"t": 22.25, "srcp": "SET 1 GL 5 1 12 128"}
+{"t": 22.3, "srcp": "SET 1 GL 5 1 11 128"}
+{"t": 22.35, "srcp": "SET 1 GL 5 1 10 128"}
+{"t": 22.4, "srcp": "SET 1 GL 5 1 9 128"}
+{"t": 22.45, "srcp": "SET 1 GL 5 1 8 128"}
+{"t": 22.48819, "ch": 5, "sound": "steam/slow4.wav", "ev": "end"}
+{"t": 22.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 22.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 22.5, "srcp": "SET 1 GL 5 1 7 128"}
+{"t": 22.55, "srcp": "SET 1 GL 5 1 6 128"}
+{"t": 22.590309, "ch": 2, "sound": "steam/slow1.wav", "ev": "start"}
+{"t": 22.6, "srcp": "SET 1 GL 5 1 5 128"}
+{"t": 22.7, "srcp": "SET 1 GL 5 1 4 128"}
+{"t": 22.75, "srcp": "SET 1 GL 5 1 3 128"}
+{"t": 22.8, "srcp": "SET 1 GL 5 1 2 128"}
+{"t": 22.840309, "ch": 2, "sound": "steam/slow1.wav", "ev": "end"}
+{"t": 22.85, "srcp": "SET 1 GL 5 1 1 128"}
+{"t": 22.9, "srcp": "SET 1 GL 5 1 0 128"}
+{"t": 24.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 24.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 26.0, "input": {"axis": 0.0}}
+{"t": 26.5, "ch": 1, "sound": "steam/idle.wav", "ev": "end"}
+{"t": 26.5, "ch": 1, "sound": "steam/idle.wav", "ev": "start"}
+{"t": 27.0, "input": {"press": 4}}
+{"t": 27.0, "ch": 1, "sound": "steam/idle.wav", "ev": "stop"}
+{"t": 27.1, "input": {"release": 4}}
