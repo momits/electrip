@@ -76,4 +76,4 @@ Soll Electrip 2 sie nachbilden, damit der Golden-Test `tests/golden/event_sounds
 Electrip 2 prüft die Bedingungen mit den aktuellen Werten bei jeder Änderung von Zustand, Richtung, v und a.
 Der Golden-Test für B-17 vergleicht dann nur Szenarien, in denen beide Verhalten übereinstimmen.
 Der Harness bleibt unverändert und zeichnet weiter das echte Alt-Verhalten auf.
-**Antwort:** _offen_
+**Antwort:** Ja, wie vorgeschlagen.
