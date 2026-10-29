@@ -1,0 +1,23 @@
+{
+  "locos": [],
+  "server": {
+    "host": "localhost",
+    "port": 4303,
+    "bus": 1,
+    "power": true
+  },
+  "joystick": {
+    "emergency_button": 0,
+    "reverse_button": 1,
+    "accel_axis": 2,
+    "axis_threshold": 0.06,
+    "focus_button": 3,
+    "sound_button": 4,
+    "use_auto_focus": true,
+    "show_function_nr": false
+  },
+  "sound": {
+    "sampling_rate": 44100,
+    "show_level_bar": true
+  }
+}

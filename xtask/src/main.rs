@@ -1,5 +1,6 @@
 //! Project automation: `cargo xtask <command>`. See AGENTS.md.
 
+mod corpus;
 mod golden;
 mod sim;
 
@@ -37,7 +38,8 @@ fn main() -> ExitCode {
         Some("review-check") => review_check(args.get(1).map(String::as_str)),
         Some("sim") => sim::sim(args.get(1).map(String::as_str)),
         Some("golden") => golden::golden(args.get(1).map(String::as_str)),
-        _ => Err("usage: cargo xtask <test | loc | parity | review-check [base] | sim up|down | golden [--record]>".into()),
+        Some("corpus") => corpus::corpus(args.get(1).map(String::as_str)),
+        _ => Err("usage: cargo xtask <test | loc | parity | review-check [base] | sim up|down | golden [--record] | corpus [--record]>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

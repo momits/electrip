@@ -107,17 +107,23 @@ def post(event_type, **fields):
     fakes.Pygame.post(types.SimpleNamespace(type=event_type, joy=0, **fields))
 
 
+def setup(tmp):
+    """Makes legacy/ importable with fakes and an empty home in *tmp*."""
+    # Electrip 1 writes last_file.json below $HOME or into the cwd.
+    workdir = Path(tmp)
+    (workdir / ".config" / "electrip").mkdir(parents=True)
+    os.environ["HOME"] = tmp
+    os.chdir(tmp)
+    sys.path.insert(0, str(LEGACY))
+    fakes.install_gi()
+    fakes.install_pygame()
+    return workdir
+
+
 def main():
     scenario = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     with tempfile.TemporaryDirectory() as tmp:
-        # Electrip 1 writes last_file.json below $HOME or into the cwd.
-        workdir = Path(tmp)
-        (workdir / ".config" / "electrip").mkdir(parents=True)
-        os.environ["HOME"] = tmp
-        os.chdir(tmp)
-        sys.path.insert(0, str(LEGACY))
-        fakes.install_gi()
-        fakes.install_pygame()
+        workdir = setup(tmp)
         if "curves" in scenario:
             run_curves(scenario["curves"])
         else:

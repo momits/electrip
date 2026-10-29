@@ -1,0 +1,732 @@
+{
+  "locos": [
+    {
+      "name": "BR 216",
+      "speed_steps": 128,
+      "max_speed": 120.00000000000003,
+      "address": 2,
+      "protocol": "N 1",
+      "accel_duration": 20.0,
+      "decel_duration": 17.0,
+      "direction": true,
+      "img_path": "/home/electrip/Lokomotiven/BR 216/image/br216.png",
+      "sound_volume": 0.5647058823529412,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          120.00000000000003,
+          128.0
+        ]
+      ],
+      "function_sounds": [
+        {
+          "name": "Hupe",
+          "file_path": "/home/electrip/Lokomotiven/BR 216/sound/Horn BR216.wav",
+          "state": false,
+          "button": 1,
+          "toggle_mode": 2
+        }
+      ],
+      "event_sounds": [],
+      "engine": {
+        "type": "diesel",
+        "start_sound": "/home/electrip/Lokomotiven/BR 216/sound/01 - anlassen.ogg",
+        "idle_sound": "/home/electrip/Lokomotiven/BR 216/sound/02 - leerlauf.ogg",
+        "quit_sound": "/home/electrip/Lokomotiven/BR 216/sound/18 - abstellen2.wav",
+        "sound_segments": [
+          {
+            "start": 0.0,
+            "end": 21.550539744847892,
+            "load_sound": "/home/electrip/Lokomotiven/BR 216/sound/04 - fahrstufe1.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/BR 216/sound/16 - fahrstufe-bremsung1.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/BR 216/sound/03 - beschleunigung0-1.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/BR 216/sound/17 - bremsung1-0.ogg"
+          },
+          {
+            "start": 21.550539744847892,
+            "end": 45.80961727183514,
+            "load_sound": "/home/electrip/Lokomotiven/BR 216/sound/06 - fahrstufe2.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/BR 216/sound/14 - fahrstufe-bremsung2.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/BR 216/sound/05 - beschleunigung1-2.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/BR 216/sound/15 - bremsung2-1.ogg"
+          },
+          {
+            "start": 45.80961727183513,
+            "end": 70.89303238469087,
+            "load_sound": "/home/electrip/Lokomotiven/BR 216/sound/08 - fahrstufe3.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/BR 216/sound/12 - fahrstufe-bremsung3.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/BR 216/sound/07 - beschleunigung2-3.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/BR 216/sound/13 - bremsung3-2.ogg"
+          },
+          {
+            "start": 70.89303238469087,
+            "end": 120.0,
+            "load_sound": "/home/electrip/Lokomotiven/BR 216/sound/10 - fahrstufe4.ogg",
+            "idle_sound": null,
+            "accel_sound": "/home/electrip/Lokomotiven/BR 216/sound/09 - beschleunigung3-4.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/BR 216/sound/11 - bremsung4-3.ogg"
+          }
+        ]
+      },
+      "functions": []
+    },
+    {
+      "name": "BR 81",
+      "speed_steps": 128,
+      "max_speed": 45.0,
+      "address": 3,
+      "protocol": "N 1",
+      "accel_duration": 30.0,
+      "decel_duration": 22.999999999999982,
+      "direction": true,
+      "img_path": "/home/electrip/Lokomotiven/BR 81/image/br81.png",
+      "sound_volume": 0.5411764705882354,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          45.0,
+          128
+        ]
+      ],
+      "function_sounds": [
+        {
+          "name": "Pfiff (lang)",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Pfiff_2_1.ogg",
+          "state": false,
+          "button": 1,
+          "toggle_mode": 2
+        },
+        {
+          "name": "Pfiff (kurz)",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Pfiff_2_2.ogg",
+          "state": false,
+          "button": 2,
+          "toggle_mode": 2
+        },
+        {
+          "name": "Glocke",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Glocke_11kHz_8Bit_Gertges.ogg",
+          "state": false,
+          "button": 3,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Schaffner",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/PfiffAbfahrt11_ID(1800)_22.ogg",
+          "state": false,
+          "button": 4,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Entw\u00e4ssern",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/entwaessern_loop2_ID(A200).ogg",
+          "state": false,
+          "button": 5,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Generator",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/99_lima.ogg",
+          "state": false,
+          "button": 6,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Sieden",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Sieden_U12_ID(A102).ogg",
+          "state": false,
+          "button": -1,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Injektor",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/01_10_Injektor_ID(1501).ogg",
+          "state": false,
+          "button": -1,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Kohle",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Kohle_2.ogg",
+          "state": false,
+          "button": -1,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Luftpumpe",
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Pumpe_ID(1600).ogg",
+          "state": false,
+          "button": -1,
+          "toggle_mode": 0
+        }
+      ],
+      "event_sounds": [
+        {
+          "name": "Bremsen",
+          "state": true,
+          "button": 7,
+          "file_path": "/home/electrip/Lokomotiven/BR 81/sound/Bremsenquietschen3.ogg",
+          "direction": null,
+          "min_speed": 1.8,
+          "max_speed": 5.0,
+          "min_accel": null,
+          "max_accel": -1.7,
+          "fade_in": 0,
+          "fade_out": 0,
+          "play_to_end": false
+        }
+      ],
+      "engine": {
+        "type": "steam",
+        "idle_sound": "/home/electrip/Lokomotiven/BR 81/sound/leerlauf2.ogg",
+        "cylinder_steam_sound": "/home/electrip/Lokomotiven/BR 81/sound/zylinderdampf.ogg",
+        "nr_strokes": 4,
+        "stroke_start_delay": 2.0,
+        "wheel_diameter": 1.2,
+        "min_freq": 0.30000000000000004,
+        "sound_segments": [
+          {
+            "start": 0.0,
+            "end": 28.668639053254438,
+            "stroke_sounds": [
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)_22_1.wav",
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)_22_2.wav",
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)_22_3.wav",
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)_22_4.wav"
+            ]
+          },
+          {
+            "start": 28.668639053254438,
+            "end": 45.0,
+            "stroke_sounds": [
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)-15_22_1.wav",
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)-15_22_2.wav",
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)-15_22_3.wav",
+              "/home/electrip/Lokomotiven/BR 81/sound/BR93_ID(F002)-15_22_4.wav"
+            ]
+          }
+        ]
+      },
+      "functions": [
+        {
+          "name": "Licht",
+          "nr": 0,
+          "state": false,
+          "button": -1,
+          "toggle_mode": 0
+        }
+      ]
+    },
+    {
+      "name": "Koef II",
+      "speed_steps": 28,
+      "max_speed": 45.0,
+      "address": 23,
+      "protocol": "M 2",
+      "accel_duration": 25.0,
+      "decel_duration": 19.0,
+      "direction": true,
+      "img_path": "image/k\u00f6f2_schr\u00e4g_klein.png",
+      "sound_volume": 0.49058823529411766,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          45.0,
+          28.0
+        ]
+      ],
+      "function_sounds": [
+        {
+          "name": "Pfiff",
+          "file_path": "/home/electrip/Lokomotiven/Koef II/sound/PfiffAbfahrt.ogg",
+          "state": false,
+          "button": 1,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Horn",
+          "file_path": "/home/electrip/Lokomotiven/Koef II/sound/Horn.ogg",
+          "state": false,
+          "button": 2,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Zischen",
+          "file_path": "/home/electrip/Lokomotiven/Koef II/sound/Luft-Zisch.ogg",
+          "state": false,
+          "button": 3,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Kette",
+          "file_path": "/home/electrip/Lokomotiven/Koef II/sound/Kette.ogg",
+          "state": false,
+          "button": 4,
+          "toggle_mode": 0
+        }
+      ],
+      "event_sounds": [
+        {
+          "name": "Bremsen",
+          "state": true,
+          "button": 5,
+          "file_path": "/home/electrip/Lokomotiven/Koef II/sound/Bremsen.ogg",
+          "direction": null,
+          "min_speed": 2.0,
+          "max_speed": 5.0,
+          "min_accel": null,
+          "max_accel": -1.6,
+          "fade_in": 0,
+          "fade_out": 0,
+          "play_to_end": false
+        }
+      ],
+      "engine": {
+        "type": "diesel",
+        "start_sound": "/home/electrip/Lokomotiven/Koef II/sound/start.ogg",
+        "idle_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS0.ogg",
+        "quit_sound": "/home/electrip/Lokomotiven/Koef II/sound/stop.ogg",
+        "sound_segments": [
+          {
+            "start": 0.0,
+            "end": 22.5,
+            "load_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS1.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS1.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS0-FS1.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS1_FS0.ogg"
+          },
+          {
+            "start": 22.5,
+            "end": 45.0,
+            "load_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS2.ogg",
+            "idle_sound": null,
+            "accel_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS1-FS2.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/Koef II/sound/FS2-FS1.ogg"
+          }
+        ]
+      },
+      "functions": [
+        {
+          "name": "Licht",
+          "nr": 0,
+          "state": true,
+          "button": 6,
+          "toggle_mode": 0
+        }
+      ]
+    },
+    {
+      "name": "V 200",
+      "speed_steps": 128,
+      "max_speed": 140.0,
+      "address": 20,
+      "protocol": "N 1",
+      "accel_duration": 20.0,
+      "decel_duration": 16.0,
+      "direction": true,
+      "img_path": "/home/electrip/Lokomotiven/V 200/image/v200_cartoon.png",
+      "sound_volume": 0.48235294117647054,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          140.0,
+          128.0
+        ]
+      ],
+      "function_sounds": [
+        {
+          "name": "Hupe 1",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/Horn_V200_1.ogg",
+          "state": false,
+          "button": 1,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Hupe 2",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/Horn_V200_2.ogg",
+          "state": false,
+          "button": 2,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Hupe 3",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/Horn_V200_3.ogg",
+          "state": false,
+          "button": 3,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Hupe 4",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/Horn_V200_4.ogg",
+          "state": false,
+          "button": 4,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Ansage",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/Ansage 2.ogg",
+          "state": false,
+          "button": 5,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Heizung",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/Heizung.ogg",
+          "state": false,
+          "button": 6,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Pfiff",
+          "file_path": "/home/electrip/Lokomotiven/V 200/sound/PfiffAbfahrt.ogg",
+          "state": false,
+          "button": -1,
+          "toggle_mode": 3
+        }
+      ],
+      "event_sounds": [],
+      "engine": {
+        "type": "diesel",
+        "start_sound": "/home/electrip/Lokomotiven/V 200/sound/start1.ogg",
+        "idle_sound": "/home/electrip/Lokomotiven/V 200/sound/FS0.ogg",
+        "quit_sound": "/home/electrip/Lokomotiven/V 200/sound/stop1.ogg",
+        "sound_segments": [
+          {
+            "start": 0.0,
+            "end": 30.726744186046513,
+            "load_sound": "/home/electrip/Lokomotiven/V 200/sound/FS1.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/V 200/sound/FS1.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS0-FS1.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS1-FS0.ogg"
+          },
+          {
+            "start": 30.726744186046513,
+            "end": 61.14825581395349,
+            "load_sound": "/home/electrip/Lokomotiven/V 200/sound/FS2.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/V 200/sound/FS2.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS1-FS2.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS2-FS1.ogg"
+          },
+          {
+            "start": 61.14825581395349,
+            "end": 100.57412790697674,
+            "load_sound": "/home/electrip/Lokomotiven/V 200/sound/FS3.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/V 200/sound/FS3.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS2-FS3.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS3-FS2.ogg"
+          },
+          {
+            "start": 100.57412790697674,
+            "end": 140.0,
+            "load_sound": "/home/electrip/Lokomotiven/V 200/sound/FS4.ogg",
+            "idle_sound": null,
+            "accel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS3-FS4.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 200/sound/FS4-FS3.ogg"
+          }
+        ]
+      },
+      "functions": [
+        {
+          "name": "Licht",
+          "nr": 0,
+          "state": true,
+          "button": 7,
+          "toggle_mode": 0
+        }
+      ]
+    },
+    {
+      "name": "V 60",
+      "speed_steps": 128,
+      "max_speed": 60.0,
+      "address": 60,
+      "protocol": "N 1",
+      "accel_duration": 18.0,
+      "decel_duration": 15.0,
+      "direction": true,
+      "img_path": "/home/electrip/Lokomotiven/V 60/image/v60.png",
+      "sound_volume": 0.49411764705882355,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          60.0,
+          128.0
+        ]
+      ],
+      "function_sounds": [
+        {
+          "name": "Horn",
+          "file_path": "/home/electrip/Lokomotiven/V 60/sound/horn.ogg",
+          "state": false,
+          "button": 1,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Luft",
+          "file_path": "/home/electrip/Lokomotiven/V 60/sound/luft.ogg",
+          "state": false,
+          "button": 2,
+          "toggle_mode": 3
+        },
+        {
+          "name": "\u00d6l",
+          "file_path": "/home/electrip/Lokomotiven/V 60/sound/oel.ogg",
+          "state": false,
+          "button": 3,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Kupplung",
+          "file_path": "/home/electrip/Lokomotiven/V 60/sound/kupplung.ogg",
+          "state": false,
+          "button": 4,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Kompressor",
+          "file_path": "/home/electrip/Lokomotiven/V 60/sound/kompressor.ogg",
+          "state": false,
+          "button": 5,
+          "toggle_mode": 3
+        }
+      ],
+      "event_sounds": [
+        {
+          "name": "Bremsen",
+          "state": true,
+          "button": -1,
+          "file_path": "/home/electrip/Lokomotiven/V 60/sound/Bremse1.ogg",
+          "direction": null,
+          "min_speed": 3.0,
+          "max_speed": 7.0,
+          "min_accel": null,
+          "max_accel": -1.5,
+          "fade_in": 0,
+          "fade_out": 0,
+          "play_to_end": false
+        }
+      ],
+      "engine": {
+        "type": "diesel",
+        "start_sound": "/home/electrip/Lokomotiven/V 60/sound/start.ogg",
+        "idle_sound": "/home/electrip/Lokomotiven/V 60/sound/FS0.ogg",
+        "quit_sound": "/home/electrip/Lokomotiven/V 60/sound/stop2.ogg",
+        "sound_segments": [
+          {
+            "start": 0.0,
+            "end": 10.07267441860465,
+            "load_sound": "/home/electrip/Lokomotiven/V 60/sound/FS1.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/V 60/sound/FS1.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/V 60/sound/FS0-FS1.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 60/sound/FS1-FS0.ogg"
+          },
+          {
+            "start": 10.07267441860465,
+            "end": 24.767441860465116,
+            "load_sound": "/home/electrip/Lokomotiven/V 60/sound/FS2.ogg",
+            "idle_sound": "/home/electrip/Lokomotiven/V 60/sound/FS2.ogg",
+            "accel_sound": "/home/electrip/Lokomotiven/V 60/sound/FS1_FS2.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 60/sound/FS2_FS1.ogg"
+          },
+          {
+            "start": 24.767441860465116,
+            "end": 60.0,
+            "load_sound": "/home/electrip/Lokomotiven/V 60/sound/FS3.ogg",
+            "idle_sound": null,
+            "accel_sound": "/home/electrip/Lokomotiven/V 60/sound/FS2_FS3.ogg",
+            "decel_sound": "/home/electrip/Lokomotiven/V 60/sound/FS3_FS2.ogg"
+          }
+        ]
+      },
+      "functions": [
+        {
+          "name": "Licht",
+          "nr": 0,
+          "state": false,
+          "button": 6,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Telex (vorne)",
+          "nr": 1,
+          "state": false,
+          "button": 7,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Telex (hinten)",
+          "nr": 2,
+          "state": false,
+          "button": 8,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Rangiergang",
+          "nr": 3,
+          "state": false,
+          "button": -1,
+          "toggle_mode": 0
+        },
+        {
+          "name": "ABV Aus",
+          "nr": 4,
+          "state": false,
+          "button": -1,
+          "toggle_mode": 0
+        }
+      ]
+    },
+    {
+      "name": "VT 98",
+      "speed_steps": 128,
+      "max_speed": 90.0,
+      "address": 5,
+      "protocol": "N 1",
+      "accel_duration": 24.0,
+      "decel_duration": 18.0,
+      "direction": true,
+      "img_path": "/home/electrip/Lokomotiven/VT 98/image/vt98_cartoon_ohne_schienen.png",
+      "sound_volume": 0.5764705882352941,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          90.0,
+          128.0
+        ]
+      ],
+      "function_sounds": [
+        {
+          "name": "Hupe",
+          "file_path": "/home/electrip/Lokomotiven/VT 98/sound/Hupe2.ogg",
+          "state": false,
+          "button": 0,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Horn (Hoch)",
+          "file_path": "/home/electrip/Lokomotiven/VT 98/sound/Oebb_Horn Hoch_04.ogg",
+          "state": false,
+          "button": 1,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Horn (Tief)",
+          "file_path": "/home/electrip/Lokomotiven/VT 98/sound/Oebb_Horn_Tief_04.ogg",
+          "state": false,
+          "button": 2,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Schaffner",
+          "file_path": "/home/electrip/Lokomotiven/VT 98/sound/Schaffnerpfiff1.ogg",
+          "state": false,
+          "button": 3,
+          "toggle_mode": 3
+        },
+        {
+          "name": "Ansage",
+          "file_path": "/home/electrip/Lokomotiven/VT 98/sound/Ansage.ogg",
+          "state": false,
+          "button": 4,
+          "toggle_mode": 3
+        },
+        {
+          "name": "T\u00fcr Auf/Zu",
+          "file_path": "/home/electrip/Lokomotiven/VT 98/sound/Tuer_auf_zu_Ohne_Beep_02.ogg",
+          "state": false,
+          "button": 5,
+          "toggle_mode": 3
+        }
+      ],
+      "event_sounds": [],
+      "engine": null,
+      "functions": [
+        {
+          "name": "Licht",
+          "nr": 0,
+          "state": true,
+          "button": 6,
+          "toggle_mode": 0
+        },
+        {
+          "name": "Rangiergang",
+          "nr": 3,
+          "state": false,
+          "button": 7,
+          "toggle_mode": 0
+        },
+        {
+          "name": "ABV Aus",
+          "nr": 4,
+          "state": false,
+          "button": -1,
+          "toggle_mode": 0
+        }
+      ]
+    },
+    {
+      "name": "Unbenannte Lok",
+      "speed_steps": 128,
+      "max_speed": 100.0,
+      "address": 1,
+      "protocol": "N 1",
+      "accel_duration": 11.5,
+      "decel_duration": 8.5,
+      "direction": true,
+      "img_path": null,
+      "sound_volume": 0.8,
+      "speed_control_points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          100.0,
+          128.0
+        ]
+      ],
+      "function_sounds": [],
+      "event_sounds": [],
+      "engine": null,
+      "functions": []
+    }
+  ],
+  "server": {
+    "host": "localhost",
+    "port": 4303,
+    "bus": 1,
+    "power": true
+  },
+  "joystick": {
+    "emergency_button": 0,
+    "reverse_button": 1,
+    "accel_axis": 2,
+    "axis_threshold": 0.06,
+    "focus_button": 3,
+    "sound_button": 4,
+    "use_auto_focus": true,
+    "show_function_nr": false
+  },
+  "sound": {
+    "sampling_rate": 44100,
+    "show_level_bar": true
+  }
+}

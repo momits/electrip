@@ -22,7 +22,8 @@ pub fn golden(flag: Option<&str>) -> Result {
     scenarios.sort();
     for scenario in &scenarios {
         let name = scenario.file_stem().and_then(|s| s.to_str()).unwrap_or("?");
-        let output = run_harness(scenario)?;
+        let output =
+            python("harness.py", &[scenario]).map_err(|e| format!("golden {name}: {e}"))?;
         let golden = dir.join(format!("{name}.jsonl"));
         if record {
             fs::write(&golden, output).map_err(|e| format!("{}: {e}", golden.display()))?;
@@ -42,15 +43,16 @@ pub fn golden(flag: Option<&str>) -> Result {
     Ok(())
 }
 
-fn run_harness(scenario: &Path) -> Result<String> {
+/// Runs a script from `tools/legacy-harness/` and returns its stdout.
+pub fn python(script: &str, args: &[&Path]) -> Result<String> {
     let out = Command::new("python3")
-        .arg(root().join("tools/legacy-harness/harness.py"))
-        .arg(scenario)
+        .arg(root().join("tools/legacy-harness").join(script))
+        .args(args)
         .output()
         .map_err(|e| format!("python3: {e}"))?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(format!("harness {}: {}", scenario.display(), err.trim()));
+        return Err(format!("{script}: {}", err.trim()));
     }
     String::from_utf8(out.stdout).map_err(|e| e.to_string())
 }

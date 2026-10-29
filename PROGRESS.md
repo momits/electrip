@@ -8,6 +8,25 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-29 – Phase 0, Schritt 3d: Korpus (Claude)
+
+- `tests/corpus/packages/`: die sechs Lokpakete von SourceForge, unverändert (BR 216, BR 81, Koef II, V 200, V 60, VT 98).
+- `tests/corpus/configs/`: drei vollständige Konfigurationen, erzeugt mit dem Code aus `legacy/` durch `tools/legacy-harness/corpus.py` (Q-002).
+  Sie decken alle Pakete, eine neue Lok mit Vorgabewerten, geänderte Einstellungen und alle Felder eines Geräusch-Ereignisses ab.
+- `cargo xtask corpus` prüft `tests/corpus/SHA256SUMS` und ob `corpus.py` dieselben Konfigurationen erzeugt; `--record` schreibt beides neu.
+  Der CI-Job „checks“ führt die Prüfung aus.
+  Neue Abhängigkeit von `xtask`: `sha2`.
+- Lizenz: Das Projekt steht auf SourceForge unter GPLv3, die Pakete haben keine eigene Lizenzdatei.
+  Einige Sounds tragen Namen fremder Sammlungen.
+  Das Repo ist privat; vor einer Veröffentlichung sollte Mo die Herkunft klären.
+- Auffälligkeiten für B-20 und B-21 stehen in `tools/legacy-harness/README.md`.
+  Wichtig: Electrip 1 entpackt das Bild von Koef II unter falschem Namen, weil das ZIP UTF-8-Namen ohne UTF-8-Flag enthält.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Hex-Ausgabe von `sha2` statt eigener Schleife, ein Vergleich für `SHA256SUMS` mit klarer Meldung bei fehlender Datei, Prüfung auf neue oder fehlende Konfigurationen, doppeltes Bytecode-Flag entfernt, Parametername in `corpus.py`.
+  Golden Files unverändert.
+- **Offen:** Commit, Push und CI-Lauf.
+- **Nächster Schritt:** 3e, Z21-Simulator (eigene Sitzung).
+
 ## 2026-10-28 – Phase 0, Schritt 3c: Golden-Harness für Electrip 1 (Claude)
 
 - `tools/legacy-harness/`: startet den unveränderten Code aus `legacy/` mit Fakes für GTK, pygame und Threads auf einer virtuellen Uhr.
@@ -22,7 +41,11 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Golden Files nach dem Refactoring unverändert.
 - Neue Frage Q-013: Geräusch-Ereignisse in Electrip 1 prüfen alte Werte und beobachten die Geschwindigkeit nicht.
   Soll Electrip 2 das nachbilden?
-- **Offen:** Q-013 (Mo); CI-Lauf nach dem Push.
+- CI für `8b7984b` ist in allen sechs Jobs grün, auch die neue Golden-Prüfung.
+- Q-013 hat Mo beantwortet: Electrip 2 bildet die Eigenheiten nicht nach.
+  Der Golden-Test für B-17 vergleicht nur Szenarien, in denen altes und neues Verhalten übereinstimmen.
+  Der Harness bleibt unverändert.
+- **Offen:** Der Commit mit der Antwort auf Q-013 ist noch nicht gepusht.
 - **Nächster Schritt:** 3d, Korpus.
 
 ## 2026-10-28 – Phase 0, Schritt 3b: srcpd-Simulator (Claude)
@@ -85,7 +108,7 @@ Details zu jedem Schritt: `spec/phase0-plan.md`.
 - [x] Schritt 3a: Cargo-Workspace mit leeren Crates, `xtask` (`test`, `loc`, `parity`, Check des Trailers `Simplicity-Review`), CI auf Linux/macOS/Windows
 - [x] Schritt 3b: srcpd mit Loopback-Bus in Docker, `cargo xtask sim up`
 - [x] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
-- [ ] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
+- [x] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
 - [ ] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
 - [ ] Schritt 4: `loop.sh` und Devcontainer
 - [ ] Tor A: Freigabe durch Mo

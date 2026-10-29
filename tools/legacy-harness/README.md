@@ -75,3 +75,40 @@ Die Golden Files zeigen das echte Verhalten von Electrip 1, auch wo es überrasc
 - Diesel: Die Steuerung sendet die erste Fahrstufe erst mit Beginn des Übergangs Leerlauf → Segment 1 und Fahrstufe 0 erst mit dem Übergang Segment 1 → Leerlauf (B-13).
 - Dampf: Eine neue Taktpause gilt erst nach der laufenden Pause.
 - Geräusch-Ereignisse: siehe Frage Q-013 in `spec/questions.md`.
+
+## Korpus (B-20, B-21)
+
+`tests/corpus/` enthält echte Dateien von Electrip 1 für die Import-Tests.
+`cargo xtask corpus` prüft alle Dateien gegen `tests/corpus/SHA256SUMS`.
+Außerdem erzeugt es die Konfigurationen mit `corpus.py` neu und vergleicht sie mit `configs/`.
+`cargo xtask corpus --record` schreibt die Konfigurationen und `SHA256SUMS` neu.
+
+**Lokpakete:** `packages/` enthält die sechs Pakete aus dem Ordner „Loco packages - Lokomotivpakete“ der SourceForge-Projektseite, unverändert (Stand 2026-10-29).
+Ein Paket ist ein ZIP mit `<Name>.loco` (JSON einer Lok), `sound/` und `image/`.
+Die Pfade in der `.loco`-Datei sind relativ zum Paket.
+Das Projekt steht auf SourceForge unter GPLv3.
+Die Pakete haben keine eigene Lizenzdatei.
+Einige Sounddateien tragen Namen fremder Sound-Sammlungen, zum Beispiel `Glocke_11kHz_8Bit_Gertges.ogg`.
+Das Repo ist privat.
+
+**Konfigurationen:** `corpus.py` erzeugt mit dem Code aus `legacy/` drei vollständige Konfigurationen, wie Electrip 1 sie speichert:
+
+- `empty.json`: neue Konfiguration ohne Änderung.
+- `packages.json`: alle Pakete, importiert wie über die Oberfläche (`JsonModel.load_loco`), dazu eine neue Lok mit Vorgabewerten.
+- `settings.json`: BR 216 und V 60 mit geänderten Einstellungen für Server, Gamepad und Sound.
+  Die V 60 hat zusätzlich eine Kennlinie mit drei Punkten, eine Funktion im Tastmodus (`PUSH`) und ein Geräusch-Ereignis mit allen Feldern.
+
+Electrip 1 entpackt ein Paket neben das ZIP und speichert absolute Pfade.
+`corpus.py` legt die ZIPs nach `~/Lokomotiven/` in einem temporären Home.
+Danach ersetzt es dieses Home durch `/home/electrip`.
+Ein Import-Test bildet also `/home/electrip/Lokomotiven/<Name>/` auf das entpackte Paket `<Name>.zip` ab.
+Die Namen sind deutsch (`LANGUAGE=de`), etwa „Unbenannte Lok“.
+
+**Auffälligkeiten der Pakete:**
+
+- `Koef II.zip`: Der Bildname enthält Umlaute in UTF-8, aber ohne das UTF-8-Flag des ZIP-Formats.
+  Python liest den Namen als CP437 und entpackt die Datei unter einem falschen Namen.
+  Electrip 1 findet das Bild deshalb nicht und speichert `img_path` relativ: `image/köf2_schräg_klein.png`.
+- `Koef II.zip`, `V 200.zip` und `V 60.zip` enthalten einige Sounddateien doppelt unter demselben Namen.
+- Die `.loco`-Dateien lassen Felder weg, die neuere Versionen von Electrip 1 kennen, etwa `fade_in` bei Geräusch-Ereignissen.
+  Electrip 1 setzt dann Vorgabewerte und meldet „Ungültiges Dateiformat“.
