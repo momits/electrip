@@ -25,7 +25,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Übernommen: Konstante für `LAN_X_UNKNOWN_COMMAND`, Firmware als eine Konstante, eine Schleife für Broadcasts, klarerer Methodenname.
   Entfernt, weil keine Anforderung sie braucht: Freischaltcode, Binärzustände, Lok herausnehmen.
   MM und Hardware-Info bleiben wegen B-06 und B-23.
-- **Offen:** CI-Lauf nach dem Push prüfen.
+- CI für `0397f7b` ist in allen sieben Jobs grün, auch der neue Job „Z21 simulator“.
 - **Nächster Schritt:** 4, `loop.sh` und Devcontainer.
 
 ## 2026-10-29 – Phase 0, Schritt 3d: Korpus (Claude)
