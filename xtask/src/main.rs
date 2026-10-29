@@ -24,6 +24,7 @@ const LAYERS: &[(&str, Option<&[&str]>)] = &[
     ("electrip-sync", Some(&["electrip-core"])),
     ("electrip-control", None),
     ("electrip", None),
+    ("electrip-sim-z21", Some(&[])),
     ("xtask", Some(&[])),
 ];
 

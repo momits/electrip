@@ -8,6 +8,26 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-29 – Phase 0, Schritt 3e: Z21-Simulator (Claude)
+
+- `sim/z21/`: Crate `electrip-sim-z21`, ein UDP-Server nach Roco „Z21 LAN Protokoll“ V1.13.
+  Das PDF liegt wegen der Rechte von Roco nicht im Repo; Link und SHA-256 stehen in `sim/z21/README.md`.
+- Er deckt die Szenarien von N-02 ab: Anmelden und Abmelden, Gleisstrom, Lok fahren, Funktionen F0–F31, Nothalt für Anlage und Lok, Broadcasts an andere Clients.
+  Dazu kommen Lok-Format MM für B-06 und die Hardware-Info, mit der ein Treiber die Firmware 1.43 für den Lok-Nothalt prüfen kann.
+- Aufruf: `cargo run -p electrip-sim-z21`, in Rust-Tests `electrip_sim_z21::serve` mit eigenem Socket.
+  Er zählt nicht zum Zeilenbudget, weil er unter `sim/` liegt.
+- 22 Tests: Konformität mit den Beispiel-Telegrammen der Spezifikation, Szenarien auf virtueller Uhr und ein UDP-Test.
+- Gegenprobe mit der unabhängigen Bibliothek z21aio 1.0.7 in `sim/z21/crosscheck.py`, lokal grün.
+  Der neue CI-Job „Z21 simulator“ führt sie aus.
+- Wo die Spezifikation schweigt, hat der Simulator Annahmen getroffen.
+  Sie stehen in `sim/z21/README.md`, und der Z21-Treiber darf sich nicht auf sie verlassen.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Konstante für `LAN_X_UNKNOWN_COMMAND`, Firmware als eine Konstante, eine Schleife für Broadcasts, klarerer Methodenname.
+  Entfernt, weil keine Anforderung sie braucht: Freischaltcode, Binärzustände, Lok herausnehmen.
+  MM und Hardware-Info bleiben wegen B-06 und B-23.
+- **Offen:** CI-Lauf nach dem Push prüfen.
+- **Nächster Schritt:** 4, `loop.sh` und Devcontainer.
+
 ## 2026-10-29 – Phase 0, Schritt 3d: Korpus (Claude)
 
 - `tests/corpus/packages/`: die sechs Lokpakete von SourceForge, unverändert (BR 216, BR 81, Koef II, V 200, V 60, VT 98).
@@ -110,6 +130,6 @@ Details zu jedem Schritt: `spec/phase0-plan.md`.
 - [x] Schritt 3b: srcpd mit Loopback-Bus in Docker, `cargo xtask sim up`
 - [x] Schritt 3c: Headless-Harness für Alt-Electrip, Golden-Tests aufzeichnen (B-08, B-10, B-14, B-17)
 - [x] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
-- [ ] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
+- [x] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
 - [ ] Schritt 4: `loop.sh` und Devcontainer
 - [ ] Tor A: Freigabe durch Mo

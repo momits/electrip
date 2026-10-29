@@ -52,6 +52,23 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask sim up
 
+  z21-sim:
+    name: Z21 simulator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install z21aio==1.0.7
+      - run: cargo build --package electrip-sim-z21
+      - run: |
+          target/debug/electrip-sim-z21 &
+          sleep 1
+          python sim/z21/crosscheck.py
+
   checks:
     name: loc, parity, simplicity review
     runs-on: ubuntu-latest
