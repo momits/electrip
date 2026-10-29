@@ -1,19 +1,24 @@
 {
   "name": "Electrip 2",
-  "build": { "dockerfile": "Dockerfile" },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
+  "build": { "dockerfile": "Dockerfile", "context": ".." },
+  "workspaceMount": "source=electrip-workspace,target=/workspaces/electrip,type=volume",
+  "workspaceFolder": "/workspaces/electrip",
+  "init": true,
+  "runArgs": ["--cap-add=NET_ADMIN"],
   "containerEnv": {
     "GIT_AUTHOR_NAME": "Claude (Electrip-Loop)",
     "GIT_AUTHOR_EMAIL": "noreply@anthropic.com",
     "GIT_COMMITTER_NAME": "Claude (Electrip-Loop)",
-    "GIT_COMMITTER_EMAIL": "noreply@anthropic.com"
+    "GIT_COMMITTER_EMAIL": "noreply@anthropic.com",
+    "HTTPS_PROXY": "http://127.0.0.1:3128",
+    "https_proxy": "http://127.0.0.1:3128",
+    "NO_PROXY": "localhost,127.0.0.1",
+    "no_proxy": "localhost,127.0.0.1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
   "remoteEnv": {
     "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}",
     "GH_TOKEN": "${localEnv:GH_TOKEN}"
   },
-  "postCreateCommand": "git config --global credential.https://github.com.helper '!gh auth git-credential' && git config --global url.https://github.com/.insteadOf git@github.com:"
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh && ([ -d .git ] || git clone https://github.com/momits/electrip.git .)"
 }

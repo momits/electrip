@@ -1,0 +1,4 @@
+# Independent Z21 library for crosscheck.py, pinned by hash: pip install --require-hashes -r sim/z21/requirements.txt
+z21aio==1.0.7 \
+    --hash=sha256:7895842c30302ec846bbfbb494c21a619846bacb32d9967f93c59ac603007115 \
+    --hash=sha256:732acdfafe56a65ae1f779737eace75fcf482fa31c93cd058c978c3380b690bb

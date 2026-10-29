@@ -8,6 +8,38 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-29 – Phase 0, Schritt 4: Härtung des Devcontainers (Claude)
+
+Mo hat eine Prüfung auf Sandbox-Isolation und Supply-Chain-Sicherheit verlangt und alle vorgeschlagenen Härtungen freigegeben.
+
+- **Isolation:** Der Container klont das Repo in ein eigenes Volume, statt Mos Arbeitsordner einzubinden.
+  Er läuft ohne Docker-in-Docker und ohne `privileged`, nur mit `NET_ADMIN`.
+  Eine Firewall lässt ausgehenden Verkehr nur über tinyproxy zu, der nur Anthropic-API, GitHub und crates.io durchlässt; DNS ist gesperrt.
+  `vscode` darf per sudo nur noch das Firewall-Skript starten.
+  `loop.sh` startet nur hinter der Firewall statt nur im Container.
+- **srcpd ohne Docker:** `cargo xtask sim up` startet srcpd direkt, wenn es installiert ist, sonst wie bisher in Docker.
+  srcpd kommt im Container aus dem Debian-Paket.
+- **Supply Chain:** Basis-Images per Digest, Claude Code per Version und SHA-256 ohne Auto-Update und Telemetrie, gh und srcpd aus Debian statt aus Devcontainer-Features.
+  Rust ist auf 1.99.1 gepinnt (`rust-toolchain.toml`), die CI nutzt das statt `dtolnay/rust-toolchain`.
+  CI: Actions per Commit-SHA, `permissions: contents: read`, z21aio per Hash in `sim/z21/requirements.txt`, neuer Schritt `cargo deny check` mit `deny.toml`.
+  Damit ist auch die Warnung zu `actions/checkout@v4` erledigt.
+- **Für Mo auf GitHub:** Fine-grained `GH_TOKEN` ohne Recht „Workflows“, Ruleset für `main` mit Pflicht zu Pull Request und grünen Checks, Rebase-Merge erlauben.
+  Details in `.devcontainer/README.md`.
+- Getestet: Image baut. Hinter der Firewall sind `cargo xtask test`, `golden`, `corpus` und `sim up|down` grün, auch mit leerem Cargo-Cache.
+  Erlaubte Hosts antworten, andere Hosts, direkter Verkehr und DNS sind gesperrt.
+  `sudo` für andere Befehle, `iptables` und das Beenden des Proxys scheitern.
+  `claude -p` erreicht über den Proxy die API.
+  `cargo deny check` ist grün.
+- **Weiter nicht getestet:** `devcontainer up` selbst, also Klon ins Volume, `postStartCommand` und Push aus dem Container.
+- **Rest-Risiko:** Der Agent kennt beide Tokens und könnte sie über GitHub nach außen geben.
+  Gegenmittel sind knappe Token-Rechte und die Regeln auf GitHub.
+- Einfachheits- und Sicherheits-Review: refactored (Sub-Agent).
+  Übernommen: Klon erst nach dem Start der Firewall, weil er den Proxy braucht.
+  Die Firewall sperrt zuerst alles und lässt auf `lo` nur `127.0.0.1` und `::1` zu, damit auch Dockers DNS auf `127.0.0.11` gesperrt bleibt.
+  Das Firewall-Skript nutzt absolute Pfade.
+  `insteadOf` für SSH-Adressen ist entfallen, `xtask sim` prüft nur einmal auf srcpd.
+  Offen und bewusst so gelassen: CI-Runner, apt-Pakete der CI und Debian-Paketversionen sind nicht gepinnt.
+
 ## 2026-10-29 – Phase 0, Schritt 4: Loop und Devcontainer (Claude)
 
 - `.devcontainer/`: Image `devcontainers/rust:2-1-trixie` mit Claude Code, dazu die Features Docker-in-Docker und GitHub-CLI.

@@ -1,0 +1,6 @@
+^api\.anthropic\.com$
+^github\.com$
+^api\.github\.com$
+^[a-z0-9-]+\.actions\.githubusercontent\.com$
+^productionresultssa[0-9]+\.blob\.core\.windows\.net$
+^(index\.|static\.)?crates\.io$
