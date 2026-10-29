@@ -12,7 +12,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-import harness  # also keeps legacy/ free of bytecode
+sys.dont_write_bytecode = True  # keep the repo free of bytecode
+
+import harness  # noqa: E402
 
 # Stands in for the temporary home, so the files do not depend on the run.
 HOME = "/home/electrip"

@@ -24,7 +24,9 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - Einfachheits-Review: refactored (Sub-Agent).
   Übernommen: Hex-Ausgabe von `sha2` statt eigener Schleife, ein Vergleich für `SHA256SUMS` mit klarer Meldung bei fehlender Datei, Prüfung auf neue oder fehlende Konfigurationen, doppeltes Bytecode-Flag entfernt, Parametername in `corpus.py`.
   Golden Files unverändert.
-- **Offen:** Commit, Push und CI-Lauf.
+- CI für `68f9b9a` ist in allen sechs Jobs grün, auch die neue Korpus-Prüfung.
+- Nachtrag: `68f9b9a` enthielt versehentlich eine `.pyc`-Datei.
+  `harness.py` setzt das Bytecode-Flag erst beim eigenen Import, deshalb setzt `corpus.py` es wieder selbst vor dem Import.
 - **Nächster Schritt:** 3e, Z21-Simulator (eigene Sitzung).
 
 ## 2026-10-28 – Phase 0, Schritt 3c: Golden-Harness für Electrip 1 (Claude)
@@ -45,7 +47,6 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - Q-013 hat Mo beantwortet: Electrip 2 bildet die Eigenheiten nicht nach.
   Der Golden-Test für B-17 vergleicht nur Szenarien, in denen altes und neues Verhalten übereinstimmen.
   Der Harness bleibt unverändert.
-- **Offen:** Der Commit mit der Antwort auf Q-013 ist noch nicht gepusht.
 - **Nächster Schritt:** 3d, Korpus.
 
 ## 2026-10-28 – Phase 0, Schritt 3b: srcpd-Simulator (Claude)
