@@ -20,10 +20,10 @@ docker run -d --name electrip --init --cap-add=NET_ADMIN \
   --env-file .devcontainer/container.env electrip sleep infinity >/dev/null
 
 docker exec electrip sudo /usr/local/bin/init-sandbox.sh
-for name in claude github; do
-  token_var=${name}_token
-  printf %s "${!token_var}" |
-    docker exec -i -u keeper electrip sh -c "umask 077; cat >/etc/electrip-secrets/$name"
-done
+store_token() {
+  printf %s "$2" | docker exec -i -u keeper electrip sh -c "umask 077; cat >/etc/electrip-secrets/$1"
+}
+store_token claude "$claude_token"
+store_token github "$github_token"
 docker exec electrip bash -c '[ -d .git ] || git clone -q http://127.0.0.1:8080/github-git/ .'
 echo "Ready. Start the loop with: docker exec -it electrip ./loop.sh"
