@@ -8,6 +8,26 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-30 – Phase 0, Schritt 4: Tokens für den Agenten unlesbar (Claude)
+
+Mo wollte, dass der Agent die Tokens nur benutzen, aber nicht auslesen kann.
+Umgebungsvariablen reichen dafür nicht: Jeder Prozess desselben Nutzers kann sie lesen.
+
+- `auth-proxy.py` läuft unter dem eigenen Nutzer `keeper`, der allein die Tokens in `/etc/electrip-secrets` lesen kann.
+  Er setzt sie in Anfragen an die Anthropic-API, an die GitHub-API für `momits/electrip` und an Git für dieses Repo ein, alle anderen Pfade lehnt er ab.
+- Claude Code bekommt nur einen Platzhalter und `ANTHROPIC_BASE_URL`.
+  Ein Versuch auf dem Mac hat gezeigt, dass das mit dem Abo-Login geht, auch mit Streaming.
+- `gh` ist entfernt, der Agent nutzt die REST-API per `curl` über den Proxy; `prompts/session.md` nennt die Pfade.
+  `origin` zeigt auf den Proxy.
+- `.devcontainer/start.sh` startet den Container und schreibt die Tokens per `docker exec -u keeper` direkt zu `keeper`, nicht über die Umgebung.
+- Direkt nach außen dürfen nur noch `keeper` und tinyproxy; tinyproxy lässt nur crates.io und den Speicher für CI-Logs durch.
+- Getestet im Container mit Platzhalter-Tokens: Der Agent kann Token-Dateien, Umgebung und Speicher von `keeper` nicht lesen und nichts in dessen Verzeichnis schreiben.
+  Anthropic, GitHub-API und Git antworten über den Proxy mit 401 auf die Platzhalter, also kommt das eingesetzte Token an.
+  Andere Pfade wie `gists` lehnt der Proxy ab, direkte Verbindungen zu Anthropic und GitHub sind gesperrt.
+- Einfachheits- und Sicherheits-Review: refactored (Sub-Agent), kein Weg zu den Tokens gefunden.
+  Übernommen: `Content-Length` aus `len(body)` statt vom Client, Antwort 502 bei Fehlern der Gegenstelle, keine doppelten Header, Proxy startet in `/` ohne Core-Dumps, `store-secret` entfällt, Tokens gehen nur an `docker exec`, Recht „Checks“ für das GitHub-Token.
+- **Nicht getestet:** echte Tokens im Container, also Klon, Push und Claude-Sitzung über den Proxy, sowie `start.sh` selbst.
+
 ## 2026-10-29 – Phase 0, Schritt 4: Härtung des Devcontainers (Claude)
 
 Mo hat eine Prüfung auf Sandbox-Isolation und Supply-Chain-Sicherheit verlangt und alle vorgeschlagenen Härtungen freigegeben.

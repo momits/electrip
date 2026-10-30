@@ -14,11 +14,9 @@
     "https_proxy": "http://127.0.0.1:3128",
     "NO_PROXY": "localhost,127.0.0.1",
     "no_proxy": "localhost,127.0.0.1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8080/anthropic",
+    "CLAUDE_CODE_OAUTH_TOKEN": "added-by-auth-proxy"
   },
-  "remoteEnv": {
-    "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}",
-    "GH_TOKEN": "${localEnv:GH_TOKEN}"
-  },
-  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh && ([ -d .git ] || git clone https://github.com/momits/electrip.git .)"
+  "postStartCommand": "sudo /usr/local/bin/init-sandbox.sh"
 }

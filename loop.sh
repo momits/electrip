@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs agent sessions one after another with prompts/session.md (spec/phase0-plan.md, step 4).
 # Sessions run without permission checks, so the loop only starts behind the
-# devcontainer firewall, which allows outgoing traffic only through its proxy.
+# devcontainer firewall, which blocks direct outgoing traffic.
 # Each session logs to logs/. The loop ends when the file STOP exists.
 set -euo pipefail
 cd "$(dirname "$0")"

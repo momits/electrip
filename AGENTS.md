@@ -87,6 +87,6 @@ Jedes Inkrement wird vor dem Abschluss einmal gegen diese Liste geprüft. Grundl
 
 - Kleine, in sich abgeschlossene Commits; Nachricht beginnt mit der Anforderungs-ID, z. B. `B-08: add speed curve interpolation`.
 - Jede Aufgabe kommt über einen eigenen Pull Request nach `main`. Titel wie eine Commit-Nachricht (`<ID>: <was sich ändert>`); Beschreibung auf Englisch in kurzen Abschnitten: warum, was sich ändert, wie geprüft, Ergebnis des Einfachheits-Reviews, offene Punkte.
-- Merge ohne Warten auf Mo, sobald die CI grün ist (`gh pr checks --watch`), mit `gh pr merge --rebase --delete-branch`, damit die Commits mit Trailer erhalten bleiben. Ist die CI rot, auf dem Branch reparieren. Hat sich `main` geändert, Branch auf `origin/main` rebasen, mit `--force-with-lease` pushen, erneut auf die CI warten.
+- Merge ohne Warten auf Mo, sobald die CI grün ist, per Rebase-Merge, damit die Commits mit Trailer erhalten bleiben; danach den Branch löschen. Ist die CI rot, auf dem Branch reparieren. Hat sich `main` geändert, Branch auf `origin/main` rebasen, mit `--force-with-lease` pushen, erneut auf die CI warten.
 - Nichts in `legacy/` ändern (Referenz). Ausnahme: ein Headless-Wrapper für Golden-Tests unter `tools/legacy-harness/`, nicht in `legacy/` selbst.
 - Keine Secrets, keine großen Binärdateien außer im Korpus (`tests/corpus/`, SHA-256 in `tests/corpus/SHA256SUMS`).
