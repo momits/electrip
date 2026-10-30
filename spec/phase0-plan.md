@@ -38,7 +38,7 @@ Phase 0 baut das Fundament, bevor der autonome Loop startet. Jeder Schritt ist s
 - Nicht in derselben Sitzung wie der Z21-Treiber (ADR 0005).
 
 ## Schritt 4 – Loop und Devcontainer
-- `.devcontainer/` mit Rust, Docker-in-Docker für die Simulatoren, Claude Code.
+- `.devcontainer/` mit Rust, Claude Code und srcpd, gestartet mit `start.sh` (ohne devcontainer-CLI und ohne Docker-in-Docker, siehe `PROGRESS.md`).
 - `loop.sh`: ruft `claude -p` mit `prompts/session.md` in Schleife auf, loggt jede Sitzung nach `logs/`, erkennt das Nutzungslimit, wartet und setzt fort.
 - `prompts/session.md`: Sitzungsablauf aus `AGENTS.md` als Prompt.
 
