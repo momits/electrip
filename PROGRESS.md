@@ -8,6 +8,15 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-30 – Loop nutzt fest Opus (Claude)
+
+- Auf Wunsch von Mo ruft `loop.sh` Claude mit `--model claude-opus-5-5` auf, auch beim Fortsetzen nach dem Nutzungslimit.
+  Vorher lief der Loop mit dem Standardmodell des Abos (Sonnet 5.5).
+  Für ein neues Modell `MODEL` in `loop.sh` ändern.
+- `--dangerously-skip-permissions` bleibt nach Rücksprache mit Mo; der Container ist die Sicherheitsgrenze.
+- Getestet: Argumente mit simuliertem `claude` im Container, Modellname mit dem echten `claude -p`.
+- Einfachheits-Review: ok (Selbstprüfung, zwei Zeilen).
+
 ## 2026-10-30 – Tor A freigegeben (Mo)
 
 - Mo hat Tor A freigegeben, Phase 0 ist abgeschlossen.

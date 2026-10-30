@@ -6,6 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+MODEL=claude-opus-5-5 # pinned, so a new default model does not change the loop silently
 LIMIT_WAIT=${LIMIT_WAIT:-1800} # seconds between attempts while the usage limit holds
 FAILURE_WAIT=60
 MAX_FAILURES=3
@@ -34,7 +35,7 @@ while [ ! -e STOP ]; do
   log="logs/$(date +%Y%m%d-%H%M%S).jsonl"
   echo "$(date '+%F %T') session ${resume[*]:-new} -> $log"
   status=0
-  claude -p "$prompt" "${resume[@]}" --dangerously-skip-permissions \
+  claude -p "$prompt" "${resume[@]}" --model "$MODEL" --dangerously-skip-permissions \
     --output-format stream-json --verbose >"$log" 2>&1 || status=$?
   result=$(result_of "$log")
   is_error=true # a session without a result line failed
