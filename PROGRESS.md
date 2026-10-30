@@ -8,6 +8,12 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-30 – Tor A freigegeben (Mo)
+
+- Mo hat Tor A freigegeben, Phase 0 ist abgeschlossen.
+- Der erste Lauf des Loops mit echten Tokens hat Klon, Claude-Sitzung, Push, Pull Request und Merge über den Auth-Proxy bestätigt (PR #4).
+- **Nächster Schritt:** Phase 1 im Loop (`.devcontainer/start.sh`, dann `docker exec -it electrip ./loop.sh`).
+
 ## 2026-10-30 – Loop hält vor Tor A (Claude)
 
 - CI auf `main` (`bc4abc0`) ist grün, es gibt nichts zu reparieren.
@@ -233,4 +239,4 @@ Details zu jedem Schritt: `spec/phase0-plan.md`.
 - [x] Schritt 3d: Korpus (Mos JSON-Konfigurationen, SourceForge-Lokpakete)
 - [x] Schritt 3e: Z21-Simulator nach Spezifikation (eigene Sitzung)
 - [x] Schritt 4: `loop.sh` und Devcontainer
-- [ ] Tor A: Freigabe durch Mo
+- [x] Tor A: Freigabe durch Mo (2026-10-30)
