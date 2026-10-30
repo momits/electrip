@@ -36,9 +36,10 @@ Deshalb haben die Tokens nur die nötigen Rechte, und GitHub prüft serverseitig
 ## Einmalig auf dem Rechner
 
 ```sh
-claude setup-token                       # Token für Mos Claude-Platz, gilt ein Jahr
-npm install -g @devcontainers/cli@0.80.0
+claude setup-token   # Token für Mos Claude-Platz, gilt ein Jahr
 ```
+
+Außer Docker braucht es auf dem Rechner nichts.
 
 `GH_TOKEN` ist ein Fine-grained Token nur für `momits/electrip` mit kurzer Laufzeit.
 Er braucht Schreibrecht auf „Contents“ und „Pull requests“ sowie Leserecht auf „Actions“ und „Checks“.
@@ -51,24 +52,27 @@ In den Repo-Einstellungen muss „Allow rebase merging“ an sein.
 
 ```sh
 CLAUDE_CODE_OAUTH_TOKEN=… GH_TOKEN=… .devcontainer/start.sh
-devcontainer exec --workspace-folder . ./loop.sh
+docker exec -it electrip ./loop.sh
 ```
 
-`start.sh` startet den Container, schreibt die Tokens als Nutzer `keeper` in dessen Verzeichnis und klont beim ersten Start das Repo.
+`start.sh` baut das Image, legt den Container `electrip` neu an und startet Firewall und Proxys.
+Es schreibt die Tokens als Nutzer `keeper` in dessen Verzeichnis und klont beim ersten Start das Repo.
 Die Tokens landen nur bei `keeper`, nicht in der Umgebung des Containers.
-Nach einem Neubau des Images `start.sh` erneut ausführen.
+Der Klon liegt im Volume `electrip-workspace` und bleibt beim Neuanlegen erhalten.
+Läuft der Container noch, bricht `start.sh` ab; vorher `docker stop electrip`.
+Die Umgebung des Containers steht in `container.env`.
 
-Nur die devcontainer-CLI nutzen, nicht VS Code.
+Den Container nicht in VS Code öffnen.
 VS Code reicht SSH-Agent und Git-Zugangsdaten des Rechners in den Container durch.
 
 - Jede Sitzung schreibt ihr Protokoll als JSON Lines nach `logs/` im Volume.
-  Lesen mit `devcontainer exec --workspace-folder . ls logs`.
+  Lesen mit `docker exec electrip ls logs`.
   Im Terminal erscheint nur die letzte Nachricht der Sitzung.
 - Erreicht eine Sitzung das Nutzungslimit, wartet `loop.sh` 30 Minuten und setzt dieselbe Sitzung fort.
   Das wiederholt sich, bis das Limit zurückgesetzt ist.
   `LIMIT_WAIT` setzt die Wartezeit in Sekunden.
 - Nach drei Fehlschlägen in Folge, etwa ohne gültiges Token, bricht `loop.sh` ab.
-- `devcontainer exec --workspace-folder . touch STOP` beendet den Loop nach der laufenden Sitzung.
+- `docker exec electrip touch STOP` beendet den Loop nach der laufenden Sitzung.
   Der Agent legt `STOP` selbst an, wenn er ohne Mo nicht weiterkommt.
   Vor dem nächsten Start `STOP` löschen.
 

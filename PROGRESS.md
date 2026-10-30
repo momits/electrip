@@ -8,6 +8,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-30 – Phase 0, Schritt 4: Container ohne devcontainer-CLI (Claude)
+
+- Mo fragte, wie sicher `npm install -g @devcontainers/cli` ist.
+  Das Paket läuft mit Mos Rechten auf dem Mac, ist nur per Versionsnummer gepinnt und ohne Provenance-Nachweis.
+  Seit der Härtung nutzt der Container keine Devcontainer-Features mehr, also braucht es die CLI nicht.
+- `start.sh` baut das Image und startet den Container `electrip` nur mit Docker: mit `--init`, `NET_ADMIN`, dem Volume `electrip-workspace` und `container.env`.
+  Läuft der Container schon, bricht es ab, damit kein laufender Loop stirbt.
+  `devcontainer.json` ist entfallen, seine Umgebung steht in `container.env`.
+  Den Loop startet `docker exec -it electrip ./loop.sh`.
+- Getestet mit Platzhalter-Tokens: Container startet als `vscode`, Firewall, tinyproxy und Auth-Proxy laufen, das Volume gehört `vscode`, die Umgebung enthält keine Tokens, die GitHub-API antwortet über den Proxy mit 401.
+  Der Klon scheitert mit Platzhaltern erwartungsgemäß.
+  Ein zweiter Start bei laufendem Container bricht ab.
+- Einfachheits-Review: ok (Selbstprüfung, kleiner Diff): eine Quelle für die Umgebung, keine neue Abhängigkeit, eine Abhängigkeit weniger.
+- **Nicht getestet:** echte Tokens, also Klon, Push, Pull Request und eine Claude-Sitzung im Container.
+
 ## 2026-10-30 – Phase 0, Schritt 4: Tokens für den Agenten unlesbar (Claude)
 
 Mo wollte, dass der Agent die Tokens nur benutzen, aber nicht auslesen kann.
