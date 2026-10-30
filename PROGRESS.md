@@ -8,6 +8,13 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-10-30 – Loop hält vor Tor A (Claude)
+
+- CI auf `main` (`bc4abc0`) ist grün, es gibt nichts zu reparieren.
+- Alle Schritte der Phase 0 sind erledigt, Tor A ist nicht abgehakt, Phase 1 darf deshalb nicht beginnen.
+- **Wartet auf Mo:** Tor A prüfen (Container mit echten Tokens starten: Klon, Push, Pull Request, Claude-Sitzung), abhaken und `STOP` löschen.
+- Einfachheits-Review: entfällt, nur Doku geändert.
+
 ## 2026-10-30 – Phase 0, Schritt 4: Container ohne devcontainer-CLI (Claude)
 
 - Mo fragte, wie sicher `npm install -g @devcontainers/cli` ist.
