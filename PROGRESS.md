@@ -17,6 +17,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Der Einfachheits-Review selbst bleibt Pflicht, sein Ergebnis steht in `PROGRESS.md` und in der Beschreibung des Pull Requests.
 - Der CI-Job heißt jetzt „loc, parity, golden, corpus, dependencies“.
 
+## 2026-10-30 – B-06: Decoder-Modell im Kern (Claude)
+
+- Erste Aufgabe der Phase 1, CI auf `main` war grün.
+- `crates/core/src/decoder.rs`: `Protocol` (Motorola 1/2, DCC kurz/lang) mit Adressbereichen und Fahrstufen aus B-06, `Decoder` lässt nur gültige Kombinationen zu.
+  Beim Protokollwechsel wird die Adresse auf das Maximum begrenzt und die höchste Fahrstufenzahl gesetzt, wie in Electrip 1.
+- `clippy.toml` erlaubt `unwrap()` und `expect()` in Tests, wie `AGENTS.md` es vorsieht.
+- 7 Unit-Tests grün, `cargo xtask test` grün.
+- Einfachheits-Review: ok (Selbstprüfung, kleiner Diff).
+- **Offen für B-06, Status deshalb unverändert:** Bestätigung beim Protokollwechsel (kommt mit der Kennlinie, B-08/B-09), Umstellung N 1 > 127 auf N 2 beim Import (B-21), Übersetzung im srcpd-Treiber und Test gegen srcpd-Loopback (N-02).
+
 ## 2026-10-30 – Loop nutzt fest Opus (Claude)
 
 - Auf Wunsch von Mo ruft `loop.sh` Claude mit `--model claude-opus-5-5` auf, auch beim Fortsetzen nach dem Nutzungslimit.
