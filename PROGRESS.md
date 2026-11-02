@@ -8,6 +8,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – N-02: `CommandStation` und srcpd-Treiber (Claude)
+
+- CI auf `main` lief beim Start noch, danach grün.
+- `crates/core/src/station.rs`: Trait `CommandStation` mit `set_power`, `set_loco`, `emergency_stop` (nur die Lok) und `events`.
+  Der Treiber bekommt immer den ganzen Lok-Zustand (Richtung, Fahrstufe, F0–F28), weil der Host ihn hält (ADR 0010) und srcpd Funktionen löscht, die ein `SET GL` nicht nennt.
+  Anlagen-Nothalt ist Gleisstrom aus (B-23).
+- Neues Crate `electrip-station-srcp`: COMMAND-Session für Befehle, INFO-Session in eigenem Thread für Ereignisse (Gleisstrom, Lok-Zustand, auch von fremden Programmen; `Disconnected` bei Abbruch).
+  `INIT GL` sendet der Treiber vor dem ersten `SET GL` einer Adresse und nach jedem Wechsel von Protokoll oder Fahrstufen; Funktionszahl wie Electrip 1 (M 1: 1, M 2: 5, DCC: 29).
+  Verbinden prüft den Bus mit `INIT <bus> POWER` wie Electrip 1; Fehler (Server nicht erreichbar, kein SRCP, Bus fehlt) haben verständliche Texte.
+- Szenario-Tests `crates/station-srcp/tests/srcpd_loopback.rs` (Verbinden/Trennen, Fehler, Gleisstrom, Fahren, Protokollwechsel, F0–F28, Lok-Nothalt, fremde Änderung) sind `#[ignore]`, weil sie srcpd brauchen.
+  `cargo xtask sim up` führt sie statt des bisherigen Rauchtests aus, damit laufen sie im CI-Job „srcpd simulator“.
+  Unit-Tests für das Parsen der INFO-Zeilen und den Verbindungsabbruch (Fake-Server).
+- `cargo xtask test` und `cargo xtask sim up` grün. Hardware-Checkliste in `spec/hw-checklist.md`.
+- Status unverändert: Der Z21-Treiber fehlt (Phase 2), und der Treiber ist noch nicht im Sitzungs-Host angebunden.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Die Meldung „Bus fehlt“ nennt die Ursache mit, Fahrstufenzahl nur einmal gelesen.
+- **Nächster Schritt:** B-01: Verbindung (Host, Port 4303, Bus) als Befehl im Sitzungs-Host und über den Steuerkanal, Zustand `connected`/`disconnected` aus den Ereignissen.
+
 ## 2026-11-02 – B-10: Fahren mit der Achse im Kern (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
