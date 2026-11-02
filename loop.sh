@@ -24,8 +24,9 @@ result_of() {
 }
 
 # The session id lets a session that hit the usage limit continue with its context.
+# No `| head` here: with pipefail, its early exit would end the whole loop.
 session_of() {
-  jq -rR 'fromjson? | .session_id // empty' "$1" | head -n 1
+  jq -nrR 'first(inputs | fromjson? | .session_id // empty)' "$1"
 }
 
 failures=0
