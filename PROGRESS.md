@@ -8,6 +8,25 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-10: Fahren mit der Achse im Sitzungs-Host (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neue Befehle `set_axis` (Auslenkung -1 bis 1, Totzone 0,06 wie Electrip 1) und `reverse` (Richtungswender); der Zustand jeder Lok zeigt `speed` und `forward` (`spec/steuerkanal.md`).
+- `Host::poll(seconds)` beschleunigt alle Loks mit ihrer Achse (`Session::drive`, `Motion` aus dem letzten B-10-Eintrag) und schickt dem Treiber jede Lok, deren Fahrstufe oder Richtung sich geändert hat.
+  Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1; Funktionen bleiben 0 bis B-07.
+  Beim Verbinden und für neue Loks wird erst nach einer Änderung gesendet, damit eine Lok, die ein anderes Programm fährt, nicht angehalten wird.
+  Loks fahren auch ohne Verbindung (Zustand ändert sich, nichts wird gesendet).
+- Der Steuerkanal übergibt dem Host die seit dem letzten Abfragen vergangene Zeit (Takt 50 ms) und schickt den Zustand, solange er sich ändert.
+  Deshalb kann eine `state`-Nachricht vor dem `reply` eintreffen; der Test-Helfer überspringt sie und hat jetzt ein Lese-Timeout von 5 s.
+- Tests: Unit-Tests in `crates/core/src/host/tests.rs` (Fake-Treiber zeichnet gesendete Zustände auf), `crates/electrip/tests/driving.rs` über den Steuerkanal (Beschleunigen/Bremsen in etwa 1 s, Richtungswender) und ein `#[ignore]`-Test gegen srcpd (Fahrstufe 128, dann Stillstand rückwärts), der in `cargo xtask sim up` mitläuft.
+- `cargo xtask test` und `cargo xtask sim up` grün. Hardware-Checkliste in `spec/hw-checklist.md` ergänzt.
+- B-10 `wired` gesetzt (neue Definition für Phase 1: Befehl im Kern und über den Steuerkanal).
+  `verified` bleibt offen: Die Gamepad-Achse (N-01/B-03) und der Test mit virtuellem Gamepad fehlen. Fremde Lok-Änderungen von der Zentrale übernimmt der Host noch nicht (Q-010).
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: ein Test-Helfer `host()` statt zwei. Nicht übernommen: Totzone als Parameter von `Motion::accelerate` bleibt, weil sie mit N-01 pro Achse kommt.
+- **Nächster Schritt:** B-21 (Konfigurationsdatei, damit B-01, B-04 und B-05 gespeichert werden) oder fremde Lok-Änderungen im Host übernehmen (Q-010).
+  Offen aus Mos Eintrag unten: Status von B-01, B-04, B-05, B-06, B-08, B-09 nach der neuen Definition prüfen.
+
 ## 2026-11-02 – `wired` in Phase 1: Befehl plus Steuerkanal (Mo + Claude)
 
 - Fast alle Bausteine blieben ohne `wired`, weil die Oberfläche fehlt; die kommt erst in Phase 2.
