@@ -4,4 +4,5 @@
 //! depend on any other crate of the workspace.
 
 pub mod decoder;
+pub mod loco;
 pub mod speed_curve;
