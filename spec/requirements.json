@@ -250,7 +250,7 @@
       "hw": false,
       "status": {
         "wired": false,
-        "verified": false,
+        "verified": true,
         "accepted": false
       }
     },

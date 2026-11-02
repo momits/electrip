@@ -8,6 +8,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-09: Kennlinie zurücksetzen über den Steuerkanal (Claude)
+
+- `crates/electrip/tests/curve_reset.rs` prüft über den Steuerkanal: Vmax, Fahrstufenzahl und Protokoll ohne `confirmed` liefern den Fehler zur Bestätigung, und die Lok samt geknickter Kennlinie bleibt unverändert (auch für einen neu verbundenen Client).
+  Mit `confirmed` wird die Kennlinie zur Geraden von (0, 0) bis (Vmax, Fahrstufenzahl).
+- Kein Produktcode geändert; der Kern konnte das schon (B-09-Eintrag unten, N-08).
+- `cargo xtask test` grün. B-09 `verified` gesetzt, denn `control-channel` ist seine einzige Prüfart.
+  `wired` bleibt offen: Die Warnung mit Bestätigung in der UI fehlt, es gibt noch keine Oberfläche.
+- Einfachheits-Review: ok (Selbstprüfung, nur eine Testdatei).
+- **Nächster Schritt:** `control-channel`-Tests für B-08 (Punkte anlegen, löschen, verschieben); danach B-04 (Namen, Umbenennen, Löschen, Reihenfolge).
+
 ## 2026-11-02 – N-08: Steuerkanal (Claude)
 
 - CI auf `main` war grün.
