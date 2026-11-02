@@ -1,16 +1,21 @@
 use super::*;
+use electrip_core::station::StationError;
+
+fn host() -> Host {
+    Host::new(Box::new(|_| Err(StationError("no station".into()))))
+}
 
 #[test]
 fn execute_applies_a_command() {
-    let mut session = Session::default();
-    assert_eq!(execute(&mut session, r#"{"command": "add_loco"}"#), Ok(()));
-    assert_eq!(session.locos().len(), 1);
+    let mut host = host();
+    assert_eq!(execute(&mut host, r#"{"command": "add_loco"}"#), Ok(()));
+    assert_eq!(host.session().locos().len(), 1);
 }
 
 #[test]
 fn execute_explains_invalid_json() {
-    let mut session = Session::default();
-    let error = execute(&mut session, r#"{"command": "fly"}"#).unwrap_err();
+    let mut host = host();
+    let error = execute(&mut host, r#"{"command": "fly"}"#).unwrap_err();
     assert!(
         error.starts_with("invalid command: unknown variant `fly`"),
         "{error}"
@@ -19,9 +24,9 @@ fn execute_explains_invalid_json() {
 
 #[test]
 fn execute_explains_a_failed_command() {
-    let mut session = Session::default();
+    let mut host = host();
     let error = execute(
-        &mut session,
+        &mut host,
         r#"{"command": "set_address", "loco": 1, "address": 3}"#,
     );
     assert_eq!(error, Err("there is no loco with id 1".into()));

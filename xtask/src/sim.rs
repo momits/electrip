@@ -1,5 +1,5 @@
 //! `cargo xtask sim up|down`: srcpd with a loopback bus (`sim/srcpd/`),
-//! checked by the srcpd-loopback tests of the SRCP driver. srcpd runs directly where it is
+//! checked by the srcpd-loopback tests. srcpd runs directly where it is
 //! installed, as in the devcontainer, which has no Docker; else in Docker.
 
 use crate::{Result, root};
@@ -95,14 +95,19 @@ fn wait_for_srcpd() -> Result {
     }
 }
 
-/// The scenario tests of the srcpd driver (srcpd-loopback).
+/// The scenario tests of the srcpd driver and of the connection over the
+/// control channel (srcpd-loopback).
 fn loopback_tests() -> Result {
     let args = [
         "test",
         "-p",
         "electrip-station-srcp",
+        "-p",
+        "electrip",
         "--test",
         "srcpd_loopback",
+        "--test",
+        "station_connection",
         "--",
         "--ignored",
     ];

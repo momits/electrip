@@ -2,27 +2,36 @@
 //! receive the state, one JSON message per line. The format is described in
 //! `spec/steuerkanal.md`.
 
+use electrip_core::host::Host;
 use electrip_core::session::{Command, Session};
 use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
 
-/// The session and all connected clients. One lock for both keeps the
+/// How often the host handles the events of the command station.
+const POLL_INTERVAL: Duration = Duration::from_millis(50);
+
+/// The host and all connected clients. One lock for both keeps the
 /// messages to each client in order.
-#[derive(Default)]
 struct Shared {
-    session: Session,
+    host: Host,
     clients: Vec<TcpStream>,
 }
 
 /// Serves clients until the listener fails; each client gets a thread.
-pub fn serve(listener: TcpListener) -> io::Result<()> {
-    let shared = Arc::new(Mutex::new(Shared::default()));
+pub fn serve(listener: TcpListener, host: Host) -> io::Result<()> {
+    let shared = Arc::new(Mutex::new(Shared {
+        host,
+        clients: Vec::new(),
+    }));
+    let poller = Arc::clone(&shared);
+    thread::spawn(move || poll(&poller));
     for stream in listener.incoming() {
         let stream = stream?;
         let shared = Arc::clone(&shared);
@@ -38,27 +47,45 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     {
         let mut shared = lock(shared)?;
         send(&mut writer, &json!({"type": "hello", "version": VERSION}))?;
-        send(&mut writer, &state(&shared.session))?;
+        send(&mut writer, &state(shared.host.session()))?;
         shared.clients.push(stream.try_clone()?);
     }
     for line in BufReader::new(stream).lines() {
         let line = line?;
         let mut shared = lock(shared)?;
-        let result = execute(&mut shared.session, &line);
+        let result = execute(&mut shared.host, &line);
         send(&mut writer, &reply(&result))?;
         if result.is_ok() {
-            let state = state(&shared.session);
-            shared.clients.retain_mut(|c| send(c, &state).is_ok());
+            shared.broadcast();
         }
     }
     Ok(())
 }
 
-/// Reads a command from a JSON line and applies it to the session.
-fn execute(session: &mut Session, line: &str) -> Result<(), String> {
+/// Lets the host handle station events and reports changes to all clients.
+fn poll(shared: &Mutex<Shared>) -> io::Result<()> {
+    loop {
+        thread::sleep(POLL_INTERVAL);
+        let mut shared = lock(shared)?;
+        if shared.host.poll() {
+            shared.broadcast();
+        }
+    }
+}
+
+impl Shared {
+    /// Sends the state to all clients and forgets the disconnected ones.
+    fn broadcast(&mut self) {
+        let state = state(self.host.session());
+        self.clients.retain_mut(|c| send(c, &state).is_ok());
+    }
+}
+
+/// Reads a command from a JSON line and applies it.
+fn execute(host: &mut Host, line: &str) -> Result<(), String> {
     let command: Command =
         serde_json::from_str(line).map_err(|e| format!("invalid command: {e}"))?;
-    session.apply(command).map_err(|e| e.to_string())
+    host.apply(command).map_err(|e| e.to_string())
 }
 
 fn reply(result: &Result<(), String>) -> Value {
