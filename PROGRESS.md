@@ -8,6 +8,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-23: Gleisstrom und Nothalt (Claude)
+
+- Die vorige Sitzung war mitten in B-23 abgebrochen; der Zwischenstand wurde formatiert, geprüft und fertiggestellt.
+- Neue Befehle `toggle_power` (Nothalt der Anlage: Gleisstrom aus, beim nächsten Mal an; nur mit Verbindung), `emergency_stop { loco }` (nur diese Lok hält sofort, Achse losgelassen, SRCP-Nothalt) und `set_power_on_start { on }`.
+- Zustand `station` hat neu `power_on_start` (Vorgabe an, aus Electrip 1 als `power` importiert) und `track_power`.
+  `connect` schaltet den Gleisstrom ein, wenn `power_on_start` gesetzt ist; `track_power` folgt den Meldungen der Zentrale und ist damit über alle Instanzen an derselben Zentrale synchron.
+- Tests: `crates/core/src/host/tests.rs` (Fake-Treiber zeichnet Gleisstrom, Fahrstufen und Nothalt auf), `crates/electrip/tests/track_power.rs` über den Steuerkanal, zwei `#[ignore]`-Tests gegen srcpd (Gleisstrom bei zwei Instanzen, Lok-Nothalt kommt an).
+  Lokal ohne Docker liefen die srcpd-Tests nicht; sie laufen im CI-Job „srcpd simulator“.
+- `cargo xtask test` grün. Hardware-Checkliste in `spec/hw-checklist.md` ergänzt.
+- Status unverändert: Der Lokwechsel („vorige/nächste Lok“ mit Auto-Scroll) und die Zuordnung „Lok, die das auslösende Eingabegerät steuert“ brauchen Eingabegeräte (N-01, N-07); die Anzeige des Gleisstroms kommt in Phase 2.
+- Einfachheits-Review: ok (Sub-Agent). Optionale Hinweise (Befehlszweige in eigene Methoden, Helfer im Fake-Treiber) nicht übernommen.
+- **Nächster Schritt:** Eingabegeräte (N-01/N-07), damit B-03, B-10 und B-23 vollständig werden.
+
 ## 2026-11-02 – B-21: Import von Konfigurationsdateien aus Electrip 1 (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
