@@ -41,8 +41,8 @@
       "phase": 1,
       "hw": true,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       }
     },
@@ -117,8 +117,8 @@
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       }
     },
@@ -633,8 +633,8 @@
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       }
     },
