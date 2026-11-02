@@ -42,7 +42,7 @@ claude setup-token   # Token für Mos Claude-Platz, gilt ein Jahr
 Außer Docker braucht es auf dem Rechner nichts.
 
 `GH_TOKEN` ist ein Fine-grained Token nur für `momits/electrip` mit kurzer Laufzeit.
-Er braucht Schreibrecht auf „Contents“ und „Pull requests“ sowie Leserecht auf „Actions“ und „Checks“.
+Er braucht Schreibrecht auf „Contents“ und „Pull requests“ sowie Leserecht auf „Actions“.
 Ohne das Recht „Workflows“ kann der Agent die CI nicht ändern.
 
 Auf GitHub für `main` ein Ruleset anlegen: Pull Request und grüne Status-Checks sind Pflicht, nur Mo darf das umgehen.
