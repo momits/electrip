@@ -19,6 +19,9 @@ fn add_loco_uses_the_defaults_of_electrip_1() {
         Decoder::new(Protocol::DccShort, 1, 128).unwrap()
     );
     assert_eq!(entry.loco.max_speed(), 100.0);
+    assert_eq!(entry.loco.accel_duration(), 11.5);
+    assert_eq!(entry.loco.brake_duration(), 8.5);
+    assert_eq!(entry.loco.volume(), 0.8);
     assert_eq!(
         entry.loco.speed_curve().points(),
         [(0.0, 0.0), (100.0, 128.0)]
@@ -65,6 +68,9 @@ fn commands_are_read_from_json() {
         json!({"command": "move_curve_point", "loco": 1, "point": 1, "speed": 60.0, "step": 6.0}),
         json!({"command": "add_curve_point", "loco": 1, "speed": 30.0, "step": 3.0}),
         json!({"command": "remove_curve_point", "loco": 1, "point": 2}),
+        json!({"command": "set_accel_duration", "loco": 1, "seconds": 20.0}),
+        json!({"command": "set_brake_duration", "loco": 1, "seconds": 4.5}),
+        json!({"command": "set_volume", "loco": 1, "volume": 0.25}),
     ] {
         session.apply(command(value)).unwrap();
     }
@@ -76,6 +82,10 @@ fn commands_are_read_from_json() {
     assert_eq!(
         loco.speed_curve().points(),
         [(0.0, 0.0), (30.0, 3.0), (100.0, 14.0)]
+    );
+    assert_eq!(
+        (loco.accel_duration(), loco.brake_duration(), loco.volume()),
+        (20.0, 4.5, 0.25)
     );
 }
 
@@ -90,7 +100,10 @@ fn the_state_is_written_as_json() {
                 "name": "Unbenannte Lok",
                 "decoder": {"protocol": "dcc_short", "address": 1, "speed_steps": 128},
                 "max_speed": 100.0,
-                "speed_curve": [[0.0, 0.0], [100.0, 128.0]]
+                "speed_curve": [[0.0, 0.0], [100.0, 128.0]],
+                "accel_duration": 11.5,
+                "brake_duration": 8.5,
+                "volume": 0.8
             }],
             "station": "disconnected"
         })

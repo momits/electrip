@@ -110,3 +110,45 @@ fn address_changes_keep_the_curve() {
     assert!(loco.set_address(128).is_err());
     assert_eq!(loco.speed_curve(), &curve);
 }
+
+#[test]
+fn new_has_the_durations_and_volume_of_electrip_1() {
+    let loco = loco();
+    assert_eq!(loco.accel_duration(), 11.5);
+    assert_eq!(loco.brake_duration(), 8.5);
+    assert_eq!(loco.volume(), 0.8);
+}
+
+#[test]
+fn durations_and_volume_change_without_resetting_the_curve() {
+    let mut loco = loco();
+    let curve = loco.speed_curve().clone();
+    loco.set_accel_duration(1.0).unwrap();
+    loco.set_brake_duration(9999.0).unwrap();
+    loco.set_volume(0.0).unwrap();
+    assert_eq!(
+        (loco.accel_duration(), loco.brake_duration(), loco.volume()),
+        (1.0, 9999.0, 0.0)
+    );
+    assert_eq!(*loco.speed_curve(), curve);
+}
+
+#[test]
+fn durations_and_volume_out_of_range_change_nothing() {
+    let mut loco = loco();
+    let before = loco.clone();
+    for seconds in [0.5, 9999.5, f64::NAN] {
+        assert_eq!(
+            loco.set_accel_duration(seconds),
+            Err(LocoError::DurationOutOfRange)
+        );
+        assert_eq!(
+            loco.set_brake_duration(seconds),
+            Err(LocoError::DurationOutOfRange)
+        );
+    }
+    for volume in [-0.1, 1.1, f64::NAN] {
+        assert_eq!(loco.set_volume(volume), Err(LocoError::VolumeOutOfRange));
+    }
+    assert_eq!(loco, before);
+}
