@@ -8,6 +8,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-02 – B-23: Lokwechsel mit Dauerdruck (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- **SDL3 ist im Container nicht baubar:** Es gibt weder `libsdl3-dev` noch `cmake` (für `sdl3` mit `build-from-source`), kein `sudo` für `apt`, und der Proxy lässt nur crates.io durch.
+  Der nächste Schritt aus N-01 (Crate `electrip-input`) braucht deshalb Mo: `cmake` oder `libsdl3-dev` (Debian trixie hat SDL 3.2) im `.devcontainer/Dockerfile` nachinstallieren und den Container neu bauen.
+  Bis dahin habe ich stattdessen das Dauerdruck-Scrollen gebaut.
+- Hält ein Gerät „vorige/nächste Lok“, wechselt die Lok sofort, nach 500 ms erneut und dann alle 60 ms, bis der Knopf losgelassen wird (wie Electrip 1: der zweite Wechsel kommt bei 560 ms).
+  `Device` merkt sich den gehaltenen Wechsel; `Session::drive` (also `Host::poll`) zählt die Zeit und wechselt die Lok.
+  Loslassen beendet das Scrollen auch dann, wenn die Belegung in der Zwischenzeit geändert wurde.
+- Tests: `input/tests.rs` (Zeitpunkte), `host/tests.rs` (Scrollen über freie Loks, Ende beim Loslassen, auch nach `unbind`), `crates/electrip/tests/input_devices.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` und `cargo xtask parity` grün.
+- **B-23** `wired`: Alle Kriterien ohne Oberfläche sind über den Steuerkanal erfüllt; die Anzeige des Gleisstroms kommt in Phase 2.
+  `verified` fehlt der Test mit virtuellem Gamepad (SDL3, siehe oben).
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Loslassen vor dem Nachschlagen der Belegung, `change_and_scroll` statt eines zweiten `start_scroll`.
+  Nicht übernommen: die Zweige „vorige/nächste Lok“ zusammenlegen (spart kaum Zeilen).
+- **Nächster Schritt:** mit Mo SDL3 in den Container bringen (siehe oben), dann `electrip-input`. Ohne SDL3: B-21 (Konfigurationen speichern) oder fremde Lok-Änderungen im Host übernehmen (Q-010).
+
 ## 2026-11-02 – N-01, B-02: Eingabegeräte und Mappings im Kern (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
