@@ -63,7 +63,10 @@ fn reports_connection_errors() {
     let error = SrcpStation::connect("127.0.0.1", DEFAULT_PORT, 7)
         .err()
         .unwrap();
-    assert_eq!(error.0, "the SRCP server has no bus 7");
+    assert!(
+        error.0.starts_with("the SRCP server has no bus 7: "),
+        "{error}"
+    );
 }
 
 #[test]
