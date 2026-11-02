@@ -8,6 +8,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-08: Geschwindigkeitskennlinie im Kern (Claude)
+
+- CI auf `main` war grün.
+- `crates/core/src/speed_curve.rs`: `SpeedCurve` bildet km/h über Kontrollpunkte auf Fahrstufen ab, wie `LinearSegmentFunction` in Electrip 1.
+  Punkte anlegen, löschen und verschieben halten die Kennlinie steigend; erster und letzter Punkt bleiben und ändern nur ihre Fahrstufe.
+  `step_at` liefert die ungerundete Fahrstufe, Geschwindigkeit 0 ist immer Fahrstufe 0, außerhalb der Kennlinie `None`; abschneiden auf ganze Fahrstufen bleibt Sache des Aufrufers, wie in Electrip 1.
+- Bewusste Abweichungen: Ein Punkt auf einer schon belegten Geschwindigkeit wird ignoriert (Electrip 1 stürzt mit Division durch null ab), ebenso ungültige Punktnummern; `new` lehnt weniger als zwei Punkte oder Enden ohne Geschwindigkeitsspanne ab.
+  `get_x` ist nicht übernommen, Electrip 1 brauchte es nur zum Zeichnen.
+- Golden-Test `crates/core/tests/golden_speed_curve.rs` vergleicht Punkte und Fahrstufen bitgenau mit `tests/golden/speed_curve.jsonl`.
+  Dafür ist `serde_json` Dev-Abhängigkeit von `core`, mit `float_roundtrip`, weil der Standard-Parser Fließkommazahlen nicht exakt liest.
+- 9 Unit-Tests und der Golden-Test grün, `cargo xtask test` grün.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Beim Verschieben begrenzt zuerst der linke, dann der rechte Nachbar, damit bei fallender Kennlinie wie in Electrip 1 der rechte gewinnt.
+- **Offen für B-08, Status deshalb unverändert:** Befehle und Steuerkanal (Prüfart `control-channel`), Bedienung per Klick, Rechtsklick und Ziehen in der UI.
+
 ## 2026-11-02 – Prüfung des Review-Trailers entfernt (Mo + Claude)
 
 - Der Loop kam mit PR #7 (B-06) nicht weiter: `cargo xtask review-check` ließ den CI-Job „loc, parity, simplicity review, dependencies“ scheitern.
