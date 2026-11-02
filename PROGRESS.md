@@ -8,6 +8,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-08: Kennlinie über den Steuerkanal (Claude)
+
+- CI auf `main` war grün.
+- `crates/electrip/tests/speed_curve.rs` prüft über den Steuerkanal: Punkt anlegen, inneren Punkt verschieben, Endpunkt verschieben (ändert nur die Fahrstufe), Punkt löschen; ein neu verbundener Client sieht dasselbe.
+  Erster und letzter Punkt lassen sich nicht löschen, eine unbekannte Lok ergibt einen Fehler.
+- Kein Produktcode geändert.
+- `cargo xtask test` grün. B-08 `verified` gesetzt: Golden-, Unit- und `control-channel`-Tests sind grün.
+  `wired` bleibt offen: Klick, Rechtsklick und Ziehen in der UI fehlen, es gibt noch keine Oberfläche.
+- Einfachheits-Review: ok (Selbstprüfung, nur eine Testdatei).
+- **Nächster Schritt:** B-04 (Namen, Umbenennen, Löschen, Reihenfolge) im Kern und über den Steuerkanal.
+
 ## 2026-11-02 – B-09: Kennlinie zurücksetzen über den Steuerkanal (Claude)
 
 - `crates/electrip/tests/curve_reset.rs` prüft über den Steuerkanal: Vmax, Fahrstufenzahl und Protokoll ohne `confirmed` liefern den Fehler zur Bestätigung, und die Lok samt geknickter Kennlinie bleibt unverändert (auch für einen neu verbundenen Client).
