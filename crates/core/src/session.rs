@@ -349,11 +349,7 @@ impl Session {
             Command::RenameAction { action, name } => self.action(action)?.name = name,
             Command::RemoveAction { action } => self.remove_action(action)?,
             Command::AddFunction { loco, function } => self.add_function(loco, function)?,
-            Command::RemoveFunction { loco, index } => {
-                let functions = self.loco(loco)?.functions_mut();
-                check_index(functions, index)?;
-                functions.remove(index);
-            }
+            Command::RemoveFunction { loco, index } => self.remove_function(loco, index)?,
             Command::MoveFunction {
                 loco,
                 index,

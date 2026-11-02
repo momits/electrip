@@ -19,8 +19,9 @@ impl Session {
     }
 
     pub(super) fn remove_action(&mut self, id: u32) -> Result<(), CommandError> {
-        self.action(id)?;
-        self.actions.retain(|a| a.id != id);
+        let index = self.actions.iter().position(|a| a.id == id);
+        self.actions
+            .remove(index.ok_or(CommandError::UnknownAction(id))?);
         for entry in &mut self.locos {
             entry.loco.functions_mut().retain(|f| f.action != id);
         }
@@ -48,6 +49,13 @@ impl Session {
         self.loco(loco)?
             .functions_mut()
             .push(Function { on, ..function });
+        Ok(())
+    }
+
+    pub(super) fn remove_function(&mut self, loco: u32, index: usize) -> Result<(), CommandError> {
+        let functions = self.loco(loco)?.functions_mut();
+        check_index(functions, index)?;
+        functions.remove(index);
         Ok(())
     }
 
