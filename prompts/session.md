@@ -10,7 +10,7 @@ Ein lokaler Proxy setzt die Tokens ein:
 
 - `origin` zeigt auf `http://127.0.0.1:8080/github-git/`, `git pull` und `git push` funktionieren normal.
 - Die GitHub-REST-API für dieses Repo erreichst du mit `curl` unter `http://127.0.0.1:8080/github-api/repos/momits/electrip/…`.
-  Beispiele: `actions/runs?branch=main&per_page=1`, `pulls` (POST zum Erstellen), `commits/<sha>/check-runs`, `pulls/<n>/merge` (PUT mit `{"merge_method": "rebase"}`), `actions/jobs/<id>/logs` (mit `curl -L`).
+  Beispiele: `actions/runs?branch=main&per_page=1`, `pulls` (POST zum Erstellen), `actions/runs?head_sha=<sha>` (CI-Ergebnis eines Commits; `check-runs` ist für das Token gesperrt), `pulls/<n>/merge` (PUT mit `{"merge_method": "rebase"}`), `actions/jobs/<id>/logs` (mit `curl -L`).
   Andere Pfade lehnt der Proxy ab.
 - Warte auf die CI im Vordergrund, nicht mit Hintergrund-Befehlen.
   Die Sitzung endet erst, wenn alle Hintergrund-Befehle fertig sind, auch nach dem Merge.
