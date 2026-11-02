@@ -8,6 +8,18 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-10: Fahren mit der Achse im Kern (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core/src/drive.rs`: `Motion` hält Geschwindigkeit (km/h) und Fahrtrichtung einer Lok.
+  `accelerate` ändert die Geschwindigkeit proportional zur Achsauslenkung wie `accelerate_loco` in Electrip 1: Vollausschlag nach vorn erreicht Vmax in der Beschleunigungsdauer, nach hinten steht die Lok aus Vmax in der Bremsdauer; innerhalb der Totzone (Parameter, pro Achse kommt mit N-01) bleibt die Geschwindigkeit.
+  Die vergangene Zeit ist ein Parameter statt fester 50-ms-Takte.
+  `reverse` (Richtungswender) setzt die Geschwindigkeit auf 0 und wechselt die Richtung.
+- 7 Unit-Tests in `crates/core/src/drive/tests.rs` (Dauern mit ±10 % wie Q-003), `cargo xtask test` grün.
+  Status unverändert: Noch nicht im Sitzungs-Host angebunden (Takt, Befehle), srcpd-Loopback und virtuelles Gamepad fehlen.
+- Einfachheits-Review: ok (Sub-Agent).
+- **Nächster Schritt:** Lokbild aus B-05 im Kern oder B-01/N-02 (srcpd-Treiber hinter `CommandStation`), damit B-10 senden kann.
+
 ## 2026-11-02 – B-05: Beschleunigungs-, Bremsdauer und Lautstärke im Kern und über den Steuerkanal (Claude)
 
 - CI auf `main` war grün.
