@@ -8,6 +8,14 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – Neue Anforderung N-08: Steuerkanal (Mo + Claude)
+
+- B-06, B-08 und B-09 blieben ohne Status, weil ihre Prüfart `control-channel` keinen Steuerkanal hat.
+  Den gab es bisher nur im Konzept und in ADR 0002, nicht als Anforderung.
+- Mo hat N-08 „Steuerkanal“ in `spec/requirements.json` aufgenommen (Phase 1).
+- **Nächster Schritt im Loop:** N-08 vor weiteren Kernbausteinen, denn B-01, B-04, B-05, B-08, B-09 und B-24 brauchen ihn zur Prüfung.
+  Danach die schon gebauten Bausteine über den Steuerkanal anbinden und ihren Status setzen.
+
 ## 2026-11-02 – B-09: Kennlinie zurücksetzen im Kern (Claude)
 
 - CI auf `main` war grün.
