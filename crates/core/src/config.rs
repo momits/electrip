@@ -38,13 +38,15 @@ pub fn path(dir: &Path, name: &str) -> PathBuf {
     dir.join(format!("{name}.json"))
 }
 
-/// The names of the configurations in the library, sorted.
+/// The names of the configurations in the library, sorted; files whose
+/// names are no valid names are left out.
 pub fn names(dir: &Path) -> io::Result<Vec<String>> {
     let mut names = Vec::new();
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
         if path.extension().is_some_and(|e| e == "json") {
-            names.extend(path.file_stem().and_then(|s| s.to_str()).map(String::from));
+            let name = path.file_stem().and_then(|s| s.to_str());
+            names.extend(name.filter(|n| valid_name(n)).map(String::from));
         }
     }
     names.sort();
@@ -56,9 +58,12 @@ pub fn read(path: &Path) -> io::Result<Config> {
     serde_json::from_str(&json).map_err(io::Error::other)
 }
 
+/// Writes a temporary file first, so a crash cannot leave half a file.
 pub fn write(path: &Path, config: &Config) -> io::Result<()> {
     let json = serde_json::to_string_pretty(config).map_err(io::Error::other)?;
-    fs::write(path, json)
+    let temporary = path.with_extension("json.tmp");
+    fs::write(&temporary, json)?;
+    fs::rename(temporary, path)
 }
 
 #[cfg(test)]

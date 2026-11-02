@@ -66,3 +66,12 @@ fn reading_an_invalid_file_fails() {
     fs::write(&path, "{\"locos\": 1}").unwrap();
     assert!(read(&path).is_err());
 }
+
+#[test]
+fn names_leaves_out_invalid_names() {
+    let dir = TempDir::new().unwrap();
+    for file in ["a.json", "end .json", "a.json.tmp"] {
+        fs::write(dir.path().join(file), "{}").unwrap();
+    }
+    assert_eq!(names(dir.path()).unwrap(), ["a"]);
+}

@@ -12,6 +12,7 @@ use crate::loco::{Loco, LocoError};
 use crate::station::{LocoState, MAX_FUNCTION, StationError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::io;
 use std::path::PathBuf;
 
 /// A user action. Locos are addressed by their id in the session.
@@ -225,6 +226,12 @@ pub enum CommandError {
 impl From<LocoError> for CommandError {
     fn from(error: LocoError) -> Self {
         CommandError::Loco(error)
+    }
+}
+
+impl From<io::Error> for CommandError {
+    fn from(error: io::Error) -> Self {
+        CommandError::File(error.to_string())
     }
 }
 
