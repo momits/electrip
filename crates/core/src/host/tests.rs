@@ -30,14 +30,9 @@ impl CommandStation for FakeDriver {
     }
 }
 
-/// A host whose connector reaches only the server "srcp", and its events.
-fn host() -> (Host, Events) {
-    let (host, events, _) = host_sending();
-    (host, events)
-}
-
-/// Like [`host`], also with the loco states the driver got.
-fn host_sending() -> (Host, Events, Sent) {
+/// A host whose connector reaches only the server "srcp", its events and
+/// the loco states the driver got.
+fn host() -> (Host, Events, Sent) {
     let (events, sent) = (Events::default(), Sent::default());
     let (driver_events, driver_sent) = (Arc::clone(&events), Arc::clone(&sent));
     let host = Host::new(Box::new(move |station| {
@@ -61,7 +56,7 @@ fn set_server(host: &mut Host, name: &str) -> Result<(), CommandError> {
 
 #[test]
 fn the_server_defaults_to_electrip_1() {
-    let (host, _) = host();
+    let (host, _, _) = host();
     let station = host.session().station();
     assert_eq!(
         (station.host.as_str(), station.port, station.bus),
@@ -72,7 +67,7 @@ fn the_server_defaults_to_electrip_1() {
 
 #[test]
 fn connects_to_the_configured_server() {
-    let (mut host, _) = host();
+    let (mut host, _, _) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     let station = host.session().station();
@@ -82,7 +77,7 @@ fn connects_to_the_configured_server() {
 
 #[test]
 fn a_failed_connect_reports_the_error_and_changes_nothing() {
-    let (mut host, _) = host();
+    let (mut host, _, _) = host();
     let before = host.session().clone();
     let error = host.apply(Command::Connect).unwrap_err();
     assert_eq!(error.to_string(), "cannot reach localhost");
@@ -91,7 +86,7 @@ fn a_failed_connect_reports_the_error_and_changes_nothing() {
 
 #[test]
 fn the_server_changes_only_while_disconnected() {
-    let (mut host, _) = host();
+    let (mut host, _, _) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     assert_eq!(set_server(&mut host, "other"), Err(CommandError::Connected));
@@ -102,7 +97,7 @@ fn the_server_changes_only_while_disconnected() {
 
 #[test]
 fn a_broken_connection_disconnects_and_can_be_reopened() {
-    let (mut host, events) = host();
+    let (mut host, events, _) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     assert!(!host.poll(0.05));
@@ -116,7 +111,7 @@ fn a_broken_connection_disconnects_and_can_be_reopened() {
 /// A connected host with one loco (id 1, address 1, 100 km/h, 128 steps,
 /// 11.5 s to accelerate) and the loco states the driver got.
 fn driving_host() -> (Host, Sent) {
-    let (mut host, _, sent) = host_sending();
+    let (mut host, _, sent) = host();
     host.apply(Command::AddLoco).unwrap();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
@@ -196,7 +191,7 @@ fn reverse_stops_and_changes_the_direction() {
 
 #[test]
 fn locos_drive_without_a_connection() {
-    let (mut host, _) = host();
+    let (mut host, _, _) = host();
     host.apply(Command::AddLoco).unwrap();
     set_axis(&mut host, 1.0);
     assert!(host.poll(11.5));
@@ -205,7 +200,7 @@ fn locos_drive_without_a_connection() {
 
 #[test]
 fn the_axis_of_an_unknown_loco_is_an_error() {
-    let (mut host, _) = host();
+    let (mut host, _, _) = host();
     let error = host.apply(Command::SetAxis {
         loco: 7,
         deflection: 1.0,
