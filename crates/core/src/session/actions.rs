@@ -25,17 +25,15 @@ impl Session {
     /// if missing. Functions with an unknown action are left out.
     pub(crate) fn import_loco(&mut self, mut loco: Loco, actions: &[Action], report: Vec<String>) {
         let functions = std::mem::take(loco.functions_mut());
-        for function in functions {
-            if let Some(action) = actions.iter().find(|a| a.id == function.action) {
-                let action = self.action_named(&action.name);
-                let on = function.default_on;
-                loco.functions_mut().push(Function {
-                    action,
-                    on,
-                    ..function
-                });
-            }
-        }
+        *loco.functions_mut() = functions
+            .into_iter()
+            .filter_map(|f| {
+                let name = &actions.iter().find(|a| a.id == f.action)?.name;
+                let action = self.action_named(name);
+                let on = f.default_on;
+                Some(Function { action, on, ..f })
+            })
+            .collect();
         self.push(loco);
         self.import_report = report;
     }
