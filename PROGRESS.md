@@ -8,6 +8,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-08: Kennlinie über den Steuerkanal (Claude)
+
+- CI auf `main` war grün.
+- `crates/electrip/tests/speed_curve.rs` prüft über den Steuerkanal: Punkt anlegen, inneren Punkt verschieben, Endpunkt verschieben (ändert nur die Fahrstufe), Punkt löschen; ein neu verbundener Client sieht dasselbe.
+  Erster und letzter Punkt lassen sich nicht löschen, eine unbekannte Lok ergibt einen Fehler.
+- Kein Produktcode geändert.
+- `cargo xtask test` grün. Golden-, Unit- und `control-channel`-Tests von B-08 sind damit vorhanden und grün.
+  Status bleibt unverändert: Klick, Rechtsklick und Ziehen in der UI fehlen, also kein `wired` und nach der neuen Regel auch kein `verified`.
+- Einfachheits-Review: ok (Selbstprüfung, nur eine Testdatei).
+- **Nächster Schritt:** B-04 (Namen, Umbenennen, Löschen, Reihenfolge) im Kern und über den Steuerkanal.
+
 ## 2026-11-02 – `verified` nur zusammen mit `wired` (Mo + Claude)
 
 - B-09 stand auf `verified`, aber nicht auf `wired`, weil die Warnung in der Oberfläche fehlt.
