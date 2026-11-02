@@ -8,6 +8,25 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-21: Import von Konfigurationsdateien aus Electrip 1 (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core/src/electrip1.rs` liest eine Konfigurationsdatei von Electrip 1; neuer Befehl `import_electrip1 { path }` ersetzt Loks und Server (nur ohne Verbindung, ein Fehler ändert nichts).
+  Übernommen wird, was Electrip 2 schon kennt: Name, Protokoll, Adresse, Fahrstufen, Vmax, Kennlinie, Beschleunigungs- und Bremsdauer, Lautstärke, Host, Port, Bus.
+  Fehlende Werte bekommen die Vorgaben von Electrip 1; fehlen Lokliste, Server oder Kennlinie, ist die Datei ungültig wie in Electrip 1.
+  Loks mit N 1 und Adresse über 127 werden DCC lang und stehen im neuen Zustandsfeld `import_report` (B-06).
+- `electrip-core` hängt jetzt von `serde_json` ab (mit `float_roundtrip`, damit Werte wie `120.00000000000003` exakt bleiben).
+- Tests: `crates/core/src/electrip1/tests.rs` (alle drei Korpus-Konfigurationen Feld für Feld verlustfrei, Vorgaben, Umstellung auf DCC lang, ungültige Dateien), `session/tests.rs`, `control-channel`-Test `crates/electrip/tests/electrip1_import.rs`.
+- `cargo xtask test`, `cargo xtask sim up` und `cargo xtask parity` grün.
+- **B-06** `wired` und `verified`: Der Import war das letzte fehlende Kriterium; Unit-, `control-channel`- und srcpd-Loopback-Tests grün.
+- B-21 bleibt offen: Konfigurationen anlegen, umbenennen, löschen, wechseln, speichern und exportieren fehlen; verlustfrei ist der Import erst, wenn Bild, Sounds, Funktionen und Gamepad-Einstellungen im Kern sind.
+  Bis es mehrere Konfigurationen gibt, ersetzt der Import die aktuelle.
+  Der Import liegt im Kern statt in `library`, weil der Befehl im Kern ihn braucht und `core` von keinem anderen Crate abhängen darf.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: `Station` wird direkt aus der Datei gelesen statt über eine Kopie ihrer Felder, `import()` ist privat.
+  Nicht übernommen: Fehlervarianten zusammenlegen (die getypten Fehler bleiben), gemeinsamer Test-Helfer für den Korpus-Pfad über Crates hinweg.
+- **Nächster Schritt:** B-21 weiter: Konfigurationen speichern und verwalten (ADR 0003: Automerge-Dokument je Konfiguration, `library`), damit B-01 und B-04 gespeichert werden.
+
 ## 2026-11-02 – Status nach der neuen `wired`-Definition geprüft (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).

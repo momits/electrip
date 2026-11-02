@@ -172,8 +172,8 @@
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       },
       "notes": "Electrip 1 zeigt zusätzlich die maximale Funktionszahl je Protokoll an (M 1: 1, M 2: 5, DCC: 32) – nur als Hinweis anzeigen, nicht erzwingen (siehe out_of_scope)."
