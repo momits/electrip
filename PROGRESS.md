@@ -8,6 +8,28 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-02 – N-01, B-02: Eingabegeräte und Mappings im Kern (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core/src/input.rs`: `Mapping` je Gerätetyp (`kind`) von Bedienelementen (Namen wie SDL: `a`, `lefty`, `dpleft`; Joysticks z. B. `button0`, `axis1`, `hat0_left`) auf `Target`: Fahren (mit Totzone je Achse, B-02), Richtungswender, Nothalt der Anlage, Lok-Nothalt, vorige/nächste Lok oder logische Aktion (ADR 0009).
+  `Device` ist ein angeschlossenes Gerät mit der Lok, die es steuert, und merkt sich gedrückte Knöpfe, damit wiederholte Meldungen nichts doppelt auslösen.
+- Neue Befehle in `crates/core/src/session/devices.rs`: `add_device`, `remove_device`, `bind`, `unbind`, `input`.
+  Ein neuer Gerätetyp bekommt das Standard-Mapping nach Electrip 1 (`lefty` fährt, `a` Nothalt der Anlage, `b` Richtungswender, Steuerkreuz links/rechts Lokwechsel).
+  Ein neues Gerät steuert die erste freie Lok; Lokwechsel überspringt Loks anderer Geräte wie Electrip 1, die Achse wandert mit.
+  `input` liefert dem Host den passenden Befehl (`trigger_action`, `reverse`, `toggle_power`, `emergency_stop`); damit nennt eine Aktion jetzt die Lok des auslösenden Geräts (N-07).
+  `remove_action` löscht auch die Belegungen der Aktion.
+- Die Totzone wird jetzt beim Setzen der Achse angewendet (`drive::deflection`); `set_axis` behält 0,06.
+- Zustand: neue Felder `mappings` und `devices` (`spec/steuerkanal.md`). Über den Steuerkanal sind das die virtuellen Eingaben.
+- Tests: `input/tests.rs`, `host/tests.rs` (Achse, Totzone je Belegung, Knöpfe einmal je Druck, Aktion an der Lok des Geräts, Lokwechsel, Achse wandert mit, Gerät entfernen), `crates/electrip/tests/input_devices.rs`: Xbox-Pad, PlayStation-Pad und Joystick fahren gleichzeitig drei Loks mit je eigenem Mapping.
+- `cargo xtask test` und `cargo xtask parity` grün.
+- Status unverändert: Echte Gamepads fehlen (SDL3-Treiber in `input`, Knopfnamen des Geräts, Test mit SDL-Virtual-Joystick).
+  B-02: Fokus und Fahrgeräusch an/aus kommen mit Oberfläche bzw. Sound (Phase 2); Knopfnamen kommen mit SDL3.
+  B-23: Dauerdruck beim Lokwechsel scrollt noch nicht (Electrip 1: nach 500 ms alle 60 ms).
+  Mappings werden noch nicht gespeichert (B-21).
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Totzone beim Setzen der Achse statt eigener `Axis`-Struktur je Lok, einfacheres `match` in `input`, `change_loco` ohne `Option<()>`, `taken_locos` statt doppelter Zeile, Standard-Totzone nur an einer Stelle.
+- **Nächster Schritt:** Crate `electrip-input` mit SDL3: Geräte erkennen und ihre Ereignisse als `add_device`/`input` an den Host geben, Test mit SDL-Virtual-Joystick; danach Dauerdruck-Scrollen (B-23).
+
 ## 2026-11-02 – N-07, B-07: Logische Aktionen schalten Lokfunktionen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
