@@ -9,6 +9,26 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-02 – B-05: Lokbild (Claude)
+
+- Die vorige Sitzung brach mitten in B-05 ab (Nutzungslimit); ihr Zwischenstand ist der erste Commit dieses Branches.
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core/src/picture.rs`: lädt ein PNG oder JPEG, schneidet einen Ausschnitt im Seitenverhältnis 22:17 aus (`crop`: linke obere Ecke `x`, `y` und Breite `width` in Pixeln des Bildes; Verschieben und Zoomen ändern diese Werte) und speichert ihn in 440×340 px als PNG unter `media/<sha256>.png` in der Bibliothek (ADR 0003: jedes Bild nur einmal).
+  Ohne `crop` nimmt es den größten Ausschnitt in der Mitte.
+- Neuer Befehl `set_picture { loco, path, crop }`; neues Feld `picture` je Lok im Zustand und in der gespeicherten Konfiguration (`spec/steuerkanal.md`).
+  Neu wählen heißt: `set_picture` noch einmal.
+- `import_electrip1` übernimmt das Lokbild (`img_path`, relativ zum Ordner der Datei) mittig zugeschnitten; fehlt das Bild, steht das im `import_report`, der Import läuft weiter.
+- Neue Abhängigkeiten: `image` (nur PNG und JPEG) und `sha2`; `image` auch als Dev-Abhängigkeit von `electrip` für ein Testbild.
+- Tests: `picture/tests.rs` (Ausschnitt, Standard Mitte, feste Größe, gleiches Bild nur einmal, Ausschnitt außerhalb, keine Bilddatei), `host/library/tests.rs` (speichern und wieder öffnen, Fehler ändert nichts, Import schneidet mittig zu), `crates/electrip/tests/loco_properties.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` und `cargo xtask parity` grün.
+- **B-05** `wired`: alle Kriterien ohne Oberfläche erfüllt. `verified` fehlt der Screenshot-Test; Bildauswahl mit Verschieben/Zoomen und Anzeige kommen in Phase 2.
+- Offene Punkte: Die EXIF-Ausrichtung von JPEGs wird nicht beachtet (Handyfotos im Hochformat liegen dann quer); Bilder in `media/`, die keine Lok mehr nutzt, werden nicht gelöscht.
+  Ein Client sieht nur den Namen des Bildes; die Datei liegt beim Host (Übertragung mit N-04/ADR 0010).
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: überflüssige Prüfung `width > 0`, Schreiben ohne Closure.
+  Nicht übernommen: `Import.pictures` mit den Loks zu Paaren zusammenlegen (mehr Umbau für wenig Gewinn).
+- **Nächster Schritt:** Lok-Export/-Import als ZIP (B-20) oder SDL3 im Container (siehe B-23-Eintrag).
+
 ## 2026-11-02 – B-21: Konfigurationen in einer Bibliothek (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
