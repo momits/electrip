@@ -12,13 +12,15 @@ use crate::speed_curve::{Point, SpeedCurve};
 use serde::Deserialize;
 use std::fmt;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// What a file of Electrip 1 holds, as far as Electrip 2 knows it yet.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Import {
     pub locos: Vec<Loco>,
     pub station: Station,
+    /// The image file of each loco, if it has one (B-05).
+    pub pictures: Vec<Option<PathBuf>>,
     /// Changes made to fit the file to Electrip 2, one line each.
     pub report: Vec<String>,
 }
@@ -64,6 +66,7 @@ struct OldLoco {
     decel_duration: f64,
     sound_volume: f64,
     speed_control_points: Vec<Point>,
+    img_path: Option<PathBuf>,
 }
 
 /// Defaults of Electrip 1 (`legacy/src/electrip/config/json_model.py`).
@@ -79,6 +82,7 @@ impl Default for OldLoco {
             decel_duration: 8.5,
             sound_volume: 0.0,
             speed_control_points: Vec::new(),
+            img_path: None,
         }
     }
 }
@@ -93,6 +97,7 @@ pub fn read(path: &Path) -> Result<Import, ImportError> {
 fn import(json: &str) -> Result<Import, ImportError> {
     let file: File = serde_json::from_str(json).map_err(|e| ImportError::Invalid(e.to_string()))?;
     let mut report = Vec::new();
+    let pictures = file.locos.iter().map(|old| old.img_path.clone()).collect();
     let locos = file
         .locos
         .into_iter()
@@ -101,6 +106,7 @@ fn import(json: &str) -> Result<Import, ImportError> {
     Ok(Import {
         locos,
         station: file.server,
+        pictures,
         report,
     })
 }

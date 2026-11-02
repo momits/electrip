@@ -2,6 +2,7 @@
 //! connection to the command station and the library of configurations.
 
 use crate::config::Config;
+use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
 use std::collections::HashMap;
@@ -80,14 +81,27 @@ impl Host {
             Command::RemoveConfiguration { name } => self.remove(name)?,
             Command::ExportConfiguration { path } => self.export(&path)?,
             Command::ImportElectrip1 { path } => self.import(&path)?,
-            command => {
-                let before = self.session.clone();
-                self.session.apply(command)?;
-                if let Err(error) = self.save() {
-                    self.session = before;
-                    return Err(error);
-                }
+            Command::SetPicture { loco, path, crop } => {
+                self.session.loco(loco)?;
+                let picture = picture::store(&self.media(), &path, crop)
+                    .map_err(CommandError::Picture)?;
+                self.change(|session| Ok(session.loco(loco)?.set_picture(picture)))?;
             }
+            command => self.change(|session| session.apply(command))?,
+        }
+        Ok(())
+    }
+
+    /// Changes the session and saves it; on an error both stay unchanged.
+    fn change(
+        &mut self,
+        change: impl FnOnce(&mut Session) -> Result<(), CommandError>,
+    ) -> Result<(), CommandError> {
+        let before = self.session.clone();
+        change(&mut self.session)?;
+        if let Err(error) = self.save() {
+            self.session = before;
+            return Err(error);
         }
         Ok(())
     }
