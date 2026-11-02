@@ -59,7 +59,7 @@ fn failed_commands_name_the_reason() {
     let order = json!({"command": "move_loco", "loco": 1, "position": 1});
     assert_eq!(
         client.command(order),
-        Err("there is no position 1 in the loco list".into())
+        Err("there is no position 1 in the list".into())
     );
     assert_eq!(field(&client, "id"), [1]);
 }

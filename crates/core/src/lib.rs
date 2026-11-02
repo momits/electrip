@@ -6,6 +6,7 @@
 pub mod decoder;
 pub mod drive;
 pub mod electrip1;
+pub mod function;
 pub mod host;
 pub mod loco;
 pub mod session;

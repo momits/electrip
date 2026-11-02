@@ -91,7 +91,13 @@ fn commands_are_read_from_json() {
 
 #[test]
 fn the_state_is_written_as_json() {
-    let session = session_with_loco();
+    let mut session = session_with_loco();
+    session
+        .apply(Command::AddAction {
+            name: "Licht".into(),
+        })
+        .unwrap();
+    add_function(&mut session, 1, 1, 0);
     assert_eq!(
         serde_json::to_value(&session).unwrap(),
         json!({
@@ -104,9 +110,11 @@ fn the_state_is_written_as_json() {
                 "accel_duration": 11.5,
                 "brake_duration": 8.5,
                 "volume": 0.8,
+                "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
                 "speed": 0.0,
                 "forward": true
             }],
+            "actions": [{"id": 1, "name": "Licht"}],
             "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
             "import_report": []
         })
@@ -235,4 +243,164 @@ fn import_needs_a_disconnected_session() {
     let result = session.apply(Command::ImportElectrip1 { path });
     assert_eq!(result, Err(CommandError::Connected));
     assert_eq!(session, before);
+}
+
+/// A session with two locos and the actions "Licht" (1) and "Horn" (2).
+fn session_with_actions() -> Session {
+    let mut session = session_with_locos(2);
+    for name in ["Licht", "Horn"] {
+        session
+            .apply(Command::AddAction { name: name.into() })
+            .unwrap();
+    }
+    session
+}
+
+fn add_function(session: &mut Session, loco: u32, action: u32, number: u8) {
+    let function = json!({"action": action, "number": number, "name": "Licht"});
+    session
+        .apply(command(
+            json!({"command": "add_function", "loco": loco, "function": function}),
+        ))
+        .unwrap();
+}
+
+fn trigger(session: &mut Session, loco: u32, action: u32, pressed: bool) {
+    session
+        .apply(Command::TriggerAction {
+            loco,
+            action,
+            pressed,
+        })
+        .unwrap();
+}
+
+fn station_functions(session: &Session, loco: usize) -> u32 {
+    session.locos()[loco].station_state().functions
+}
+
+#[test]
+fn actions_are_added_renamed_and_removed() {
+    let mut session = session_with_actions();
+    session
+        .apply(Command::RenameAction {
+            action: 1,
+            name: "Fernlicht".into(),
+        })
+        .unwrap();
+    session.apply(Command::RemoveAction { action: 2 }).unwrap();
+    session
+        .apply(Command::AddAction {
+            name: "Pfiff".into(),
+        })
+        .unwrap();
+    let actions: Vec<(u32, &str)> = session
+        .actions()
+        .iter()
+        .map(|a| (a.id, a.name.as_str()))
+        .collect();
+    assert_eq!(actions, [(1, "Fernlicht"), (3, "Pfiff")]);
+}
+
+#[test]
+fn an_unknown_action_is_an_error() {
+    let mut session = session_with_actions();
+    let error = session.apply(Command::RemoveAction { action: 7 });
+    assert_eq!(error, Err(CommandError::UnknownAction(7)));
+    let function = json!({"action": 7, "number": 0});
+    let error = session.apply(command(
+        json!({"command": "add_function", "loco": 1, "function": function}),
+    ));
+    assert_eq!(error, Err(CommandError::UnknownAction(7)));
+}
+
+#[test]
+fn a_function_above_f28_is_an_error() {
+    let mut session = session_with_actions();
+    let function = json!({"action": 1, "number": 29});
+    let error = session.apply(command(
+        json!({"command": "add_function", "loco": 1, "function": function}),
+    ));
+    assert_eq!(error, Err(CommandError::FunctionOutOfRange(29)));
+}
+
+#[test]
+fn an_action_switches_different_functions_at_different_locos() {
+    let mut session = session_with_actions();
+    add_function(&mut session, 1, 1, 0);
+    add_function(&mut session, 2, 1, 4);
+    trigger(&mut session, 1, 1, true);
+    trigger(&mut session, 2, 1, true);
+    assert_eq!(station_functions(&session, 0), 1 << 0);
+    assert_eq!(station_functions(&session, 1), 1 << 4);
+}
+
+#[test]
+fn an_action_affects_only_the_given_loco() {
+    let mut session = session_with_actions();
+    add_function(&mut session, 1, 1, 0);
+    add_function(&mut session, 2, 1, 0);
+    trigger(&mut session, 1, 1, true);
+    assert_eq!(station_functions(&session, 1), 0);
+}
+
+#[test]
+fn an_action_without_a_function_at_the_loco_does_nothing() {
+    let mut session = session_with_actions();
+    add_function(&mut session, 1, 1, 0);
+    let before = session.clone();
+    trigger(&mut session, 1, 2, true);
+    assert_eq!(session, before);
+}
+
+#[test]
+fn a_function_starts_in_its_default_state() {
+    let mut session = session_with_actions();
+    let function = json!({"action": 1, "number": 2, "mode": "push", "default_on": true});
+    session
+        .apply(command(
+            json!({"command": "add_function", "loco": 1, "function": function}),
+        ))
+        .unwrap();
+    assert_eq!(station_functions(&session, 0), 1 << 2);
+    trigger(&mut session, 1, 1, true);
+    assert_eq!(station_functions(&session, 0), 0);
+}
+
+fn function_numbers(session: &Session) -> Vec<u8> {
+    let functions = session.locos()[0].loco.functions();
+    functions.iter().map(|f| f.number).collect()
+}
+
+#[test]
+fn functions_are_removed_and_moved() {
+    let mut session = session_with_actions();
+    for number in [0, 1, 2] {
+        add_function(&mut session, 1, 1, number);
+    }
+    session
+        .apply(Command::MoveFunction {
+            loco: 1,
+            index: 0,
+            position: 2,
+        })
+        .unwrap();
+    assert_eq!(function_numbers(&session), [1, 2, 0]);
+    session
+        .apply(Command::RemoveFunction { loco: 1, index: 1 })
+        .unwrap();
+    assert_eq!(function_numbers(&session), [1, 0]);
+    let error = session.apply(Command::RemoveFunction { loco: 1, index: 2 });
+    assert_eq!(error, Err(CommandError::PositionOutOfRange(2)));
+}
+
+#[test]
+fn removing_an_action_removes_its_functions() {
+    let mut session = session_with_actions();
+    add_function(&mut session, 1, 1, 0);
+    add_function(&mut session, 1, 2, 1);
+    add_function(&mut session, 2, 1, 0);
+    session.apply(Command::RemoveAction { action: 1 }).unwrap();
+    assert_eq!(function_numbers(&session), [1]);
+    assert!(session.locos()[1].loco.functions().is_empty());
 }

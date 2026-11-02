@@ -3,6 +3,7 @@
 //! curve and resets it, which needs a confirmation (B-09).
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
+use crate::function::Function;
 use crate::speed_curve::SpeedCurve;
 use serde::Serialize;
 use std::fmt;
@@ -78,6 +79,8 @@ pub struct Loco {
     /// Seconds from Vmax to standstill at full braking.
     brake_duration: f64,
     volume: f64,
+    /// In the order the user sorted them (B-07).
+    functions: Vec<Function>,
 }
 
 impl Loco {
@@ -93,6 +96,7 @@ impl Loco {
             accel_duration: 11.5,
             brake_duration: 8.5,
             volume: 0.8,
+            functions: Vec::new(),
         })
     }
 
@@ -146,6 +150,14 @@ impl Loco {
     pub fn set_volume(&mut self, volume: f64) -> Result<(), LocoError> {
         self.volume = check(VOLUME_RANGE, volume, LocoError::VolumeOutOfRange)?;
         Ok(())
+    }
+
+    pub fn functions(&self) -> &[Function] {
+        &self.functions
+    }
+
+    pub fn functions_mut(&mut self) -> &mut Vec<Function> {
+        &mut self.functions
     }
 
     pub fn set_address(&mut self, address: u16) -> Result<(), LocoError> {

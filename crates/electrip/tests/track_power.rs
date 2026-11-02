@@ -8,11 +8,10 @@
 
 mod common;
 
+use common::srcpd::{connect_to_srcpd, expect_event, observer};
 use common::{App, Client};
-use electrip_core::station::{CommandStation, StationEvent};
-use electrip_station_srcp::{DEFAULT_PORT, SrcpStation};
+use electrip_core::station::StationEvent;
 use serde_json::{Value, json};
-use std::time::{Duration, Instant};
 
 #[test]
 fn the_track_power_toggles_only_while_connected() {
@@ -33,30 +32,6 @@ fn power_on_start_can_be_switched_off() {
     assert_eq!(client.state["station"]["power_on_start"], false);
 }
 
-/// A client of a new app, connected to srcpd on bus 1.
-fn connect_to_srcpd(app: &App) -> Client {
-    let mut client = app.connect();
-    client
-        .command(
-            json!({"command": "set_server", "host": "127.0.0.1", "port": DEFAULT_PORT, "bus": 1}),
-        )
-        .unwrap();
-    client.command(json!({"command": "connect"})).unwrap();
-    client
-}
-
-/// Waits until `station` reports an event that `matches`.
-fn expect_event(station: &mut SrcpStation, matches: impl Fn(&StationEvent) -> bool) {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while Instant::now() < deadline {
-        if station.events().iter().any(&matches) {
-            return;
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    panic!("ERROR srcpd did not report the expected event");
-}
-
 /// Waits until the client gets a state with the track power `on`.
 fn expect_track_power(client: &mut Client, on: bool) {
     while client.state["station"]["track_power"] != Value::Bool(on) {
@@ -68,7 +43,7 @@ fn expect_track_power(client: &mut Client, on: bool) {
 #[ignore = "needs srcpd: cargo xtask sim up"]
 fn the_track_power_toggles_and_reaches_other_instances() {
     let (app, other_app) = (App::start(), App::start());
-    let mut observer = SrcpStation::connect("127.0.0.1", DEFAULT_PORT, 1).unwrap();
+    let mut observer = observer();
     let mut client = connect_to_srcpd(&app);
     expect_event(&mut observer, |e| *e == StationEvent::Power(true));
     let mut other = connect_to_srcpd(&other_app);
@@ -96,7 +71,7 @@ fn srcpd_gets_the_loco_emergency_stop() {
     ] {
         client.command(command).unwrap();
     }
-    let mut observer = SrcpStation::connect("127.0.0.1", DEFAULT_PORT, 1).unwrap();
+    let mut observer = observer();
     let is_loco = |e: &StationEvent, step| matches!(e, StationEvent::Loco { address: 42, state } if state.step == step);
     expect_event(&mut observer, |e| is_loco(e, 128));
 

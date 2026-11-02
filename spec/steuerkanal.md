@@ -37,9 +37,11 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "accel_duration": 11.5,
     "brake_duration": 8.5,
     "volume": 0.8,
+    "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
     "speed": 0.0,
     "forward": true
   }],
+  "actions": [{"id": 1, "name": "Licht"}],
   "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "import_report": []
 }
@@ -50,6 +52,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `protocol`: `motorola1`, `motorola2`, `dcc_short`, `dcc_long` (B-06).
 - `speed_curve`: Kontrollpunkte `[km/h, Fahrstufe]` (B-08).
 - `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
+- `functions`: Decoder-Funktionen der Lok in der vom Nutzer sortierten Reihenfolge (B-07): logische Aktion `action`, Funktionsnummer `number` (F0–F28), `name`, `mode` (`switch` Umschalter: erste Auslösung an, zweite aus; `push` Taster: an, solange gehalten), `default_on` (Standardzustand „An“ kehrt beide Modi um) und `on` (ob die Funktion gerade an ist; die Zentrale bekommt alle Funktionen, die an sind).
+- `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
@@ -80,6 +84,13 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
 | `set_axis` | `loco`, `deflection` (Auslenkung der Fahrachse von -1 voll zurück bis 1 voll vor; bis 0,06 wird sie ignoriert wie in Electrip 1) | B-10 |
 | `reverse` | `loco` (Richtungswender: Geschwindigkeit 0, dann andere Richtung) | B-10 |
+| `add_action` | `name` | N-07 |
+| `rename_action` | `action`, `name` | N-07 |
+| `remove_action` | `action` (löscht auch alle Funktionen, die auf die Aktion zeigen) | N-07 |
+| `add_function` | `loco`, `function` (Objekt mit `action`, `number`, optional `name` (Standard leer), `mode` (Standard `switch`), `default_on` (Standard `false`)); hängt die Funktion an, sie steht im Standardzustand | B-07 |
+| `remove_function` | `loco`, `index` (Nummer ab 0 in `functions`) | B-07 |
+| `move_function` | `loco`, `index`, `position` (neue Stelle ab 0) | B-07 |
+| `trigger_action` | `loco`, `action`, `pressed` (`true` gedrückt, `false` losgelassen); schaltet die Funktionen der Lok, die auf die Aktion zeigen, eine Aktion ohne Funktion bei dieser Lok tut nichts | N-07, B-07 |
 | `set_server` | `host`, `port`, `bus` (nur ohne Verbindung) | B-01 |
 | `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
 | `disconnect` | – | B-01 |
