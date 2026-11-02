@@ -53,6 +53,15 @@ impl Host {
                         .map_err(CommandError::Station)?;
                 }
             }
+            Command::Input {
+                device,
+                control,
+                value,
+            } => {
+                if let Some(command) = self.session.input(device, &control, value)? {
+                    self.apply(command)?;
+                }
+            }
             command => self.session.apply(command)?,
         }
         Ok(())

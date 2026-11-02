@@ -98,6 +98,19 @@ fn the_state_is_written_as_json() {
         })
         .unwrap();
     add_function(&mut session, 1, 1, 0);
+    session
+        .apply(command(
+            json!({"command": "add_device", "device": 7, "kind": "Xbox"}),
+        ))
+        .unwrap();
+    session
+        .apply(command(json!({"command": "bind", "kind": "Xbox", "control": "lefty", "target": {"type": "action", "action": 1}})))
+        .unwrap();
+    session
+        .apply(command(
+            json!({"command": "unbind", "kind": "Xbox", "control": "a"}),
+        ))
+        .unwrap();
     assert_eq!(
         serde_json::to_value(&session).unwrap(),
         json!({
@@ -115,6 +128,13 @@ fn the_state_is_written_as_json() {
                 "forward": true
             }],
             "actions": [{"id": 1, "name": "Licht"}],
+            "mappings": [{"kind": "Xbox", "bindings": [
+                {"control": "b", "target": {"type": "reverse"}},
+                {"control": "dpleft", "target": {"type": "previous_loco"}},
+                {"control": "dpright", "target": {"type": "next_loco"}},
+                {"control": "lefty", "target": {"type": "action", "action": 1}}
+            ]}],
+            "devices": [{"id": 7, "kind": "Xbox", "loco": 1}],
             "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
             "import_report": []
         })

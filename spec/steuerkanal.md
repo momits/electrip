@@ -42,6 +42,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "forward": true
   }],
   "actions": [{"id": 1, "name": "Licht"}],
+  "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
+  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1}],
   "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "import_report": []
 }
@@ -54,6 +56,12 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
 - `functions`: Decoder-Funktionen der Lok in der vom Nutzer sortierten Reihenfolge (B-07): logische Aktion `action`, Funktionsnummer `number` (F0–F28), `name`, `mode` (`switch` Umschalter: erste Auslösung an, zweite aus; `push` Taster: an, solange gehalten), `default_on` (Standardzustand „An“ kehrt beide Modi um) und `on` (ob die Funktion gerade an ist; die Zentrale bekommt alle Funktionen, die an sind).
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
+- `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
+  `control` heißt wie in SDL, z. B. `a`, `lefty`, `dpleft`; Joysticks ohne Gamepad-Belegung z. B. `button0`, `axis1`, `hat0_left`.
+  `target` ist ein Objekt mit `type`: `drive` (Fahrachse, `dead_zone` Totzone, Standard 0,06), `reverse`, `toggle_power` (Nothalt der Anlage), `emergency_stop` (Lok-Nothalt), `previous_loco`, `next_loco` (Lokwechsel zur nächsten Lok in der Liste, die kein anderes Gerät steuert, wie Electrip 1) oder `action` mit `action` (logische Aktion).
+  Ein neuer Gerätetyp bekommt das Standard-Mapping nach Electrip 1: `lefty` fährt, `a` Nothalt der Anlage, `b` Richtungswender, `dpleft`/`dpright` Lokwechsel.
+- `devices`: angeschlossene Eingabegeräte, auch virtuelle über den Steuerkanal; `loco` ist die Lok, die das Gerät steuert (`null`, wenn keine frei ist).
+  Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
@@ -86,11 +94,16 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `reverse` | `loco` (Richtungswender: Geschwindigkeit 0, dann andere Richtung) | B-10 |
 | `add_action` | `name` | N-07 |
 | `rename_action` | `action`, `name` | N-07 |
-| `remove_action` | `action` (löscht auch alle Funktionen, die auf die Aktion zeigen) | N-07 |
+| `remove_action` | `action` (löscht auch alle Funktionen und Belegungen, die auf die Aktion zeigen) | N-07 |
 | `add_function` | `loco`, `function` (Objekt mit `action`, `number`, optional `name` (Standard leer), `mode` (Standard `switch`), `default_on` (Standard `false`)); hängt die Funktion an, sie steht im Standardzustand | B-07 |
 | `remove_function` | `loco`, `index` (Nummer ab 0 in `functions`) | B-07 |
 | `move_function` | `loco`, `index`, `position` (neue Stelle ab 0) | B-07 |
 | `trigger_action` | `loco`, `action`, `pressed` (`true` gedrückt, `false` losgelassen); schaltet die Funktionen der Lok, die auf die Aktion zeigen, eine Aktion ohne Funktion bei dieser Lok tut nichts | N-07, B-07 |
+| `add_device` | `device` (frei gewählte `id`), `kind` (Gerätetyp); schließt ein (virtuelles) Eingabegerät an | N-01 |
+| `remove_device` | `device`; die Achse seiner Lok wird losgelassen, die Lok behält ihre Geschwindigkeit | N-01 |
+| `bind` | `kind`, `control`, `target` (siehe `mappings`); ersetzt die bisherige Belegung des Bedienelements | N-01, B-02 |
+| `unbind` | `kind`, `control` | N-01, B-02 |
+| `input` | `device`, `control`, `value` (Knöpfe und Hat-Richtungen `1` gedrückt, `0` losgelassen; Achsen -1 bis 1, nach oben negativ wie in SDL); wirkt über das Mapping auf die Lok des Geräts, ein unbelegtes Bedienelement tut nichts | N-01, B-02 |
 | `set_server` | `host`, `port`, `bus` (nur ohne Verbindung) | B-01 |
 | `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
 | `disconnect` | – | B-01 |
@@ -117,4 +130,4 @@ Beispiel:
 `crates/electrip/tests/common/mod.rs` startet die App auf einem freien Port und spricht den Steuerkanal an (`App::start`, `App::connect`, `Client::command`).
 Tests mit der Prüfart `control-channel` liegen unter `crates/electrip/tests/` und binden den Helfer mit `mod common;` ein.
 
-Noch nicht enthalten: Screenshots und virtuelle Eingaben; sie kommen mit Oberfläche und Eingabegeräten.
+Noch nicht enthalten: Screenshots; sie kommen mit der Oberfläche.

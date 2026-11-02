@@ -3,6 +3,7 @@
 
 use super::{CommandError, Session, check_index};
 use crate::function::{Action, Function};
+use crate::input::Target;
 use crate::station::MAX_FUNCTION;
 
 impl Session {
@@ -24,6 +25,10 @@ impl Session {
             .remove(index.ok_or(CommandError::UnknownAction(id))?);
         for entry in &mut self.locos {
             entry.loco.functions_mut().retain(|f| f.action != id);
+        }
+        let target = Target::Action { action: id };
+        for mapping in &mut self.mappings {
+            mapping.bindings.retain(|b| b.target != target);
         }
         Ok(())
     }

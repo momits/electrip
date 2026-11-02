@@ -1,5 +1,7 @@
 use super::*;
 use crate::decoder::Decoder;
+use crate::function::{Function, Mode};
+use crate::input::Target;
 use crate::station::LocoState;
 use std::sync::{Arc, Mutex};
 
@@ -290,4 +292,209 @@ fn the_loco_emergency_stop_stops_only_the_loco() {
     assert_eq!(speed(&host), 0.0);
     assert!(host.session().station().track_power);
     assert_eq!(*sent.lock().unwrap(), [Call::EmergencyStop(1)]);
+}
+
+/// A connected host with `locos` locos (ids from 1, addresses 1) and one
+/// pad (id 1) with the standard mapping.
+fn host_with_pad(locos: usize) -> (Host, Sent) {
+    let (mut host, sent) = driving_host();
+    for _ in 1..locos {
+        host.apply(Command::AddLoco).unwrap();
+    }
+    add_device(&mut host, 1);
+    (host, sent)
+}
+
+fn add_device(host: &mut Host, device: u32) {
+    let kind = "pad".into();
+    host.apply(Command::AddDevice { device, kind }).unwrap();
+}
+
+fn input(host: &mut Host, control: &str, value: f64) -> Result<(), CommandError> {
+    host.apply(Command::Input {
+        device: 1,
+        control: control.into(),
+        value,
+    })
+}
+
+fn press(host: &mut Host, control: &str) {
+    input(host, control, 1.0).unwrap();
+    input(host, control, 0.0).unwrap();
+}
+
+fn device_loco(host: &Host, device: usize) -> Option<u32> {
+    host.session().devices()[device].loco
+}
+
+#[test]
+fn the_axis_of_a_device_drives_its_loco_with_up_negative() {
+    let (mut host, _) = host_with_pad(1);
+    input(&mut host, "lefty", -1.0).unwrap();
+    host.poll(1.15);
+    assert!((speed(&host) - 10.0).abs() < 1e-9);
+}
+
+#[test]
+fn the_dead_zone_belongs_to_the_binding() {
+    let (mut host, _) = host_with_pad(1);
+    input(&mut host, "lefty", -0.1).unwrap();
+    host.poll(1.0);
+    assert!(speed(&host) > 0.0);
+    let target = Target::Drive { dead_zone: 0.2 };
+    let (kind, control) = ("pad".into(), "lefty".into());
+    host.apply(Command::Bind {
+        kind,
+        control,
+        target,
+    })
+    .unwrap();
+    let before = speed(&host);
+    input(&mut host, "lefty", -0.1).unwrap();
+    host.poll(1.0);
+    assert_eq!(speed(&host), before);
+}
+
+#[test]
+fn buttons_trigger_built_in_actions_once_per_press() {
+    let (mut host, sent) = host_with_pad(1);
+    input(&mut host, "a", 1.0).unwrap();
+    input(&mut host, "a", 1.0).unwrap();
+    assert!(!host.session().station().track_power);
+    input(&mut host, "a", 0.0).unwrap();
+    press(&mut host, "b");
+    assert!(!host.session().locos()[0].motion.forward());
+    assert_eq!(*sent.lock().unwrap(), [Call::Power(false)]);
+}
+
+#[test]
+fn a_control_without_binding_does_nothing() {
+    let (mut host, _) = host_with_pad(1);
+    let before = host.session().clone();
+    press(&mut host, "x");
+    assert_eq!(*host.session(), before);
+}
+
+#[test]
+fn a_bound_action_switches_the_functions_of_the_device_loco() {
+    let (mut host, _) = host_with_pad(2);
+    host.apply(Command::AddAction {
+        name: "Licht".into(),
+    })
+    .unwrap();
+    for loco in [1, 2] {
+        let function = Function {
+            action: 1,
+            number: 0,
+            name: String::new(),
+            mode: Mode::Push,
+            default_on: false,
+            on: false,
+        };
+        host.apply(Command::AddFunction { loco, function }).unwrap();
+    }
+    let (kind, control) = ("pad".into(), "x".into());
+    let target = Target::Action { action: 1 };
+    host.apply(Command::Bind {
+        kind,
+        control,
+        target,
+    })
+    .unwrap();
+    input(&mut host, "x", 1.0).unwrap();
+    let on = |host: &Host| {
+        host.session()
+            .locos()
+            .iter()
+            .map(|e| e.loco.functions()[0].on)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(on(&host), [true, false]);
+    input(&mut host, "x", 0.0).unwrap();
+    assert_eq!(on(&host), [false, false]);
+}
+
+#[test]
+fn devices_get_free_locos_and_skip_taken_ones_when_changing() {
+    let (mut host, _) = host_with_pad(3);
+    add_device(&mut host, 2);
+    assert_eq!(
+        (device_loco(&host, 0), device_loco(&host, 1)),
+        (Some(1), Some(2))
+    );
+    press(&mut host, "dpright");
+    assert_eq!(device_loco(&host, 0), Some(3));
+    press(&mut host, "dpright");
+    assert_eq!(device_loco(&host, 0), Some(3));
+    press(&mut host, "dpleft");
+    assert_eq!(device_loco(&host, 0), Some(1));
+}
+
+#[test]
+fn the_axis_moves_along_to_the_new_loco() {
+    let (mut host, _) = host_with_pad(2);
+    input(&mut host, "lefty", -1.0).unwrap();
+    press(&mut host, "dpright");
+    host.poll(1.15);
+    let speeds: Vec<f64> = host
+        .session()
+        .locos()
+        .iter()
+        .map(|e| e.motion.speed())
+        .collect();
+    assert_eq!(speeds[0], 0.0);
+    assert!((speeds[1] - 10.0).abs() < 1e-9);
+}
+
+#[test]
+fn removing_a_device_releases_the_axis_of_its_loco() {
+    let (mut host, _) = host_with_pad(1);
+    input(&mut host, "lefty", -1.0).unwrap();
+    host.poll(1.15);
+    host.apply(Command::RemoveDevice { device: 1 }).unwrap();
+    host.poll(1.0);
+    assert!((speed(&host) - 10.0).abs() < 1e-9);
+    assert_eq!(
+        input(&mut host, "a", 1.0),
+        Err(CommandError::UnknownDevice(1))
+    );
+}
+
+#[test]
+fn a_removed_loco_frees_the_device_for_another() {
+    let (mut host, _) = host_with_pad(2);
+    add_device(&mut host, 2);
+    host.apply(Command::AddLoco).unwrap();
+    host.apply(Command::RemoveLoco { loco: 1 }).unwrap();
+    assert_eq!(
+        (device_loco(&host, 0), device_loco(&host, 1)),
+        (Some(3), Some(2))
+    );
+}
+
+#[test]
+fn removing_an_action_removes_its_bindings() {
+    let (mut host, _) = host_with_pad(1);
+    host.apply(Command::AddAction {
+        name: "Licht".into(),
+    })
+    .unwrap();
+    let (kind, control) = ("pad".into(), "x".into());
+    let target = Target::Action { action: 1 };
+    host.apply(Command::Bind {
+        kind,
+        control,
+        target,
+    })
+    .unwrap();
+    host.apply(Command::RemoveAction { action: 1 }).unwrap();
+    assert_eq!(host.session().mappings()[0].target("x"), None);
+}
+
+#[test]
+fn device_ids_are_unique() {
+    let (mut host, _) = host_with_pad(1);
+    let kind = "other".into();
+    let error = host.apply(Command::AddDevice { device: 1, kind });
+    assert_eq!(error, Err(CommandError::DeviceExists(1)));
 }
