@@ -6,7 +6,35 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
+- `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
+
+## 2026-11-02 – B-21: Konfigurationen in einer Bibliothek (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Die Bibliothek ist ein Verzeichnis mit einer JSON-Datei `<name>.json` je Konfiguration (Konzept: „Gesamtkonfiguration als JSON speichern/laden“).
+  Gespeichert werden Loks (Reihenfolge, Decoder, Kennlinie, Funktionen im Standardzustand), Aktionen, Mappings und Server; Fahrzustand und Geräte nicht.
+  `crates/core/src/config.rs` liest und schreibt die Dateien (erst in eine temporäre Datei, dann umbenannt), `crates/core/src/host/library.rs` hat die Befehle.
+- Neue Befehle `new_configuration`, `open_configuration`, `rename_configuration`, `remove_configuration` (nur eine andere als die geöffnete), `export_configuration { path }`.
+  Jede Änderung an der geöffneten Konfiguration schreibt der Host sofort; schlägt das Schreiben fehl, bleibt die Sitzung unverändert.
+  Neu anlegen, öffnen und importieren nur ohne Verbindung, weil sich der Server ändert.
+  `import_electrip1` legt jetzt eine neue Konfiguration mit dem Dateinamen ohne Endung an und öffnet sie.
+  Namen müssen auf allen Systemen Dateinamen sein; so kann kein Befehl Dateien außerhalb der Bibliothek erreichen.
+- Zustand: neue Felder `configuration` und `configurations` (`spec/steuerkanal.md`).
+- Die App hat neu `--library <verzeichnis>` (Vorgabe: `electrip` im Datenverzeichnis des Nutzers) und `-f/--file <konfiguration>` (B-24); ohne `-f` öffnet sie die erste Konfiguration nach Namen, eine leere Bibliothek bekommt „Electrip“.
+- `tempfile` ist neue Dev-Abhängigkeit (Tests mit Bibliotheksverzeichnis).
+- Tests: `config/tests.rs`, `host/library/tests.rs` (speichern und wieder öffnen, wechseln, umbenennen, löschen, exportieren, importieren, ungültige Namen, fehlgeschlagenes Speichern), `crates/electrip/tests/configurations.rs` über den Steuerkanal inkl. Neustart mit `--file`.
+- `cargo xtask test`, `cargo xtask loc` und `cargo xtask parity` grün; srcpd-Tests nur in der CI (kein Docker lokal).
+- **B-01** `wired` und `verified`: Host, Port und Bus werden jetzt gespeichert.
+  **B-04** `wired` und `verified`: Die Reihenfolge der Lokliste wird gespeichert. Offen für Phase 2: Umbenennen und Löschen in der UI.
+  **B-24** `wired` und `verified`: `-f/--file` öffnet die Konfiguration. Offen für Phase 2: Maussteuerung.
+  **B-21** bleibt offen: Der Import ist erst verlustfrei, wenn Bild, Sounds, Funktionen und Gamepad-Einstellungen im Kern sind.
+- Offene Punkte: Beim Laden prüft die App die Werte der Datei nicht gegen die Grenzen (Adresse, Fahrstufen, Kennlinie); das kann eine von Hand bearbeitete Datei verletzen.
+  ADR 0003 sieht je Konfiguration ein Automerge-Dokument vor; das kommt mit der gemeinsam genutzten Konfiguration (N-04, Phase 2), bis dahin genügt JSON.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Sitzung zurücksetzen, wenn das Speichern scheitert; Dateien mit ungültigen Namen auslassen (sonst startet die App nicht); atomares Schreiben; `From<io::Error>` statt `map_err` an zehn Stellen.
+  Nicht übernommen: `refresh` aufteilen, `-f` direkt an `Host::new` geben (beides mehr Code für wenig Gewinn); `Function.on` wieder nur über `load` setzen.
+- **Nächster Schritt:** SDL3 im Container (siehe B-23-Eintrag), sonst Lokbild (B-05) oder Lok-Export/-Import als ZIP (B-20).
 
 ## 2026-11-02 – B-23: Lokwechsel mit Dauerdruck (Claude)
 
