@@ -1,6 +1,6 @@
 //! N-01 over the control channel: three virtual input devices of
 //! different types control three locos at once, each through the mapping
-//! of its type.
+//! of its type. Holding "next loco" scrolls through the locos (B-23).
 
 // Test code: unwrap is allowed (AGENTS.md).
 #![allow(clippy::unwrap_used)]
@@ -9,6 +9,7 @@ mod common;
 
 use common::{App, Client};
 use serde_json::{Value, json};
+use std::time::{Duration, Instant};
 
 /// The devices: an Xbox pad with the standard mapping, a PlayStation pad
 /// driving with the right stick and a joystick with numbered controls.
@@ -105,6 +106,26 @@ fn a_button_of_a_device_switches_a_function_of_its_loco() {
     set_up(&mut client);
     press(&mut client, 3, "button0");
     assert_eq!(client.state["locos"][2]["functions"][0]["on"], true);
+}
+
+#[test]
+fn holding_next_loco_scrolls_after_500_ms() {
+    let app = App::start();
+    let mut client = app.connect();
+    set_up(&mut client);
+    for _ in 4..=6 {
+        client.command(json!({"command": "add_loco"})).unwrap();
+    }
+    let start = Instant::now();
+    input(&mut client, 1, "dpright", 1.0);
+    assert_eq!(client.state["devices"][0]["loco"], 4);
+    while client.state["devices"][0]["loco"] != 6 {
+        client.expect_state();
+    }
+    assert!(start.elapsed() >= Duration::from_millis(560));
+    input(&mut client, 1, "dpright", 0.0);
+    press(&mut client, 1, "dpleft");
+    assert_eq!(client.state["devices"][0]["loco"], 5);
 }
 
 #[test]
