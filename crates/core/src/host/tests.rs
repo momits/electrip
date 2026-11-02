@@ -449,6 +449,17 @@ fn holding_next_loco_scrolls_until_released() {
 }
 
 #[test]
+fn releasing_stops_the_scroll_even_after_unbinding() {
+    let (mut host, _) = host_with_pad(3);
+    input(&mut host, "dpright", 1.0).unwrap();
+    let (kind, control) = ("pad".into(), "dpright".into());
+    host.apply(Command::Unbind { kind, control }).unwrap();
+    input(&mut host, "dpright", 0.0).unwrap();
+    host.poll(1.0);
+    assert_eq!(device_loco(&host, 0), Some(2));
+}
+
+#[test]
 fn the_axis_moves_along_to_the_new_loco() {
     let (mut host, _) = host_with_pad(2);
     input(&mut host, "lefty", -1.0).unwrap();
