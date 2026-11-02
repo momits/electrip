@@ -11,6 +11,7 @@ pub mod function;
 pub mod host;
 pub mod input;
 pub mod loco;
+pub mod picture;
 pub mod session;
 pub mod speed_curve;
 pub mod station;

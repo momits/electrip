@@ -81,6 +81,8 @@ pub struct Loco {
     volume: f64,
     /// In the order the user sorted them (B-07).
     functions: Vec<Function>,
+    /// Name of the picture in the media directory (B-05).
+    picture: Option<String>,
 }
 
 impl Loco {
@@ -97,6 +99,7 @@ impl Loco {
             brake_duration: 8.5,
             volume: 0.8,
             functions: Vec::new(),
+            picture: None,
         })
     }
 
@@ -158,6 +161,14 @@ impl Loco {
 
     pub fn functions_mut(&mut self) -> &mut Vec<Function> {
         &mut self.functions
+    }
+
+    pub fn picture(&self) -> Option<&str> {
+        self.picture.as_deref()
+    }
+
+    pub fn set_picture(&mut self, picture: String) {
+        self.picture = Some(picture);
     }
 
     pub fn set_address(&mut self, address: u16) -> Result<(), LocoError> {

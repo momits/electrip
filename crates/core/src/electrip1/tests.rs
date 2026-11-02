@@ -38,7 +38,8 @@ fn the_corpus_is_imported_without_loss() {
         assert_eq!(import.station.power_on_start, server["power"], "{name}");
         let old_locos = file["locos"].as_array().unwrap();
         assert_eq!(import.locos.len(), old_locos.len(), "{name}");
-        for (loco, old) in import.locos.iter().zip(old_locos) {
+        for ((loco, picture), old) in import.locos.iter().zip(&import.pictures).zip(old_locos) {
+            assert_eq!(picture.as_deref().and_then(Path::to_str), old["img_path"].as_str());
             let decoder = loco.decoder();
             assert_eq!(loco.name(), old["name"]);
             assert_eq!(protocol_name(decoder.protocol()), old["protocol"]);

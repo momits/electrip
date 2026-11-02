@@ -4,6 +4,7 @@
 use super::Host;
 use crate::config::{self, Config, DEFAULT_NAME};
 use crate::electrip1;
+use crate::picture;
 use crate::session::CommandError;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -65,7 +66,18 @@ impl Host {
             .unwrap_or_default();
         self.check_disconnected()?;
         let new_path = self.new_path(name)?;
-        let import = electrip1::read(path).map_err(CommandError::Import)?;
+        let mut import = electrip1::read(path).map_err(CommandError::Import)?;
+        let folder = path.parent().unwrap_or(Path::new(""));
+        for (loco, picture) in import.locos.iter_mut().zip(&import.pictures) {
+            if let Some(picture) = picture {
+                match picture::store(&self.media(), &folder.join(picture), None) {
+                    Ok(name) => loco.set_picture(name),
+                    Err(error) => import
+                        .report
+                        .push(format!("{}: {error} ({})", loco.name(), picture.display())),
+                }
+            }
+        }
         let config = Config {
             locos: import.locos,
             station: import.station,
@@ -73,6 +85,11 @@ impl Host {
         };
         config::write(&new_path, &config)?;
         self.load(name.into(), config, import.report)
+    }
+
+    /// The directory of the pictures (B-05).
+    pub(super) fn media(&self) -> PathBuf {
+        self.library.join("media")
     }
 
     fn load(

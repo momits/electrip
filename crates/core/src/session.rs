@@ -9,6 +9,7 @@ use crate::electrip1::ImportError;
 use crate::function::{Action, Function};
 use crate::input::{Device, Mapping, Target};
 use crate::loco::{Loco, LocoError};
+use crate::picture::{Crop, PictureError};
 use crate::station::{LocoState, MAX_FUNCTION, StationError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -67,6 +68,13 @@ pub enum Command {
     SetVolume {
         loco: u32,
         volume: f64,
+    },
+    /// Loads the image at `path` on the host and saves the crop, by default
+    /// the largest one in the middle, as the loco's picture (B-05).
+    SetPicture {
+        loco: u32,
+        path: PathBuf,
+        crop: Option<Crop>,
     },
     AddCurvePoint {
         loco: u32,
@@ -217,6 +225,7 @@ pub enum CommandError {
     Disconnected,
     Station(StationError),
     Import(ImportError),
+    Picture(PictureError),
     InvalidName(String),
     ConfigurationExists(String),
     ConfigurationOpen(String),
@@ -253,6 +262,7 @@ impl fmt::Display for CommandError {
             CommandError::Disconnected => f.write_str("connect to the command station first"),
             CommandError::Station(error) => error.fmt(f),
             CommandError::Import(error) => error.fmt(f),
+            CommandError::Picture(error) => error.fmt(f),
             CommandError::InvalidName(name) => write!(f, "{name:?} cannot name a configuration"),
             CommandError::ConfigurationExists(name) => {
                 write!(f, "there is already a configuration {name:?}")
@@ -492,6 +502,7 @@ impl Session {
             | Command::Disconnect
             | Command::TogglePower
             | Command::EmergencyStop { .. }
+            | Command::SetPicture { .. }
             | Command::Input { .. }
             | Command::NewConfiguration { .. }
             | Command::OpenConfiguration { .. }
@@ -578,7 +589,7 @@ impl Session {
         Ok(&mut self.locos[index])
     }
 
-    fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {
+    pub(crate) fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {
         Ok(&mut self.entry(id)?.loco)
     }
 }
