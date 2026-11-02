@@ -8,3 +8,4 @@ pub mod drive;
 pub mod loco;
 pub mod session;
 pub mod speed_curve;
+pub mod station;
