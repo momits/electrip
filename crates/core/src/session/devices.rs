@@ -26,7 +26,7 @@ impl Session {
     pub(super) fn remove_device(&mut self, id: u32) -> Result<(), CommandError> {
         let device = self.devices.remove(self.device_index(id)?);
         if let Some(entry) = device.loco.and_then(|loco| self.entry(loco).ok()) {
-            entry.axis.deflection = 0.0;
+            entry.axis = 0.0;
         }
         Ok(())
     }
@@ -84,18 +84,26 @@ impl Session {
         if !self.devices[index].press(control, pressed) {
             return Ok(None);
         }
-        Ok(match (&target, loco) {
-            (&Target::Action { action }, Some(loco)) => Some(Command::TriggerAction {
+        if let Target::Action { action } = target {
+            return Ok(loco.map(|loco| Command::TriggerAction {
                 loco,
                 action,
                 pressed,
-            }),
-            _ if !pressed => None,
+            }));
+        }
+        if !pressed {
+            return Ok(None);
+        }
+        Ok(match (target, loco) {
             (Target::TogglePower, _) => Some(Command::TogglePower),
             (Target::Reverse, Some(loco)) => Some(Command::Reverse { loco }),
             (Target::EmergencyStop, Some(loco)) => Some(Command::EmergencyStop { loco }),
-            (Target::PreviousLoco | Target::NextLoco, _) => {
-                self.change_loco(index, target == Target::NextLoco);
+            (Target::PreviousLoco, _) => {
+                self.change_loco(index, false);
+                None
+            }
+            (Target::NextLoco, _) => {
+                self.change_loco(index, true);
                 None
             }
             _ => None,
@@ -105,21 +113,25 @@ impl Session {
     /// Switches the device to the next loco in the list (or the previous
     /// one) that no other device controls, like Electrip 1. The axis of
     /// the device moves along.
-    fn change_loco(&mut self, device: usize, forward: bool) -> Option<()> {
-        let current = self.devices[device].loco?;
-        let position = self.index(current).ok()?;
-        let taken: Vec<u32> = self.devices.iter().filter_map(|d| d.loco).collect();
+    fn change_loco(&mut self, device: usize, forward: bool) {
+        let Some(position) = self.devices[device].loco.and_then(|id| self.index(id).ok()) else {
+            return;
+        };
+        let taken = self.taken_locos();
         let free = |e: &&LocoEntry| !taken.contains(&e.id);
         let next = if forward {
             self.locos[position + 1..].iter().find(free)
         } else {
             self.locos[..position].iter().rev().find(free)
-        }?
-        .id;
+        };
+        let Some(next) = next.map(|e| e.id) else {
+            return;
+        };
         let axis = mem::take(&mut self.locos[position].axis);
-        self.entry(next).ok()?.axis = axis;
-        self.devices[device].loco = Some(next);
-        Some(())
+        if let Ok(entry) = self.entry(next) {
+            entry.axis = axis;
+            self.devices[device].loco = Some(next);
+        }
     }
 
     /// Gives each device without a loco, or whose loco was removed, the
@@ -130,10 +142,14 @@ impl Session {
             if loco.is_some_and(|id| self.index(id).is_ok()) {
                 continue;
             }
-            let taken: Vec<u32> = self.devices.iter().filter_map(|d| d.loco).collect();
+            let taken = self.taken_locos();
             let free = self.locos.iter().find(|e| !taken.contains(&e.id));
             self.devices[index].loco = free.map(|e| e.id);
         }
+    }
+
+    fn taken_locos(&self) -> Vec<u32> {
+        self.devices.iter().filter_map(|d| d.loco).collect()
     }
 
     fn device_index(&self, id: u32) -> Result<usize, CommandError> {

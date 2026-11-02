@@ -56,7 +56,7 @@ impl Mapping {
             (
                 "lefty",
                 Target::Drive {
-                    dead_zone: DEAD_ZONE,
+                    dead_zone: default_dead_zone(),
                 },
             ),
             ("a", Target::TogglePower),

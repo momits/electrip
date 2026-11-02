@@ -3,7 +3,7 @@
 //! [`Host::apply`](crate::host::Host::apply).
 
 use crate::decoder::{Decoder, Protocol};
-use crate::drive::{DEAD_ZONE, Motion};
+use crate::drive::{self, DEAD_ZONE, Motion};
 use crate::electrip1::{self, ImportError};
 use crate::function::{Action, Function};
 use crate::input::{Device, Mapping, Target};
@@ -262,25 +262,9 @@ pub struct LocoEntry {
     pub loco: Loco,
     #[serde(flatten)]
     pub motion: Motion,
+    /// The deflection of the drive axis, 0 within the dead zone.
     #[serde(skip)]
-    axis: Axis,
-}
-
-/// Where the drive axis of a loco stands and the dead zone of the control
-/// that moved it last.
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct Axis {
-    deflection: f64,
-    dead_zone: f64,
-}
-
-impl Default for Axis {
-    fn default() -> Self {
-        Axis {
-            deflection: 0.0,
-            dead_zone: DEAD_ZONE,
-        }
-    }
+    axis: f64,
 }
 
 impl LocoEntry {
@@ -342,7 +326,7 @@ impl Session {
     pub(crate) fn emergency_stop(&mut self, id: u32) -> Result<&LocoEntry, CommandError> {
         let entry = self.entry(id)?;
         entry.motion.stop();
-        entry.axis.deflection = 0.0;
+        entry.axis = 0.0;
         Ok(entry)
     }
 
@@ -434,10 +418,7 @@ impl Session {
     }
 
     fn set_axis(&mut self, loco: u32, deflection: f64, dead_zone: f64) -> Result<(), CommandError> {
-        self.entry(loco)?.axis = Axis {
-            deflection: deflection.clamp(-1.0, 1.0),
-            dead_zone,
-        };
+        self.entry(loco)?.axis = drive::deflection(deflection, dead_zone);
         Ok(())
     }
 
@@ -447,13 +428,7 @@ impl Session {
         let mut changed = false;
         for entry in &mut self.locos {
             let before = entry.motion;
-            let Axis {
-                deflection,
-                dead_zone,
-            } = entry.axis;
-            entry
-                .motion
-                .accelerate(&entry.loco, deflection, dead_zone, seconds);
+            entry.motion.accelerate(&entry.loco, entry.axis, seconds);
             changed |= entry.motion != before;
         }
         changed
@@ -474,7 +449,7 @@ impl Session {
             id: self.last_id,
             loco,
             motion: Motion::default(),
-            axis: Axis::default(),
+            axis: 0.0,
         });
     }
 
