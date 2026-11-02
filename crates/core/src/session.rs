@@ -3,8 +3,9 @@
 //! [`Host::apply`](crate::host::Host::apply).
 
 use crate::decoder::{Decoder, Protocol};
+use crate::drive::{DEAD_ZONE, Motion};
 use crate::loco::{Loco, LocoError};
-use crate::station::StationError;
+use crate::station::{LocoState, StationError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -76,6 +77,16 @@ pub enum Command {
         speed: f64,
         step: f64,
     },
+    /// Deflection of the drive axis from -1 (full back) to 1 (full forward);
+    /// the host accelerates the loco with it until the next one (B-10).
+    SetAxis {
+        loco: u32,
+        deflection: f64,
+    },
+    /// The direction switch: stops the loco and changes its direction.
+    Reverse {
+        loco: u32,
+    },
     /// Where the SRCP server is; only while disconnected.
     SetServer {
         host: String,
@@ -142,6 +153,24 @@ pub struct LocoEntry {
     pub id: u32,
     #[serde(flatten)]
     pub loco: Loco,
+    #[serde(flatten)]
+    pub motion: Motion,
+    #[serde(skip)]
+    axis: f64,
+}
+
+impl LocoEntry {
+    /// What the command station gets: the speed step from the speed curve,
+    /// cut off like Electrip 1. Functions follow with B-07.
+    pub fn station_state(&self) -> LocoState {
+        let curve = self.loco.speed_curve();
+        let step = curve.step_at(self.motion.speed()).unwrap_or(0.0);
+        LocoState {
+            forward: self.motion.forward(),
+            step: step as u8,
+            functions: 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
@@ -215,11 +244,29 @@ impl Session {
                 .loco(loco)?
                 .speed_curve_mut()
                 .move_point(point, speed, step),
+            Command::SetAxis { loco, deflection } => {
+                self.entry(loco)?.axis = deflection.clamp(-1.0, 1.0)
+            }
+            Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
             // Handled by Host::apply, which holds the driver.
             Command::Connect | Command::Disconnect => {}
         }
         Ok(())
+    }
+
+    /// Accelerates every loco with its axis for `seconds`; returns whether a
+    /// speed changed.
+    pub(crate) fn drive(&mut self, seconds: f64) -> bool {
+        let mut changed = false;
+        for entry in &mut self.locos {
+            let before = entry.motion;
+            entry
+                .motion
+                .accelerate(&entry.loco, entry.axis, DEAD_ZONE, seconds);
+            changed |= entry.motion != before;
+        }
+        changed
     }
 
     /// Defaults of Electrip 1: DCC short, address 1, 128 steps, 100 km/h;
@@ -230,6 +277,8 @@ impl Session {
         self.locos.push(LocoEntry {
             id: self.last_id,
             loco,
+            motion: Motion::default(),
+            axis: 0.0,
         });
         Ok(())
     }
@@ -263,9 +312,13 @@ impl Session {
             .ok_or(CommandError::UnknownLoco(id))
     }
 
-    fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {
+    fn entry(&mut self, id: u32) -> Result<&mut LocoEntry, CommandError> {
         let index = self.index(id)?;
-        Ok(&mut self.locos[index].loco)
+        Ok(&mut self.locos[index])
+    }
+
+    fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {
+        Ok(&mut self.entry(id)?.loco)
     }
 }
 

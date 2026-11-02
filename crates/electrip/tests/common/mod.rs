@@ -9,6 +9,7 @@ use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::process::{Child, ChildStdout, Command, Stdio};
+use std::time::Duration;
 
 /// The running app; it is stopped when dropped.
 pub struct App {
@@ -30,6 +31,10 @@ impl App {
     /// A new client, after the greeting; `state` holds the initial state.
     pub fn connect(&self) -> Client {
         let stream = TcpStream::connect(&self.address).unwrap();
+        // A missing message fails the test instead of blocking it.
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
         let mut client = Client {
             reader: BufReader::new(stream.try_clone().unwrap()),
             writer: stream,
@@ -65,9 +70,15 @@ pub struct Client {
 impl Client {
     /// Sends a raw line and returns the reply; after a success the new
     /// state is read into `state`.
+    /// States that arrive before the reply, e.g. while a loco accelerates,
+    /// are read into `state` as well.
     pub fn send_line(&mut self, line: &str) -> Value {
         writeln!(self.writer, "{line}").unwrap();
-        let reply = self.next();
+        let mut reply = self.next();
+        while reply["type"] == "state" {
+            self.state = reply["state"].clone();
+            reply = self.next();
+        }
         assert_eq!(reply["type"], "reply", "{reply}");
         if reply["ok"] == true {
             self.expect_state();

@@ -108,6 +108,8 @@ fn loopback_tests() -> Result {
         "srcpd_loopback",
         "--test",
         "station_connection",
+        "--test",
+        "driving",
         "--",
         "--ignored",
     ];

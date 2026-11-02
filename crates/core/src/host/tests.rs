@@ -6,14 +6,18 @@ use std::sync::{Arc, Mutex};
 /// Events the test hands to the fake driver.
 type Events = Arc<Mutex<Vec<StationEvent>>>;
 
-struct FakeDriver(Events);
+/// Loco states the fake driver got, with the address.
+type Sent = Arc<Mutex<Vec<(u16, LocoState)>>>;
+
+struct FakeDriver(Events, Sent);
 
 impl CommandStation for FakeDriver {
     fn set_power(&mut self, _: bool) -> Result<(), StationError> {
         Ok(())
     }
 
-    fn set_loco(&mut self, _: &Decoder, _: &LocoState) -> Result<(), StationError> {
+    fn set_loco(&mut self, decoder: &Decoder, state: &LocoState) -> Result<(), StationError> {
+        self.1.lock().unwrap().push((decoder.address(), *state));
         Ok(())
     }
 
@@ -28,16 +32,23 @@ impl CommandStation for FakeDriver {
 
 /// A host whose connector reaches only the server "srcp", and its events.
 fn host() -> (Host, Events) {
-    let events = Events::default();
-    let driver_events = Arc::clone(&events);
+    let (host, events, _) = host_sending();
+    (host, events)
+}
+
+/// Like [`host`], also with the loco states the driver got.
+fn host_sending() -> (Host, Events, Sent) {
+    let (events, sent) = (Events::default(), Sent::default());
+    let (driver_events, driver_sent) = (Arc::clone(&events), Arc::clone(&sent));
     let host = Host::new(Box::new(move |station| {
         if station.host == "srcp" {
-            Ok(Box::new(FakeDriver(Arc::clone(&driver_events))))
+            let driver = FakeDriver(Arc::clone(&driver_events), Arc::clone(&driver_sent));
+            Ok(Box::new(driver))
         } else {
             Err(StationError(format!("cannot reach {}", station.host)))
         }
     }));
-    (host, events)
+    (host, events, sent)
 }
 
 fn set_server(host: &mut Host, name: &str) -> Result<(), CommandError> {
@@ -94,10 +105,112 @@ fn a_broken_connection_disconnects_and_can_be_reopened() {
     let (mut host, events) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
-    assert!(!host.poll());
+    assert!(!host.poll(0.05));
     events.lock().unwrap().push(StationEvent::Disconnected);
-    assert!(host.poll());
+    assert!(host.poll(0.05));
     assert!(!host.session().station().connected);
     host.apply(Command::Connect).unwrap();
     assert!(host.session().station().connected);
+}
+
+/// A connected host with one loco (id 1, address 1, 100 km/h, 128 steps,
+/// 11.5 s to accelerate) and the loco states the driver got.
+fn driving_host() -> (Host, Sent) {
+    let (mut host, _, sent) = host_sending();
+    host.apply(Command::AddLoco).unwrap();
+    set_server(&mut host, "srcp").unwrap();
+    host.apply(Command::Connect).unwrap();
+    (host, sent)
+}
+
+fn set_axis(host: &mut Host, deflection: f64) {
+    host.apply(Command::SetAxis {
+        loco: 1,
+        deflection,
+    })
+    .unwrap();
+}
+
+fn speed(host: &Host) -> f64 {
+    host.session().locos()[0].motion.speed()
+}
+
+fn state(forward: bool, step: u8) -> (u16, LocoState) {
+    let state = LocoState {
+        forward,
+        step,
+        functions: 0,
+    };
+    (1, state)
+}
+
+#[test]
+fn the_axis_accelerates_and_the_driver_gets_the_speed_step() {
+    let (mut host, sent) = driving_host();
+    assert!(!host.poll(0.05));
+    set_axis(&mut host, 1.0);
+    assert!(host.poll(1.15));
+    assert!((speed(&host) - 10.0).abs() < 1e-9);
+    assert!(host.poll(20.0));
+    assert_eq!(speed(&host), 100.0);
+    assert_eq!(*sent.lock().unwrap(), [state(true, 12), state(true, 128)]);
+}
+
+#[test]
+fn the_axis_at_rest_keeps_the_speed_and_sends_nothing() {
+    let (mut host, sent) = driving_host();
+    set_axis(&mut host, 1.0);
+    host.poll(2.3);
+    set_axis(&mut host, 0.03);
+    sent.lock().unwrap().clear();
+    assert!(!host.poll(1.0));
+    assert!((speed(&host) - 20.0).abs() < 1e-9);
+    assert!(sent.lock().unwrap().is_empty());
+}
+
+#[test]
+fn the_axis_back_brakes() {
+    let (mut host, _) = driving_host();
+    set_axis(&mut host, 1.0);
+    host.poll(11.5);
+    set_axis(&mut host, -0.5);
+    host.poll(8.5);
+    assert!((speed(&host) - 50.0).abs() < 1e-9);
+}
+
+#[test]
+fn reverse_stops_and_changes_the_direction() {
+    let (mut host, sent) = driving_host();
+    host.apply(Command::Reverse { loco: 1 }).unwrap();
+    host.poll(0.05);
+    set_axis(&mut host, 1.0);
+    host.poll(11.5);
+    host.apply(Command::Reverse { loco: 1 }).unwrap();
+    set_axis(&mut host, 0.0);
+    host.poll(0.05);
+    assert_eq!(
+        *sent.lock().unwrap(),
+        [state(false, 0), state(false, 128), state(true, 0)]
+    );
+}
+
+#[test]
+fn locos_drive_without_a_connection() {
+    let (mut host, _) = host();
+    host.apply(Command::AddLoco).unwrap();
+    set_axis(&mut host, 1.0);
+    assert!(host.poll(11.5));
+    assert_eq!(speed(&host), 100.0);
+}
+
+#[test]
+fn the_axis_of_an_unknown_loco_is_an_error() {
+    let (mut host, _) = host();
+    let error = host.apply(Command::SetAxis {
+        loco: 7,
+        deflection: 1.0,
+    });
+    assert_eq!(error, Err(CommandError::UnknownLoco(7)));
+    let error = host.apply(Command::Reverse { loco: 7 });
+    assert_eq!(error, Err(CommandError::UnknownLoco(7)));
 }

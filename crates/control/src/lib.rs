@@ -9,12 +9,13 @@ use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
 
-/// How often the host handles the events of the command station.
+/// How often the host handles the events of the command station and
+/// drives the locos; Electrip 1 drove every 50 ms.
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 /// The host and all connected clients. One lock for both keeps the
@@ -62,12 +63,16 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     Ok(())
 }
 
-/// Lets the host handle station events and reports changes to all clients.
+/// Lets the host handle station events and drive the locos, and reports
+/// changes to all clients.
 fn poll(shared: &Mutex<Shared>) -> io::Result<()> {
+    let mut last = Instant::now();
     loop {
         thread::sleep(POLL_INTERVAL);
         let mut shared = lock(shared)?;
-        if shared.host.poll() {
+        let seconds = last.elapsed().as_secs_f64();
+        last = Instant::now();
+        if shared.host.poll(seconds) {
             shared.broadcast();
         }
     }

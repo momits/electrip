@@ -4,9 +4,13 @@
 //! Vmax in the braking duration, as in Electrip 1.
 
 use crate::loco::Loco;
+use serde::Serialize;
+
+/// Axis deflections up to this are ignored; the default of Electrip 1.
+pub const DEAD_ZONE: f64 = 0.06;
 
 /// Speed in km/h and direction of a loco.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct Motion {
     speed: f64,
     forward: bool,
