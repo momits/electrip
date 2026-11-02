@@ -9,6 +9,16 @@ use serde::Serialize;
 /// Axis deflections up to this are ignored; the default of Electrip 1.
 pub const DEAD_ZONE: f64 = 0.06;
 
+/// The deflection of an axis, clamped to -1 to 1; within the dead zone it
+/// is 0, so the speed stays.
+pub fn deflection(value: f64, dead_zone: f64) -> f64 {
+    if value.abs() <= dead_zone {
+        0.0
+    } else {
+        value.clamp(-1.0, 1.0)
+    }
+}
+
 /// Speed in km/h and direction of a loco.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct Motion {
@@ -35,10 +45,9 @@ impl Motion {
     }
 
     /// Changes the speed for `seconds` with the axis at `deflection` (-1 full
-    /// back to 1 full forward), between standstill and Vmax. Within the dead
-    /// zone the speed stays.
-    pub fn accelerate(&mut self, loco: &Loco, deflection: f64, dead_zone: f64, seconds: f64) {
-        if deflection.abs() <= dead_zone {
+    /// back to 1 full forward), between standstill and Vmax.
+    pub fn accelerate(&mut self, loco: &Loco, deflection: f64, seconds: f64) {
+        if deflection == 0.0 {
             return;
         }
         let duration = if deflection > 0.0 {

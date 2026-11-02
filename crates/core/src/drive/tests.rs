@@ -1,8 +1,6 @@
 use super::*;
 use crate::decoder::{Decoder, Protocol};
 
-const DEAD_ZONE: f64 = 0.06;
-
 /// 100 km/h, 11.5 s to accelerate, 8.5 s to brake.
 fn loco() -> Loco {
     Loco::new(Decoder::new(Protocol::DccShort, 1, 128).unwrap(), 100.0).unwrap()
@@ -14,7 +12,7 @@ fn time_to(motion: &mut Motion, deflection: f64, target: f64) -> f64 {
     let loco = loco();
     let mut seconds = 0.0;
     while motion.speed() != target && seconds < 100.0 {
-        motion.accelerate(&loco, deflection, DEAD_ZONE, 0.05);
+        motion.accelerate(&loco, deflection, 0.05);
         seconds += 0.05;
     }
     seconds
@@ -52,30 +50,33 @@ fn full_back_stops_from_max_speed_in_the_braking_duration() {
 #[test]
 fn acceleration_is_proportional_to_the_deflection() {
     let (mut half, mut full) = (moving(50.0), moving(50.0));
-    half.accelerate(&loco(), 0.5, DEAD_ZONE, 1.0);
-    full.accelerate(&loco(), 1.0, DEAD_ZONE, 1.0);
+    half.accelerate(&loco(), 0.5, 1.0);
+    full.accelerate(&loco(), 1.0, 1.0);
     assert_eq!(full.speed() - 50.0, 2.0 * (half.speed() - 50.0));
     let (mut half, mut full) = (moving(50.0), moving(50.0));
-    half.accelerate(&loco(), -0.5, DEAD_ZONE, 1.0);
-    full.accelerate(&loco(), -1.0, DEAD_ZONE, 1.0);
+    half.accelerate(&loco(), -0.5, 1.0);
+    full.accelerate(&loco(), -1.0, 1.0);
     assert_eq!(50.0 - full.speed(), 2.0 * (50.0 - half.speed()));
 }
 
 #[test]
-fn axis_within_the_dead_zone_keeps_the_speed() {
-    for deflection in [0.0, DEAD_ZONE, -DEAD_ZONE] {
-        let mut motion = moving(50.0);
-        motion.accelerate(&loco(), deflection, DEAD_ZONE, 1.0);
-        assert_eq!(motion, moving(50.0));
+fn axis_within_the_dead_zone_is_at_rest_and_keeps_the_speed() {
+    for value in [0.0, DEAD_ZONE, -DEAD_ZONE] {
+        assert_eq!(deflection(value, DEAD_ZONE), 0.0);
     }
+    assert_eq!(deflection(0.07, DEAD_ZONE), 0.07);
+    assert_eq!(deflection(-1.5, DEAD_ZONE), -1.0);
+    let mut motion = moving(50.0);
+    motion.accelerate(&loco(), 0.0, 1.0);
+    assert_eq!(motion, moving(50.0));
 }
 
 #[test]
 fn speed_stays_between_standstill_and_max_speed() {
     let mut motion = moving(99.0);
-    motion.accelerate(&loco(), 1.0, DEAD_ZONE, 10.0);
+    motion.accelerate(&loco(), 1.0, 10.0);
     assert_eq!(motion.speed(), 100.0);
-    motion.accelerate(&loco(), -1.0, DEAD_ZONE, 100.0);
+    motion.accelerate(&loco(), -1.0, 100.0);
     assert_eq!(motion.speed(), 0.0);
 }
 
