@@ -13,7 +13,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - CI auf `main` war grün.
 - `crates/core/src/session.rs`: `Session` hält die Loks (mit `id`) und die Verbindung zur Zentrale (bisher nur `disconnected`); `Command` umfasst alle bisherigen Befehle: Lok anlegen (Vorgaben wie Electrip 1), Adresse, Protokoll, Fahrstufen, Vmax (mit `confirmed`, B-09) und Kennlinienpunkte anlegen, löschen, verschieben.
   Fehler haben verständliche Texte (`Display`); ein fehlgeschlagener Befehl ändert nichts.
-  `core` nutzt dafür `serde` (derive).
+  `core` nutzt dafür `serde` (derive); `deny.toml` erlaubt deshalb zusätzlich die Lizenz Unicode-3.0 (`unicode-ident`, über jedes Proc-Makro, OSI-anerkannt, nur zur Übersetzungszeit).
 - Neues Crate `electrip-control`: zeilenweises JSON über TCP nur auf `127.0.0.1`, `hello` mit Version 1, Zustand nach dem Verbinden und nach jedem erfolgreichen Befehl an alle Clients, auf jeden Befehl eine `reply`.
   Ein Thread je Client, eine gemeinsame Sperre für Sitzung und Clients.
 - `electrip [--control-port <port>]` startet ohne Oberfläche (Standardport 4711, 0 = frei) und nennt die Adresse in der ersten Ausgabezeile.

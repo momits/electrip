@@ -1,7 +1,8 @@
 # `cargo deny check`: known advisories, licenses and sources of all dependencies.
 
 [licenses]
-allow = ["MIT", "Apache-2.0", "GPL-3.0-or-later"]
+# Unicode-3.0: unicode-ident, needed by every proc macro (serde derive, Slint).
+allow = ["MIT", "Apache-2.0", "GPL-3.0-or-later", "Unicode-3.0"]
 private = { ignore = true }
 
 [sources]
