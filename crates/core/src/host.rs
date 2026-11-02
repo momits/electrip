@@ -81,8 +81,12 @@ impl Host {
             Command::ExportConfiguration { path } => self.export(&path)?,
             Command::ImportElectrip1 { path } => self.import(&path)?,
             command => {
+                let before = self.session.clone();
                 self.session.apply(command)?;
-                self.save()?;
+                if let Err(error) = self.save() {
+                    self.session = before;
+                    return Err(error);
+                }
             }
         }
         Ok(())

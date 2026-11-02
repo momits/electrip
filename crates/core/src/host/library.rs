@@ -6,17 +6,12 @@ use crate::config::{self, Config, DEFAULT_NAME};
 use crate::electrip1;
 use crate::session::CommandError;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
-
-fn file_error(error: io::Error) -> CommandError {
-    CommandError::File(error.to_string())
-}
 
 impl Host {
     pub(super) fn open_first(&mut self) -> Result<(), CommandError> {
-        fs::create_dir_all(&self.library).map_err(file_error)?;
-        match config::names(&self.library).map_err(file_error)?.first() {
+        fs::create_dir_all(&self.library)?;
+        match config::names(&self.library)?.first() {
             Some(name) => self.open(name.clone()),
             None => self.create(DEFAULT_NAME.into(), Config::default()),
         }
@@ -27,7 +22,7 @@ impl Host {
         let config = self.session.config();
         if config != self.saved {
             let path = config::path(&self.library, self.session.configuration());
-            config::write(&path, &config).map_err(file_error)?;
+            config::write(&path, &config)?;
             self.saved = config;
         }
         Ok(())
@@ -35,19 +30,19 @@ impl Host {
 
     pub(super) fn create(&mut self, name: String, config: Config) -> Result<(), CommandError> {
         self.check_disconnected()?;
-        config::write(&self.new_path(&name)?, &config).map_err(file_error)?;
+        config::write(&self.new_path(&name)?, &config)?;
         self.load(name, config, Vec::new())
     }
 
     pub(super) fn open(&mut self, name: String) -> Result<(), CommandError> {
         self.check_disconnected()?;
-        let config = config::read(&self.path(&name)?).map_err(file_error)?;
+        let config = config::read(&self.path(&name)?)?;
         self.load(name, config, Vec::new())
     }
 
     pub(super) fn rename(&mut self, name: String) -> Result<(), CommandError> {
         let from = config::path(&self.library, self.session.configuration());
-        fs::rename(from, self.new_path(&name)?).map_err(file_error)?;
+        fs::rename(from, self.new_path(&name)?)?;
         self.refresh(name)
     }
 
@@ -55,12 +50,12 @@ impl Host {
         if name == self.session.configuration() {
             return Err(CommandError::ConfigurationOpen(name));
         }
-        fs::remove_file(self.path(&name)?).map_err(file_error)?;
+        fs::remove_file(self.path(&name)?)?;
         self.refresh(self.session.configuration().into())
     }
 
     pub(super) fn export(&self, path: &Path) -> Result<(), CommandError> {
-        config::write(path, &self.saved).map_err(file_error)
+        Ok(config::write(path, &self.saved)?)
     }
 
     pub(super) fn import(&mut self, path: &Path) -> Result<(), CommandError> {
@@ -76,7 +71,7 @@ impl Host {
             station: import.station,
             ..Config::default()
         };
-        config::write(&new_path, &config).map_err(file_error)?;
+        config::write(&new_path, &config)?;
         self.load(name.into(), config, import.report)
     }
 
@@ -93,7 +88,7 @@ impl Host {
 
     /// Reads the names of the configurations again.
     fn refresh(&mut self, open: String) -> Result<(), CommandError> {
-        let names = config::names(&self.library).map_err(file_error)?;
+        let names = config::names(&self.library)?;
         self.session.set_configurations(open, names);
         Ok(())
     }

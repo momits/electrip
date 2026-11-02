@@ -216,3 +216,16 @@ fn a_failed_import_changes_nothing() {
     assert_eq!(*host.session(), before);
     assert_eq!(names(&host), [DEFAULT_NAME]);
 }
+
+#[test]
+fn a_failed_save_changes_nothing() {
+    let (mut host, _, _, _library) = host();
+    // A directory in place of the file makes saving fail.
+    let path = host.path(DEFAULT_NAME).unwrap();
+    fs::remove_file(&path).unwrap();
+    fs::create_dir(path.with_extension("json.tmp")).unwrap();
+    let before = host.session().clone();
+    let result = host.apply(Command::AddLoco);
+    assert!(matches!(result, Err(CommandError::File(_))), "{result:?}");
+    assert_eq!(*host.session(), before);
+}
