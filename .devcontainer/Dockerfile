@@ -6,8 +6,9 @@ ARG CLAUDE_VERSION=2.1.312
 ARG CLAUDE_SHA256_ARM64=dc4af28917455e009d26704b82a438353a06149e825b6cdf782908b2d28661f5
 ARG CLAUDE_SHA256_AMD64=4f4178ce41d83e23341ebfbaecdbcf8ea6bf7baea0690025abe49eeec3a5d01d
 
+# cmake builds SDL3 from the source in the sdl3-src crate, pinned by Cargo.lock (N-01).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends srcpd tinyproxy iptables \
+    && apt-get install -y --no-install-recommends srcpd tinyproxy iptables cmake \
     && rm -rf /var/lib/apt/lists/*
 
 RUN case $(dpkg --print-architecture) in \
