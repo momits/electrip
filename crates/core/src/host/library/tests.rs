@@ -210,7 +210,7 @@ fn a_failed_import_changes_nothing() {
     let (mut host, _, _, _library) = host();
     host.apply(Command::AddLoco).unwrap();
     let before = host.session().clone();
-    let path = PathBuf::from("/nonexistent/electrip.json");
+    let path = PathBuf::from("/nonexistent/anlage.json");
     let result = host.apply(Command::ImportElectrip1 { path });
     assert!(matches!(result, Err(CommandError::Import(_))));
     assert_eq!(*host.session(), before);
