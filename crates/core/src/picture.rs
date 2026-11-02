@@ -79,8 +79,7 @@ pub fn store(dir: &Path, source: &Path, crop: Option<Crop>) -> Result<String, Pi
     let image = image::open(source).map_err(|e| PictureError::Read(e.to_string()))?;
     let (width, height) = image.dimensions();
     let crop = crop.unwrap_or(Crop::centered(width, height));
-    let inside = crop.width > 0
-        && crop.height() > 0
+    let inside = crop.height() > 0
         && u64::from(crop.x) + u64::from(crop.width) <= u64::from(width)
         && u64::from(crop.y) + u64::from(crop.height()) <= u64::from(height);
     if !inside {
@@ -96,11 +95,9 @@ pub fn store(dir: &Path, source: &Path, crop: Option<Crop>) -> Result<String, Pi
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect();
-    let write = || -> std::io::Result<()> {
-        fs::create_dir_all(dir)?;
-        fs::write(path(dir, &name), &png)
-    };
-    write().map_err(|e| PictureError::Write(e.to_string()))?;
+    fs::create_dir_all(dir)
+        .and_then(|()| fs::write(path(dir, &name), &png))
+        .map_err(|e| PictureError::Write(e.to_string()))?;
     Ok(name)
 }
 
