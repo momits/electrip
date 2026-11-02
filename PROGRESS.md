@@ -8,6 +8,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-04: Lokverwaltung im Kern und über den Steuerkanal (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core`: `Loco` hat einen Namen, neue Loks heißen „Unbenannte Lok“ wie in Electrip 1.
+  Neue Befehle `rename_loco`, `remove_loco` und `move_loco` (neue Stelle in der Lokliste); die Reihenfolge von `locos` im Zustand ist die Lokliste.
+  Ids werden nie wiederverwendet (`last_id`, nicht im Zustand), damit ein Befehl für eine gelöschte Lok keine neue trifft.
+- Unit-Tests in `crates/core/src/session/tests.rs`, `control-channel`-Test in `crates/electrip/tests/loco_management.rs`; Format in `spec/steuerkanal.md`.
+- `cargo xtask test` grün.
+  Status unverändert: Umbenennen und Löschen in der UI fehlen, und die Reihenfolge wird noch nicht gespeichert, weil es noch keine Konfigurationsdatei gibt (B-21).
+  Beim Speichern muss `last_id` mitgespeichert werden.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: `loco()` nutzt `index()`, Test-Helfer zusammengeführt.
+- **Nächster Schritt:** B-05 (Lautstärke, Beschleunigungs- und Bremsdauer) im Kern und über den Steuerkanal, ohne Lokbild.
+
 ## 2026-11-02 – B-08: Kennlinie über den Steuerkanal (Claude)
 
 - CI auf `main` war grün.
