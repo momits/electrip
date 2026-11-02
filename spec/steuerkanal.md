@@ -42,6 +42,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "brake_duration": 8.5,
     "volume": 0.8,
     "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
+    "picture": null,
     "speed": 0.0,
     "forward": true
   }],
@@ -61,6 +62,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `speed_curve`: Kontrollpunkte `[km/h, Fahrstufe]` (B-08).
 - `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
 - `functions`: Decoder-Funktionen der Lok in der vom Nutzer sortierten Reihenfolge (B-07): logische Aktion `action`, Funktionsnummer `number` (F0–F28), `name`, `mode` (`switch` Umschalter: erste Auslösung an, zweite aus; `push` Taster: an, solange gehalten), `default_on` (Standardzustand „An“ kehrt beide Modi um) und `on` (ob die Funktion gerade an ist; die Zentrale bekommt alle Funktionen, die an sind).
+- `picture`: Name des Lokbilds (B-05) oder `null`. Die Datei `media/<picture>.png` in der Bibliothek ist der gespeicherte Ausschnitt in 440×340 px; der Name ist ihr SHA-256, so liegt jedes Bild nur einmal dort.
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
   `control` heißt wie in SDL, z. B. `a`, `lefty`, `dpleft`; Joysticks ohne Gamepad-Belegung z. B. `button0`, `axis1`, `hat0_left`.
@@ -95,6 +97,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `set_accel_duration` | `loco`, `seconds` | B-05 |
 | `set_brake_duration` | `loco`, `seconds` | B-05 |
 | `set_volume` | `loco`, `volume` | B-05 |
+| `set_picture` | `loco`, `path` (PNG oder JPEG auf dem Rechner der App), optional `crop` (Ausschnitt in Pixeln des Bildes: `x`, `y` linke obere Ecke, `width` Breite; die Höhe folgt aus dem Seitenverhältnis 22:17. Verschieben ändert `x`/`y`, Zoomen `width`. Standard: der größte Ausschnitt in der Mitte); speichert den Ausschnitt als Lokbild in 440×340 px | B-05 |
 | `add_curve_point` | `loco`, `speed`, `step` | B-08 |
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
@@ -123,7 +126,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `rename_configuration` | `name` (neuer Name der geöffneten Konfiguration) | B-21 |
 | `remove_configuration` | `name` (löscht eine andere als die geöffnete Konfiguration) | B-21 |
 | `export_configuration` | `path` (schreibt die geöffnete Konfiguration in eine Datei auf dem Rechner der App) | B-21 |
-| `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
+| `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Lokbild (mittig zugeschnitten; ein relativer Pfad gilt ab dem Ordner der Datei, ein fehlendes Bild steht im `import_report`), Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
 
 Namen von Konfigurationen müssen auf allen Systemen Dateinamen sein: nicht leer, ohne `.` am Anfang und Leerzeichen am Ende, ohne `< > : " / \ | ? *` und Steuerzeichen.
 

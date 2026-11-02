@@ -20,9 +20,23 @@ fn saved(dir: &Path, name: &str) -> RgbImage {
 #[test]
 fn the_centered_crop_is_the_largest_in_the_middle() {
     let wide = Crop::centered(1000, 340);
-    assert_eq!(wide, Crop { x: 280, y: 0, width: 440 });
+    assert_eq!(
+        wide,
+        Crop {
+            x: 280,
+            y: 0,
+            width: 440
+        }
+    );
     let tall = Crop::centered(440, 1000);
-    assert_eq!(tall, Crop { x: 0, y: 330, width: 440 });
+    assert_eq!(
+        tall,
+        Crop {
+            x: 0,
+            y: 330,
+            width: 440
+        }
+    );
     assert_eq!(Crop::centered(220, 170).width, 220);
 }
 
@@ -31,7 +45,11 @@ fn the_crop_is_saved_in_the_fixed_size() {
     let dir = TempDir::new().unwrap();
     let source = image_file(dir.path(), "lok.png", 300, 100, 150);
     let media = dir.path().join("media");
-    let crop = Crop { x: 160, y: 10, width: 110 };
+    let crop = Crop {
+        x: 160,
+        y: 10,
+        width: 110,
+    };
     let name = store(&media, &source, Some(crop)).unwrap();
     let picture = saved(&media, &name);
     assert_eq!(picture.dimensions(), (WIDTH, HEIGHT));
@@ -66,10 +84,26 @@ fn the_crop_must_lie_inside_the_image() {
     let dir = TempDir::new().unwrap();
     let source = image_file(dir.path(), "lok.png", 440, 340, 100);
     for crop in [
-        Crop { x: 1, y: 0, width: 440 },
-        Crop { x: 0, y: 1, width: 440 },
-        Crop { x: 0, y: 0, width: 0 },
-        Crop { x: u32::MAX, y: 0, width: 10 },
+        Crop {
+            x: 1,
+            y: 0,
+            width: 440,
+        },
+        Crop {
+            x: 0,
+            y: 1,
+            width: 440,
+        },
+        Crop {
+            x: 0,
+            y: 0,
+            width: 0,
+        },
+        Crop {
+            x: u32::MAX,
+            y: 0,
+            width: 10,
+        },
     ] {
         let result = store(dir.path(), &source, Some(crop));
         assert_eq!(result, Err(PictureError::CropOutsideImage), "{crop:?}");

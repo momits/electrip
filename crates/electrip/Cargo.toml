@@ -11,6 +11,7 @@ electrip-core = { path = "../core" }
 electrip-station-srcp = { path = "../station-srcp" }
 
 [dev-dependencies]
+image = { version = "0.25.10", default-features = false, features = ["png"] }
 serde_json = "1"
 tempfile = "3"
 

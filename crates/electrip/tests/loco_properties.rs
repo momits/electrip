@@ -1,5 +1,5 @@
-//! B-05: acceleration and braking duration and volume of a loco are set
-//! through the control channel, and every client sees them.
+//! B-05: acceleration and braking duration, volume and picture of a loco
+//! are set through the control channel, and every client sees them.
 
 // Test code: unwrap is allowed (AGENTS.md).
 #![allow(clippy::unwrap_used)]
@@ -8,6 +8,7 @@ mod common;
 
 use common::App;
 use serde_json::json;
+use tempfile::TempDir;
 
 #[test]
 fn durations_and_volume_are_set() {
@@ -33,6 +34,32 @@ fn durations_and_volume_are_set() {
 
     // Every client sees the result.
     assert_eq!(app.connect().state, client.state);
+}
+
+#[test]
+fn a_crop_of_an_image_becomes_the_picture() {
+    let library = TempDir::new().unwrap();
+    let app = App::start_in(library.path(), &[]);
+    let mut client = app.connect();
+    client.command(json!({"command": "add_loco"})).unwrap();
+    assert_eq!(client.state["locos"][0]["picture"], json!(null));
+    let source = library.path().join("lok.png");
+    image::RgbImage::new(1100, 850).save(&source).unwrap();
+
+    let crop = json!({"x": 100, "y": 50, "width": 220});
+    client
+        .command(json!({"command": "set_picture", "loco": 1, "path": source, "crop": crop}))
+        .unwrap();
+    let name = client.state["locos"][0]["picture"].as_str().unwrap();
+    let saved = image::open(library.path().join(format!("media/{name}.png"))).unwrap();
+    assert_eq!((saved.width(), saved.height()), (440, 340));
+    assert_eq!(app.connect().state, client.state);
+
+    let crop = json!({"x": 1000, "y": 0, "width": 220});
+    let error = client
+        .command(json!({"command": "set_picture", "loco": 1, "path": source, "crop": crop}))
+        .unwrap_err();
+    assert_eq!(error, "the crop must lie inside the picture");
 }
 
 #[test]

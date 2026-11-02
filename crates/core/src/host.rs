@@ -83,9 +83,12 @@ impl Host {
             Command::ImportElectrip1 { path } => self.import(&path)?,
             Command::SetPicture { loco, path, crop } => {
                 self.session.loco(loco)?;
-                let picture = picture::store(&self.media(), &path, crop)
-                    .map_err(CommandError::Picture)?;
-                self.change(|session| Ok(session.loco(loco)?.set_picture(picture)))?;
+                let picture =
+                    picture::store(&self.media(), &path, crop).map_err(CommandError::Picture)?;
+                self.change(|session| {
+                    session.loco(loco)?.set_picture(picture);
+                    Ok(())
+                })?;
             }
             command => self.change(|session| session.apply(command))?,
         }
