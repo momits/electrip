@@ -50,3 +50,15 @@ Vorbereitung: wie B-10 verbunden, eine Lok fährt.
 - [ ] `emergency_stop` für die fahrende Lok: nur sie hält sofort an, andere Loks fahren weiter, der Gleisstrom bleibt an.
 
 Ergebnis: _offen_
+
+## B-07 – Lokfunktionen über logische Aktionen (über den Steuerkanal, noch ohne Gamepad)
+
+Vorbereitung: wie B-10 verbunden, eine DCC-Lok mit Licht auf F0 und einer weiteren Funktion (z. B. Horn auf F2) angelegt, `add_action` „Licht“ (1) und „Horn“ (2).
+
+- [ ] `add_function` mit Aktion 1, F0, `mode: switch`; `trigger_action` gedrückt und losgelassen: das Licht geht an und bleibt an; beim zweiten Mal geht es aus.
+- [ ] `add_function` mit Aktion 2, F2, `mode: push`: die Funktion läuft nur, solange `pressed: true` gilt; nach `pressed: false` hört sie auf.
+- [ ] Eine Funktion mit `default_on: true` ist nach `add_function` sofort an und wird durch die Aktion ausgeschaltet.
+- [ ] Eine zweite Lok bildet Aktion 1 auf eine andere Funktionsnummer ab: `trigger_action` für diese Lok schaltet nur deren Funktion, die erste Lok bleibt unverändert.
+- [ ] Beim Fahren mit `set_axis` bleiben eingeschaltete Funktionen an.
+
+Ergebnis: _offen_

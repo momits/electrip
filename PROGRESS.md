@@ -6,7 +6,27 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- (noch keine)
+- `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
+
+## 2026-11-02 – N-07, B-07: Logische Aktionen schalten Lokfunktionen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core/src/function.rs`: `Action` (Name, lokübergreifend), `Function` (Aktion → Funktionsnummer F0–F28, Name, Modus Umschalter/Taster, Standardzustand, aktueller Zustand `on`).
+  Befehle in `crates/core/src/session/actions.rs`: `add_action`, `rename_action`, `remove_action` (löscht auch die Funktionen, die darauf zeigen), `add_function`, `remove_function`, `move_function`, `trigger_action { loco, action, pressed }`.
+  Die Zentrale bekommt alle Funktionen, die an sind; der Host sendet sie wie Fahrstufen nach jeder Änderung.
+  Funktionsnummern über F28 sind ein Fehler, weil `CommandStation` nur F0–F28 kennt (N-02); gegen die Grenzen der Zentrale wird nicht geprüft.
+- Zustand: neues Feld `actions`, je Lok `functions` (`spec/steuerkanal.md`).
+- Tests: `crates/core/src/function/tests.rs` (Umschalter, Taster, Standardzustand „An“), `session/tests.rs`, `crates/electrip/tests/actions.rs` über den Steuerkanal und ein `#[ignore]`-Test gegen srcpd (zwei Loks, dieselbe Aktion auf F0 bzw. F4).
+- **Gefunden und behoben:** `cargo xtask sim up` führte nur eine feste Liste von Testdateien aus; die srcpd-Tests aus `track_power.rs` (B-23) liefen deshalb nie.
+  Jetzt laufen alle `#[ignore]`-Integrationstests von `electrip` und `electrip-station-srcp`; lokal alle grün.
+  Gemeinsame srcpd-Helfer stehen in `crates/electrip/tests/common/srcpd.rs`.
+- `cargo xtask test`, `cargo xtask sim up` und `cargo xtask parity` grün. Hardware-Checkliste in `spec/hw-checklist.md` ergänzt.
+- **B-07** `wired`; `verified` fehlt der Test mit virtuellem Gamepad (N-01).
+  **N-07** bleibt offen: Aktionen werden noch nicht in der Konfiguration gespeichert (B-21), und „die Lok, die das auslösende Eingabegerät steuert“ kommt mit N-01; bis dahin nennt `trigger_action` die Lok.
+  Der Import aus Electrip 1 übernimmt noch keine Funktionen (ADR 0009: je Knopfnummer eine Aktion; mit B-21/N-01).
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: `remove_function` in `session/actions.rs`, `remove_action` sucht die Aktion nur einmal, Test-Helfer `try_add_function`.
+- **Nächster Schritt:** Eingabegeräte (N-01) mit virtuellem Gamepad, damit B-03, B-07, B-10, B-23 und N-07 vollständig werden; oder B-21 (Konfigurationen speichern).
 
 ## 2026-11-02 – B-23: Gleisstrom und Nothalt (Claude)
 
