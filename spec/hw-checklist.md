@@ -27,3 +27,14 @@ Vorbereitung: srcpd auf einem anderen Rechner im Netz (z. B. Raspberry Pi) mit e
 - [ ] srcpd wieder starten, `connect` ohne Neustart von Electrip gelingt.
 
 Ergebnis: _offen_
+
+## B-10 – Fahren mit der Achse (über den Steuerkanal, noch ohne Gamepad)
+
+Vorbereitung: wie B-01 verbunden, eine DCC-Lok mit 128 Fahrstufen angelegt (`add_loco`, `set_address`), Beschleunigungs- und Bremsdauer z. B. 10 s.
+
+- [ ] `set_axis` mit `deflection: 1`: die Lok fährt gleichmäßig an und erreicht nach etwa 10 s die Höchstgeschwindigkeit.
+- [ ] `set_axis` mit `deflection: 0`: die Lok hält ihre Geschwindigkeit.
+- [ ] `set_axis` mit `deflection: -1`: die Lok bremst in etwa 10 s bis zum Stillstand.
+- [ ] `reverse` während der Fahrt: die Lok hält sofort an, nach erneutem `set_axis` fährt sie in die andere Richtung.
+
+Ergebnis: _offen_
