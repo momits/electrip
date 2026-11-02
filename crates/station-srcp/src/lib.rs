@@ -28,7 +28,7 @@ impl SrcpStation {
         let mut command = open(host, port, "COMMAND")?;
         // INIT POWER as in Electrip 1; it also tells whether the bus exists.
         request(&mut command, &format!("INIT {bus} POWER"))
-            .map_err(|_| StationError(format!("the SRCP server has no bus {bus}")))?;
+            .map_err(|e| StationError(format!("the SRCP server has no bus {bus}: {e}")))?;
         let info = open(host, port, "INFO")?;
         let (sender, events) = channel();
         let reader = info.get_ref().try_clone().map_err(io_error)?;
@@ -51,20 +51,16 @@ impl SrcpStation {
         mode: u8,
         state: &LocoState,
     ) -> Result<(), StationError> {
-        let (bus, address) = (self.bus, decoder.address());
+        let (bus, address, steps) = (self.bus, decoder.address(), decoder.speed_steps());
         if self.initialized.get(&address) != Some(decoder) {
             let (protocol, functions) = srcp_protocol(decoder.protocol());
-            let init = format!(
-                "INIT {bus} GL {address} {protocol} {} {functions}",
-                decoder.speed_steps()
-            );
+            let init = format!("INIT {bus} GL {address} {protocol} {steps} {functions}");
             request(&mut self.command, &init)?;
             self.initialized.insert(address, *decoder);
         }
         let functions: Vec<&str> = (0..=MAX_FUNCTION)
             .map(|n| if state.function(n) { "1" } else { "0" })
             .collect();
-        let steps = decoder.speed_steps();
         let set = format!(
             "SET {bus} GL {address} {mode} {} {steps} {}",
             state.step,
