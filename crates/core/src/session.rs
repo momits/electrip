@@ -191,11 +191,8 @@ impl Session {
     }
 
     fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {
-        self.locos
-            .iter_mut()
-            .find(|e| e.id == id)
-            .map(|e| &mut e.loco)
-            .ok_or(CommandError::UnknownLoco(id))
+        let index = self.index(id)?;
+        Ok(&mut self.locos[index].loco)
     }
 }
 
