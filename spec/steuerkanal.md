@@ -29,6 +29,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 {
   "locos": [{
     "id": 1,
+    "name": "Unbenannte Lok",
     "decoder": {"protocol": "dcc_short", "address": 1, "speed_steps": 128},
     "max_speed": 100.0,
     "speed_curve": [[0.0, 0.0], [100.0, 128.0]]
@@ -37,6 +38,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 }
 ```
 
+- `locos` steht in der Reihenfolge der Lokliste (B-04); eine `id` wird nie wiederverwendet, auch nicht nach dem Löschen.
+- `name`: neue Loks heißen „Unbenannte Lok“ (B-04).
 - `protocol`: `motorola1`, `motorola2`, `dcc_short`, `dcc_long` (B-06).
 - `speed_curve`: Kontrollpunkte `[km/h, Fahrstufe]` (B-08).
 - `station`: Verbindung zur Zentrale; bisher nur `disconnected`, es gibt noch keinen Treiber.
@@ -48,6 +51,9 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `command` | Parameter | Anforderung |
 |---|---|---|
 | `add_loco` | – (Vorgaben wie Electrip 1: DCC kurz, Adresse 1, 128 Fahrstufen, 100 km/h) | B-04 |
+| `rename_loco` | `loco`, `name` | B-04 |
+| `remove_loco` | `loco` | B-04 |
+| `move_loco` | `loco`, `position` (neue Stelle in der Lokliste ab 0) | B-04 |
 | `set_address` | `loco`, `address` | B-06 |
 | `set_protocol` | `loco`, `protocol`, `confirmed` | B-06, B-09 |
 | `set_speed_steps` | `loco`, `speed_steps`, `confirmed` | B-06, B-09 |
