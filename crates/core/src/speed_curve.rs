@@ -29,6 +29,15 @@ impl SpeedCurve {
         Some(curve)
     }
 
+    /// The straight curve from step 0 at standstill to `max_steps` at
+    /// `max_speed`, as Electrip 1 sets it on a reset. `max_speed` must be
+    /// above 0.
+    pub(crate) fn straight(max_speed: f64, max_steps: f64) -> Self {
+        SpeedCurve {
+            points: vec![(0.0, 0.0), (max_speed, max_steps)],
+        }
+    }
+
     pub fn points(&self) -> &[Point] {
         &self.points
     }
