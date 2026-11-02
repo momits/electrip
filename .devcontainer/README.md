@@ -79,5 +79,5 @@ VS Code reicht SSH-Agent und Git-Zugangsdaten des Rechners in den Container durc
 ## Pull Requests
 
 Jede Aufgabe kommt über einen eigenen Pull Request nach `main`.
-Der Agent erstellt ihn, wartet auf die grüne CI und merged ihn selbst mit Rebase, damit die Commits mit Trailer erhalten bleiben.
+Der Agent erstellt ihn, wartet auf die grüne CI und merged ihn selbst mit Rebase, damit die einzelnen Commits erhalten bleiben.
 Es läuft immer nur ein Loop mit einem Agenten (ADR 0007).

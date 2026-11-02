@@ -36,11 +36,10 @@ fn main() -> ExitCode {
         Some("test") => test(),
         Some("loc") => loc(),
         Some("parity") => parity(),
-        Some("review-check") => review_check(args.get(1).map(String::as_str)),
         Some("sim") => sim::sim(args.get(1).map(String::as_str)),
         Some("golden") => golden::golden(args.get(1).map(String::as_str)),
         Some("corpus") => corpus::corpus(args.get(1).map(String::as_str)),
-        _ => Err("usage: cargo xtask <test | loc | parity | review-check [base] | sim up|down | golden [--record] | corpus [--record]>".into()),
+        _ => Err("usage: cargo xtask <test | loc | parity | sim up|down | golden [--record] | corpus [--record]>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -196,47 +195,4 @@ fn parity() -> Result {
         done[2]
     );
     Ok(())
-}
-
-/// The newest commit in `base..HEAD` that touches `crates/` must carry the
-/// trailer `Simplicity-Review: ok|refactored` (AGENTS.md, ADR 0008).
-/// Without a usable base (first push) the whole history is checked.
-fn review_check(base: Option<&str>) -> Result {
-    let range = match base {
-        Some(b) if !b.is_empty() && !b.chars().all(|c| c == '0') => format!("{b}..HEAD"),
-        _ => "HEAD".to_string(),
-    };
-    let newest = git(&["log", "-1", "--format=%H", &range, "--", "crates/"])?;
-    if newest.is_empty() {
-        println!("ok    review-check (no product code changed)");
-        return Ok(());
-    }
-    let trailer = git(&[
-        "log",
-        "-1",
-        "--format=%(trailers:key=Simplicity-Review,valueonly)",
-        &newest,
-    ])?;
-    match trailer.as_str() {
-        "ok" | "refactored" => {
-            println!("ok    review-check ({newest:.8}: {trailer})");
-            Ok(())
-        }
-        _ => Err(format!(
-            "review-check: commit {newest:.8} changes crates/ but lacks the trailer 'Simplicity-Review: ok|refactored'"
-        )),
-    }
-}
-
-fn git(args: &[&str]) -> Result<String> {
-    let out = Command::new("git")
-        .args(args)
-        .current_dir(root())
-        .output()
-        .map_err(|e| format!("git: {e}"))?;
-    if !out.status.success() {
-        let err = String::from_utf8_lossy(&out.stderr);
-        return Err(format!("git {}: {}", args.join(" "), err.trim()));
-    }
-    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }

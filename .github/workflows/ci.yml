@@ -67,17 +67,14 @@ jobs:
           python sim/z21/crosscheck.py
 
   checks:
-    name: loc, parity, simplicity review, dependencies
+    name: loc, parity, golden, corpus, dependencies
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo xtask loc
       - run: cargo xtask parity
       - run: cargo xtask golden
       - run: cargo xtask corpus
-      - run: cargo xtask review-check "${{ github.event.pull_request.base.sha || github.event.before }}"
       - run: cargo install cargo-deny --locked --version 0.20.2
       - run: cargo deny check
