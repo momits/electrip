@@ -2,9 +2,7 @@ use super::*;
 use serde_json::json;
 
 fn session_with_loco() -> Session {
-    let mut session = Session::default();
-    session.apply(Command::AddLoco).unwrap();
-    session
+    session_with_locos(1)
 }
 
 fn command(value: serde_json::Value) -> Command {
