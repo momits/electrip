@@ -16,3 +16,14 @@ Die Szenario-Tests laufen bisher nur gegen den Loopback-Bus (`cargo xtask sim up
 - [ ] Eine Änderung aus einem anderen SRCP-Programm kommt als Ereignis an.
 
 Ergebnis: _offen_
+
+## B-01 – Verbindung zum SRCP-Server
+
+Vorbereitung: srcpd auf einem anderen Rechner im Netz (z. B. Raspberry Pi) mit echtem Bus; `electrip` läuft und wird über den Steuerkanal bedient (`spec/steuerkanal.md`).
+
+- [ ] `set_server` mit Host/IP des srcpd-Rechners, Port 4303 und Bus, dann `connect`: Zustand zeigt `connected: true`.
+- [ ] Falscher Host und falscher Bus ergeben eine verständliche Fehlermeldung.
+- [ ] srcpd beenden oder Netzwerkkabel ziehen: Zustand wechselt auf `connected: false` (bei gezogenem Kabel ggf. erst, wenn das Betriebssystem den Abbruch meldet).
+- [ ] srcpd wieder starten, `connect` ohne Neustart von Electrip gelingt.
+
+Ergebnis: _offen_
