@@ -109,11 +109,11 @@ fn invalid_files_are_errors() {
     let cases = [
         (
             json!({"server": {}}),
-            "not a file of Electrip 1: missing field `locos` at line 1 column 13",
+            "invalid file: missing field `locos` at line 1 column 13",
         ),
         (
             json!({"locos": []}),
-            "not a file of Electrip 1: missing field `server` at line 1 column 12",
+            "invalid file: missing field `server` at line 1 column 12",
         ),
         (
             file_with_loco(json!({"name": "A", "protocol": "X", "speed_control_points": curve})),

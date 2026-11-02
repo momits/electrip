@@ -81,12 +81,14 @@ impl Host {
             Command::RemoveConfiguration { name } => self.remove(name)?,
             Command::ExportConfiguration { path } => self.export(&path)?,
             Command::ImportElectrip1 { path } => self.import(&path)?,
+            Command::ExportLoco { loco, path } => self.export_loco(loco, &path)?,
+            Command::ImportLoco { path } => self.import_loco(&path)?,
             Command::SetPicture { loco, path, crop } => {
                 self.session.loco(loco)?;
                 let picture =
                     picture::store(&self.media(), &path, crop).map_err(CommandError::Picture)?;
                 self.change(|session| {
-                    session.loco(loco)?.set_picture(picture);
+                    session.loco(loco)?.set_picture(Some(picture));
                     Ok(())
                 })?;
             }

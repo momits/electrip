@@ -4,6 +4,7 @@
 use super::{CommandError, Session, check_index};
 use crate::function::{Action, Function};
 use crate::input::Target;
+use crate::loco::Loco;
 use crate::station::MAX_FUNCTION;
 
 impl Session {
@@ -17,6 +18,37 @@ impl Session {
             id: self.last_action_id,
             name,
         });
+    }
+
+    /// Appends a loco of a package (B-20); its functions get the actions of
+    /// this configuration with the names of their `actions`, which are added
+    /// if missing. Functions with an unknown action are left out.
+    pub(crate) fn import_loco(&mut self, mut loco: Loco, actions: &[Action], report: Vec<String>) {
+        let functions = std::mem::take(loco.functions_mut());
+        for function in functions {
+            if let Some(action) = actions.iter().find(|a| a.id == function.action) {
+                let action = self.action_named(&action.name);
+                let on = function.default_on;
+                loco.functions_mut().push(Function {
+                    action,
+                    on,
+                    ..function
+                });
+            }
+        }
+        self.push(loco);
+        self.import_report = report;
+    }
+
+    /// The id of the action `name`; adds it if missing.
+    fn action_named(&mut self, name: &str) -> u32 {
+        match self.actions.iter().find(|a| a.name == name) {
+            Some(action) => action.id,
+            None => {
+                self.add_action(name.into());
+                self.last_action_id
+            }
+        }
     }
 
     pub(super) fn remove_action(&mut self, id: u32) -> Result<(), CommandError> {

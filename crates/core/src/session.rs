@@ -204,6 +204,17 @@ pub enum Command {
     ExportConfiguration {
         path: PathBuf,
     },
+    /// Writes the loco with its picture as a package to a file on the host
+    /// (B-20).
+    ExportLoco {
+        loco: u32,
+        path: PathBuf,
+    },
+    /// Appends the loco of a package of Electrip 2 or 1 on the host; its
+    /// picture goes to the library.
+    ImportLoco {
+        path: PathBuf,
+    },
     /// Imports a configuration file of Electrip 1 on the host as a new
     /// configuration named like the file and opens it; only while
     /// disconnected.
@@ -509,7 +520,9 @@ impl Session {
             | Command::RenameConfiguration { .. }
             | Command::RemoveConfiguration { .. }
             | Command::ExportConfiguration { .. }
-            | Command::ImportElectrip1 { .. } => {}
+            | Command::ImportElectrip1 { .. }
+            | Command::ExportLoco { .. }
+            | Command::ImportLoco { .. } => {}
             Command::AddDevice { device, kind } => self.add_device(device, kind)?,
             Command::RemoveDevice { device } => self.remove_device(device)?,
             Command::Bind {

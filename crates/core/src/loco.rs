@@ -167,8 +167,8 @@ impl Loco {
         self.picture.as_deref()
     }
 
-    pub fn set_picture(&mut self, picture: String) {
-        self.picture = Some(picture);
+    pub fn set_picture(&mut self, picture: Option<String>) {
+        self.picture = picture;
     }
 
     pub fn set_address(&mut self, address: u16) -> Result<(), LocoError> {
