@@ -8,6 +8,26 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-01: Verbindung zum SRCP-Server über den Sitzungs-Host (Claude)
+
+- CI auf `main` lief beim Start noch, danach grün.
+- `crates/core/src/host.rs`: `Host` (ADR 0010) hält die Sitzung und den einzigen Treiber; ein `Connector` öffnet ihn, damit `core` den srcpd-Treiber nicht kennt.
+  `Host::apply` ist jetzt der einzige Weg, die Sitzung zu ändern (`Session::apply` nur noch im Crate).
+  `Host::poll` verarbeitet die Ereignisse der Zentrale; bisher nur `Disconnected`.
+- Neue Befehle `set_server` (Host, Port, Bus; nur ohne Verbindung), `connect` und `disconnect`.
+  Vorgaben wie Electrip 1: `localhost`, 4303, Bus 1. Ein fehlgeschlagenes `connect` nennt die Ursache und ändert nichts; ein erneutes `connect` öffnet eine neue Verbindung, bevor es die alte schließt.
+  Der Zustand `station` ist jetzt ein Objekt `{host, port, bus, connected}` (`spec/steuerkanal.md`).
+- Der Steuerkanal fragt den Host alle 50 ms ab und schickt den Zustand an alle Clients, wenn sich etwas geändert hat, z. B. ein Verbindungsabbruch.
+  `electrip` hängt jetzt von `electrip-core` und `electrip-station-srcp` ab.
+- Tests: Unit-Tests in `crates/core/src/host/tests.rs` (Fake-Treiber). `crates/electrip/tests/station_connection.rs` prüft über den Steuerkanal mit einem Fake-SRCP-Server Einstellen, Verbinden, Abbruch und erneutes Verbinden sowie einen nicht erreichbaren Server.
+  Zwei `#[ignore]`-Tests gegen srcpd (Verbinden, fehlender Bus) laufen in `cargo xtask sim up` mit.
+  Außerdem von Hand geprüft: App mit srcpd verbunden, srcpd beendet, Zustand wechselte auf `connected: false`.
+- `cargo xtask test` und `cargo xtask sim up` grün. Hardware-Checkliste in `spec/hw-checklist.md`.
+- Status unverändert: Host, Port und Bus werden noch nicht gespeichert, weil die Konfigurationsdatei fehlt (B-21), und es gibt noch keine Oberfläche.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Kommentar am leeren `Connect`/`Disconnect`-Zweig in `Session::apply`, Test-Helfer `set_server` liefert ein `Result`.
+- **Nächster Schritt:** B-10 im Host anbinden (Takt, Fahrbefehle an den Treiber, fremde Lok-Änderungen nach Q-010) oder B-21 (Konfigurationsdatei, damit B-01, B-04 und B-05 gespeichert werden).
+
 ## 2026-11-02 – N-02: `CommandStation` und srcpd-Treiber (Claude)
 
 - CI auf `main` lief beim Start noch, danach grün.
