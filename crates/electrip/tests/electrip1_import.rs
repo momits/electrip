@@ -1,5 +1,6 @@
 //! B-21, B-06: a configuration file of Electrip 1 is imported through the
-//! control channel, and every client sees the result and the report.
+//! control channel as a new configuration, and every client sees the result
+//! and the report.
 
 // Test code: unwrap is allowed (AGENTS.md).
 #![allow(clippy::unwrap_used)]
@@ -22,6 +23,8 @@ fn a_file_of_electrip_1_is_imported() {
         .command(json!({"command": "import_electrip1", "path": path}))
         .unwrap();
     let state = &client.state;
+    assert_eq!(state["configuration"], "settings");
+    assert_eq!(state["configurations"], json!(["Electrip", "settings"]));
     assert_eq!(state["locos"][0]["name"], "BR 216");
     assert_eq!(
         state["locos"][1]["decoder"],

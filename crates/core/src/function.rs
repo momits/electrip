@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// A named action of the configuration, the same for all locos.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Action {
     pub id: u32,
     pub name: String,
@@ -34,7 +34,7 @@ pub struct Function {
     #[serde(default)]
     pub default_on: bool,
     /// Whether the function is on now; starts with `default_on`.
-    #[serde(skip_deserializing)]
+    #[serde(default)]
     pub on: bool,
 }
 

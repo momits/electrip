@@ -5,7 +5,11 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 
 ## Verbindung
 
-- `electrip [--control-port <port>]` startet die App ohne Oberfläche; Standardport 4711, Port 0 wählt einen freien Port.
+- `electrip [--control-port <port>] [--library <verzeichnis>] [-f|--file <konfiguration>]` startet die App ohne Oberfläche; Standardport 4711, Port 0 wählt einen freien Port.
+- `--library`: Verzeichnis der Konfigurationen, eine Datei `<name>.json` je Konfiguration (B-21).
+  Vorgabe ist `electrip` im Datenverzeichnis des Nutzers (Linux `$XDG_DATA_HOME` bzw. `~/.local/share`, macOS `~/Library/Application Support`, Windows `%APPDATA%`).
+  Ein leeres Verzeichnis bekommt die Konfiguration „Electrip“.
+- Beim Start ist die Konfiguration `-f`/`--file` geöffnet (B-24), sonst die erste nach Namen.
 - Der Steuerkanal lauscht nur auf `127.0.0.1` (TCP).
 - Die erste Zeile auf der Standardausgabe endet mit der Adresse: `… control channel on 127.0.0.1:4711`.
 - Jede Nachricht ist ein JSON-Objekt in einer Zeile (UTF-8, Zeilenende `\n`), in beide Richtungen.
@@ -45,7 +49,9 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
   "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1}],
   "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
-  "import_report": []
+  "import_report": [],
+  "configuration": "Electrip",
+  "configurations": ["Electrip"]
 }
 ```
 
@@ -68,6 +74,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
 - `power_on_start`: ob `connect` den Gleisstrom einschaltet (Vorgabe an, B-23); `track_power`: Gleisstrom, wie ihn die Zentrale zuletzt gemeldet hat, ohne Verbindung `false`.
   Schaltet eine andere Instanz an derselben Zentrale den Gleisstrom, folgt `track_power` (B-23).
+- `configuration`: Name der geöffneten Konfiguration; `configurations`: alle Konfigurationen der Bibliothek, sortiert (B-21).
+  Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle
@@ -110,7 +118,14 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `set_power_on_start` | `on` | B-23 |
 | `toggle_power` | – (Nothalt der Anlage: Gleisstrom aus, beim nächsten Mal wieder an; nur mit Verbindung) | B-23 |
 | `emergency_stop` | `loco` (Lok-Nothalt: nur diese Lok hält sofort, die Achse wird losgelassen; der Gleisstrom bleibt an) | B-23 |
-| `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; ersetzt Loks und Server, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
+| `new_configuration` | `name` (legt eine leere Konfiguration an und öffnet sie; nur ohne Verbindung) | B-21 |
+| `open_configuration` | `name` (nur ohne Verbindung; Loks bekommen neue `id`s, Geräte behalten ihre Lok, wenn sie können) | B-21 |
+| `rename_configuration` | `name` (neuer Name der geöffneten Konfiguration) | B-21 |
+| `remove_configuration` | `name` (löscht eine andere als die geöffnete Konfiguration) | B-21 |
+| `export_configuration` | `path` (schreibt die geöffnete Konfiguration in eine Datei auf dem Rechner der App) | B-21 |
+| `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
+
+Namen von Konfigurationen müssen auf allen Systemen Dateinamen sein: nicht leer, ohne `.` am Anfang und Leerzeichen am Ende, ohne `< > : " / \ | ? *` und Steuerzeichen.
 
 `confirmed` ist optional (Standard `false`).
 Setzt eine Änderung die Kennlinie zurück und fehlt die Bestätigung, antwortet die App mit einem Fehler und ändert nichts (B-09).

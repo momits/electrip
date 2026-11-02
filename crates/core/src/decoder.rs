@@ -57,7 +57,7 @@ impl fmt::Display for DecoderError {
 }
 
 /// A valid combination of protocol, address and speed steps.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Decoder {
     protocol: Protocol,
     address: u16,

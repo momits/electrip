@@ -5,7 +5,7 @@
 use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::function::Function;
 use crate::speed_curve::SpeedCurve;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::RangeInclusive;
 
@@ -68,7 +68,7 @@ impl fmt::Display for LocoError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Loco {
     name: String,
     decoder: Decoder,

@@ -2,16 +2,17 @@
 //! gamepads, the control channel and tests change the state only through
 //! [`Host::apply`](crate::host::Host::apply).
 
+use crate::config::Config;
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
-use crate::electrip1::{self, ImportError};
+use crate::electrip1::ImportError;
 use crate::function::{Action, Function};
 use crate::input::{Device, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::station::{LocoState, MAX_FUNCTION, StationError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// A user action. Locos are addressed by their id in the session.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -173,8 +174,30 @@ pub enum Command {
         control: String,
         value: f64,
     },
-    /// Replaces the locos and the server with those of a configuration
-    /// file of Electrip 1 on the host; only while disconnected (B-21).
+    /// Creates an empty configuration in the library and opens it; only
+    /// while disconnected (B-21).
+    NewConfiguration {
+        name: String,
+    },
+    /// Opens a configuration of the library; only while disconnected.
+    OpenConfiguration {
+        name: String,
+    },
+    /// Renames the open configuration.
+    RenameConfiguration {
+        name: String,
+    },
+    /// Deletes a configuration other than the open one.
+    RemoveConfiguration {
+        name: String,
+    },
+    /// Writes the open configuration to a file on the host.
+    ExportConfiguration {
+        path: PathBuf,
+    },
+    /// Imports a configuration file of Electrip 1 on the host as a new
+    /// configuration named like the file and opens it; only while
+    /// disconnected.
     ImportElectrip1 {
         path: PathBuf,
     },
@@ -193,6 +216,10 @@ pub enum CommandError {
     Disconnected,
     Station(StationError),
     Import(ImportError),
+    InvalidName(String),
+    ConfigurationExists(String),
+    ConfigurationOpen(String),
+    File(String),
 }
 
 impl From<LocoError> for CommandError {
@@ -219,6 +246,14 @@ impl fmt::Display for CommandError {
             CommandError::Disconnected => f.write_str("connect to the command station first"),
             CommandError::Station(error) => error.fmt(f),
             CommandError::Import(error) => error.fmt(f),
+            CommandError::InvalidName(name) => write!(f, "{name:?} cannot name a configuration"),
+            CommandError::ConfigurationExists(name) => {
+                write!(f, "there is already a configuration {name:?}")
+            }
+            CommandError::ConfigurationOpen(name) => {
+                write!(f, "the configuration {name:?} is open")
+            }
+            CommandError::File(reason) => write!(f, "file error: {reason}"),
         }
     }
 }
@@ -302,6 +337,10 @@ pub struct Session {
     last_action_id: u32,
     /// What the last import changed to fit the file (B-06).
     import_report: Vec<String>,
+    /// The name of the open configuration (B-21).
+    configuration: String,
+    /// The names of all configurations in the library, sorted.
+    configurations: Vec<String>,
 }
 
 impl Session {
@@ -311,6 +350,50 @@ impl Session {
 
     pub fn station(&self) -> &Station {
         &self.station
+    }
+
+    pub fn configuration(&self) -> &str {
+        &self.configuration
+    }
+
+    /// The part of the session that is saved; functions in their default
+    /// state, the station disconnected.
+    pub fn config(&self) -> Config {
+        let mut locos: Vec<Loco> = self.locos.iter().map(|e| e.loco.clone()).collect();
+        for function in locos.iter_mut().flat_map(|l| l.functions_mut()) {
+            function.on = function.default_on;
+        }
+        let station = Station {
+            connected: false,
+            track_power: false,
+            ..self.station.clone()
+        };
+        Config {
+            locos,
+            actions: self.actions.clone(),
+            mappings: self.mappings.clone(),
+            station,
+        }
+    }
+
+    /// Replaces the configuration; the locos stand and get new ids, the
+    /// devices keep their locos if they can.
+    pub(crate) fn load(&mut self, config: Config, report: Vec<String>) {
+        self.locos.clear();
+        for loco in config.locos {
+            self.push(loco);
+        }
+        self.last_action_id = config.actions.iter().map(|a| a.id).max().unwrap_or(0);
+        self.actions = config.actions;
+        self.mappings = config.mappings;
+        self.station = config.station;
+        self.import_report = report;
+        self.assign_locos();
+    }
+
+    pub(crate) fn set_configurations(&mut self, open: String, names: Vec<String>) {
+        self.configuration = open;
+        self.configurations = names;
     }
 
     pub(crate) fn set_connected(&mut self, connected: bool) {
@@ -397,13 +480,18 @@ impl Session {
             } => self.trigger_action(loco, action, pressed)?,
             Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
             Command::SetPowerOnStart { on } => self.station.power_on_start = on,
-            // Handled by Host::apply, which holds the driver.
+            // Handled by Host::apply, which holds the driver and the library.
             Command::Connect
             | Command::Disconnect
             | Command::TogglePower
             | Command::EmergencyStop { .. }
-            | Command::Input { .. } => {}
-            Command::ImportElectrip1 { path } => self.import_electrip1(&path)?,
+            | Command::Input { .. }
+            | Command::NewConfiguration { .. }
+            | Command::OpenConfiguration { .. }
+            | Command::RenameConfiguration { .. }
+            | Command::RemoveConfiguration { .. }
+            | Command::ExportConfiguration { .. }
+            | Command::ImportElectrip1 { .. } => {}
             Command::AddDevice { device, kind } => self.add_device(device, kind)?,
             Command::RemoveDevice { device } => self.remove_device(device)?,
             Command::Bind {
@@ -452,20 +540,6 @@ impl Session {
             motion: Motion::default(),
             axis: 0.0,
         });
-    }
-
-    fn import_electrip1(&mut self, path: &Path) -> Result<(), CommandError> {
-        if self.station.connected {
-            return Err(CommandError::Connected);
-        }
-        let import = electrip1::read(path).map_err(CommandError::Import)?;
-        self.locos.clear();
-        for loco in import.locos {
-            self.push(loco);
-        }
-        self.station = import.station;
-        self.import_report = import.report;
-        Ok(())
     }
 
     fn set_server(&mut self, host: String, port: u16, bus: u16) -> Result<(), CommandError> {

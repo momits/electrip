@@ -1,9 +1,11 @@
-//! The session host (ADR 0010): it holds the session and the only
-//! connection to the command station.
+//! The session host (ADR 0010): it holds the session, the only
+//! connection to the command station and the library of configurations.
 
+use crate::config::Config;
 use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub type Driver = Box<dyn CommandStation + Send>;
 
@@ -16,16 +18,26 @@ pub struct Host {
     connect: Connector,
     /// The last state of each loco the driver knows, by loco id.
     sent: HashMap<u32, LocoState>,
+    /// The directory of the configuration files (B-21).
+    library: PathBuf,
+    /// The open configuration as it was last saved.
+    saved: Config,
 }
 
 impl Host {
-    pub fn new(connect: Connector) -> Self {
-        Host {
+    /// Opens the first configuration of the library; an empty library
+    /// gets one.
+    pub fn new(connect: Connector, library: PathBuf) -> Result<Self, CommandError> {
+        let mut host = Host {
             session: Session::default(),
             driver: None,
             connect,
             sent: HashMap::new(),
-        }
+            library,
+            saved: Config::default(),
+        };
+        host.open_first()?;
+        Ok(host)
     }
 
     pub fn session(&self) -> &Session {
@@ -62,7 +74,16 @@ impl Host {
                     self.apply(command)?;
                 }
             }
-            command => self.session.apply(command)?,
+            Command::NewConfiguration { name } => self.create(name, Config::default())?,
+            Command::OpenConfiguration { name } => self.open(name)?,
+            Command::RenameConfiguration { name } => self.rename(name)?,
+            Command::RemoveConfiguration { name } => self.remove(name)?,
+            Command::ExportConfiguration { path } => self.export(&path)?,
+            Command::ImportElectrip1 { path } => self.import(&path)?,
+            command => {
+                self.session.apply(command)?;
+                self.save()?;
+            }
         }
         Ok(())
     }
@@ -131,5 +152,6 @@ impl Host {
     }
 }
 
+mod library;
 #[cfg(test)]
 mod tests;

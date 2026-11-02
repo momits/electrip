@@ -4,11 +4,11 @@
 //! The curve rises monotonically. Like in Electrip 1, the first point (start
 //! step) and the last point (step at Vmax) always exist and keep their speed.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub type Point = (f64, f64);
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct SpeedCurve {
     points: Vec<Point>,

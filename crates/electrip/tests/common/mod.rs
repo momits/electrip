@@ -10,24 +10,43 @@ pub mod srcpd;
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
+use std::path::Path;
 use std::process::{Child, ChildStdout, Command, Stdio};
 use std::time::Duration;
+use tempfile::TempDir;
 
 /// The running app; it is stopped when dropped.
 pub struct App {
     child: Child,
     address: String,
+    /// The library of [`App::start`], deleted when dropped.
+    _library: Option<TempDir>,
 }
 
 impl App {
+    /// Starts the app with an empty library.
     pub fn start() -> App {
+        let library = TempDir::new().unwrap();
+        let mut app = App::start_in(library.path(), &[]);
+        app._library = Some(library);
+        app
+    }
+
+    /// Starts the app with the library and further options.
+    pub fn start_in(library: &Path, args: &[&str]) -> App {
         let mut child = Command::new(env!("CARGO_BIN_EXE_electrip"))
-            .args(["--control-port", "0"])
+            .args(["--control-port", "0", "--library"])
+            .arg(library)
+            .args(args)
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
         let address = read_address(child.stdout.take().unwrap());
-        App { child, address }
+        App {
+            child,
+            address,
+            _library: None,
+        }
     }
 
     /// A new client, after the greeting; `state` holds the initial state.
