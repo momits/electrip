@@ -52,3 +52,17 @@ fn a_device_reports_only_changes_of_its_buttons() {
     assert!(device.press("a", false));
     assert!(!device.press("a", false));
 }
+
+#[test]
+fn a_held_scroll_repeats_after_500_ms_every_60_ms() {
+    let mut device = Device::new(1, "pad".into());
+    assert_eq!(device.scroll(1.0), None);
+    device.start_scroll("dpright", true);
+    assert_eq!(device.scroll(0.5), Some((true, 0)));
+    assert_eq!(device.scroll(0.07), Some((true, 1)));
+    assert_eq!(device.scroll(0.13), Some((true, 2)));
+    device.release("dpleft");
+    assert_eq!(device.scroll(0.06), Some((true, 1)));
+    device.release("dpright");
+    assert_eq!(device.scroll(1.0), None);
+}

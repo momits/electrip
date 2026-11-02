@@ -101,6 +101,28 @@ pub struct Device {
     /// The buttons held down now.
     #[serde(skip)]
     held: Vec<String>,
+    #[serde(skip)]
+    scroll: Option<Scroll>,
+}
+
+/// Holding "previous/next loco" changes the loco again after 500 ms and
+/// then every 60 ms, like Electrip 1 (B-23).
+const SCROLL_DELAY: f64 = 0.5;
+const SCROLL_INTERVAL: f64 = 0.06;
+
+/// A held loco change.
+#[derive(Debug, Clone, PartialEq)]
+struct Scroll {
+    control: String,
+    forward: bool,
+    seconds: f64,
+}
+
+impl Scroll {
+    /// The loco changes after the first one, up to `seconds` of holding.
+    fn steps(seconds: f64) -> u32 {
+        ((seconds - SCROLL_DELAY) / SCROLL_INTERVAL).max(0.0) as u32
+    }
 }
 
 impl Device {
@@ -110,6 +132,7 @@ impl Device {
             kind,
             loco: None,
             held: Vec::new(),
+            scroll: None,
         }
     }
 
@@ -124,6 +147,31 @@ impl Device {
             _ => return false,
         }
         true
+    }
+
+    /// Starts scrolling while `control` is held.
+    pub fn start_scroll(&mut self, control: &str, forward: bool) {
+        self.scroll = Some(Scroll {
+            control: control.into(),
+            forward,
+            seconds: 0.0,
+        });
+    }
+
+    /// Stops scrolling if `control` started it.
+    pub fn release(&mut self, control: &str) {
+        if self.scroll.as_ref().is_some_and(|s| s.control == control) {
+            self.scroll = None;
+        }
+    }
+
+    /// Holds the scroll for `seconds` longer; returns the direction and
+    /// how many times the loco changes now.
+    pub fn scroll(&mut self, seconds: f64) -> Option<(bool, u32)> {
+        let scroll = self.scroll.as_mut()?;
+        let before = Scroll::steps(scroll.seconds);
+        scroll.seconds += seconds;
+        Some((scroll.forward, Scroll::steps(scroll.seconds) - before))
     }
 }
 

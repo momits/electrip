@@ -422,10 +422,11 @@ impl Session {
         Ok(())
     }
 
-    /// Accelerates every loco with its axis for `seconds`; returns whether a
-    /// speed changed.
+    /// Changes the locos of held "previous/next loco" controls and
+    /// accelerates every loco with its axis for `seconds`; returns whether
+    /// the session changed.
     pub(crate) fn drive(&mut self, seconds: f64) -> bool {
-        let mut changed = false;
+        let mut changed = self.scroll(seconds);
         for entry in &mut self.locos {
             let before = entry.motion;
             entry.motion.accelerate(&entry.loco, entry.axis, seconds);

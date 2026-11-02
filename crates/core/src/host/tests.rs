@@ -431,6 +431,24 @@ fn devices_get_free_locos_and_skip_taken_ones_when_changing() {
 }
 
 #[test]
+fn holding_next_loco_scrolls_until_released() {
+    let (mut host, _) = host_with_pad(5);
+    add_device(&mut host, 2);
+    input(&mut host, "dpright", 1.0).unwrap();
+    assert_eq!(device_loco(&host, 0), Some(3));
+    assert!(!host.poll(0.45));
+    assert!(host.poll(0.12));
+    assert_eq!(device_loco(&host, 0), Some(4));
+    host.poll(0.06);
+    assert_eq!(device_loco(&host, 0), Some(5));
+    input(&mut host, "dpright", 0.0).unwrap();
+    input(&mut host, "dpleft", 1.0).unwrap();
+    input(&mut host, "dpleft", 0.0).unwrap();
+    host.poll(1.0);
+    assert_eq!(device_loco(&host, 0), Some(4));
+}
+
+#[test]
 fn the_axis_moves_along_to_the_new_loco() {
     let (mut host, _) = host_with_pad(2);
     input(&mut host, "lefty", -1.0).unwrap();
