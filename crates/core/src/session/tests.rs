@@ -1,5 +1,5 @@
 use super::*;
-use serde_json::json;
+use serde_json::{Value, json};
 
 fn session_with_loco() -> Session {
     session_with_locos(1)
@@ -256,13 +256,15 @@ fn session_with_actions() -> Session {
     session
 }
 
+fn try_add_function(session: &mut Session, loco: u32, function: Value) -> Result<(), CommandError> {
+    session.apply(command(
+        json!({"command": "add_function", "loco": loco, "function": function}),
+    ))
+}
+
 fn add_function(session: &mut Session, loco: u32, action: u32, number: u8) {
     let function = json!({"action": action, "number": number, "name": "Licht"});
-    session
-        .apply(command(
-            json!({"command": "add_function", "loco": loco, "function": function}),
-        ))
-        .unwrap();
+    try_add_function(session, loco, function).unwrap();
 }
 
 fn trigger(session: &mut Session, loco: u32, action: u32, pressed: bool) {
@@ -307,20 +309,14 @@ fn an_unknown_action_is_an_error() {
     let mut session = session_with_actions();
     let error = session.apply(Command::RemoveAction { action: 7 });
     assert_eq!(error, Err(CommandError::UnknownAction(7)));
-    let function = json!({"action": 7, "number": 0});
-    let error = session.apply(command(
-        json!({"command": "add_function", "loco": 1, "function": function}),
-    ));
+    let error = try_add_function(&mut session, 1, json!({"action": 7, "number": 0}));
     assert_eq!(error, Err(CommandError::UnknownAction(7)));
 }
 
 #[test]
 fn a_function_above_f28_is_an_error() {
     let mut session = session_with_actions();
-    let function = json!({"action": 1, "number": 29});
-    let error = session.apply(command(
-        json!({"command": "add_function", "loco": 1, "function": function}),
-    ));
+    let error = try_add_function(&mut session, 1, json!({"action": 1, "number": 29}));
     assert_eq!(error, Err(CommandError::FunctionOutOfRange(29)));
 }
 
@@ -357,11 +353,7 @@ fn an_action_without_a_function_at_the_loco_does_nothing() {
 fn a_function_starts_in_its_default_state() {
     let mut session = session_with_actions();
     let function = json!({"action": 1, "number": 2, "mode": "push", "default_on": true});
-    session
-        .apply(command(
-            json!({"command": "add_function", "loco": 1, "function": function}),
-        ))
-        .unwrap();
+    try_add_function(&mut session, 1, function).unwrap();
     assert_eq!(station_functions(&session, 0), 1 << 2);
     trigger(&mut session, 1, 1, true);
     assert_eq!(station_functions(&session, 0), 0);
