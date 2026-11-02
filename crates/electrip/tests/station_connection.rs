@@ -54,9 +54,8 @@ fn confirm(stream: TcpStream) {
     }
 }
 
-fn set_server(client: &mut Client, port: u16, bus: u16) {
-    let server = json!({"command": "set_server", "host": "127.0.0.1", "port": port, "bus": bus});
-    client.command(server).unwrap();
+fn set_server(client: &mut Client, port: u16, bus: u16) -> Result<(), String> {
+    client.command(json!({"command": "set_server", "host": "127.0.0.1", "port": port, "bus": bus}))
 }
 
 fn connect(client: &mut Client) -> Result<(), String> {
@@ -68,7 +67,7 @@ fn the_server_is_configurable() {
     let app = App::start();
     let mut client = app.connect();
     assert_eq!(client.state["station"]["port"], 4303);
-    set_server(&mut client, 4304, 2);
+    set_server(&mut client, 4304, 2).unwrap();
     let station = &app.connect().state["station"];
     assert_eq!(
         *station,
@@ -81,10 +80,10 @@ fn connects_notices_a_broken_connection_and_reconnects() {
     let server = FakeServer::start();
     let app = App::start();
     let mut client = app.connect();
-    set_server(&mut client, server.port, 1);
+    set_server(&mut client, server.port, 1).unwrap();
     connect(&mut client).unwrap();
     assert_eq!(client.state["station"]["connected"], true);
-    let error = client.command(json!({"command": "set_server", "host": "x", "port": 1, "bus": 1}));
+    let error = set_server(&mut client, 1, 1);
     assert_eq!(
         error,
         Err("disconnect from the command station first".into())
@@ -104,7 +103,7 @@ fn connects_notices_a_broken_connection_and_reconnects() {
 fn an_unreachable_server_is_reported() {
     let app = App::start();
     let mut client = app.connect();
-    set_server(&mut client, 1, 1);
+    set_server(&mut client, 1, 1).unwrap();
     let error = connect(&mut client).unwrap_err();
     assert!(
         error.starts_with("cannot reach the SRCP server 127.0.0.1:1"),
@@ -117,7 +116,7 @@ fn an_unreachable_server_is_reported() {
 fn connects_to_srcpd() {
     let app = App::start();
     let mut client = app.connect();
-    set_server(&mut client, 4303, 1);
+    set_server(&mut client, 4303, 1).unwrap();
     connect(&mut client).unwrap();
     assert_eq!(client.state["station"]["connected"], true);
 }
@@ -127,7 +126,7 @@ fn connects_to_srcpd() {
 fn a_missing_bus_of_srcpd_is_reported() {
     let app = App::start();
     let mut client = app.connect();
-    set_server(&mut client, 4303, 7);
+    set_server(&mut client, 4303, 7).unwrap();
     let error = connect(&mut client).unwrap_err();
     assert!(
         error.starts_with("the SRCP server has no bus 7: "),
