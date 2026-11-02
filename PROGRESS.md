@@ -8,6 +8,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-09: Kennlinie zurücksetzen im Kern (Claude)
+
+- CI auf `main` war grün.
+- `crates/core/src/loco.rs`: `Loco` hält Decoder, Vmax und Kennlinie.
+  Ändern von Vmax, Fahrstufenzahl oder Protokoll setzt die Kennlinie wie Electrip 1 auf eine Gerade von (0, 0) bis (Vmax, Fahrstufenzahl) zurück, aber nur mit `confirmed = true`.
+  Ohne Bestätigung kommt `ResetNotConfirmed` und die Lok bleibt unverändert; ungültige Werte scheitern schon vorher, damit die UI nur für gültige Änderungen nachfragt.
+  Gleiche Werte ändern nichts und brauchen keine Bestätigung; die Adresse ändert die Kennlinie nicht.
+- Vmax ist wie in Electrip 1 auf 1–999 km/h begrenzt.
+- 9 Unit-Tests grün, `cargo xtask test` grün.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: `change_axes` vergleicht die geänderte Lok selbst, statt dass jeder Setter ein Flag „geändert“ berechnet.
+- **Offen für B-09, Status deshalb unverändert:** Befehle, Steuerkanal (einzige Prüfart `control-channel`) und der Warnhinweis in der UI.
+  Damit ist auch die Bestätigung beim Protokollwechsel aus B-06 im Kern vorhanden.
+
 ## 2026-11-02 – B-08: Geschwindigkeitskennlinie im Kern (Claude)
 
 - CI auf `main` war grün.
