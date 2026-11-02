@@ -95,9 +95,20 @@ pub enum Command {
         port: u16,
         bus: u16,
     },
+    /// Whether connecting switches the track power on (B-23).
+    SetPowerOnStart {
+        on: bool,
+    },
     /// Connects to the server; the host also replaces an open connection.
     Connect,
     Disconnect,
+    /// The emergency stop of the layout: switches the track power off, the
+    /// next time on again; only while connected (B-23).
+    TogglePower,
+    /// Stops only this loco at once; the track power stays on (B-23).
+    EmergencyStop {
+        loco: u32,
+    },
     /// Replaces the locos and the server with those of a configuration
     /// file of Electrip 1 on the host; only while disconnected (B-21).
     ImportElectrip1 {
@@ -111,6 +122,7 @@ pub enum CommandError {
     PositionOutOfRange(usize),
     Loco(LocoError),
     Connected,
+    Disconnected,
     Station(StationError),
     Import(ImportError),
 }
@@ -130,6 +142,7 @@ impl fmt::Display for CommandError {
             }
             CommandError::Loco(error) => error.fmt(f),
             CommandError::Connected => f.write_str("disconnect from the command station first"),
+            CommandError::Disconnected => f.write_str("connect to the command station first"),
             CommandError::Station(error) => error.fmt(f),
             CommandError::Import(error) => error.fmt(f),
         }
@@ -144,8 +157,14 @@ pub struct Station {
     pub host: String,
     pub port: u16,
     pub bus: u16,
+    /// Electrip 1 calls it `power`.
+    #[serde(alias = "power")]
+    pub power_on_start: bool,
     #[serde(skip_deserializing)]
     pub connected: bool,
+    /// As the command station last reported it; off while disconnected.
+    #[serde(skip_deserializing)]
+    pub track_power: bool,
 }
 
 /// Defaults of Electrip 1.
@@ -155,7 +174,9 @@ impl Default for Station {
             host: "localhost".into(),
             port: 4303,
             bus: 1,
+            power_on_start: true,
             connected: false,
+            track_power: false,
         }
     }
 }
@@ -208,6 +229,19 @@ impl Session {
 
     pub(crate) fn set_connected(&mut self, connected: bool) {
         self.station.connected = connected;
+        self.station.track_power &= connected;
+    }
+
+    pub(crate) fn set_track_power(&mut self, on: bool) {
+        self.station.track_power = on;
+    }
+
+    /// Stops the loco at once and releases its axis.
+    pub(crate) fn emergency_stop(&mut self, id: u32) -> Result<&LocoEntry, CommandError> {
+        let entry = self.entry(id)?;
+        entry.motion.stop();
+        entry.axis = 0.0;
+        Ok(entry)
     }
 
     /// Executes a command; on an error the session stays unchanged.
@@ -263,8 +297,12 @@ impl Session {
             }
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
+            Command::SetPowerOnStart { on } => self.station.power_on_start = on,
             // Handled by Host::apply, which holds the driver.
-            Command::Connect | Command::Disconnect => {}
+            Command::Connect
+            | Command::Disconnect
+            | Command::TogglePower
+            | Command::EmergencyStop { .. } => {}
             Command::ImportElectrip1 { path } => self.import_electrip1(&path)?,
         }
         Ok(())
@@ -321,12 +359,9 @@ impl Session {
         if self.station.connected {
             return Err(CommandError::Connected);
         }
-        self.station = Station {
-            host,
-            port,
-            bus,
-            connected: false,
-        };
+        self.station.host = host;
+        self.station.port = port;
+        self.station.bus = bus;
         Ok(())
     }
 

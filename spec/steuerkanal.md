@@ -40,7 +40,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "speed": 0.0,
     "forward": true
   }],
-  "station": {"host": "localhost", "port": 4303, "bus": 1, "connected": false},
+  "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "import_report": []
 }
 ```
@@ -54,6 +54,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
+- `power_on_start`: ob `connect` den Gleisstrom einschaltet (Vorgabe an, B-23); `track_power`: Gleisstrom, wie ihn die Zentrale zuletzt gemeldet hat, ohne Verbindung `false`.
+  Schaltet eine andere Instanz an derselben Zentrale den Gleisstrom, folgt `track_power` (B-23).
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle
@@ -81,6 +83,9 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `set_server` | `host`, `port`, `bus` (nur ohne Verbindung) | B-01 |
 | `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
 | `disconnect` | – | B-01 |
+| `set_power_on_start` | `on` | B-23 |
+| `toggle_power` | – (Nothalt der Anlage: Gleisstrom aus, beim nächsten Mal wieder an; nur mit Verbindung) | B-23 |
+| `emergency_stop` | `loco` (Lok-Nothalt: nur diese Lok hält sofort, die Achse wird losgelassen; der Gleisstrom bleibt an) | B-23 |
 | `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; ersetzt Loks und Server, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
 
 `confirmed` ist optional (Standard `false`).

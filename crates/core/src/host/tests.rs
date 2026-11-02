@@ -6,22 +6,37 @@ use std::sync::{Arc, Mutex};
 /// Events the test hands to the fake driver.
 type Events = Arc<Mutex<Vec<StationEvent>>>;
 
-/// Loco states the fake driver got, with the address.
-type Sent = Arc<Mutex<Vec<(u16, LocoState)>>>;
+/// What the fake driver got; locos by address.
+#[derive(Debug, PartialEq)]
+enum Call {
+    Power(bool),
+    Loco(u16, LocoState),
+    EmergencyStop(u16),
+}
+
+type Sent = Arc<Mutex<Vec<Call>>>;
 
 struct FakeDriver(Events, Sent);
 
 impl CommandStation for FakeDriver {
-    fn set_power(&mut self, _: bool) -> Result<(), StationError> {
+    fn set_power(&mut self, on: bool) -> Result<(), StationError> {
+        self.1.lock().unwrap().push(Call::Power(on));
         Ok(())
     }
 
     fn set_loco(&mut self, decoder: &Decoder, state: &LocoState) -> Result<(), StationError> {
-        self.1.lock().unwrap().push((decoder.address(), *state));
+        self.1
+            .lock()
+            .unwrap()
+            .push(Call::Loco(decoder.address(), *state));
         Ok(())
     }
 
-    fn emergency_stop(&mut self, _: &Decoder, _: &LocoState) -> Result<(), StationError> {
+    fn emergency_stop(&mut self, decoder: &Decoder, _: &LocoState) -> Result<(), StationError> {
+        self.1
+            .lock()
+            .unwrap()
+            .push(Call::EmergencyStop(decoder.address()));
         Ok(())
     }
 
@@ -109,12 +124,13 @@ fn a_broken_connection_disconnects_and_can_be_reopened() {
 }
 
 /// A connected host with one loco (id 1, address 1, 100 km/h, 128 steps,
-/// 11.5 s to accelerate) and the loco states the driver got.
+/// 11.5 s to accelerate) and what the driver got after connecting.
 fn driving_host() -> (Host, Sent) {
     let (mut host, _, sent) = host();
     host.apply(Command::AddLoco).unwrap();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
+    sent.lock().unwrap().clear();
     (host, sent)
 }
 
@@ -130,13 +146,13 @@ fn speed(host: &Host) -> f64 {
     host.session().locos()[0].motion.speed()
 }
 
-fn state(forward: bool, step: u8) -> (u16, LocoState) {
+fn state(forward: bool, step: u8) -> Call {
     let state = LocoState {
         forward,
         step,
         functions: 0,
     };
-    (1, state)
+    Call::Loco(1, state)
 }
 
 #[test]
@@ -208,4 +224,70 @@ fn the_axis_of_an_unknown_loco_is_an_error() {
     assert_eq!(error, Err(CommandError::UnknownLoco(7)));
     let error = host.apply(Command::Reverse { loco: 7 });
     assert_eq!(error, Err(CommandError::UnknownLoco(7)));
+}
+
+#[test]
+fn connecting_switches_the_track_power_on() {
+    let (mut host, _, sent) = host();
+    set_server(&mut host, "srcp").unwrap();
+    host.apply(Command::Connect).unwrap();
+    assert!(host.session().station().track_power);
+    assert_eq!(*sent.lock().unwrap(), [Call::Power(true)]);
+    host.apply(Command::Disconnect).unwrap();
+    assert!(!host.session().station().track_power);
+}
+
+#[test]
+fn connecting_leaves_the_track_power_if_switched_off() {
+    let (mut host, _, sent) = host();
+    assert!(host.session().station().power_on_start);
+    host.apply(Command::SetPowerOnStart { on: false }).unwrap();
+    set_server(&mut host, "srcp").unwrap();
+    assert!(!host.session().station().power_on_start);
+    host.apply(Command::Connect).unwrap();
+    assert!(!host.session().station().track_power);
+    assert!(sent.lock().unwrap().is_empty());
+}
+
+#[test]
+fn the_emergency_stop_toggles_the_track_power() {
+    let (mut host, sent) = driving_host();
+    host.apply(Command::TogglePower).unwrap();
+    assert!(!host.session().station().track_power);
+    host.apply(Command::TogglePower).unwrap();
+    assert!(host.session().station().track_power);
+    assert_eq!(
+        *sent.lock().unwrap(),
+        [Call::Power(false), Call::Power(true)]
+    );
+}
+
+#[test]
+fn the_track_power_toggles_only_while_connected() {
+    let (mut host, _, _) = host();
+    let error = host.apply(Command::TogglePower);
+    assert_eq!(error, Err(CommandError::Disconnected));
+}
+
+#[test]
+fn the_track_power_follows_the_command_station() {
+    let (mut host, events, _) = host();
+    set_server(&mut host, "srcp").unwrap();
+    host.apply(Command::Connect).unwrap();
+    events.lock().unwrap().push(StationEvent::Power(false));
+    assert!(host.poll(0.05));
+    assert!(!host.session().station().track_power);
+}
+
+#[test]
+fn the_loco_emergency_stop_stops_only_the_loco() {
+    let (mut host, sent) = driving_host();
+    set_axis(&mut host, 1.0);
+    host.poll(11.5);
+    sent.lock().unwrap().clear();
+    host.apply(Command::EmergencyStop { loco: 1 }).unwrap();
+    host.poll(1.0);
+    assert_eq!(speed(&host), 0.0);
+    assert!(host.session().station().track_power);
+    assert_eq!(*sent.lock().unwrap(), [Call::EmergencyStop(1)]);
 }
