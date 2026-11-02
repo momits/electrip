@@ -38,3 +38,15 @@ Vorbereitung: wie B-01 verbunden, eine DCC-Lok mit 128 Fahrstufen angelegt (`add
 - [ ] `reverse` während der Fahrt: die Lok hält sofort an, nach erneutem `set_axis` fährt sie in die andere Richtung.
 
 Ergebnis: _offen_
+
+## B-23 – Gleisstrom und Nothalt (über den Steuerkanal, noch ohne Gamepad)
+
+Vorbereitung: wie B-10 verbunden, eine Lok fährt.
+
+- [ ] `connect` schaltet den Gleisstrom ein (`track_power: true`); nach `set_power_on_start` mit `on: false` bleibt er beim nächsten `connect` aus.
+- [ ] `toggle_power`: der Gleisstrom geht aus, alle Loks halten; erneut `toggle_power`: er geht wieder an.
+- [ ] Gleisstrom an der Zentrale selbst ausschalten (Stopp-Taste): der Zustand zeigt sofort `track_power: false`.
+- [ ] Eine zweite Instanz an derselben Zentrale zeigt jeden Wechsel des Gleisstroms.
+- [ ] `emergency_stop` für die fahrende Lok: nur sie hält sofort an, andere Loks fahren weiter, der Gleisstrom bleibt an.
+
+Ergebnis: _offen_
