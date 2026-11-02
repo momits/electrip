@@ -68,6 +68,11 @@ impl Session {
         value: f64,
     ) -> Result<Option<Command>, CommandError> {
         let index = self.device_index(id)?;
+        let pressed = value >= 0.5;
+        if !pressed {
+            // Also when the mapping changed while the control was held.
+            self.devices[index].release(control);
+        }
         let device = &self.devices[index];
         let mapping = self.mappings.iter().find(|m| m.kind == device.kind);
         let Some(target) = mapping.and_then(|m| m.target(control)).cloned() else {
@@ -80,7 +85,6 @@ impl Session {
             }
             return Ok(None);
         }
-        let pressed = value >= 0.5;
         if !self.devices[index].press(control, pressed) {
             return Ok(None);
         }
@@ -92,7 +96,6 @@ impl Session {
             }));
         }
         if !pressed {
-            self.devices[index].release(control);
             return Ok(None);
         }
         Ok(match (target, loco) {
@@ -100,18 +103,18 @@ impl Session {
             (Target::Reverse, Some(loco)) => Some(Command::Reverse { loco }),
             (Target::EmergencyStop, Some(loco)) => Some(Command::EmergencyStop { loco }),
             (Target::PreviousLoco, _) => {
-                self.start_scroll(index, control, false);
+                self.change_and_scroll(index, control, false);
                 None
             }
             (Target::NextLoco, _) => {
-                self.start_scroll(index, control, true);
+                self.change_and_scroll(index, control, true);
                 None
             }
             _ => None,
         })
     }
 
-    fn start_scroll(&mut self, device: usize, control: &str, forward: bool) {
+    fn change_and_scroll(&mut self, device: usize, control: &str, forward: bool) {
         self.change_loco(device, forward);
         self.devices[device].start_scroll(control, forward);
     }
