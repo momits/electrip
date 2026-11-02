@@ -8,6 +8,7 @@ pub mod drive;
 pub mod electrip1;
 pub mod function;
 pub mod host;
+pub mod input;
 pub mod loco;
 pub mod session;
 pub mod speed_curve;

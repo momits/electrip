@@ -6,6 +6,7 @@ use crate::decoder::{Decoder, Protocol};
 use crate::drive::{DEAD_ZONE, Motion};
 use crate::electrip1::{self, ImportError};
 use crate::function::{Action, Function};
+use crate::input::{Device, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::station::{LocoState, MAX_FUNCTION, StationError};
 use serde::{Deserialize, Serialize};
@@ -144,6 +145,34 @@ pub enum Command {
     EmergencyStop {
         loco: u32,
     },
+    /// Connects an input device (N-01). The caller chooses the id; `kind`
+    /// names the device type whose mapping it uses. The device controls
+    /// the first loco no other device controls.
+    AddDevice {
+        device: u32,
+        kind: String,
+    },
+    /// Disconnects the device; its loco keeps its speed.
+    RemoveDevice {
+        device: u32,
+    },
+    /// Maps a control of all devices of `kind` to `target` (B-02).
+    Bind {
+        kind: String,
+        control: String,
+        target: Target,
+    },
+    Unbind {
+        kind: String,
+        control: String,
+    },
+    /// A control of a device moved: buttons and hat directions 1 pressed
+    /// and 0 released, axes from -1 to 1 with up negative like SDL.
+    Input {
+        device: u32,
+        control: String,
+        value: f64,
+    },
     /// Replaces the locos and the server with those of a configuration
     /// file of Electrip 1 on the host; only while disconnected (B-21).
     ImportElectrip1 {
@@ -155,6 +184,8 @@ pub enum Command {
 pub enum CommandError {
     UnknownLoco(u32),
     UnknownAction(u32),
+    UnknownDevice(u32),
+    DeviceExists(u32),
     PositionOutOfRange(usize),
     FunctionOutOfRange(u8),
     Loco(LocoError),
@@ -175,6 +206,8 @@ impl fmt::Display for CommandError {
         match self {
             CommandError::UnknownLoco(id) => write!(f, "there is no loco with id {id}"),
             CommandError::UnknownAction(id) => write!(f, "there is no action with id {id}"),
+            CommandError::UnknownDevice(id) => write!(f, "there is no device with id {id}"),
+            CommandError::DeviceExists(id) => write!(f, "there is already a device with id {id}"),
             CommandError::PositionOutOfRange(position) => {
                 write!(f, "there is no position {position} in the list")
             }
@@ -230,7 +263,24 @@ pub struct LocoEntry {
     #[serde(flatten)]
     pub motion: Motion,
     #[serde(skip)]
-    axis: f64,
+    axis: Axis,
+}
+
+/// Where the drive axis of a loco stands and the dead zone of the control
+/// that moved it last.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Axis {
+    deflection: f64,
+    dead_zone: f64,
+}
+
+impl Default for Axis {
+    fn default() -> Self {
+        Axis {
+            deflection: 0.0,
+            dead_zone: DEAD_ZONE,
+        }
+    }
 }
 
 impl LocoEntry {
@@ -256,6 +306,9 @@ pub struct Session {
     locos: Vec<LocoEntry>,
     /// The logical actions in the order they were added (N-07).
     actions: Vec<Action>,
+    /// One mapping per device type, in the order they were first used.
+    mappings: Vec<Mapping>,
+    devices: Vec<Device>,
     station: Station,
     /// Ids are never reused, so a command for a removed loco cannot hit a
     /// new one.
@@ -289,7 +342,7 @@ impl Session {
     pub(crate) fn emergency_stop(&mut self, id: u32) -> Result<&LocoEntry, CommandError> {
         let entry = self.entry(id)?;
         entry.motion.stop();
-        entry.axis = 0.0;
+        entry.axis.deflection = 0.0;
         Ok(entry)
     }
 
@@ -341,9 +394,7 @@ impl Session {
                 .loco(loco)?
                 .speed_curve_mut()
                 .move_point(point, speed, step),
-            Command::SetAxis { loco, deflection } => {
-                self.entry(loco)?.axis = deflection.clamp(-1.0, 1.0)
-            }
+            Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::AddAction { name } => self.add_action(name),
             Command::RenameAction { action, name } => self.action(action)?.name = name,
@@ -366,9 +417,27 @@ impl Session {
             Command::Connect
             | Command::Disconnect
             | Command::TogglePower
-            | Command::EmergencyStop { .. } => {}
+            | Command::EmergencyStop { .. }
+            | Command::Input { .. } => {}
             Command::ImportElectrip1 { path } => self.import_electrip1(&path)?,
+            Command::AddDevice { device, kind } => self.add_device(device, kind)?,
+            Command::RemoveDevice { device } => self.remove_device(device)?,
+            Command::Bind {
+                kind,
+                control,
+                target,
+            } => self.bind(kind, control, target)?,
+            Command::Unbind { kind, control } => self.mapping(kind).unbind(&control),
         }
+        self.assign_locos();
+        Ok(())
+    }
+
+    fn set_axis(&mut self, loco: u32, deflection: f64, dead_zone: f64) -> Result<(), CommandError> {
+        self.entry(loco)?.axis = Axis {
+            deflection: deflection.clamp(-1.0, 1.0),
+            dead_zone,
+        };
         Ok(())
     }
 
@@ -378,9 +447,13 @@ impl Session {
         let mut changed = false;
         for entry in &mut self.locos {
             let before = entry.motion;
+            let Axis {
+                deflection,
+                dead_zone,
+            } = entry.axis;
             entry
                 .motion
-                .accelerate(&entry.loco, entry.axis, DEAD_ZONE, seconds);
+                .accelerate(&entry.loco, deflection, dead_zone, seconds);
             changed |= entry.motion != before;
         }
         changed
@@ -401,7 +474,7 @@ impl Session {
             id: self.last_id,
             loco,
             motion: Motion::default(),
-            axis: 0.0,
+            axis: Axis::default(),
         });
     }
 
@@ -463,5 +536,6 @@ fn check_index<T>(list: &[T], index: usize) -> Result<(), CommandError> {
 }
 
 mod actions;
+mod devices;
 #[cfg(test)]
 mod tests;
