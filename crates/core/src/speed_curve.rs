@@ -69,8 +69,8 @@ impl SpeedCurve {
             (Some(_), Some(_)) => return,
             _ => old_speed,
         };
-        let step = right.map_or(step, |r| step.min(r.1));
         let step = left.map_or(step, |l| step.max(l.1));
+        let step = right.map_or(step, |r| step.min(r.1));
         self.points[nr] = (speed, step);
     }
 

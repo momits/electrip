@@ -8,8 +8,7 @@ use std::fs;
 #[test]
 fn speed_curve_matches_electrip_1() {
     let read = |path: &str| {
-        let text = fs::read_to_string(format!("{}/../../{path}", env!("CARGO_MANIFEST_DIR")));
-        text.unwrap()
+        fs::read_to_string(format!("{}/../../{path}", env!("CARGO_MANIFEST_DIR"))).unwrap()
     };
     let points = |value: &Value| -> Vec<Point> {
         let pair = |p: &Value| (p[0].as_f64().unwrap(), p[1].as_f64().unwrap());

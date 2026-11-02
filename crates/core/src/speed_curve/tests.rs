@@ -84,3 +84,11 @@ fn inner_point_moves_between_its_neighbours() {
     c.move_point(5, 50.0, 50.0);
     assert_eq!(c.points().len(), 3);
 }
+
+#[test]
+fn right_neighbour_wins_on_a_falling_curve_like_electrip_1() {
+    let mut c = SpeedCurve::new(&[(0.0, 100.0), (100.0, 0.0)]).unwrap();
+    c.add_point(50.0, 30.0);
+    c.move_point(1, 50.0, 200.0);
+    assert_eq!(c.points()[1], (50.0, 0.0));
+}
