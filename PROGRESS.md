@@ -8,6 +8,13 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – `verified` nur zusammen mit `wired` (Mo + Claude)
+
+- B-09 stand auf `verified`, aber nicht auf `wired`, weil die Warnung in der Oberfläche fehlt.
+  Damit zeigte der Paritätsbericht mehr Fortschritt, als es gibt.
+- Mo hat entschieden: `verified` gilt nur zusammen mit `wired` (`AGENTS.md`, Abschnitt Spezifikation).
+  B-09 steht deshalb wieder auf `verified: false`, bis die Warnung angebunden ist.
+
 ## 2026-11-02 – B-09: Kennlinie zurücksetzen über den Steuerkanal (Claude)
 
 - `crates/electrip/tests/curve_reset.rs` prüft über den Steuerkanal: Vmax, Fahrstufenzahl und Protokoll ohne `confirmed` liefern den Fehler zur Bestätigung, und die Lok samt geknickter Kennlinie bleibt unverändert (auch für einen neu verbundenen Client).
