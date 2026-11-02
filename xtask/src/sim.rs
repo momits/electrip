@@ -95,8 +95,8 @@ fn wait_for_srcpd() -> Result {
     }
 }
 
-/// The scenario tests of the srcpd driver and of the connection over the
-/// control channel (srcpd-loopback).
+/// The scenario tests of the srcpd driver and of the app over the control
+/// channel (srcpd-loopback): all integration tests marked `#[ignore]`.
 fn loopback_tests() -> Result {
     let args = [
         "test",
@@ -104,12 +104,7 @@ fn loopback_tests() -> Result {
         "electrip-station-srcp",
         "-p",
         "electrip",
-        "--test",
-        "srcpd_loopback",
-        "--test",
-        "station_connection",
-        "--test",
-        "driving",
+        "--tests",
         "--",
         "--ignored",
     ];

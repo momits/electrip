@@ -5,8 +5,9 @@
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{DEAD_ZONE, Motion};
 use crate::electrip1::{self, ImportError};
+use crate::function::{Action, Function};
 use crate::loco::{Loco, LocoError};
-use crate::station::{LocoState, StationError};
+use crate::station::{LocoState, MAX_FUNCTION, StationError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -89,6 +90,40 @@ pub enum Command {
     Reverse {
         loco: u32,
     },
+    /// Adds a logical action (N-07).
+    AddAction {
+        name: String,
+    },
+    RenameAction {
+        action: u32,
+        name: String,
+    },
+    /// Removes the action and every function mapped to it.
+    RemoveAction {
+        action: u32,
+    },
+    /// Appends a mapping of an action to a decoder function (B-07).
+    AddFunction {
+        loco: u32,
+        function: Function,
+    },
+    RemoveFunction {
+        loco: u32,
+        index: usize,
+    },
+    /// Moves a function to `position` (from 0) in the list of the loco.
+    MoveFunction {
+        loco: u32,
+        index: usize,
+        position: usize,
+    },
+    /// Presses (`pressed`) or releases an action for a loco; it switches
+    /// the functions of the loco mapped to it.
+    TriggerAction {
+        loco: u32,
+        action: u32,
+        pressed: bool,
+    },
     /// Where the SRCP server is; only while disconnected.
     SetServer {
         host: String,
@@ -119,7 +154,9 @@ pub enum Command {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CommandError {
     UnknownLoco(u32),
+    UnknownAction(u32),
     PositionOutOfRange(usize),
+    FunctionOutOfRange(u8),
     Loco(LocoError),
     Connected,
     Disconnected,
@@ -137,8 +174,12 @@ impl fmt::Display for CommandError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             CommandError::UnknownLoco(id) => write!(f, "there is no loco with id {id}"),
+            CommandError::UnknownAction(id) => write!(f, "there is no action with id {id}"),
             CommandError::PositionOutOfRange(position) => {
-                write!(f, "there is no position {position} in the loco list")
+                write!(f, "there is no position {position} in the list")
+            }
+            CommandError::FunctionOutOfRange(number) => {
+                write!(f, "F{number} lies above F{MAX_FUNCTION}")
             }
             CommandError::Loco(error) => error.fmt(f),
             CommandError::Connected => f.write_str("disconnect from the command station first"),
@@ -194,26 +235,34 @@ pub struct LocoEntry {
 
 impl LocoEntry {
     /// What the command station gets: the speed step from the speed curve,
-    /// cut off like Electrip 1. Functions follow with B-07.
+    /// cut off like Electrip 1, and the functions that are on.
     pub fn station_state(&self) -> LocoState {
         let curve = self.loco.speed_curve();
         let step = curve.step_at(self.motion.speed()).unwrap_or(0.0);
-        LocoState {
+        let mut state = LocoState {
             forward: self.motion.forward(),
             step: step as u8,
             functions: 0,
+        };
+        for function in self.loco.functions().iter().filter(|f| f.on) {
+            state.set_function(function.number, true);
         }
+        state
     }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct Session {
     locos: Vec<LocoEntry>,
+    /// The logical actions in the order they were added (N-07).
+    actions: Vec<Action>,
     station: Station,
     /// Ids are never reused, so a command for a removed loco cannot hit a
     /// new one.
     #[serde(skip)]
     last_id: u32,
+    #[serde(skip)]
+    last_action_id: u32,
     /// What the last import changed to fit the file (B-06).
     import_report: Vec<String>,
 }
@@ -296,6 +345,25 @@ impl Session {
                 self.entry(loco)?.axis = deflection.clamp(-1.0, 1.0)
             }
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
+            Command::AddAction { name } => self.add_action(name),
+            Command::RenameAction { action, name } => self.action(action)?.name = name,
+            Command::RemoveAction { action } => self.remove_action(action)?,
+            Command::AddFunction { loco, function } => self.add_function(loco, function)?,
+            Command::RemoveFunction { loco, index } => {
+                let functions = self.loco(loco)?.functions_mut();
+                check_index(functions, index)?;
+                functions.remove(index);
+            }
+            Command::MoveFunction {
+                loco,
+                index,
+                position,
+            } => self.move_function(loco, index, position)?,
+            Command::TriggerAction {
+                loco,
+                action,
+                pressed,
+            } => self.trigger_action(loco, action, pressed)?,
             Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
             Command::SetPowerOnStart { on } => self.station.power_on_start = on,
             // Handled by Host::apply, which holds the driver.
@@ -366,9 +434,7 @@ impl Session {
     }
 
     fn move_loco(&mut self, id: u32, position: usize) -> Result<(), CommandError> {
-        if position >= self.locos.len() {
-            return Err(CommandError::PositionOutOfRange(position));
-        }
+        check_index(&self.locos, position)?;
         let entry = self.locos.remove(self.index(id)?);
         self.locos.insert(position, entry);
         Ok(())
@@ -391,5 +457,15 @@ impl Session {
     }
 }
 
+/// An error unless `index` points into `list`.
+fn check_index<T>(list: &[T], index: usize) -> Result<(), CommandError> {
+    if index < list.len() {
+        Ok(())
+    } else {
+        Err(CommandError::PositionOutOfRange(index))
+    }
+}
+
+mod actions;
 #[cfg(test)]
 mod tests;

@@ -5,6 +5,8 @@
 // Test code: unwrap is allowed (AGENTS.md); not every test uses every helper.
 #![allow(clippy::unwrap_used, dead_code)]
 
+pub mod srcpd;
+
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
