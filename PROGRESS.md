@@ -8,6 +8,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – B-05: Beschleunigungs-, Bremsdauer und Lautstärke im Kern und über den Steuerkanal (Claude)
+
+- CI auf `main` war grün.
+- `crates/core/src/loco.rs`: `Loco` hat `accel_duration`, `brake_duration` und `volume`, Vorgaben wie Electrip 1 (11,5 s, 8,5 s, 0,8).
+  Dauern wie in Electrip 1 auf 1–9999 s begrenzt, Lautstärke auf 0–1; ein Wert außerhalb ändert nichts und meldet einen Fehler.
+  Die Kennlinie bleibt dabei unverändert. Vmax war schon da (B-09).
+- Neue Befehle `set_accel_duration`, `set_brake_duration`, `set_volume`; Format in `spec/steuerkanal.md`.
+- Unit-Tests in `crates/core/src/loco/tests.rs` und `session/tests.rs`, `control-channel`-Test in `crates/electrip/tests/loco_properties.rs`.
+- `cargo xtask test` grün.
+  Status unverändert: Lokbild (Ausschnitt wählen, 440×340 px, Import aus Electrip 1) und die UI mit Screenshot-Test fehlen.
+- Einfachheits-Review: ok (Sub-Agent).
+- **Nächster Schritt:** Lokbild im Kern (Ausschnitt 22:17 auf 440×340 px zuschneiden) oder ein anderer Kernbaustein der Phase 1 (z. B. B-24 oder B-01).
+
 ## 2026-11-02 – B-04: Lokverwaltung im Kern und über den Steuerkanal (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
