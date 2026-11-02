@@ -127,6 +127,8 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `remove_configuration` | `name` (löscht eine andere als die geöffnete Konfiguration) | B-21 |
 | `export_configuration` | `path` (schreibt die geöffnete Konfiguration in eine Datei auf dem Rechner der App) | B-21 |
 | `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Lokbild (mittig zugeschnitten; ein relativer Pfad gilt ab dem Ordner der Datei, ein fehlendes Bild steht im `import_report`), Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
+| `export_loco` | `loco`, `path` (Datei auf dem Rechner der App); schreibt die Lok als ZIP: `loco.json` mit der Lok und den Aktionen, die ihre Funktionen nutzen, und das Lokbild als `media/<name>.png` | B-20 |
+| `import_loco` | `path` (ZIP von `export_loco` oder Lokpaket von Electrip 1 auf dem Rechner der App); hängt die Lok an die Lokliste, das Bild kommt in die Bibliothek. Funktionen bekommen die Aktionen dieser Konfiguration mit gleichem Namen, fehlende Aktionen werden angelegt. Aus Paketen von Electrip 1 wird übernommen, was `import_electrip1` übernimmt; ein fehlendes Bild steht im `import_report` | B-20 |
 
 Namen von Konfigurationen müssen auf allen Systemen Dateinamen sein: nicht leer, ohne `.` am Anfang und Leerzeichen am Ende, ohne `< > : " / \ | ? *` und Steuerzeichen.
 

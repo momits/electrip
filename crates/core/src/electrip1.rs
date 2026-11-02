@@ -38,7 +38,7 @@ impl fmt::Display for ImportError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ImportError::Read(reason) => write!(f, "cannot read the file: {reason}"),
-            ImportError::Invalid(reason) => write!(f, "not a file of Electrip 1: {reason}"),
+            ImportError::Invalid(reason) => write!(f, "invalid file: {reason}"),
             ImportError::UnknownProtocol { loco, protocol } => {
                 write!(f, "{loco}: unknown protocol {protocol:?}")
             }
@@ -109,6 +109,15 @@ fn import(json: &str) -> Result<Import, ImportError> {
         pictures,
         report,
     })
+}
+
+/// Reads the loco file of a loco package of Electrip 1 (B-20); returns the
+/// loco and the path of its image file in the package.
+pub fn loco(json: &[u8], report: &mut Vec<String>) -> Result<(Loco, Option<PathBuf>), ImportError> {
+    let old: OldLoco =
+        serde_json::from_slice(json).map_err(|e| ImportError::Invalid(e.to_string()))?;
+    let picture = old.img_path.clone();
+    Ok((convert(old, report)?, picture))
 }
 
 fn convert(old: OldLoco, report: &mut Vec<String>) -> Result<Loco, ImportError> {

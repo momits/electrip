@@ -4,6 +4,7 @@
 use super::Host;
 use crate::config::{self, Config, DEFAULT_NAME};
 use crate::electrip1;
+use crate::package;
 use crate::picture;
 use crate::session::CommandError;
 use std::fs;
@@ -71,7 +72,7 @@ impl Host {
         for (loco, picture) in import.locos.iter_mut().zip(&import.pictures) {
             if let Some(picture) = picture {
                 match picture::store(&self.media(), &folder.join(picture), None) {
-                    Ok(name) => loco.set_picture(name),
+                    Ok(name) => loco.set_picture(Some(name)),
                     Err(error) => import.report.push(format!(
                         "{}: {error} ({})",
                         loco.name(),
@@ -87,6 +88,24 @@ impl Host {
         };
         config::write(&new_path, &config)?;
         self.load(name.into(), config, import.report)
+    }
+
+    pub(super) fn export_loco(&mut self, loco: u32, path: &Path) -> Result<(), CommandError> {
+        let loco = self.session.loco(loco)?.clone();
+        Ok(package::write(
+            path,
+            &loco,
+            self.session.actions(),
+            &self.media(),
+        )?)
+    }
+
+    pub(super) fn import_loco(&mut self, path: &Path) -> Result<(), CommandError> {
+        let package = package::read(path, &self.media()).map_err(CommandError::Import)?;
+        self.change(|session| {
+            session.import_loco(package.loco, &package.actions, package.report);
+            Ok(())
+        })
     }
 
     /// The directory of the pictures (B-05).

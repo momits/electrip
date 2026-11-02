@@ -76,7 +76,13 @@ pub fn path(dir: &Path, name: &str) -> PathBuf {
 /// Saves the crop of the image at `source` in the media directory `dir`,
 /// by default the largest one in the middle; returns the picture's name.
 pub fn store(dir: &Path, source: &Path, crop: Option<Crop>) -> Result<String, PictureError> {
-    let image = image::open(source).map_err(|e| PictureError::Read(e.to_string()))?;
+    let bytes = fs::read(source).map_err(|e| PictureError::Read(e.to_string()))?;
+    store_bytes(dir, &bytes, crop)
+}
+
+/// Like [`store`] with the content of the image file.
+pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<String, PictureError> {
+    let image = image::load_from_memory(bytes).map_err(|e| PictureError::Read(e.to_string()))?;
     let (width, height) = image.dimensions();
     let crop = crop.unwrap_or(Crop::centered(width, height));
     let inside = crop.height() > 0

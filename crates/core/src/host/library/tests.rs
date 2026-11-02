@@ -324,3 +324,65 @@ fn imported_pictures_are_cropped_in_the_middle() {
         "{line}"
     );
 }
+
+#[test]
+fn imported_locos_use_the_actions_of_the_configuration() {
+    let (mut host, _, _, library) = host();
+    for name in ["Horn", "Licht"] {
+        host.apply(Command::AddAction { name: name.into() })
+            .unwrap();
+    }
+    host.apply(Command::AddLoco).unwrap();
+    for action in [2, 1] {
+        let function = Function {
+            action,
+            number: action as u8,
+            name: String::new(),
+            mode: Default::default(),
+            default_on: false,
+            on: false,
+        };
+        host.apply(Command::AddFunction { loco: 1, function })
+            .unwrap();
+    }
+    host.apply(Command::TriggerAction {
+        loco: 1,
+        action: 1,
+        pressed: true,
+    })
+    .unwrap();
+    let path = library.path().join("lok.zip");
+    let export = Command::ExportLoco {
+        loco: 1,
+        path: path.clone(),
+    };
+    host.apply(export).unwrap();
+
+    new_configuration(&mut host, "Keller").unwrap();
+    host.apply(Command::AddAction {
+        name: "Licht".into(),
+    })
+    .unwrap();
+    host.apply(Command::ImportLoco { path }).unwrap();
+    let actions = host.session().actions();
+    let names: Vec<_> = actions.iter().map(|a| (a.id, a.name.as_str())).collect();
+    assert_eq!(names, [(1, "Licht"), (2, "Horn")]);
+    let functions = host.session().locos()[0].loco.functions();
+    let used: Vec<_> = functions
+        .iter()
+        .map(|f| (f.action, f.number, f.on))
+        .collect();
+    assert_eq!(used, [(1, 2, false), (2, 1, false)]);
+    open(&mut host, "Keller").unwrap();
+    assert_eq!(host.session().locos().len(), 1);
+}
+
+#[test]
+fn a_failed_loco_import_changes_nothing() {
+    let (mut host, _, _, library) = host();
+    let before = host.session().clone();
+    let path = library.path().join("fehlt.zip");
+    let error = host.apply(Command::ImportLoco { path }).unwrap_err();
+    assert!(matches!(error, CommandError::Import(_)), "{error}");
+    assert_eq!(*host.session(), before);
+}
