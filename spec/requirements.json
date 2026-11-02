@@ -848,6 +848,33 @@
         "verified": false,
         "accepted": false
       }
+    },
+    {
+      "id": "N-08",
+      "source": {
+        "type": "neu",
+        "ref": "Mo 2026-11-02"
+      },
+      "title": "Steuerkanal",
+      "description": "Lokaler JSON-Steuerkanal (Crate `control`, ADR 0002): Agenten, Tests und Skripte lesen den Zustand und rufen Befehle des Kerns auf, ohne Oberfläche. Er ist dasselbe Protokoll wie die spätere Client-Host-Verbindung (ADR 0010). Screenshots und virtuelle Eingaben kommen hinzu, sobald Oberfläche und Eingabegeräte existieren.",
+      "acceptance": [
+        "Die App startet ohne Oberfläche und öffnet den Steuerkanal nur auf localhost; der Port ist einstellbar",
+        "Jeder Befehl des Kerns ist als JSON-Nachricht aufrufbar; die Antwort meldet Erfolg oder einen verständlichen Fehler",
+        "Der Zustand (Loks mit Decoder und Kennlinie, Verbindung zur Zentrale) ist als JSON lesbar; Änderungen werden an verbundene Clients gemeldet",
+        "Das Nachrichtenformat ist versioniert und in `spec/steuerkanal.md` beschrieben, sodass die Client-Host-Verbindung (N-03) es ohne zweites Protokoll nutzen kann",
+        "Ein Test-Helfer startet die App und spricht den Steuerkanal an, sodass andere Anforderungen ihre Prüfart `control-channel` damit abdecken"
+      ],
+      "verification": [
+        "unit",
+        "control-channel"
+      ],
+      "phase": 1,
+      "hw": false,
+      "status": {
+        "wired": false,
+        "verified": false,
+        "accepted": false
+      }
     }
   ],
   "glossary": {
