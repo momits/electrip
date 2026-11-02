@@ -64,7 +64,7 @@ fn a_missing_file_names_the_reason() {
     let app = App::start();
     let mut client = app.connect();
     let error = client
-        .command(json!({"command": "import_electrip1", "path": "/nonexistent/electrip.json"}))
+        .command(json!({"command": "import_electrip1", "path": "/nonexistent/anlage.json"}))
         .unwrap_err();
     assert!(error.starts_with("cannot read the file: "), "{error}");
 }
