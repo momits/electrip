@@ -8,6 +8,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – N-08: Steuerkanal (Claude)
+
+- CI auf `main` war grün.
+- `crates/core/src/session.rs`: `Session` hält die Loks (mit `id`) und die Verbindung zur Zentrale (bisher nur `disconnected`); `Command` umfasst alle bisherigen Befehle: Lok anlegen (Vorgaben wie Electrip 1), Adresse, Protokoll, Fahrstufen, Vmax (mit `confirmed`, B-09) und Kennlinienpunkte anlegen, löschen, verschieben.
+  Fehler haben verständliche Texte (`Display`); ein fehlgeschlagener Befehl ändert nichts.
+  `core` nutzt dafür `serde` (derive).
+- Neues Crate `electrip-control`: zeilenweises JSON über TCP nur auf `127.0.0.1`, `hello` mit Version 1, Zustand nach dem Verbinden und nach jedem erfolgreichen Befehl an alle Clients, auf jeden Befehl eine `reply`.
+  Ein Thread je Client, eine gemeinsame Sperre für Sitzung und Clients.
+- `electrip [--control-port <port>]` startet ohne Oberfläche (Standardport 4711, 0 = frei) und nennt die Adresse in der ersten Ausgabezeile.
+- Format in `spec/steuerkanal.md`.
+- Test-Helfer `crates/electrip/tests/common/mod.rs` (`App::start`, `App::connect`, `Client::command`); `crates/electrip/tests/control_channel.rs` prüft Begrüßung, Befehle, Fehler und Meldung an zweiten Client.
+  App zusätzlich von Hand über den Steuerkanal bedient.
+- `cargo xtask test` grün. N-08 `wired` und `verified` gesetzt.
+- Einfachheits-Review: ok (Sub-Agent).
+- **Nächster Schritt:** B-06, B-08 und B-09 bekommen ihre `control-channel`-Tests mit dem Helfer; offen bleiben dort UI (B-08, B-09) und srcpd-Loopback (B-06).
+
 ## 2026-11-02 – Neue Anforderung N-08: Steuerkanal (Mo + Claude)
 
 - B-06, B-08 und B-09 blieben ohne Status, weil ihre Prüfart `control-channel` keinen Steuerkanal hat.
