@@ -49,7 +49,7 @@ impl fmt::Display for ImportError {
 #[derive(Deserialize)]
 struct File {
     locos: Vec<OldLoco>,
-    server: Server,
+    server: Station,
 }
 
 #[derive(Deserialize)]
@@ -83,23 +83,6 @@ impl Default for OldLoco {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(default)]
-struct Server {
-    host: String,
-    port: u16,
-    bus: u16,
-}
-
-impl Default for Server {
-    fn default() -> Self {
-        let Station {
-            host, port, bus, ..
-        } = Station::default();
-        Server { host, port, bus }
-    }
-}
-
 /// Reads a file of Electrip 1.
 pub fn read(path: &Path) -> Result<Import, ImportError> {
     let json = fs::read_to_string(path).map_err(|e| ImportError::Read(e.to_string()))?;
@@ -107,7 +90,7 @@ pub fn read(path: &Path) -> Result<Import, ImportError> {
 }
 
 /// Reads the content of a file of Electrip 1.
-pub fn import(json: &str) -> Result<Import, ImportError> {
+fn import(json: &str) -> Result<Import, ImportError> {
     let file: File = serde_json::from_str(json).map_err(|e| ImportError::Invalid(e.to_string()))?;
     let mut report = Vec::new();
     let locos = file
@@ -115,15 +98,9 @@ pub fn import(json: &str) -> Result<Import, ImportError> {
         .into_iter()
         .map(|old| convert(old, &mut report))
         .collect::<Result<_, _>>()?;
-    let station = Station {
-        host: file.server.host,
-        port: file.server.port,
-        bus: file.server.bus,
-        connected: false,
-    };
     Ok(Import {
         locos,
-        station,
+        station: file.server,
         report,
     })
 }
