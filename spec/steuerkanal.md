@@ -32,7 +32,10 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "name": "Unbenannte Lok",
     "decoder": {"protocol": "dcc_short", "address": 1, "speed_steps": 128},
     "max_speed": 100.0,
-    "speed_curve": [[0.0, 0.0], [100.0, 128.0]]
+    "speed_curve": [[0.0, 0.0], [100.0, 128.0]],
+    "accel_duration": 11.5,
+    "brake_duration": 8.5,
+    "volume": 0.8
   }],
   "station": "disconnected"
 }
@@ -42,6 +45,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `name`: neue Loks heißen „Unbenannte Lok“ (B-04).
 - `protocol`: `motorola1`, `motorola2`, `dcc_short`, `dcc_long` (B-06).
 - `speed_curve`: Kontrollpunkte `[km/h, Fahrstufe]` (B-08).
+- `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
 - `station`: Verbindung zur Zentrale; bisher nur `disconnected`, es gibt noch keinen Treiber.
 
 ## Befehle
@@ -50,7 +54,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 
 | `command` | Parameter | Anforderung |
 |---|---|---|
-| `add_loco` | – (Vorgaben wie Electrip 1: DCC kurz, Adresse 1, 128 Fahrstufen, 100 km/h) | B-04 |
+| `add_loco` | – (Vorgaben wie Electrip 1: DCC kurz, Adresse 1, 128 Fahrstufen, 100 km/h, Beschleunigung 11,5 s, Bremsen 8,5 s, Lautstärke 0,8) | B-04 |
 | `rename_loco` | `loco`, `name` | B-04 |
 | `remove_loco` | `loco` | B-04 |
 | `move_loco` | `loco`, `position` (neue Stelle in der Lokliste ab 0) | B-04 |
@@ -58,6 +62,9 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `set_protocol` | `loco`, `protocol`, `confirmed` | B-06, B-09 |
 | `set_speed_steps` | `loco`, `speed_steps`, `confirmed` | B-06, B-09 |
 | `set_max_speed` | `loco`, `max_speed`, `confirmed` | B-05, B-09 |
+| `set_accel_duration` | `loco`, `seconds` | B-05 |
+| `set_brake_duration` | `loco`, `seconds` | B-05 |
+| `set_volume` | `loco`, `volume` | B-05 |
 | `add_curve_point` | `loco`, `speed`, `step` | B-08 |
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |

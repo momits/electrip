@@ -47,6 +47,19 @@ pub enum Command {
         #[serde(default)]
         confirmed: bool,
     },
+    SetAccelDuration {
+        loco: u32,
+        seconds: f64,
+    },
+    SetBrakeDuration {
+        loco: u32,
+        seconds: f64,
+    },
+    /// Volume from 0 (silent) to 1 (full).
+    SetVolume {
+        loco: u32,
+        volume: f64,
+    },
     AddCurvePoint {
         loco: u32,
         speed: f64,
@@ -144,6 +157,13 @@ impl Session {
                 max_speed,
                 confirmed,
             } => self.loco(loco)?.set_max_speed(max_speed, confirmed)?,
+            Command::SetAccelDuration { loco, seconds } => {
+                self.loco(loco)?.set_accel_duration(seconds)?
+            }
+            Command::SetBrakeDuration { loco, seconds } => {
+                self.loco(loco)?.set_brake_duration(seconds)?
+            }
+            Command::SetVolume { loco, volume } => self.loco(loco)?.set_volume(volume)?,
             Command::AddCurvePoint { loco, speed, step } => {
                 self.loco(loco)?.speed_curve_mut().add_point(speed, step)
             }
@@ -163,7 +183,8 @@ impl Session {
         Ok(())
     }
 
-    /// Defaults of Electrip 1: DCC short, address 1, 128 steps, 100 km/h.
+    /// Defaults of Electrip 1: DCC short, address 1, 128 steps, 100 km/h;
+    /// [`Loco::new`] adds the rest.
     fn add_loco(&mut self) -> Result<(), LocoError> {
         let loco = Loco::new(Decoder::new(Protocol::DccShort, 1, 128)?, 100.0)?;
         self.last_id += 1;

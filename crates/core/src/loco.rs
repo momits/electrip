@@ -6,17 +6,26 @@ use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::speed_curve::SpeedCurve;
 use serde::Serialize;
 use std::fmt;
+use std::ops::RangeInclusive;
 
 /// Name of a new loco, as in Electrip 1.
 pub const DEFAULT_NAME: &str = "Unbenannte Lok";
 
 /// Allowed maximum speed in km/h, as in Electrip 1.
-pub const MAX_SPEED_RANGE: std::ops::RangeInclusive<f64> = 1.0..=999.0;
+pub const MAX_SPEED_RANGE: RangeInclusive<f64> = 1.0..=999.0;
+
+/// Allowed acceleration and braking duration in seconds, as in Electrip 1.
+pub const DURATION_RANGE: RangeInclusive<f64> = 1.0..=9999.0;
+
+/// Allowed volume, from silent to full.
+pub const VOLUME_RANGE: RangeInclusive<f64> = 0.0..=1.0;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LocoError {
     Decoder(DecoderError),
     MaxSpeedOutOfRange,
+    DurationOutOfRange,
+    VolumeOutOfRange,
     /// The change would reset the speed curve and was not confirmed; nothing
     /// changed.
     ResetNotConfirmed,
@@ -38,6 +47,18 @@ impl fmt::Display for LocoError {
                 MAX_SPEED_RANGE.start(),
                 MAX_SPEED_RANGE.end()
             ),
+            LocoError::DurationOutOfRange => write!(
+                f,
+                "the duration must be between {} and {} s",
+                DURATION_RANGE.start(),
+                DURATION_RANGE.end()
+            ),
+            LocoError::VolumeOutOfRange => write!(
+                f,
+                "the volume must be between {} and {}",
+                VOLUME_RANGE.start(),
+                VOLUME_RANGE.end()
+            ),
             LocoError::ResetNotConfirmed => write!(
                 f,
                 "this change resets the speed curve and needs a confirmation"
@@ -52,18 +73,26 @@ pub struct Loco {
     decoder: Decoder,
     max_speed: f64,
     speed_curve: SpeedCurve,
+    /// Seconds from standstill to Vmax at full acceleration.
+    accel_duration: f64,
+    /// Seconds from Vmax to standstill at full braking.
+    brake_duration: f64,
+    volume: f64,
 }
 
 impl Loco {
     /// A loco named [`DEFAULT_NAME`] with a straight speed curve from
-    /// standstill to Vmax.
+    /// standstill to Vmax and the durations and volume of Electrip 1.
     pub fn new(decoder: Decoder, max_speed: f64) -> Result<Self, LocoError> {
-        check_max_speed(max_speed)?;
+        check(MAX_SPEED_RANGE, max_speed, LocoError::MaxSpeedOutOfRange)?;
         Ok(Loco {
             name: DEFAULT_NAME.to_string(),
             decoder,
             max_speed,
             speed_curve: SpeedCurve::straight(max_speed, decoder.speed_steps().into()),
+            accel_duration: 11.5,
+            brake_duration: 8.5,
+            volume: 0.8,
         })
     }
 
@@ -92,12 +121,39 @@ impl Loco {
         &mut self.speed_curve
     }
 
+    pub fn accel_duration(&self) -> f64 {
+        self.accel_duration
+    }
+
+    pub fn set_accel_duration(&mut self, seconds: f64) -> Result<(), LocoError> {
+        self.accel_duration = check(DURATION_RANGE, seconds, LocoError::DurationOutOfRange)?;
+        Ok(())
+    }
+
+    pub fn brake_duration(&self) -> f64 {
+        self.brake_duration
+    }
+
+    pub fn set_brake_duration(&mut self, seconds: f64) -> Result<(), LocoError> {
+        self.brake_duration = check(DURATION_RANGE, seconds, LocoError::DurationOutOfRange)?;
+        Ok(())
+    }
+
+    pub fn volume(&self) -> f64 {
+        self.volume
+    }
+
+    pub fn set_volume(&mut self, volume: f64) -> Result<(), LocoError> {
+        self.volume = check(VOLUME_RANGE, volume, LocoError::VolumeOutOfRange)?;
+        Ok(())
+    }
+
     pub fn set_address(&mut self, address: u16) -> Result<(), LocoError> {
         Ok(self.decoder.set_address(address)?)
     }
 
     pub fn set_max_speed(&mut self, max_speed: f64, confirmed: bool) -> Result<(), LocoError> {
-        check_max_speed(max_speed)?;
+        check(MAX_SPEED_RANGE, max_speed, LocoError::MaxSpeedOutOfRange)?;
         self.change_axes(confirmed, |loco| {
             loco.max_speed = max_speed;
             Ok(())
@@ -141,11 +197,12 @@ impl Loco {
     }
 }
 
-fn check_max_speed(max_speed: f64) -> Result<(), LocoError> {
-    if MAX_SPEED_RANGE.contains(&max_speed) {
-        Ok(())
+/// The value if it lies in the range, else the error.
+fn check(range: RangeInclusive<f64>, value: f64, error: LocoError) -> Result<f64, LocoError> {
+    if range.contains(&value) {
+        Ok(value)
     } else {
-        Err(LocoError::MaxSpeedOutOfRange)
+        Err(error)
     }
 }
 
