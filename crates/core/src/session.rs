@@ -216,6 +216,7 @@ impl Session {
                 .speed_curve_mut()
                 .move_point(point, speed, step),
             Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
+            // Handled by Host::apply, which holds the driver.
             Command::Connect | Command::Disconnect => {}
         }
         Ok(())
