@@ -124,6 +124,7 @@ fn the_state_is_written_as_json() {
                 "brake_duration": 8.5,
                 "volume": 0.8,
                 "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
+                "picture": null,
                 "speed": 0.0,
                 "forward": true
             }],

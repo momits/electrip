@@ -136,6 +136,7 @@ dependencies = [
  "electrip-control",
  "electrip-core",
  "electrip-station-srcp",
+ "image",
  "serde_json",
  "tempfile",
 ]

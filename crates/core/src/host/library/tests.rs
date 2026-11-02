@@ -229,3 +229,98 @@ fn a_failed_save_changes_nothing() {
     assert!(matches!(result, Err(CommandError::File(_))), "{result:?}");
     assert_eq!(*host.session(), before);
 }
+
+/// A PNG of `width`×`height` in one colour at `path`.
+fn image_file(path: &Path, width: u32, height: u32) {
+    image::RgbImage::from_pixel(width, height, image::Rgb([0, 128, 0]))
+        .save(path)
+        .unwrap();
+}
+
+fn picture(host: &Host, loco: usize) -> Option<&str> {
+    host.session().locos()[loco].loco.picture()
+}
+
+#[test]
+fn a_picture_is_saved_and_opened_again() {
+    let (mut host, _, _, library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    let source = library.path().join("lok.jpg");
+    image_file(&source, 880, 680);
+    let crop = Some(picture::Crop {
+        x: 0,
+        y: 0,
+        width: 440,
+    });
+    host.apply(Command::SetPicture {
+        loco: 1,
+        path: source,
+        crop,
+    })
+    .unwrap();
+    let name = picture(&host, 0).unwrap().to_string();
+    assert!(picture::path(&host.media(), &name).exists());
+    new_configuration(&mut host, "Keller").unwrap();
+    open(&mut host, DEFAULT_NAME).unwrap();
+    assert_eq!(picture(&host, 0), Some(name.as_str()));
+}
+
+#[test]
+fn a_failed_picture_changes_nothing() {
+    let (mut host, _, _, library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    let source = library.path().join("lok.png");
+    image_file(&source, 22, 17);
+    let unknown = Command::SetPicture {
+        loco: 9,
+        path: source.clone(),
+        crop: None,
+    };
+    assert_eq!(host.apply(unknown), Err(CommandError::UnknownLoco(9)));
+    let crop = Some(picture::Crop {
+        x: 1,
+        y: 0,
+        width: 22,
+    });
+    let outside = Command::SetPicture {
+        loco: 1,
+        path: source,
+        crop,
+    };
+    let error = Err(CommandError::Picture(
+        picture::PictureError::CropOutsideImage,
+    ));
+    assert_eq!(host.apply(outside), error);
+    assert_eq!(picture(&host, 0), None);
+    assert!(!host.media().exists());
+}
+
+#[test]
+fn imported_pictures_are_cropped_in_the_middle() {
+    let (mut host, _, _, library) = host();
+    let folder = library.path().join("alt");
+    fs::create_dir_all(folder.join("image")).unwrap();
+    image_file(&folder.join("image/v60.png"), 1000, 340);
+    let path = folder.join("anlage.json");
+    // "settings" has BR 216 and V 60; only the picture of V 60 exists.
+    let mut json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(corpus("settings")).unwrap()).unwrap();
+    json["locos"][0]["img_path"] = "image/fehlt.png".into();
+    json["locos"][1]["img_path"] = "image/v60.png".into();
+    fs::write(&path, json.to_string()).unwrap();
+    host.apply(Command::ImportElectrip1 { path }).unwrap();
+    assert_eq!(picture(&host, 0), None);
+    let name = picture(&host, 1).unwrap();
+    let saved = image::open(picture::path(&host.media(), name)).unwrap();
+    assert_eq!(
+        (saved.width(), saved.height()),
+        (picture::WIDTH, picture::HEIGHT)
+    );
+    let report = serde_json::to_value(host.session()).unwrap()["import_report"].clone();
+    assert_eq!(report.as_array().unwrap().len(), 1);
+    let line = report[0].as_str().unwrap();
+    assert!(
+        line.starts_with("BR 216: cannot read the picture"),
+        "{line}"
+    );
+}

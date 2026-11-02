@@ -72,9 +72,11 @@ impl Host {
             if let Some(picture) = picture {
                 match picture::store(&self.media(), &folder.join(picture), None) {
                     Ok(name) => loco.set_picture(name),
-                    Err(error) => import
-                        .report
-                        .push(format!("{}: {error} ({})", loco.name(), picture.display())),
+                    Err(error) => import.report.push(format!(
+                        "{}: {error} ({})",
+                        loco.name(),
+                        picture.display()
+                    )),
                 }
             }
         }
