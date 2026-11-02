@@ -59,15 +59,14 @@ impl Loco {
 
     pub fn set_max_speed(&mut self, max_speed: f64, confirmed: bool) -> Result<(), LocoError> {
         check_max_speed(max_speed)?;
-        self.change_axes(max_speed != self.max_speed, confirmed, |loco| {
+        self.change_axes(confirmed, |loco| {
             loco.max_speed = max_speed;
             Ok(())
         })
     }
 
     pub fn set_speed_steps(&mut self, speed_steps: u8, confirmed: bool) -> Result<(), LocoError> {
-        let changed = speed_steps != self.decoder.speed_steps();
-        self.change_axes(changed, confirmed, |loco| {
+        self.change_axes(confirmed, |loco| {
             Ok(loco.decoder.set_speed_steps(speed_steps)?)
         })
     }
@@ -75,8 +74,7 @@ impl Loco {
     /// Switches the protocol like [`Decoder::set_protocol`]; this always sets
     /// the highest speed steps and so resets the curve.
     pub fn set_protocol(&mut self, protocol: Protocol, confirmed: bool) -> Result<(), LocoError> {
-        let changed = protocol != self.decoder.protocol();
-        self.change_axes(changed, confirmed, |loco| {
+        self.change_axes(confirmed, |loco| {
             loco.decoder.set_protocol(protocol);
             Ok(())
         })
@@ -87,15 +85,14 @@ impl Loco {
     /// confirmed.
     fn change_axes(
         &mut self,
-        changed: bool,
         confirmed: bool,
         change: impl FnOnce(&mut Loco) -> Result<(), LocoError>,
     ) -> Result<(), LocoError> {
-        if !changed {
-            return Ok(());
-        }
         let mut loco = self.clone();
         change(&mut loco)?;
+        if loco == *self {
+            return Ok(());
+        }
         if !confirmed {
             return Err(LocoError::ResetNotConfirmed);
         }
