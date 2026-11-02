@@ -17,10 +17,11 @@ Jede Nachricht hat ein Feld `type`.
 | `type` | Felder | Wann |
 |---|---|---|
 | `hello` | `version` (Zahl, derzeit `1`) | als erste Nachricht nach dem Verbinden |
-| `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl |
+| `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl, außerdem alle 50 ms, solange sich der Zustand ändert (z. B. beim Beschleunigen) |
 | `reply` | `ok` (bool), bei Fehler `error` (Text) | an den Absender, auf jeden Befehl genau eine, vor der folgenden `state` |
 
 Ein fehlgeschlagener Befehl ändert nichts; dann folgt keine `state`-Nachricht.
+Zwischen Befehl und `reply` kann eine `state`-Nachricht eintreffen, die sich nicht auf den Befehl bezieht.
 Die `version` steigt bei inkompatiblen Änderungen des Formats.
 
 ## Zustand
@@ -35,7 +36,9 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "speed_curve": [[0.0, 0.0], [100.0, 128.0]],
     "accel_duration": 11.5,
     "brake_duration": 8.5,
-    "volume": 0.8
+    "volume": 0.8,
+    "speed": 0.0,
+    "forward": true
   }],
   "station": {"host": "localhost", "port": 4303, "bus": 1, "connected": false}
 }
@@ -46,6 +49,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `protocol`: `motorola1`, `motorola2`, `dcc_short`, `dcc_long` (B-06).
 - `speed_curve`: Kontrollpunkte `[km/h, Fahrstufe]` (B-08).
 - `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
+- `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
+  Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
 
@@ -69,6 +74,8 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `add_curve_point` | `loco`, `speed`, `step` | B-08 |
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
+| `set_axis` | `loco`, `deflection` (Auslenkung der Fahrachse von -1 voll zurück bis 1 voll vor; bis 0,06 wird sie ignoriert wie in Electrip 1) | B-10 |
+| `reverse` | `loco` (Richtungswender: Geschwindigkeit 0, dann andere Richtung) | B-10 |
 | `set_server` | `host`, `port`, `bus` (nur ohne Verbindung) | B-01 |
 | `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
 | `disconnect` | – | B-01 |

@@ -103,7 +103,9 @@ fn the_state_is_written_as_json() {
                 "speed_curve": [[0.0, 0.0], [100.0, 128.0]],
                 "accel_duration": 11.5,
                 "brake_duration": 8.5,
-                "volume": 0.8
+                "volume": 0.8,
+                "speed": 0.0,
+                "forward": true
             }],
             "station": {"host": "localhost", "port": 4303, "bus": 1, "connected": false}
         })
