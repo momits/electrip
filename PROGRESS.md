@@ -9,6 +9,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-02 – SDL3 im Container baubar (Mo + Claude)
+
+- Das Image enthält jetzt `cmake` aus Debian, die CI-Runner haben es schon.
+  Damit baut `sdl3-sys` SDL3 aus der Quelle im Crate `sdl3-src`; die Version ist über `Cargo.lock` gepinnt, es kommt nichts außer crates.io dazu.
+- Getestet im Container hinter der Firewall: SDL 3.4.18 baut in etwa 40 s, statisch gelinkt, und ein virtuelles Gamepad lässt sich anlegen.
+- Diese Abhängigkeit funktioniert ohne weitere Debian-Pakete (Konsolen-Build ohne Video und Audio, die Oberfläche kommt von Slint):
+  `sdl3-sys = { version = "0.7", features = ["build-from-source", "link-static", "sdl-unix-console-build", "no-sdl-audio", "no-sdl-video", "no-sdl-render", "no-sdl-gpu", "no-sdl-camera"] }`
+  Ohne diese Features verlangt der Build X11-, Wayland- und Audio-Header.
+- SDL3 steht unter der Lizenz `Zlib` (frei, GPL-kompatibel); `deny.toml` muss sie mit der ersten SDL3-Abhängigkeit erlauben.
+- Nicht getestet: der Cross-Build für den Raspberry Pi mit SDL3; das zeigt die CI beim ersten Pull Request mit SDL3.
+- **Wartet auf Mo:** Container neu bauen (`docker exec electrip touch STOP`, Sitzung abwarten, `docker stop electrip`, dann `.devcontainer/start.sh`).
+- **Nächster Schritt im Loop danach:** Crate `electrip-input` mit SDL3 (N-01), dann virtuelle Gamepads für die Prüfart `virtual-gamepad`.
+
 ## 2026-11-02 – B-05: Lokbild (Claude)
 
 - Die vorige Sitzung brach mitten in B-05 ab (Nutzungslimit); ihr Zwischenstand ist der erste Commit dieses Branches.
