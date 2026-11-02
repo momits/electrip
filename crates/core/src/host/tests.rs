@@ -4,13 +4,14 @@ use crate::function::{Function, Mode};
 use crate::input::Target;
 use crate::station::LocoState;
 use std::sync::{Arc, Mutex};
+use tempfile::TempDir;
 
 /// Events the test hands to the fake driver.
 type Events = Arc<Mutex<Vec<StationEvent>>>;
 
 /// What the fake driver got; locos by address.
 #[derive(Debug, PartialEq)]
-enum Call {
+pub(super) enum Call {
     Power(bool),
     Loco(u16, LocoState),
     EmergencyStop(u16),
@@ -47,23 +48,25 @@ impl CommandStation for FakeDriver {
     }
 }
 
-/// A host whose connector reaches only the server "srcp", its events and
-/// the loco states the driver got.
-fn host() -> (Host, Events, Sent) {
+/// A host whose connector reaches only the server "srcp", its events, the
+/// loco states the driver got and its library, deleted when dropped.
+pub(super) fn host() -> (Host, Events, Sent, TempDir) {
     let (events, sent) = (Events::default(), Sent::default());
+    let library = TempDir::new().unwrap();
     let (driver_events, driver_sent) = (Arc::clone(&events), Arc::clone(&sent));
-    let host = Host::new(Box::new(move |station| {
+    let connector: Connector = Box::new(move |station| {
         if station.host == "srcp" {
             let driver = FakeDriver(Arc::clone(&driver_events), Arc::clone(&driver_sent));
             Ok(Box::new(driver))
         } else {
             Err(StationError(format!("cannot reach {}", station.host)))
         }
-    }));
-    (host, events, sent)
+    });
+    let host = Host::new(connector, library.path().into()).unwrap();
+    (host, events, sent, library)
 }
 
-fn set_server(host: &mut Host, name: &str) -> Result<(), CommandError> {
+pub(super) fn set_server(host: &mut Host, name: &str) -> Result<(), CommandError> {
     host.apply(Command::SetServer {
         host: name.into(),
         port: 4303,
@@ -73,7 +76,7 @@ fn set_server(host: &mut Host, name: &str) -> Result<(), CommandError> {
 
 #[test]
 fn the_server_defaults_to_electrip_1() {
-    let (host, _, _) = host();
+    let (host, _, _, _library) = host();
     let station = host.session().station();
     assert_eq!(
         (station.host.as_str(), station.port, station.bus),
@@ -84,7 +87,7 @@ fn the_server_defaults_to_electrip_1() {
 
 #[test]
 fn connects_to_the_configured_server() {
-    let (mut host, _, _) = host();
+    let (mut host, _, _, _library) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     let station = host.session().station();
@@ -94,7 +97,7 @@ fn connects_to_the_configured_server() {
 
 #[test]
 fn a_failed_connect_reports_the_error_and_changes_nothing() {
-    let (mut host, _, _) = host();
+    let (mut host, _, _, _library) = host();
     let before = host.session().clone();
     let error = host.apply(Command::Connect).unwrap_err();
     assert_eq!(error.to_string(), "cannot reach localhost");
@@ -103,7 +106,7 @@ fn a_failed_connect_reports_the_error_and_changes_nothing() {
 
 #[test]
 fn the_server_changes_only_while_disconnected() {
-    let (mut host, _, _) = host();
+    let (mut host, _, _, _library) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     assert_eq!(set_server(&mut host, "other"), Err(CommandError::Connected));
@@ -114,7 +117,7 @@ fn the_server_changes_only_while_disconnected() {
 
 #[test]
 fn a_broken_connection_disconnects_and_can_be_reopened() {
-    let (mut host, events, _) = host();
+    let (mut host, events, _, _library) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     assert!(!host.poll(0.05));
@@ -127,13 +130,13 @@ fn a_broken_connection_disconnects_and_can_be_reopened() {
 
 /// A connected host with one loco (id 1, address 1, 100 km/h, 128 steps,
 /// 11.5 s to accelerate) and what the driver got after connecting.
-fn driving_host() -> (Host, Sent) {
-    let (mut host, _, sent) = host();
+fn driving_host() -> (Host, Sent, TempDir) {
+    let (mut host, _, sent, library) = host();
     host.apply(Command::AddLoco).unwrap();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     sent.lock().unwrap().clear();
-    (host, sent)
+    (host, sent, library)
 }
 
 fn set_axis(host: &mut Host, deflection: f64) {
@@ -159,7 +162,7 @@ fn state(forward: bool, step: u8) -> Call {
 
 #[test]
 fn the_axis_accelerates_and_the_driver_gets_the_speed_step() {
-    let (mut host, sent) = driving_host();
+    let (mut host, sent, _library) = driving_host();
     assert!(!host.poll(0.05));
     set_axis(&mut host, 1.0);
     assert!(host.poll(1.15));
@@ -171,7 +174,7 @@ fn the_axis_accelerates_and_the_driver_gets_the_speed_step() {
 
 #[test]
 fn the_axis_at_rest_keeps_the_speed_and_sends_nothing() {
-    let (mut host, sent) = driving_host();
+    let (mut host, sent, _library) = driving_host();
     set_axis(&mut host, 1.0);
     host.poll(2.3);
     set_axis(&mut host, 0.03);
@@ -183,7 +186,7 @@ fn the_axis_at_rest_keeps_the_speed_and_sends_nothing() {
 
 #[test]
 fn the_axis_back_brakes() {
-    let (mut host, _) = driving_host();
+    let (mut host, _, _library) = driving_host();
     set_axis(&mut host, 1.0);
     host.poll(11.5);
     set_axis(&mut host, -0.5);
@@ -193,7 +196,7 @@ fn the_axis_back_brakes() {
 
 #[test]
 fn reverse_stops_and_changes_the_direction() {
-    let (mut host, sent) = driving_host();
+    let (mut host, sent, _library) = driving_host();
     host.apply(Command::Reverse { loco: 1 }).unwrap();
     host.poll(0.05);
     set_axis(&mut host, 1.0);
@@ -209,7 +212,7 @@ fn reverse_stops_and_changes_the_direction() {
 
 #[test]
 fn locos_drive_without_a_connection() {
-    let (mut host, _, _) = host();
+    let (mut host, _, _, _library) = host();
     host.apply(Command::AddLoco).unwrap();
     set_axis(&mut host, 1.0);
     assert!(host.poll(11.5));
@@ -218,7 +221,7 @@ fn locos_drive_without_a_connection() {
 
 #[test]
 fn the_axis_of_an_unknown_loco_is_an_error() {
-    let (mut host, _, _) = host();
+    let (mut host, _, _, _library) = host();
     let error = host.apply(Command::SetAxis {
         loco: 7,
         deflection: 1.0,
@@ -230,7 +233,7 @@ fn the_axis_of_an_unknown_loco_is_an_error() {
 
 #[test]
 fn connecting_switches_the_track_power_on() {
-    let (mut host, _, sent) = host();
+    let (mut host, _, sent, _library) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     assert!(host.session().station().track_power);
@@ -241,7 +244,7 @@ fn connecting_switches_the_track_power_on() {
 
 #[test]
 fn connecting_leaves_the_track_power_if_switched_off() {
-    let (mut host, _, sent) = host();
+    let (mut host, _, sent, _library) = host();
     assert!(host.session().station().power_on_start);
     host.apply(Command::SetPowerOnStart { on: false }).unwrap();
     set_server(&mut host, "srcp").unwrap();
@@ -253,7 +256,7 @@ fn connecting_leaves_the_track_power_if_switched_off() {
 
 #[test]
 fn the_emergency_stop_toggles_the_track_power() {
-    let (mut host, sent) = driving_host();
+    let (mut host, sent, _library) = driving_host();
     host.apply(Command::TogglePower).unwrap();
     assert!(!host.session().station().track_power);
     host.apply(Command::TogglePower).unwrap();
@@ -266,14 +269,14 @@ fn the_emergency_stop_toggles_the_track_power() {
 
 #[test]
 fn the_track_power_toggles_only_while_connected() {
-    let (mut host, _, _) = host();
+    let (mut host, _, _, _library) = host();
     let error = host.apply(Command::TogglePower);
     assert_eq!(error, Err(CommandError::Disconnected));
 }
 
 #[test]
 fn the_track_power_follows_the_command_station() {
-    let (mut host, events, _) = host();
+    let (mut host, events, _, _library) = host();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
     events.lock().unwrap().push(StationEvent::Power(false));
@@ -283,7 +286,7 @@ fn the_track_power_follows_the_command_station() {
 
 #[test]
 fn the_loco_emergency_stop_stops_only_the_loco() {
-    let (mut host, sent) = driving_host();
+    let (mut host, sent, _library) = driving_host();
     set_axis(&mut host, 1.0);
     host.poll(11.5);
     sent.lock().unwrap().clear();
@@ -296,13 +299,13 @@ fn the_loco_emergency_stop_stops_only_the_loco() {
 
 /// A connected host with `locos` locos (ids from 1, addresses 1) and one
 /// pad (id 1) with the standard mapping.
-fn host_with_pad(locos: usize) -> (Host, Sent) {
-    let (mut host, sent) = driving_host();
+fn host_with_pad(locos: usize) -> (Host, Sent, TempDir) {
+    let (mut host, sent, library) = driving_host();
     for _ in 1..locos {
         host.apply(Command::AddLoco).unwrap();
     }
     add_device(&mut host, 1);
-    (host, sent)
+    (host, sent, library)
 }
 
 fn add_device(host: &mut Host, device: u32) {
@@ -329,7 +332,7 @@ fn device_loco(host: &Host, device: usize) -> Option<u32> {
 
 #[test]
 fn the_axis_of_a_device_drives_its_loco_with_up_negative() {
-    let (mut host, _) = host_with_pad(1);
+    let (mut host, _, _library) = host_with_pad(1);
     input(&mut host, "lefty", -1.0).unwrap();
     host.poll(1.15);
     assert!((speed(&host) - 10.0).abs() < 1e-9);
@@ -337,7 +340,7 @@ fn the_axis_of_a_device_drives_its_loco_with_up_negative() {
 
 #[test]
 fn the_dead_zone_belongs_to_the_binding() {
-    let (mut host, _) = host_with_pad(1);
+    let (mut host, _, _library) = host_with_pad(1);
     input(&mut host, "lefty", -0.1).unwrap();
     host.poll(1.0);
     assert!(speed(&host) > 0.0);
@@ -357,7 +360,7 @@ fn the_dead_zone_belongs_to_the_binding() {
 
 #[test]
 fn buttons_trigger_built_in_actions_once_per_press() {
-    let (mut host, sent) = host_with_pad(1);
+    let (mut host, sent, _library) = host_with_pad(1);
     input(&mut host, "a", 1.0).unwrap();
     input(&mut host, "a", 1.0).unwrap();
     assert!(!host.session().station().track_power);
@@ -369,7 +372,7 @@ fn buttons_trigger_built_in_actions_once_per_press() {
 
 #[test]
 fn a_control_without_binding_does_nothing() {
-    let (mut host, _) = host_with_pad(1);
+    let (mut host, _, _library) = host_with_pad(1);
     let before = host.session().clone();
     press(&mut host, "x");
     assert_eq!(*host.session(), before);
@@ -377,7 +380,7 @@ fn a_control_without_binding_does_nothing() {
 
 #[test]
 fn a_bound_action_switches_the_functions_of_the_device_loco() {
-    let (mut host, _) = host_with_pad(2);
+    let (mut host, _, _library) = host_with_pad(2);
     host.apply(Command::AddAction {
         name: "Licht".into(),
     })
@@ -416,7 +419,7 @@ fn a_bound_action_switches_the_functions_of_the_device_loco() {
 
 #[test]
 fn devices_get_free_locos_and_skip_taken_ones_when_changing() {
-    let (mut host, _) = host_with_pad(3);
+    let (mut host, _, _library) = host_with_pad(3);
     add_device(&mut host, 2);
     assert_eq!(
         (device_loco(&host, 0), device_loco(&host, 1)),
@@ -432,7 +435,7 @@ fn devices_get_free_locos_and_skip_taken_ones_when_changing() {
 
 #[test]
 fn holding_next_loco_scrolls_until_released() {
-    let (mut host, _) = host_with_pad(5);
+    let (mut host, _, _library) = host_with_pad(5);
     add_device(&mut host, 2);
     input(&mut host, "dpright", 1.0).unwrap();
     assert_eq!(device_loco(&host, 0), Some(3));
@@ -450,7 +453,7 @@ fn holding_next_loco_scrolls_until_released() {
 
 #[test]
 fn releasing_stops_the_scroll_even_after_unbinding() {
-    let (mut host, _) = host_with_pad(3);
+    let (mut host, _, _library) = host_with_pad(3);
     input(&mut host, "dpright", 1.0).unwrap();
     let (kind, control) = ("pad".into(), "dpright".into());
     host.apply(Command::Unbind { kind, control }).unwrap();
@@ -461,7 +464,7 @@ fn releasing_stops_the_scroll_even_after_unbinding() {
 
 #[test]
 fn the_axis_moves_along_to_the_new_loco() {
-    let (mut host, _) = host_with_pad(2);
+    let (mut host, _, _library) = host_with_pad(2);
     input(&mut host, "lefty", -1.0).unwrap();
     press(&mut host, "dpright");
     host.poll(1.15);
@@ -477,7 +480,7 @@ fn the_axis_moves_along_to_the_new_loco() {
 
 #[test]
 fn removing_a_device_releases_the_axis_of_its_loco() {
-    let (mut host, _) = host_with_pad(1);
+    let (mut host, _, _library) = host_with_pad(1);
     input(&mut host, "lefty", -1.0).unwrap();
     host.poll(1.15);
     host.apply(Command::RemoveDevice { device: 1 }).unwrap();
@@ -491,7 +494,7 @@ fn removing_a_device_releases_the_axis_of_its_loco() {
 
 #[test]
 fn a_removed_loco_frees_the_device_for_another() {
-    let (mut host, _) = host_with_pad(2);
+    let (mut host, _, _library) = host_with_pad(2);
     add_device(&mut host, 2);
     host.apply(Command::AddLoco).unwrap();
     host.apply(Command::RemoveLoco { loco: 1 }).unwrap();
@@ -503,7 +506,7 @@ fn a_removed_loco_frees_the_device_for_another() {
 
 #[test]
 fn removing_an_action_removes_its_bindings() {
-    let (mut host, _) = host_with_pad(1);
+    let (mut host, _, _library) = host_with_pad(1);
     host.apply(Command::AddAction {
         name: "Licht".into(),
     })
@@ -522,7 +525,7 @@ fn removing_an_action_removes_its_bindings() {
 
 #[test]
 fn device_ids_are_unique() {
-    let (mut host, _) = host_with_pad(1);
+    let (mut host, _, _library) = host_with_pad(1);
     let kind = "other".into();
     let error = host.apply(Command::AddDevice { device: 1, kind });
     assert_eq!(error, Err(CommandError::DeviceExists(1)));

@@ -136,7 +136,9 @@ fn the_state_is_written_as_json() {
             ]}],
             "devices": [{"id": 7, "kind": "Xbox", "loco": 1}],
             "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
-            "import_report": []
+            "import_report": [],
+            "configuration": "",
+            "configurations": []
         })
     );
 }
@@ -224,45 +226,6 @@ fn move_loco_fails_for_a_position_outside_the_list() {
     });
     assert_eq!(error, Err(CommandError::PositionOutOfRange(2)));
     assert_eq!(ids(&session), [1, 2]);
-}
-
-fn corpus(name: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../tests/corpus/configs/{name}.json"))
-}
-
-#[test]
-fn import_replaces_the_locos_and_the_server() {
-    let mut session = session_with_locos(3);
-    let path = corpus("settings");
-    session.apply(Command::ImportElectrip1 { path }).unwrap();
-    let names: Vec<&str> = session.locos().iter().map(|e| e.loco.name()).collect();
-    assert_eq!(names, ["BR 216", "V 60"]);
-    // Ids are not reused.
-    let ids: Vec<u32> = session.locos().iter().map(|e| e.id).collect();
-    assert_eq!(ids, [4, 5]);
-    assert_eq!(session.station().host, "192.168.0.111");
-    assert_eq!((session.station().port, session.station().bus), (4304, 2));
-}
-
-#[test]
-fn a_failed_import_changes_nothing() {
-    let mut session = session_with_locos(1);
-    let before = session.clone();
-    let path = PathBuf::from("/nonexistent/electrip.json");
-    let result = session.apply(Command::ImportElectrip1 { path });
-    assert!(matches!(result, Err(CommandError::Import(_))));
-    assert_eq!(session, before);
-}
-
-#[test]
-fn import_needs_a_disconnected_session() {
-    let mut session = session_with_locos(1);
-    session.set_connected(true);
-    let before = session.clone();
-    let path = corpus("settings");
-    let result = session.apply(Command::ImportElectrip1 { path });
-    assert_eq!(result, Err(CommandError::Connected));
-    assert_eq!(session, before);
 }
 
 /// A session with two locos and the actions "Licht" (1) and "Horn" (2).

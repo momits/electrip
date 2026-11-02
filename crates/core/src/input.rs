@@ -34,14 +34,14 @@ fn default_dead_zone() -> f64 {
     DEAD_ZONE
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Binding {
     pub control: String,
     pub target: Target,
 }
 
 /// The bindings of all devices of one `kind`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Mapping {
     pub kind: String,
     pub bindings: Vec<Binding>,
