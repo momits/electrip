@@ -12,6 +12,8 @@ Ein lokaler Proxy setzt die Tokens ein:
 - Die GitHub-REST-API für dieses Repo erreichst du mit `curl` unter `http://127.0.0.1:8080/github-api/repos/momits/electrip/…`.
   Beispiele: `actions/runs?branch=main&per_page=1`, `pulls` (POST zum Erstellen), `commits/<sha>/check-runs`, `pulls/<n>/merge` (PUT mit `{"merge_method": "rebase"}`), `actions/jobs/<id>/logs` (mit `curl -L`).
   Andere Pfade lehnt der Proxy ab.
+- Warte auf die CI im Vordergrund, nicht mit Hintergrund-Befehlen.
+  Die Sitzung endet erst, wenn alle Hintergrund-Befehle fertig sind, auch nach dem Merge.
 
 1. Bist du nicht auf `main` oder ist der Arbeitsbaum nicht sauber, wurde die letzte Sitzung abgebrochen.
    Committe den Zwischenstand auf dem aktuellen Branch und schließe diese Aufgabe nach Schritt 3 zuerst ab.
