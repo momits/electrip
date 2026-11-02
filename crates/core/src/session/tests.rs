@@ -107,7 +107,7 @@ fn the_state_is_written_as_json() {
                 "speed": 0.0,
                 "forward": true
             }],
-            "station": {"host": "localhost", "port": 4303, "bus": 1, "connected": false},
+            "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
             "import_report": []
         })
     );

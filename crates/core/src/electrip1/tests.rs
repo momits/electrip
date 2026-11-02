@@ -35,6 +35,7 @@ fn the_corpus_is_imported_without_loss() {
         assert_eq!(import.station.host, server["host"], "{name}");
         assert_eq!(import.station.port, server["port"], "{name}");
         assert_eq!(import.station.bus, server["bus"], "{name}");
+        assert_eq!(import.station.power_on_start, server["power"], "{name}");
         let old_locos = file["locos"].as_array().unwrap();
         assert_eq!(import.locos.len(), old_locos.len(), "{name}");
         for (loco, old) in import.locos.iter().zip(old_locos) {

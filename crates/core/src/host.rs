@@ -35,21 +35,47 @@ impl Host {
     /// Executes a command; on an error the session stays unchanged.
     pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
         match command {
-            Command::Connect => {
-                let driver =
-                    (self.connect)(self.session.station()).map_err(CommandError::Station)?;
-                self.driver = Some(driver);
-                self.sent = self
-                    .session
-                    .locos()
-                    .iter()
-                    .map(|e| (e.id, e.station_state()))
-                    .collect();
-                self.session.set_connected(true);
-            }
+            Command::Connect => self.connect()?,
             Command::Disconnect => self.disconnect(),
+            Command::TogglePower => {
+                let driver = self.driver.as_mut().ok_or(CommandError::Disconnected)?;
+                let on = !self.session.station().track_power;
+                driver.set_power(on).map_err(CommandError::Station)?;
+                self.session.set_track_power(on);
+            }
+            Command::EmergencyStop { loco } => {
+                let entry = self.session.emergency_stop(loco)?;
+                let state = entry.station_state();
+                if let Some(driver) = self.driver.as_mut() {
+                    self.sent.insert(loco, state);
+                    driver
+                        .emergency_stop(entry.loco.decoder(), &state)
+                        .map_err(CommandError::Station)?;
+                }
+            }
             command => self.session.apply(command)?,
         }
+        Ok(())
+    }
+
+    /// Opens the driver and switches the track power on if the session
+    /// says so.
+    fn connect(&mut self) -> Result<(), CommandError> {
+        let station = self.session.station();
+        let power = station.power_on_start;
+        let mut driver = (self.connect)(station).map_err(CommandError::Station)?;
+        if power {
+            driver.set_power(true).map_err(CommandError::Station)?;
+        }
+        self.driver = Some(driver);
+        self.sent = self
+            .session
+            .locos()
+            .iter()
+            .map(|e| (e.id, e.station_state()))
+            .collect();
+        self.session.set_connected(true);
+        self.session.set_track_power(power);
         Ok(())
     }
 
@@ -58,13 +84,19 @@ impl Host {
     /// changed.
     pub fn poll(&mut self, seconds: f64) -> bool {
         let events = self.driver.as_mut().map(|d| d.events()).unwrap_or_default();
-        let lost = events.contains(&StationEvent::Disconnected);
-        if lost {
-            self.disconnect();
+        let mut changed = false;
+        for event in events {
+            match event {
+                StationEvent::Power(on) => self.session.set_track_power(on),
+                // Taken over with Q-010.
+                StationEvent::Loco { .. } => continue,
+                StationEvent::Disconnected => self.disconnect(),
+            }
+            changed = true;
         }
         let driven = self.session.drive(seconds);
         self.send_locos();
-        lost || driven
+        changed || driven
     }
 
     /// Sends each loco whose state changed since the driver last got it.

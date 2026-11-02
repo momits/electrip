@@ -11,7 +11,7 @@ fn greets_with_version_and_state() {
     let client = app.connect();
     assert_eq!(
         client.state,
-        json!({"locos": [], "import_report": [], "station": {"host": "localhost", "port": 4303, "bus": 1, "connected": false}})
+        json!({"locos": [], "import_report": [], "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false}})
     );
 }
 

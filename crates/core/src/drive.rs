@@ -52,8 +52,12 @@ impl Motion {
 
     /// The direction switch: stops at once, then changes the direction.
     pub fn reverse(&mut self) {
-        self.speed = 0.0;
+        self.stop();
         self.forward = !self.forward;
+    }
+
+    pub fn stop(&mut self) {
+        self.speed = 0.0;
     }
 }
 

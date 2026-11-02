@@ -71,7 +71,7 @@ fn the_server_is_configurable() {
     let station = &app.connect().state["station"];
     assert_eq!(
         *station,
-        json!({"host": "127.0.0.1", "port": 4304, "bus": 2, "connected": false})
+        json!({"host": "127.0.0.1", "port": 4304, "bus": 2, "power_on_start": true, "connected": false, "track_power": false})
     );
 }
 
