@@ -8,6 +8,14 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – `wired` in Phase 1: Befehl plus Steuerkanal (Mo + Claude)
+
+- Fast alle Bausteine blieben ohne `wired`, weil die Oberfläche fehlt; die kommt erst in Phase 2.
+  Damit wäre Tor B (B-01 bis B-10 `verified`) in Phase 1 nicht erreichbar gewesen.
+- Mo hat entschieden: In Phase 1 heißt `wired`, dass die Funktion als Befehl im Kern und über den Steuerkanal erreichbar ist (`AGENTS.md`, Abschnitt Spezifikation).
+  Kriterien zur Oberfläche bleiben offene Punkte für Phase 2.
+- **Nächster Schritt im Loop:** Status der schon gebauten Anforderungen nach dieser Definition prüfen und setzen (B-01, B-04, B-05, B-06, B-08, B-09, B-10), dann weiter mit offenen Anforderungen.
+
 ## 2026-11-02 – B-01: Verbindung zum SRCP-Server über den Sitzungs-Host (Claude)
 
 - CI auf `main` lief beim Start noch, danach grün.
