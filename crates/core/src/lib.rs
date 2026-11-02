@@ -5,4 +5,5 @@
 
 pub mod decoder;
 pub mod loco;
+pub mod session;
 pub mod speed_curve;

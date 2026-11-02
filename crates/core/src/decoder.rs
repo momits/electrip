@@ -1,7 +1,11 @@
 //! Decoder settings of a loco: protocol, address and speed steps (B-06).
 
+use serde::{Deserialize, Serialize};
+use std::fmt;
+
 /// Decoder protocol, kept neutral; each command station driver translates it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Protocol {
     Motorola1,
     Motorola2,
@@ -39,8 +43,21 @@ pub enum DecoderError {
     SpeedStepsNotSupported { options: &'static [u8] },
 }
 
+impl fmt::Display for DecoderError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DecoderError::AddressOutOfRange { max } => {
+                write!(f, "the address must be between 1 and {max}")
+            }
+            DecoderError::SpeedStepsNotSupported { options } => {
+                write!(f, "the protocol allows only these speed steps: {options:?}")
+            }
+        }
+    }
+}
+
 /// A valid combination of protocol, address and speed steps.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Decoder {
     protocol: Protocol,
     address: u16,

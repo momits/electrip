@@ -1,0 +1,13 @@
+[package]
+name = "electrip-control"
+description = "Local JSON control channel of Electrip 2"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+electrip-core = { path = "../core" }
+serde_json = "1"
+
+[lints]
+workspace = true
