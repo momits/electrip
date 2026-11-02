@@ -4,6 +4,8 @@
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::speed_curve::SpeedCurve;
+use serde::Serialize;
+use std::fmt;
 
 /// Allowed maximum speed in km/h, as in Electrip 1.
 pub const MAX_SPEED_RANGE: std::ops::RangeInclusive<f64> = 1.0..=999.0;
@@ -23,7 +25,25 @@ impl From<DecoderError> for LocoError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl fmt::Display for LocoError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LocoError::Decoder(error) => error.fmt(f),
+            LocoError::MaxSpeedOutOfRange => write!(
+                f,
+                "the maximum speed must be between {} and {} km/h",
+                MAX_SPEED_RANGE.start(),
+                MAX_SPEED_RANGE.end()
+            ),
+            LocoError::ResetNotConfirmed => write!(
+                f,
+                "this change resets the speed curve and needs a confirmation"
+            ),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Loco {
     decoder: Decoder,
     max_speed: f64,
@@ -51,6 +71,11 @@ impl Loco {
 
     pub fn speed_curve(&self) -> &SpeedCurve {
         &self.speed_curve
+    }
+
+    /// Edits of the curve itself keep it rising and need no confirmation.
+    pub fn speed_curve_mut(&mut self) -> &mut SpeedCurve {
+        &mut self.speed_curve
     }
 
     pub fn set_address(&mut self, address: u16) -> Result<(), LocoError> {
