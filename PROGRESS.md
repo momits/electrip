@@ -8,6 +8,15 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – Prüfung des Review-Trailers entfernt (Mo + Claude)
+
+- Der Loop kam mit PR #7 (B-06) nicht weiter: `cargo xtask review-check` ließ den CI-Job „loc, parity, simplicity review, dependencies“ scheitern.
+  Der Trailer `Simplicity-Review: ok` stand im Commit, aber in einem eigenen Absatz vor `Co-Authored-By`; Git wertet nur den letzten Absatz als Trailer.
+- Mo hat entschieden, die Prüfung zu streichen.
+  Entfernt: `cargo xtask review-check`, der CI-Schritt und die Trailer-Pflicht in `AGENTS.md` und ADR 0008.
+  Der Einfachheits-Review selbst bleibt Pflicht, sein Ergebnis steht in `PROGRESS.md` und in der Beschreibung des Pull Requests.
+- Der CI-Job heißt jetzt „loc, parity, golden, corpus, dependencies“.
+
 ## 2026-10-30 – Loop nutzt fest Opus (Claude)
 
 - Auf Wunsch von Mo ruft `loop.sh` Claude mit `--model claude-opus-5-5` auf, auch beim Fortsetzen nach dem Nutzungslimit.
