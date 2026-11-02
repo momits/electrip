@@ -16,7 +16,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   `import_loco { path }` liest solche ZIPs und die Lokpakete von Electrip 1 (`<name>.loco` mit den Dateien daneben, umgerechnet wie bei `import_electrip1`), legt das Bild in die Bibliothek (`media/`) und hängt die Lok an.
   Funktionen bekommen die Aktionen der offenen Konfiguration mit gleichem Namen; fehlende Aktionen werden angelegt.
   Ein fehlendes oder kaputtes Bild steht im `import_report`, der Import läuft weiter.
-- Neue Abhängigkeit `zip` (nur Deflate über zlib-rs). `picture::store_bytes` speichert ein Bild aus dem Speicher; `Loco::set_picture` nimmt jetzt `Option`.
+- Neue Abhängigkeit `zip` (nur Deflate über flate2 mit miniz_oxide, das `png` schon nutzt). `picture::store_bytes` speichert ein Bild aus dem Speicher; `Loco::set_picture` nimmt jetzt `Option`.
   Die Meldung `ImportError::Invalid` heißt jetzt „invalid file“, weil sie auch für Pakete von Electrip 2 gilt.
 - Tests: `package/tests.rs` (alle sechs Korpus-Pakete, Export und wieder Import, fehlendes und kaputtes Bild, keine Lokdatei, kein ZIP), `host/library/tests.rs` (Aktionen nach Namen, fehlgeschlagener Import ändert nichts), `crates/electrip/tests/loco_packages.rs` über den Steuerkanal.
 - `cargo xtask test`, `cargo xtask loc` (2407 Zeilen) und `cargo xtask parity` grün.
