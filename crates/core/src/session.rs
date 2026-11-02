@@ -136,12 +136,15 @@ impl fmt::Display for CommandError {
     }
 }
 
-/// The SRCP server and whether the host is connected to it (B-01).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+/// The SRCP server and whether the host is connected to it (B-01). Read
+/// from a file, missing values get the defaults and it is disconnected.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Station {
     pub host: String,
     pub port: u16,
     pub bus: u16,
+    #[serde(skip_deserializing)]
     pub connected: bool,
 }
 
