@@ -1,6 +1,8 @@
 //! Electrip 2. Without a user interface yet, the app runs headless and is
 //! operated through the control channel on localhost (N-08).
 
+use electrip_core::host::{Driver, Host};
+use electrip_station_srcp::SrcpStation;
 use std::env;
 use std::net::{Ipv4Addr, TcpListener};
 use std::process::ExitCode;
@@ -25,7 +27,11 @@ fn run() -> Result<(), String> {
         "Electrip {} control channel on {address}",
         env!("CARGO_PKG_VERSION")
     );
-    electrip_control::serve(listener).map_err(|e| e.to_string())
+    let host = Host::new(Box::new(|station| {
+        let driver = SrcpStation::connect(&station.host, station.port, station.bus)?;
+        Ok(Box::new(driver) as Driver)
+    }));
+    electrip_control::serve(listener, host).map_err(|e| e.to_string())
 }
 
 /// Reads `--control-port <port>`; port 0 picks a free port.

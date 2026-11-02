@@ -1,9 +1,10 @@
 //! The state of a session and the commands that change it (ADR 0002). UI,
 //! gamepads, the control channel and tests change the state only through
-//! [`Session::apply`].
+//! [`Host::apply`](crate::host::Host::apply).
 
 use crate::decoder::{Decoder, Protocol};
 use crate::loco::{Loco, LocoError};
+use crate::station::StationError;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -75,6 +76,15 @@ pub enum Command {
         speed: f64,
         step: f64,
     },
+    /// Where the SRCP server is; only while disconnected.
+    SetServer {
+        host: String,
+        port: u16,
+        bus: u16,
+    },
+    /// Connects to the server; the host also replaces an open connection.
+    Connect,
+    Disconnect,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -82,6 +92,8 @@ pub enum CommandError {
     UnknownLoco(u32),
     PositionOutOfRange(usize),
     Loco(LocoError),
+    Connected,
+    Station(StationError),
 }
 
 impl From<LocoError> for CommandError {
@@ -98,16 +110,31 @@ impl fmt::Display for CommandError {
                 write!(f, "there is no position {position} in the loco list")
             }
             CommandError::Loco(error) => error.fmt(f),
+            CommandError::Connected => f.write_str("disconnect from the command station first"),
+            CommandError::Station(error) => error.fmt(f),
         }
     }
 }
 
-/// Connection to the command station; no driver exists yet.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Station {
-    #[default]
-    Disconnected,
+/// The SRCP server and whether the host is connected to it (B-01).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Station {
+    pub host: String,
+    pub port: u16,
+    pub bus: u16,
+    pub connected: bool,
+}
+
+/// Defaults of Electrip 1.
+impl Default for Station {
+    fn default() -> Self {
+        Station {
+            host: "localhost".into(),
+            port: 4303,
+            bus: 1,
+            connected: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -132,8 +159,17 @@ impl Session {
         &self.locos
     }
 
+    pub fn station(&self) -> &Station {
+        &self.station
+    }
+
+    pub(crate) fn set_connected(&mut self, connected: bool) {
+        self.station.connected = connected;
+    }
+
     /// Executes a command; on an error the session stays unchanged.
-    pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
+    /// [`Host::apply`](crate::host::Host::apply) handles connecting.
+    pub(crate) fn apply(&mut self, command: Command) -> Result<(), CommandError> {
         match command {
             Command::AddLoco => self.add_loco()?,
             Command::RenameLoco { loco, name } => self.loco(loco)?.set_name(name),
@@ -179,6 +215,8 @@ impl Session {
                 .loco(loco)?
                 .speed_curve_mut()
                 .move_point(point, speed, step),
+            Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
+            Command::Connect | Command::Disconnect => {}
         }
         Ok(())
     }
@@ -192,6 +230,19 @@ impl Session {
             id: self.last_id,
             loco,
         });
+        Ok(())
+    }
+
+    fn set_server(&mut self, host: String, port: u16, bus: u16) -> Result<(), CommandError> {
+        if self.station.connected {
+            return Err(CommandError::Connected);
+        }
+        self.station = Station {
+            host,
+            port,
+            bus,
+            connected: false,
+        };
         Ok(())
     }
 

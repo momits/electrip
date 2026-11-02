@@ -51,6 +51,8 @@ name = "electrip"
 version = "0.1.0"
 dependencies = [
  "electrip-control",
+ "electrip-core",
+ "electrip-station-srcp",
  "serde_json",
 ]
 

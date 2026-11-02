@@ -37,7 +37,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "brake_duration": 8.5,
     "volume": 0.8
   }],
-  "station": "disconnected"
+  "station": {"host": "localhost", "port": 4303, "bus": 1, "connected": false}
 }
 ```
 
@@ -46,7 +46,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `protocol`: `motorola1`, `motorola2`, `dcc_short`, `dcc_long` (B-06).
 - `speed_curve`: Kontrollpunkte `[km/h, Fahrstufe]` (B-08).
 - `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
-- `station`: Verbindung zur Zentrale; bisher nur `disconnected`, es gibt noch keinen Treiber.
+- `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
+  Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
 
 ## Befehle
 
@@ -68,6 +69,9 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `add_curve_point` | `loco`, `speed`, `step` | B-08 |
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
+| `set_server` | `host`, `port`, `bus` (nur ohne Verbindung) | B-01 |
+| `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
+| `disconnect` | – | B-01 |
 
 `confirmed` ist optional (Standard `false`).
 Setzt eine Änderung die Kennlinie zurück und fehlt die Bestätigung, antwortet die App mit einem Fehler und ändert nichts (B-09).
