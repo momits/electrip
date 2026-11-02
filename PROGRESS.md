@@ -8,6 +8,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - (noch keine)
 
+## 2026-11-02 – Status nach der neuen `wired`-Definition geprüft (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Geprüft wurden B-01, B-04, B-05, B-06, B-08 und B-09 gegen ihre Akzeptanzkriterien. Nur Kriterien zur Oberfläche gelten in Phase 1 als offene Punkte, alle anderen müssen erfüllt sein.
+- **B-08** `wired` und `verified`: Endpunkte nicht löschbar und Interpolation im Kern, alle Befehle über den Steuerkanal; Golden-, Unit- und `control-channel`-Tests grün.
+  Offen für Phase 2: Klick, Rechtsklick und Ziehen in der UI.
+- **B-09** `wired` und `verified`: Ohne `confirmed` liefert der Befehl einen Fehler und ändert nichts, mit `confirmed` wird zurückgesetzt; `control-channel`-Test grün.
+  Offen für Phase 2: Warnung mit Bestätigung in der UI.
+- Unverändert, weil Kriterien ohne UI-Bezug fehlen:
+  - B-01: Host, Port und Bus werden nicht gespeichert (B-21).
+  - B-04: Die Reihenfolge der Lokliste wird nicht gespeichert (B-21).
+  - B-05: Das Lokbild (Ausschnitt 440×340 px, Import mit mittigem Zuschnitt) fehlt im Kern.
+  - B-06: Der Import aus Electrip 1 (N 1 mit Adresse > 127 wird N 2) fehlt (B-21).
+- Kein Produktcode geändert. `cargo xtask test` und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Selbstprüfung, nur Statusfelder).
+- **Nächster Schritt:** B-21 (Konfigurationsdatei mit Import aus Electrip 1); damit werden B-01, B-04 und B-06 erfüllbar.
+
 ## 2026-11-02 – B-10: Fahren mit der Achse im Sitzungs-Host (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
