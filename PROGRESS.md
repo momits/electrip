@@ -9,6 +9,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-02 – B-20: Lok-Export und -Import als ZIP (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `crates/core/src/package.rs`: `export_loco { loco, path }` schreibt ein ZIP mit `loco.json` (Lok und die Aktionen, die ihre Funktionen nutzen) und dem Lokbild als `media/<name>.png`.
+  `import_loco { path }` liest solche ZIPs und die Lokpakete von Electrip 1 (`<name>.loco` mit den Dateien daneben, umgerechnet wie bei `import_electrip1`), legt das Bild in die Bibliothek (`media/`) und hängt die Lok an.
+  Funktionen bekommen die Aktionen der offenen Konfiguration mit gleichem Namen; fehlende Aktionen werden angelegt.
+  Ein fehlendes oder kaputtes Bild steht im `import_report`, der Import läuft weiter.
+- Neue Abhängigkeit `zip` (nur Deflate über zlib-rs). `picture::store_bytes` speichert ein Bild aus dem Speicher; `Loco::set_picture` nimmt jetzt `Option`.
+  Die Meldung `ImportError::Invalid` heißt jetzt „invalid file“, weil sie auch für Pakete von Electrip 2 gilt.
+- Tests: `package/tests.rs` (alle sechs Korpus-Pakete, Export und wieder Import, fehlendes und kaputtes Bild, keine Lokdatei, kein ZIP), `host/library/tests.rs` (Aktionen nach Namen, fehlgeschlagener Import ändert nichts), `crates/electrip/tests/loco_packages.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` (2407 Zeilen) und `cargo xtask parity` grün.
+- **B-20** bleibt offen (nicht `wired`): Verlustfrei ist der Import erst, wenn Sounds (B-11 bis B-17, Phase 2) und die Funktionen von Electrip 1 (`functions` mit `button`, zusammen mit B-21) im Kern sind; bis dahin übergeht der Import sie, ohne das im `import_report` zu nennen.
+  Der Export enthält entsprechend noch keine Sounds.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: `filter_map` statt Schleife in `Session::import_loco`.
+- **Nächster Schritt:** nach dem Neubau des Containers `electrip-input` mit SDL3 (N-01, siehe SDL3-Eintrag), sonst Funktionen beim Import aus Electrip 1 (B-21/B-20).
+
 ## 2026-11-02 – SDL3 im Container baubar (Mo + Claude)
 
 - Das Image enthält jetzt `cmake` aus Debian, die CI-Runner haben es schon.
