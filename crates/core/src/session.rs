@@ -13,6 +13,18 @@ use std::fmt;
 pub enum Command {
     /// Adds a loco with the defaults of Electrip 1.
     AddLoco,
+    RenameLoco {
+        loco: u32,
+        name: String,
+    },
+    RemoveLoco {
+        loco: u32,
+    },
+    /// Moves a loco to `position` (from 0) in the loco list.
+    MoveLoco {
+        loco: u32,
+        position: usize,
+    },
     SetAddress {
         loco: u32,
         address: u16,
@@ -55,6 +67,7 @@ pub enum Command {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CommandError {
     UnknownLoco(u32),
+    PositionOutOfRange(usize),
     Loco(LocoError),
 }
 
@@ -68,6 +81,9 @@ impl fmt::Display for CommandError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             CommandError::UnknownLoco(id) => write!(f, "there is no loco with id {id}"),
+            CommandError::PositionOutOfRange(position) => {
+                write!(f, "there is no position {position} in the loco list")
+            }
             CommandError::Loco(error) => error.fmt(f),
         }
     }
@@ -92,6 +108,10 @@ pub struct LocoEntry {
 pub struct Session {
     locos: Vec<LocoEntry>,
     station: Station,
+    /// Ids are never reused, so a command for a removed loco cannot hit a
+    /// new one.
+    #[serde(skip)]
+    last_id: u32,
 }
 
 impl Session {
@@ -103,6 +123,11 @@ impl Session {
     pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
         match command {
             Command::AddLoco => self.add_loco()?,
+            Command::RenameLoco { loco, name } => self.loco(loco)?.set_name(name),
+            Command::RemoveLoco { loco } => {
+                self.locos.remove(self.index(loco)?);
+            }
+            Command::MoveLoco { loco, position } => self.move_loco(loco, position)?,
             Command::SetAddress { loco, address } => self.loco(loco)?.set_address(address)?,
             Command::SetProtocol {
                 loco,
@@ -141,9 +166,28 @@ impl Session {
     /// Defaults of Electrip 1: DCC short, address 1, 128 steps, 100 km/h.
     fn add_loco(&mut self) -> Result<(), LocoError> {
         let loco = Loco::new(Decoder::new(Protocol::DccShort, 1, 128)?, 100.0)?;
-        let id = self.locos.iter().map(|e| e.id).max().unwrap_or(0) + 1;
-        self.locos.push(LocoEntry { id, loco });
+        self.last_id += 1;
+        self.locos.push(LocoEntry {
+            id: self.last_id,
+            loco,
+        });
         Ok(())
+    }
+
+    fn move_loco(&mut self, id: u32, position: usize) -> Result<(), CommandError> {
+        if position >= self.locos.len() {
+            return Err(CommandError::PositionOutOfRange(position));
+        }
+        let entry = self.locos.remove(self.index(id)?);
+        self.locos.insert(position, entry);
+        Ok(())
+    }
+
+    fn index(&self, id: u32) -> Result<usize, CommandError> {
+        self.locos
+            .iter()
+            .position(|e| e.id == id)
+            .ok_or(CommandError::UnknownLoco(id))
     }
 
     fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {

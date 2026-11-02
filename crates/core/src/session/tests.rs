@@ -89,6 +89,7 @@ fn the_state_is_written_as_json() {
         json!({
             "locos": [{
                 "id": 1,
+                "name": "Unbenannte Lok",
                 "decoder": {"protocol": "dcc_short", "address": 1, "speed_steps": 128},
                 "max_speed": 100.0,
                 "speed_curve": [[0.0, 0.0], [100.0, 128.0]]
@@ -105,4 +106,80 @@ fn errors_are_readable() {
         error.to_string(),
         "the maximum speed must be between 1 and 999 km/h"
     );
+}
+
+fn session_with_locos(count: usize) -> Session {
+    let mut session = Session::default();
+    for _ in 0..count {
+        session.apply(Command::AddLoco).unwrap();
+    }
+    session
+}
+
+fn ids(session: &Session) -> Vec<u32> {
+    session.locos().iter().map(|e| e.id).collect()
+}
+
+#[test]
+fn a_new_loco_is_unnamed() {
+    let session = session_with_loco();
+    assert_eq!(session.locos()[0].loco.name(), "Unbenannte Lok");
+}
+
+#[test]
+fn rename_loco_sets_the_name() {
+    let mut session = session_with_loco();
+    let rename = command(json!({"command": "rename_loco", "loco": 1, "name": "BR 218"}));
+    session.apply(rename).unwrap();
+    assert_eq!(session.locos()[0].loco.name(), "BR 218");
+}
+
+#[test]
+fn remove_loco_removes_only_that_loco() {
+    let mut session = session_with_locos(3);
+    session
+        .apply(command(json!({"command": "remove_loco", "loco": 2})))
+        .unwrap();
+    assert_eq!(ids(&session), [1, 3]);
+    assert_eq!(
+        session.apply(Command::RemoveLoco { loco: 2 }),
+        Err(CommandError::UnknownLoco(2))
+    );
+}
+
+#[test]
+fn ids_of_removed_locos_are_not_reused() {
+    let mut session = session_with_locos(2);
+    session.apply(Command::RemoveLoco { loco: 2 }).unwrap();
+    session.apply(Command::AddLoco).unwrap();
+    assert_eq!(ids(&session), [1, 3]);
+}
+
+#[test]
+fn move_loco_changes_the_order() {
+    let mut session = session_with_locos(3);
+    session
+        .apply(command(
+            json!({"command": "move_loco", "loco": 3, "position": 0}),
+        ))
+        .unwrap();
+    assert_eq!(ids(&session), [3, 1, 2]);
+    session
+        .apply(Command::MoveLoco {
+            loco: 3,
+            position: 2,
+        })
+        .unwrap();
+    assert_eq!(ids(&session), [1, 2, 3]);
+}
+
+#[test]
+fn move_loco_fails_for_a_position_outside_the_list() {
+    let mut session = session_with_locos(2);
+    let error = session.apply(Command::MoveLoco {
+        loco: 1,
+        position: 2,
+    });
+    assert_eq!(error, Err(CommandError::PositionOutOfRange(2)));
+    assert_eq!(ids(&session), [1, 2]);
 }

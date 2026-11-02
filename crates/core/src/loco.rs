@@ -7,6 +7,9 @@ use crate::speed_curve::SpeedCurve;
 use serde::Serialize;
 use std::fmt;
 
+/// Name of a new loco, as in Electrip 1.
+pub const DEFAULT_NAME: &str = "Unbenannte Lok";
+
 /// Allowed maximum speed in km/h, as in Electrip 1.
 pub const MAX_SPEED_RANGE: std::ops::RangeInclusive<f64> = 1.0..=999.0;
 
@@ -45,20 +48,31 @@ impl fmt::Display for LocoError {
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Loco {
+    name: String,
     decoder: Decoder,
     max_speed: f64,
     speed_curve: SpeedCurve,
 }
 
 impl Loco {
-    /// A loco with a straight speed curve from standstill to Vmax.
+    /// A loco named [`DEFAULT_NAME`] with a straight speed curve from
+    /// standstill to Vmax.
     pub fn new(decoder: Decoder, max_speed: f64) -> Result<Self, LocoError> {
         check_max_speed(max_speed)?;
         Ok(Loco {
+            name: DEFAULT_NAME.to_string(),
             decoder,
             max_speed,
             speed_curve: SpeedCurve::straight(max_speed, decoder.speed_steps().into()),
         })
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
     }
 
     pub fn decoder(&self) -> &Decoder {
