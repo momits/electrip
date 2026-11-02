@@ -4,10 +4,12 @@
 
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{DEAD_ZONE, Motion};
+use crate::electrip1::{self, ImportError};
 use crate::loco::{Loco, LocoError};
 use crate::station::{LocoState, StationError};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::path::{Path, PathBuf};
 
 /// A user action. Locos are addressed by their id in the session.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -96,6 +98,11 @@ pub enum Command {
     /// Connects to the server; the host also replaces an open connection.
     Connect,
     Disconnect,
+    /// Replaces the locos and the server with those of a configuration
+    /// file of Electrip 1 on the host; only while disconnected (B-21).
+    ImportElectrip1 {
+        path: PathBuf,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -105,6 +112,7 @@ pub enum CommandError {
     Loco(LocoError),
     Connected,
     Station(StationError),
+    Import(ImportError),
 }
 
 impl From<LocoError> for CommandError {
@@ -123,6 +131,7 @@ impl fmt::Display for CommandError {
             CommandError::Loco(error) => error.fmt(f),
             CommandError::Connected => f.write_str("disconnect from the command station first"),
             CommandError::Station(error) => error.fmt(f),
+            CommandError::Import(error) => error.fmt(f),
         }
     }
 }
@@ -181,6 +190,8 @@ pub struct Session {
     /// new one.
     #[serde(skip)]
     last_id: u32,
+    /// What the last import changed to fit the file (B-06).
+    import_report: Vec<String>,
 }
 
 impl Session {
@@ -251,6 +262,7 @@ impl Session {
             Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
             // Handled by Host::apply, which holds the driver.
             Command::Connect | Command::Disconnect => {}
+            Command::ImportElectrip1 { path } => self.import_electrip1(&path)?,
         }
         Ok(())
     }
@@ -273,6 +285,12 @@ impl Session {
     /// [`Loco::new`] adds the rest.
     fn add_loco(&mut self) -> Result<(), LocoError> {
         let loco = Loco::new(Decoder::new(Protocol::DccShort, 1, 128)?, 100.0)?;
+        self.push(loco);
+        Ok(())
+    }
+
+    /// Appends a standing loco with a new id to the loco list.
+    fn push(&mut self, loco: Loco) {
         self.last_id += 1;
         self.locos.push(LocoEntry {
             id: self.last_id,
@@ -280,6 +298,19 @@ impl Session {
             motion: Motion::default(),
             axis: 0.0,
         });
+    }
+
+    fn import_electrip1(&mut self, path: &Path) -> Result<(), CommandError> {
+        if self.station.connected {
+            return Err(CommandError::Connected);
+        }
+        let import = electrip1::read(path).map_err(CommandError::Import)?;
+        self.locos.clear();
+        for loco in import.locos {
+            self.push(loco);
+        }
+        self.station = import.station;
+        self.import_report = import.report;
         Ok(())
     }
 
