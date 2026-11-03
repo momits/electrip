@@ -10,9 +10,11 @@
 use electrip_core::session::Command;
 use sdl3_sys::everything::*;
 use std::ffi::{CStr, c_char};
+use std::marker::PhantomData;
 
-/// SDL with its gamepad subsystem; dropping it shuts SDL down.
-pub struct Gamepads(());
+/// The gamepad subsystem of SDL, stopped when dropped. It belongs to the
+/// thread that opened it, so it is not `Send`.
+pub struct Gamepads(PhantomData<*const ()>);
 
 impl Gamepads {
     /// Starts SDL. Devices already connected arrive as events with the
@@ -27,7 +29,7 @@ impl Gamepads {
                 return Err(format!("SDL: {}", string(SDL_GetError())));
             }
         }
-        Ok(Gamepads(()))
+        Ok(Gamepads(PhantomData))
     }
 
     /// The commands for all device events since the last call.
@@ -45,8 +47,8 @@ impl Gamepads {
 
 impl Drop for Gamepads {
     fn drop(&mut self) {
-        // SAFETY: SDL was initialized in `open`.
-        unsafe { SDL_Quit() }
+        // SAFETY: the subsystem was started in `open`.
+        unsafe { SDL_QuitSubSystem(SDL_INIT_GAMEPAD) }
     }
 }
 
