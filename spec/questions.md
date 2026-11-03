@@ -95,3 +95,4 @@ Im Korpus kommt das vor: In `settings.json` ist Knopf 8 der Richtungswender und 
 Damit ist der Import nicht ganz verlustfrei (B-21).
 **Stand jetzt:** Die eingebaute Aktion behält den Knopf; die Aktion „Knopf <n>“ bleibt an der Funktion, hat aber keinen Knopf. Der `import_report` nennt das je Knopf („button 8: functions left out, it is Reverse“).
 **Vorschlag:** So lassen; der Nutzer sieht es im Bericht und kann die Aktion in der UI auf einen freien Knopf legen. Alternative: Ein Bedienelement darf mehrere Ziele haben (größere Änderung an Mapping und Befehlen `bind`/`unbind`).
+**Antwort:** Ja, wie vorgeschlagen. (Mo, 2026-11-03)

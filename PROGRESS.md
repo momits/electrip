@@ -8,6 +8,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-03 – Q-015 beantwortet, Prüfung des Z21-Treibers offen (Mo + Claude)
+
+- Mo hat Q-015 wie vorgeschlagen beantwortet: Beim Import aus Electrip 1 behält die eingebaute Aktion den Knopf, der `import_report` nennt die ausgelassenen Funktionen.
+- **Offen: Prüfung des Z21-Treibers (N-02).**
+  Der Agent hat den Treiber in PR #46 ohne das Roco-PDF geschrieben, weil es im Container nicht erreichbar war.
+  `AGENTS.md` verlangt aber, dass der Treiber nur aus der Roco-Spezifikation entsteht.
+  Der Simulator stammt aus dem PDF und ist gegen z21aio geprüft; das mindert das Risiko, ersetzt die Prüfung aber nicht.
+  N-02 steht auf `verified`, gilt aber erst nach dieser Prüfung als belastbar.
+- **Plan für die Prüfung:** Mo lädt das PDF (Link und SHA-256 in `sim/z21/README.md`) lokal herunter.
+  Eine eigene Sitzung vergleicht `crates/station-z21` mit dem PDF, ohne den Simulator-Code zu lesen.
+  Abweichungen werden auf einem Branch behoben und mit der Szenario-Testsuite gegen beide Treiber geprüft.
+- Der Loop bleibt bis dahin angehalten (`STOP`); Mo und Claude machen am 2026-11-04 damit weiter.
+
 ## 2026-11-03 – Loop hält: Q-015 und Tor zu Phase 2 (Claude)
 
 - CI auf `main` grün.
