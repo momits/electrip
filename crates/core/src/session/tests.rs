@@ -126,7 +126,8 @@ fn the_state_is_written_as_json() {
                 "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
                 "picture": null,
                 "speed": 0.0,
-                "forward": true
+                "forward": true,
+                "sound": false
             }],
             "actions": [{"id": 1, "name": "Licht"}],
             "mappings": [{"kind": "Xbox", "bindings": [
@@ -135,7 +136,7 @@ fn the_state_is_written_as_json() {
                 {"control": "dpright", "target": {"type": "next_loco"}},
                 {"control": "lefty", "target": {"type": "action", "action": 1}}
             ]}],
-            "devices": [{"id": 7, "kind": "Xbox", "loco": 1, "color": 1}],
+            "devices": [{"id": 7, "kind": "Xbox", "loco": 1, "color": 1, "focus": false}],
             "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
             "import_report": [],
             "configuration": "",

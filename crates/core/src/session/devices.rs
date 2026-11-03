@@ -98,6 +98,10 @@ impl Session {
                 pressed,
             }));
         }
+        if target == Target::Focus {
+            self.devices[index].focus = pressed;
+            return Ok(None);
+        }
         if !pressed {
             return Ok(None);
         }
@@ -105,6 +109,7 @@ impl Session {
             (Target::TogglePower, _) => Some(Command::TogglePower),
             (Target::Reverse, Some(loco)) => Some(Command::Reverse { loco }),
             (Target::EmergencyStop, Some(loco)) => Some(Command::EmergencyStop { loco }),
+            (Target::ToggleSound, Some(loco)) => Some(Command::ToggleSound { loco }),
             (Target::PreviousLoco, _) => {
                 self.change_and_scroll(index, control, false);
                 None

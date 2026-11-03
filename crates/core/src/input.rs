@@ -24,6 +24,10 @@ pub enum Target {
     /// Switches the device to the previous free loco in the list (B-23).
     PreviousLoco,
     NextLoco,
+    /// While held, the control view shows the loco of the device.
+    Focus,
+    /// Switches the driving sound of the loco of the device on or off.
+    ToggleSound,
     /// A logical action (N-07).
     Action {
         action: u32,
@@ -105,6 +109,8 @@ pub struct Device {
     /// The color of the device, 1 to `MAX_DEVICES`, unique among the
     /// connected devices.
     pub color: u8,
+    /// Whether the device holds "focus" (B-02).
+    pub focus: bool,
     /// The buttons held down now.
     #[serde(skip)]
     held: Vec<String>,
@@ -139,6 +145,7 @@ impl Device {
             kind,
             loco: None,
             color,
+            focus: false,
             held: Vec::new(),
             scroll: None,
         }
