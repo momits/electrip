@@ -55,8 +55,64 @@ fn the_corpus_is_imported_without_loss() {
             let points: Vec<Point> =
                 serde_json::from_value(old["speed_control_points"].clone()).unwrap();
             assert_eq!(loco.speed_curve().points(), points);
+            assert_functions(loco, &import.actions, &old["functions"]);
         }
     }
+}
+
+/// Each function keeps name, number, state and mode, and its action names
+/// the button or, without one, the function.
+fn assert_functions(loco: &Loco, actions: &[Action], old: &Value) {
+    let old = old.as_array().unwrap();
+    assert_eq!(loco.functions().len(), old.len());
+    for (function, old) in loco.functions().iter().zip(old) {
+        assert_eq!(function.name, old["name"]);
+        assert_eq!(function.number, old["nr"]);
+        assert_eq!(function.default_on, old["state"]);
+        assert_eq!(function.on, old["state"]);
+        let mode = if old["toggle_mode"] == 1 {
+            Mode::Push
+        } else {
+            Mode::Switch
+        };
+        assert_eq!(function.mode, mode);
+        let action = actions.iter().find(|a| a.id == function.action).unwrap();
+        let button = old["button"].as_i64().unwrap();
+        let name = if button < 0 {
+            old["name"].as_str().unwrap().to_string()
+        } else {
+            format!("Knopf {button}")
+        };
+        assert_eq!(action.name, name);
+    }
+}
+
+#[test]
+fn locos_share_the_action_of_a_button() {
+    let curve = json!([[0, 0], [100, 128]]);
+    let file = json!({"locos": [
+        {"name": "A", "speed_control_points": curve, "functions": [
+            {"name": "Licht", "nr": 0, "button": 6},
+            {"name": "Horn", "nr": 2, "button": -1, "toggle_mode": 1},
+        ]},
+        {"name": "B", "speed_control_points": curve, "functions": [
+            {"name": "Pfeife", "nr": 1, "button": 6, "toggle_mode": 2},
+            {"name": "Rauch", "nr": 29, "button": 7},
+        ]},
+    ], "server": {}});
+    let import = import_value(file).unwrap();
+    let names: Vec<_> = import.actions.iter().map(|a| a.name.as_str()).collect();
+    assert_eq!(names, ["Knopf 6", "Horn"]);
+    let functions = |i: usize| -> Vec<_> {
+        import.locos[i]
+            .functions()
+            .iter()
+            .map(|f| (f.action, f.mode))
+            .collect()
+    };
+    assert_eq!(functions(0), [(1, Mode::Switch), (2, Mode::Push)]);
+    assert_eq!(functions(1), [(1, Mode::Push)]);
+    assert_eq!(import.report, ["B: function F29 left out"]);
 }
 
 #[test]

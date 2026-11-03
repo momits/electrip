@@ -199,6 +199,28 @@ fn import_creates_a_configuration_named_like_the_file() {
     let station = host.session().station();
     assert_eq!(station.host, "192.168.0.111");
     assert_eq!((station.port, station.bus), (4304, 2));
+    let actions: Vec<_> = host
+        .session()
+        .actions()
+        .iter()
+        .map(|a| a.name.as_str())
+        .collect();
+    assert_eq!(
+        actions,
+        [
+            "Knopf 6",
+            "Knopf 7",
+            "Knopf 8",
+            "Rangiergang",
+            "ABV Aus",
+            "Knopf 3"
+        ]
+    );
+    host.apply(Command::AddAction {
+        name: "Horn".into(),
+    })
+    .unwrap();
+    assert_eq!(host.session().actions()[6].id, 7);
     let saved = config::read(&host.path("settings").unwrap()).unwrap();
     assert_eq!(saved, host.session().config());
     let exists = Err(CommandError::ConfigurationExists("settings".into()));

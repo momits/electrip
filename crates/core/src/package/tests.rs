@@ -49,6 +49,26 @@ fn the_packages_of_electrip_1_are_imported() {
 }
 
 #[test]
+fn the_functions_of_electrip_1_get_actions() {
+    let media = TempDir::new().unwrap();
+    let package = read(&corpus("VT 98"), media.path()).unwrap();
+    let names: Vec<_> = package.actions.iter().map(|a| a.name.as_str()).collect();
+    assert_eq!(names, ["Knopf 6", "Knopf 7", "ABV Aus"]);
+    let functions = package.loco.functions();
+    let ids: Vec<_> = functions.iter().map(|f| f.action).collect();
+    assert_eq!(ids, [1, 2, 3]);
+    assert_eq!(
+        (functions[0].name.as_str(), functions[0].number),
+        ("Licht", 0)
+    );
+    assert!(functions[0].default_on && functions[0].on);
+    assert_eq!(
+        (functions[1].name.as_str(), functions[1].number),
+        ("Rangiergang", 3)
+    );
+}
+
+#[test]
 fn an_exported_loco_is_imported_again() {
     let dir = TempDir::new().unwrap();
     let media = dir.path().join("media");
@@ -56,14 +76,14 @@ fn an_exported_loco_is_imported_again() {
     fs::write(&source, png()).unwrap();
     let mut loco = read(&corpus("V 60"), &media).unwrap().loco;
     loco.set_picture(Some(picture::store(&media, &source, None).unwrap()));
-    loco.functions_mut().push(Function {
+    *loco.functions_mut() = vec![Function {
         action: 2,
         number: 0,
         name: "Licht".into(),
         mode: Default::default(),
         default_on: true,
         on: true,
-    });
+    }];
     let actions = [1, 2].map(|id| Action {
         id,
         name: format!("Aktion {id}"),
