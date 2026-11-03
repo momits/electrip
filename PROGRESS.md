@@ -9,6 +9,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-03 – B-02: eingebaute Aktionen Fokus und Fahrgeräusch an/aus (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Andere Aufgaben der Phase 1 warten: B-21 auf Q-014, B-20 auf Sounds, B-03/B-05 auf Screenshot-Tests, N-02 auf den Z21-Treiber (alles Phase 2).
+- Neue Ziele im Mapping: `focus` und `toggle_sound`.
+  `focus` setzt das Feld `focus` des Geräts, solange der Knopf gedrückt ist (Electrip 1 hebt die Lok dann hervor und scrollt zu ihr; das macht die UI in Phase 2).
+  `toggle_sound` ist auch der Befehl `toggle_sound { loco }` und schaltet das Feld `sound` der Lok um (Start: aus wie in Electrip 1); abspielen kommt mit B-11 ff.
+- Alle eingebauten Aktionen lassen sich auf Knöpfe, Achsen (ab 0,5 Auslenkung gedrückt) und Hat-Richtungen legen; Totzone je Achse gab es schon.
+- Tests: `host/tests.rs` (Fokus beim Halten, Fahrgeräusch je Lok, Achse und Hat-Richtung als Knopf), `crates/input/tests/built_in_actions.rs` mit virtuellem Joystick (alle eingebauten Aktionen auf Knopf, Achse oder Hat).
+  SDL muss im Haupt-Thread laufen, daher ein Test je Datei.
+- `cargo xtask test`, `cargo xtask loc` (2644 Zeilen) und `cargo xtask parity` grün.
+- **B-02** `wired` und `verified`. Offen für Phase 2: Knopfnamen in der UI anzeigen (Kriterium 3), Fokus in der Steuerungsansicht (B-22), Fahrgeräusch nur bei Loks mit Motorgeräusch wie Electrip 1 (B-11/B-14).
+- Offene Punkte: Wird das Mapping umgestellt, während Fokus gedrückt ist, bleibt `focus` an, bis das Gerät neu angesteckt wird.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Hilfsfunktion `bind` in `host/tests.rs` auch für die beiden älteren Bind-Blöcke.
+- **Nächster Schritt:** Antwort auf Q-014 abwarten; sonst wartet Phase 1 nur noch auf Phase-2-Teile. Dann Halt mit Eintrag in `PROGRESS.md`, bis Mo Q-014 beantwortet oder das Tor zu Phase 2 freigibt.
+
 ## 2026-11-03 – B-03: Farbe je Eingabegerät (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
