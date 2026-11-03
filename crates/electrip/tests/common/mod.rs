@@ -2,17 +2,19 @@
 //! and talks to it. Other requirements cover their check `control-channel`
 //! with it: `mod common;` in a test file under `crates/electrip/tests/`.
 
-// Test code: unwrap is allowed (AGENTS.md); not every test uses every helper.
-#![allow(clippy::unwrap_used, dead_code)]
+// Test code: unwrap and panic are allowed (AGENTS.md); not every test uses
+// every helper.
+#![allow(clippy::unwrap_used, clippy::panic, dead_code)]
 
 pub mod srcpd;
 
+use electrip_core::station::{CommandStation, StationEvent};
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
-use std::net::TcpStream;
+use std::net::{TcpStream, UdpSocket};
 use std::path::Path;
 use std::process::{Child, ChildStdout, Command, Stdio};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
 /// The running app; it is stopped when dropped.
@@ -128,4 +130,24 @@ impl Client {
         self.reader.read_line(&mut line).unwrap();
         serde_json::from_str(&line).unwrap()
     }
+}
+
+/// Waits until `station` reports an event that `matches`.
+pub fn expect_event(station: &mut dyn CommandStation, matches: impl Fn(&StationEvent) -> bool) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while Instant::now() < deadline {
+        if station.events().iter().any(&matches) {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    panic!("ERROR the command station did not report the expected event");
+}
+
+/// Starts a Z21 simulator on a free port; it runs until the test ends.
+pub fn z21_simulator() -> u16 {
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let port = socket.local_addr().unwrap().port();
+    std::thread::spawn(move || electrip_sim_z21::serve(socket));
+    port
 }

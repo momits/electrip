@@ -8,7 +8,8 @@
 
 mod common;
 
-use common::srcpd::{connect_to_srcpd, expect_event, observer};
+use common::expect_event;
+use common::srcpd::{connect_to_srcpd, observer};
 use common::{App, Client};
 use electrip_core::station::{LocoState, StationEvent};
 use electrip_station_srcp::SrcpStation;
