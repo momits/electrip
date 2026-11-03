@@ -26,7 +26,8 @@ struct Shared {
 }
 
 /// Serves clients, each in a thread, and polls the host and the input
-/// devices on the calling thread; returns only on an error.
+/// devices on the calling thread; returns only when the host state is
+/// poisoned.
 pub fn serve(
     listener: TcpListener,
     host: Host,
@@ -41,12 +42,17 @@ pub fn serve(
     poll(&shared, input)
 }
 
-fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) -> io::Result<()> {
+/// A failed connection is reported and does not stop the listener.
+fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) {
     for stream in listener.incoming() {
-        let shared = Arc::clone(shared);
-        thread::spawn(move || handle_client(stream?, &shared));
+        match stream {
+            Ok(stream) => {
+                let shared = Arc::clone(shared);
+                thread::spawn(move || handle_client(stream, &shared));
+            }
+            Err(error) => eprintln!("ERROR control channel: {error}"),
+        }
     }
-    Ok(())
 }
 
 /// Greets the client with the version and the state, then executes its
