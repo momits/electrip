@@ -101,6 +101,10 @@ pub enum Command {
     Reverse {
         loco: u32,
     },
+    /// Switches the driving sound of the loco on or off (B-02).
+    ToggleSound {
+        loco: u32,
+    },
     /// Adds a logical action (N-07).
     AddAction {
         name: String,
@@ -329,6 +333,8 @@ pub struct LocoEntry {
     pub loco: Loco,
     #[serde(flatten)]
     pub motion: Motion,
+    /// Whether the driving sound is on; off at the start like Electrip 1.
+    pub sound: bool,
     /// The deflection of the drive axis, 0 within the dead zone.
     #[serde(skip)]
     axis: f64,
@@ -495,6 +501,10 @@ impl Session {
                 .move_point(point, speed, step),
             Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
+            Command::ToggleSound { loco } => {
+                let entry = self.entry(loco)?;
+                entry.sound = !entry.sound;
+            }
             Command::AddAction { name } => self.add_action(name),
             Command::RenameAction { action, name } => self.action(action)?.name = name,
             Command::RemoveAction { action } => self.remove_action(action)?,
@@ -573,6 +583,7 @@ impl Session {
             id: self.last_id,
             loco,
             motion: Motion::default(),
+            sound: false,
             axis: 0.0,
         });
     }

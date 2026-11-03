@@ -344,14 +344,7 @@ fn the_dead_zone_belongs_to_the_binding() {
     input(&mut host, "lefty", -0.1).unwrap();
     host.poll(1.0);
     assert!(speed(&host) > 0.0);
-    let target = Target::Drive { dead_zone: 0.2 };
-    let (kind, control) = ("pad".into(), "lefty".into());
-    host.apply(Command::Bind {
-        kind,
-        control,
-        target,
-    })
-    .unwrap();
+    bind(&mut host, "lefty", Target::Drive { dead_zone: 0.2 });
     let before = speed(&host);
     input(&mut host, "lefty", -0.1).unwrap();
     host.poll(1.0);
@@ -368,6 +361,57 @@ fn buttons_trigger_built_in_actions_once_per_press() {
     press(&mut host, "b");
     assert!(!host.session().locos()[0].motion.forward());
     assert_eq!(*sent.lock().unwrap(), [Call::Power(false)]);
+}
+
+fn bind(host: &mut Host, control: &str, target: Target) {
+    let (kind, control) = ("pad".into(), control.into());
+    host.apply(Command::Bind {
+        kind,
+        control,
+        target,
+    })
+    .unwrap();
+}
+
+#[test]
+fn focus_holds_while_the_button_is_down() {
+    let (mut host, _, _library) = host_with_pad(1);
+    bind(&mut host, "x", Target::Focus);
+    input(&mut host, "x", 1.0).unwrap();
+    assert!(host.session().devices()[0].focus);
+    input(&mut host, "x", 0.0).unwrap();
+    assert!(!host.session().devices()[0].focus);
+}
+
+#[test]
+fn toggle_sound_switches_the_sound_of_the_device_loco() {
+    let (mut host, _, _library) = host_with_pad(2);
+    bind(&mut host, "y", Target::ToggleSound);
+    let sound = |host: &Host| {
+        host.session()
+            .locos()
+            .iter()
+            .map(|e| e.sound)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(sound(&host), [false, false]);
+    press(&mut host, "y");
+    assert_eq!(sound(&host), [true, false]);
+    press(&mut host, "y");
+    assert_eq!(sound(&host), [false, false]);
+}
+
+#[test]
+fn axes_and_hat_directions_trigger_built_in_actions_like_buttons() {
+    let (mut host, _, _library) = host_with_pad(1);
+    bind(&mut host, "righttrigger", Target::ToggleSound);
+    bind(&mut host, "dpup", Target::Reverse);
+    input(&mut host, "righttrigger", 0.4).unwrap();
+    assert!(!host.session().locos()[0].sound);
+    input(&mut host, "righttrigger", 1.0).unwrap();
+    assert!(host.session().locos()[0].sound);
+    press(&mut host, "dpup");
+    assert!(!host.session().locos()[0].motion.forward());
 }
 
 #[test]
