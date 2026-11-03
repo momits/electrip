@@ -23,14 +23,26 @@ fn protocol_name(protocol: Protocol) -> &'static str {
     }
 }
 
-/// Every value Electrip 2 knows yet arrives unchanged.
+/// Every value Electrip 2 knows yet arrives unchanged, except a function
+/// on the button of a built-in action (Q-015).
 #[test]
 fn the_corpus_is_imported_without_loss() {
-    for name in ["empty", "packages", "settings"] {
+    let reports: [(&str, &[&str]); 3] = [
+        ("empty", &[]),
+        ("packages", &[]),
+        (
+            "settings",
+            &[
+                "button 8: functions left out, it is Reverse",
+                "button 6: functions left out, it is ToggleSound",
+            ],
+        ),
+    ];
+    for (name, report) in reports {
         let path = corpus(name);
         let file: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         let import = read(&path).unwrap();
-        assert!(import.report.is_empty(), "{name}");
+        assert_eq!(import.report, report, "{name}");
         let server = &file["server"];
         assert_eq!(import.station.host, server["host"], "{name}");
         assert_eq!(import.station.port, server["port"], "{name}");
@@ -57,7 +69,48 @@ fn the_corpus_is_imported_without_loss() {
             assert_eq!(loco.speed_curve().points(), points);
             assert_functions(loco, &import.actions, &old["functions"]);
         }
+        assert_mapping(&import, &file["joystick"]);
     }
+}
+
+/// The joystick settings and each button of a function are in the mapping
+/// of the device type "Electrip 1".
+fn assert_mapping(import: &Import, joystick: &Value) {
+    let mapping = &import.mapping;
+    assert_eq!(mapping.kind, KIND);
+    let button = |key: &str| format!("button{}", joystick[key]);
+    assert_eq!(
+        mapping.target(&format!("axis{}", joystick["accel_axis"])),
+        Some(&Target::Drive {
+            dead_zone: joystick["axis_threshold"].as_f64().unwrap()
+        })
+    );
+    let built_in = [
+        ("emergency_button", Target::TogglePower),
+        ("reverse_button", Target::Reverse),
+        ("focus_button", Target::Focus),
+        ("sound_button", Target::ToggleSound),
+    ];
+    for (key, target) in &built_in {
+        assert_eq!(mapping.target(&button(key)), Some(target));
+    }
+    let mut buttons = Vec::new();
+    for action in &import.actions {
+        if let Some(number) = action.name.strip_prefix("Knopf ") {
+            let control = format!("button{number}");
+            if built_in.iter().any(|(key, _)| button(key) == control) {
+                continue;
+            }
+            let target = Target::Action { action: action.id };
+            assert_eq!(mapping.target(&control), Some(&target));
+            buttons.push(control);
+        }
+    }
+    let built_in = built_in.iter().map(|(key, _)| button(key));
+    buttons.extend(built_in);
+    buttons.sort();
+    buttons.dedup();
+    assert_eq!(mapping.bindings.len(), buttons.len() + 1);
 }
 
 /// Each function keeps name, number, state and mode, and its action names
@@ -116,6 +169,35 @@ fn locos_share_the_action_of_a_button() {
 }
 
 #[test]
+fn built_in_actions_take_the_button_of_a_function() {
+    let file = json!({"locos": [{"speed_control_points": [[0, 0], [100, 128]], "functions": [
+        {"name": "Licht", "nr": 0, "button": 1},
+        {"name": "Horn", "nr": 1, "button": 2},
+    ]}], "server": {}, "joystick": {"sound_button": -1, "accel_axis": 0, "axis_threshold": 0.2}});
+    let import = import_value(file).unwrap();
+    let bindings: Vec<_> = import
+        .mapping
+        .bindings
+        .iter()
+        .map(|b| (b.control.as_str(), b.target.clone()))
+        .collect();
+    assert_eq!(
+        bindings,
+        [
+            ("button2", Target::Action { action: 2 }),
+            ("button0", Target::TogglePower),
+            ("button1", Target::Reverse),
+            ("button3", Target::Focus),
+            ("axis0", Target::Drive { dead_zone: 0.2 }),
+        ]
+    );
+    assert_eq!(
+        import.report,
+        ["button 1: functions left out, it is Reverse"]
+    );
+}
+
+#[test]
 fn missing_values_get_the_defaults_of_electrip_1() {
     let file = json!({"locos": [{"speed_control_points": [[0, 0], [100, 128]]}], "server": {}});
     let import = import_value(file).unwrap();
@@ -130,6 +212,13 @@ fn missing_values_get_the_defaults_of_electrip_1() {
     assert_eq!(loco.brake_duration(), 8.5);
     assert_eq!(loco.volume(), 0.0);
     assert_eq!(import.station, Station::default());
+    let mapping = &import.mapping;
+    assert_eq!(
+        mapping.target("axis2"),
+        Some(&Target::Drive { dead_zone: 0.06 })
+    );
+    assert_eq!(mapping.target("button0"), Some(&Target::TogglePower));
+    assert_eq!(mapping.target("button4"), Some(&Target::ToggleSound));
 }
 
 #[test]

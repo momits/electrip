@@ -228,6 +228,26 @@ fn import_creates_a_configuration_named_like_the_file() {
 }
 
 #[test]
+fn new_device_types_get_a_copy_of_the_imported_mapping() {
+    let (mut host, _, _, _library) = host();
+    let add = |host: &mut Host, device, kind: &str| {
+        let kind = kind.into();
+        host.apply(Command::AddDevice { device, kind }).unwrap();
+    };
+    add(&mut host, 1, "Gamepad");
+    host.apply(Command::ImportElectrip1 {
+        path: corpus("packages"),
+    })
+    .unwrap();
+    add(&mut host, 2, "Joystick");
+    let mappings = host.session().mappings();
+    let kinds: Vec<_> = mappings.iter().map(|m| m.kind.as_str()).collect();
+    assert_eq!(kinds, [electrip1::KIND, "Gamepad", "Joystick"]);
+    assert_eq!(mappings[1].bindings, mappings[0].bindings);
+    assert_eq!(mappings[2].bindings, mappings[0].bindings);
+}
+
+#[test]
 fn a_failed_import_changes_nothing() {
     let (mut host, _, _, _library) = host();
     host.apply(Command::AddLoco).unwrap();
@@ -339,8 +359,9 @@ fn imported_pictures_are_cropped_in_the_middle() {
         (picture::WIDTH, picture::HEIGHT)
     );
     let report = serde_json::to_value(host.session()).unwrap()["import_report"].clone();
-    assert_eq!(report.as_array().unwrap().len(), 1);
-    let line = report[0].as_str().unwrap();
+    // The first two lines are the buttons of Q-015.
+    assert_eq!(report.as_array().unwrap().len(), 3);
+    let line = report[2].as_str().unwrap();
     assert!(
         line.starts_with("BR 216: cannot read the picture"),
         "{line}"

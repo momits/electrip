@@ -415,7 +415,8 @@ impl Session {
     }
 
     /// Replaces the configuration; the locos stand and get new ids, the
-    /// devices keep their locos if they can.
+    /// devices keep their locos if they can and get a mapping if their type
+    /// has none.
     pub(crate) fn load(&mut self, config: Config, report: Vec<String>) {
         self.locos.clear();
         for loco in config.locos {
@@ -424,6 +425,10 @@ impl Session {
         self.last_action_id = config.actions.iter().map(|a| a.id).max().unwrap_or(0);
         self.actions = config.actions;
         self.mappings = config.mappings;
+        let kinds: Vec<_> = self.devices.iter().map(|d| d.kind.clone()).collect();
+        for kind in kinds {
+            self.mapping(kind);
+        }
         self.station = config.station;
         self.import_report = report;
         self.assign_locos();

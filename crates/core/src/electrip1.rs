@@ -7,10 +7,13 @@
 //!
 //! Each button number that a function uses becomes a logical action
 //! "Knopf <n>" (ADR 0009); a function without a button gets an action with
-//! its own name.
+//! its own name. The buttons and the drive axis of `joystick` become the
+//! mapping of the device type "Electrip 1" (Q-014); a button that is both a
+//! built-in action and a function stays the built-in action.
 
 use crate::decoder::{Decoder, Protocol};
 use crate::function::{Action, Function, Mode};
+use crate::input::{Mapping, Target};
 use crate::loco::{DEFAULT_NAME, Loco, LocoError};
 use crate::session::Station;
 use crate::speed_curve::{Point, SpeedCurve};
@@ -20,6 +23,9 @@ use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// The device type of the mapping from a file of Electrip 1.
+pub const KIND: &str = "Electrip 1";
+
 /// What a file of Electrip 1 holds, as far as Electrip 2 knows it yet.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Import {
@@ -27,6 +33,7 @@ pub struct Import {
     /// The actions the functions of the locos use.
     pub actions: Vec<Action>,
     pub station: Station,
+    pub mapping: Mapping,
     /// The image file of each loco, if it has one (B-05).
     pub pictures: Vec<Option<PathBuf>>,
     /// Changes made to fit the file to Electrip 2, one line each.
@@ -60,6 +67,33 @@ impl fmt::Display for ImportError {
 struct File {
     locos: Vec<OldLoco>,
     server: Station,
+    #[serde(default)]
+    joystick: Joystick,
+}
+
+/// Button and axis numbers of pygame; -1 is no button.
+#[derive(Deserialize)]
+#[serde(default)]
+struct Joystick {
+    emergency_button: i32,
+    reverse_button: i32,
+    accel_axis: i32,
+    axis_threshold: f64,
+    focus_button: i32,
+    sound_button: i32,
+}
+
+impl Default for Joystick {
+    fn default() -> Self {
+        Joystick {
+            emergency_button: 0,
+            reverse_button: 1,
+            accel_axis: 2,
+            axis_threshold: 0.06,
+            focus_button: 3,
+            sound_button: 4,
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -120,15 +154,24 @@ fn import(json: &str) -> Result<Import, ImportError> {
     let mut report = Vec::new();
     let mut actions = Vec::new();
     let pictures = file.locos.iter().map(|old| old.img_path.clone()).collect();
+    let buttons: Vec<i32> = file
+        .locos
+        .iter()
+        .flat_map(|old| &old.functions)
+        .filter(|f| f.nr <= MAX_FUNCTION && f.button >= 0)
+        .map(|f| f.button)
+        .collect();
     let locos = file
         .locos
         .into_iter()
         .map(|old| convert(old, &mut actions, &mut report))
-        .collect::<Result<_, _>>()?;
+        .collect::<Result<Vec<_>, _>>()?;
+    let mapping = mapping(&file.joystick, &buttons, &actions, &mut report);
     Ok(Import {
         locos,
         actions,
         station: file.server,
+        mapping,
         pictures,
         report,
     })
@@ -201,7 +244,7 @@ fn function(
     }
     let name = match old.button {
         ..0 => old.name.clone(),
-        button => format!("Knopf {button}"),
+        button => button_action(button),
     };
     Some(Function {
         action: action_id(actions, name),
@@ -215,6 +258,54 @@ fn function(
         default_on: old.state,
         on: old.state,
     })
+}
+
+/// Binds each button of a function to its action, then the built-in
+/// actions; a function whose button they take is named in the report.
+fn mapping(
+    joystick: &Joystick,
+    buttons: &[i32],
+    actions: &[Action],
+    report: &mut Vec<String>,
+) -> Mapping {
+    let mut mapping = Mapping {
+        kind: KIND.into(),
+        bindings: Vec::new(),
+    };
+    for button in buttons {
+        let name = button_action(*button);
+        if let Some(action) = actions.iter().find(|a| a.name == name) {
+            let target = Target::Action { action: action.id };
+            mapping.bind(format!("button{button}"), target);
+        }
+    }
+    let built_in = [
+        (joystick.emergency_button, Target::TogglePower),
+        (joystick.reverse_button, Target::Reverse),
+        (joystick.focus_button, Target::Focus),
+        (joystick.sound_button, Target::ToggleSound),
+    ];
+    for (button, target) in built_in.into_iter().filter(|(b, _)| *b >= 0) {
+        let control = format!("button{button}");
+        if mapping.target(&control).is_some() {
+            report.push(format!(
+                "button {button}: functions left out, it is {target:?}"
+            ));
+        }
+        mapping.bind(control, target);
+    }
+    if joystick.accel_axis >= 0 {
+        let target = Target::Drive {
+            dead_zone: joystick.axis_threshold,
+        };
+        mapping.bind(format!("axis{}", joystick.accel_axis), target);
+    }
+    mapping
+}
+
+/// The name of the action of a button.
+fn button_action(button: i32) -> String {
+    format!("Knopf {button}")
 }
 
 /// The id of the action `name`; adds it if missing.

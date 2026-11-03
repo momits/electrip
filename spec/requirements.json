@@ -552,7 +552,7 @@
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": false,
+        "wired": true,
         "verified": false,
         "accepted": false
       }

@@ -87,3 +87,11 @@ Der Import legt seit dieser Sitzung schon die Aktionen an („Knopf 6“; eine F
 Ein neuer Gerätetyp ohne eigenes Mapping bekommt eine Kopie dieses Mappings statt des Standard-Mappings; so funktioniert es sofort für Joysticks und lässt sich für Gamepads in der UI umbelegen.
 `use_auto_focus` und `show_function_nr` sind Einstellungen der Oberfläche und kommen mit B-22 in Phase 2.
 **Antwort:** Ja, wie vorgeschlagen. (Mo, 2026-11-03)
+
+## Q-015 – 2026-11-03 – B-21, ADR 0009
+**Frage:** Electrip 1 erlaubt, dass ein Knopf zugleich eine eingebaute Aktion (`emergency_button`, `reverse_button`, `focus_button`, `sound_button`) und eine Lokfunktion ist; ein Druck löst dann beides aus.
+Ein Mapping in Electrip 2 hat je Bedienelement nur ein Ziel.
+Im Korpus kommt das vor: In `settings.json` ist Knopf 8 der Richtungswender und die Funktion „Telex (hinten)“ der V 60, Knopf 6 Fahrgeräusch an/aus und eine Funktion.
+Damit ist der Import nicht ganz verlustfrei (B-21).
+**Stand jetzt:** Die eingebaute Aktion behält den Knopf; die Aktion „Knopf <n>“ bleibt an der Funktion, hat aber keinen Knopf. Der `import_report` nennt das je Knopf („button 8: functions left out, it is Reverse“).
+**Vorschlag:** So lassen; der Nutzer sieht es im Bericht und kann die Aktion in der UI auf einen freien Knopf legen. Alternative: Ein Bedienelement darf mehrere Ziele haben (größere Änderung an Mapping und Befehlen `bind`/`unbind`).
