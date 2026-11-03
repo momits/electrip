@@ -4,11 +4,17 @@
 //!
 //! Electrip 1 allowed DCC short addresses up to 10239. Such locos become DCC
 //! long and are named in the report (B-06).
+//!
+//! Each button number that a function uses becomes a logical action
+//! "Knopf <n>" (ADR 0009); a function without a button gets an action with
+//! its own name.
 
 use crate::decoder::{Decoder, Protocol};
+use crate::function::{Action, Function, Mode};
 use crate::loco::{DEFAULT_NAME, Loco, LocoError};
 use crate::session::Station;
 use crate::speed_curve::{Point, SpeedCurve};
+use crate::station::MAX_FUNCTION;
 use serde::Deserialize;
 use std::fmt;
 use std::fs;
@@ -18,6 +24,8 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Import {
     pub locos: Vec<Loco>,
+    /// The actions the functions of the locos use.
+    pub actions: Vec<Action>,
     pub station: Station,
     /// The image file of each loco, if it has one (B-05).
     pub pictures: Vec<Option<PathBuf>>,
@@ -67,6 +75,18 @@ struct OldLoco {
     sound_volume: f64,
     speed_control_points: Vec<Point>,
     img_path: Option<PathBuf>,
+    functions: Vec<OldFunction>,
+}
+
+/// A decoder function; `button` is -1 without a button.
+#[derive(Default, Deserialize)]
+#[serde(default)]
+struct OldFunction {
+    name: String,
+    nr: u8,
+    state: bool,
+    button: i32,
+    toggle_mode: u8,
 }
 
 /// Defaults of Electrip 1 (`legacy/src/electrip/config/json_model.py`).
@@ -83,6 +103,7 @@ impl Default for OldLoco {
             sound_volume: 0.0,
             speed_control_points: Vec::new(),
             img_path: None,
+            functions: Vec::new(),
         }
     }
 }
@@ -97,14 +118,16 @@ pub fn read(path: &Path) -> Result<Import, ImportError> {
 fn import(json: &str) -> Result<Import, ImportError> {
     let file: File = serde_json::from_str(json).map_err(|e| ImportError::Invalid(e.to_string()))?;
     let mut report = Vec::new();
+    let mut actions = Vec::new();
     let pictures = file.locos.iter().map(|old| old.img_path.clone()).collect();
     let locos = file
         .locos
         .into_iter()
-        .map(|old| convert(old, &mut report))
+        .map(|old| convert(old, &mut actions, &mut report))
         .collect::<Result<_, _>>()?;
     Ok(Import {
         locos,
+        actions,
         station: file.server,
         pictures,
         report,
@@ -112,15 +135,25 @@ fn import(json: &str) -> Result<Import, ImportError> {
 }
 
 /// Reads the loco file of a loco package of Electrip 1 (B-20); returns the
-/// loco and the path of its image file in the package.
-pub fn loco(json: &[u8], report: &mut Vec<String>) -> Result<(Loco, Option<PathBuf>), ImportError> {
+/// loco, the actions its functions use and the path of its image file in
+/// the package.
+pub fn loco(
+    json: &[u8],
+    report: &mut Vec<String>,
+) -> Result<(Loco, Vec<Action>, Option<PathBuf>), ImportError> {
     let old: OldLoco =
         serde_json::from_slice(json).map_err(|e| ImportError::Invalid(e.to_string()))?;
     let picture = old.img_path.clone();
-    Ok((convert(old, report)?, picture))
+    let mut actions = Vec::new();
+    let loco = convert(old, &mut actions, report)?;
+    Ok((loco, actions, picture))
 }
 
-fn convert(old: OldLoco, report: &mut Vec<String>) -> Result<Loco, ImportError> {
+fn convert(
+    old: OldLoco,
+    actions: &mut Vec<Action>,
+    report: &mut Vec<String>,
+) -> Result<Loco, ImportError> {
     let mut protocol = protocol(&old)?;
     if protocol == Protocol::DccShort && old.address > protocol.max_address() {
         protocol = Protocol::DccLong;
@@ -145,8 +178,53 @@ fn convert(old: OldLoco, report: &mut Vec<String>) -> Result<Loco, ImportError> 
         SpeedCurve::new(&old.speed_control_points).ok_or(ImportError::InvalidSpeedCurve {
             loco: old.name.clone(),
         })?;
+    *loco.functions_mut() = old
+        .functions
+        .into_iter()
+        .filter_map(|f| function(f, &old.name, actions, report))
+        .collect();
     loco.set_name(old.name);
     Ok(loco)
+}
+
+/// Functions above F28 are left out and named in the report. Push and
+/// "push limited" are push buttons; the other modes switch.
+fn function(
+    old: OldFunction,
+    loco: &str,
+    actions: &mut Vec<Action>,
+    report: &mut Vec<String>,
+) -> Option<Function> {
+    if old.nr > MAX_FUNCTION {
+        report.push(format!("{loco}: function F{} left out", old.nr));
+        return None;
+    }
+    let name = match old.button {
+        ..0 => old.name.clone(),
+        button => format!("Knopf {button}"),
+    };
+    Some(Function {
+        action: action_id(actions, name),
+        number: old.nr,
+        name: old.name,
+        mode: if matches!(old.toggle_mode, 1 | 2) {
+            Mode::Push
+        } else {
+            Mode::Switch
+        },
+        default_on: old.state,
+        on: old.state,
+    })
+}
+
+/// The id of the action `name`; adds it if missing.
+fn action_id(actions: &mut Vec<Action>, name: String) -> u32 {
+    if let Some(action) = actions.iter().find(|a| a.name == name) {
+        return action.id;
+    }
+    let id = actions.len() as u32 + 1;
+    actions.push(Action { id, name });
+    id
 }
 
 fn protocol(old: &OldLoco) -> Result<Protocol, ImportError> {

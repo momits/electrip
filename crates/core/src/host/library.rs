@@ -83,6 +83,7 @@ impl Host {
         }
         let config = Config {
             locos: import.locos,
+            actions: import.actions,
             station: import.station,
             ..Config::default()
         };

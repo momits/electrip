@@ -77,3 +77,13 @@ Electrip 2 prüft die Bedingungen mit den aktuellen Werten bei jeder Änderung v
 Der Golden-Test für B-17 vergleicht dann nur Szenarien, in denen beide Verhalten übereinstimmen.
 Der Harness bleibt unverändert und zeichnet weiter das echte Alt-Verhalten auf.
 **Antwort:** Ja, wie vorgeschlagen.
+
+## Q-014 – 2026-11-03 – B-21, B-02, ADR 0009
+**Frage:** Für welchen Gerätetyp legt der Import aus Electrip 1 das Mapping an (ADR 0009: „ein Mapping für den Gerätetyp“)?
+Electrip 1 speichert nur Knopf- und Achsnummern von pygame (`button` je Funktion, `joystick` mit `emergency_button`, `reverse_button`, `accel_axis`, `axis_threshold`, `focus_button`, `sound_button`), aber keinen Gerätetyp.
+In Electrip 2 heißen die Bedienelemente nur bei Geräten ohne SDL-Layout `button6`, `axis1`; bei bekannten Gamepads heißen sie `a`, `lefty` usw., und Mappings gelten je Gerätetyp (SDL-Name).
+Der Import legt seit dieser Sitzung schon die Aktionen an („Knopf 6“; eine Funktion ohne Knopf bekommt eine Aktion mit ihrem Namen), aber noch kein Mapping.
+**Vorschlag:** Der Import legt ein Mapping mit dem Gerätetyp „Electrip 1“ an (`button<n>` → Aktion „Knopf <n>“ bzw. eingebaute Aktion, `axis<n>` → Fahren mit `axis_threshold` als Totzone).
+Ein neuer Gerätetyp ohne eigenes Mapping bekommt eine Kopie dieses Mappings statt des Standard-Mappings; so funktioniert es sofort für Joysticks und lässt sich für Gamepads in der UI umbelegen.
+`use_auto_focus` und `show_function_nr` sind Einstellungen der Oberfläche und kommen mit B-22 in Phase 2.
+**Antwort:**

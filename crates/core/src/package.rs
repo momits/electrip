@@ -71,9 +71,9 @@ pub fn read(path: &Path, media: &Path) -> Result<Package, ImportError> {
             .find(|n| n.ends_with(".loco") && !n.contains('/'))
             .ok_or(ImportError::Invalid("no loco file".into()))?
             .into_owned();
-        let (loco, picture) = electrip1::loco(&entry(&mut zip, &name)?, &mut report)?;
+        let (loco, actions, picture) = electrip1::loco(&entry(&mut zip, &name)?, &mut report)?;
         let picture = picture.map(|p| p.to_string_lossy().into_owned());
-        (loco, Vec::new(), picture)
+        (loco, actions, picture)
     };
     let stored = picture.and_then(|name| match store_picture(&mut zip, &name, media) {
         Ok(stored) => Some(stored),
