@@ -8,6 +8,12 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-03 – Loop hält: Q-014 und Tor zu Phase 2 (Claude)
+
+- CI auf `main` grün.
+- Keine Aufgabe ohne Mo: B-21 wartet auf Q-014, B-20 auf Sounds (Phase 2), B-03/B-05 auf Screenshot-Tests der UI (Phase 2), N-02 auf den Z21-Treiber (Phase 2). Die Aufräumkandidaten sind abgearbeitet.
+- **Wartet auf Mo:** Q-014 in `spec/questions.md` beantworten oder das Tor zu Phase 2 freigeben, danach `STOP` löschen.
+
 ## 2026-11-03 – Aufräumen Phase 1 (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
