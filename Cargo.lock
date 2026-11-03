@@ -167,7 +167,9 @@ dependencies = [
  "electrip-control",
  "electrip-core",
  "electrip-input",
+ "electrip-sim-z21",
  "electrip-station-srcp",
+ "electrip-station-z21",
  "image",
  "serde_json",
  "tempfile",
@@ -210,6 +212,13 @@ version = "0.0.0"
 
 [[package]]
 name = "electrip-station-srcp"
+version = "0.1.0"
+dependencies = [
+ "electrip-core",
+]
+
+[[package]]
+name = "electrip-station-z21"
 version = "0.1.0"
 dependencies = [
  "electrip-core",
