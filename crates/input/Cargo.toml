@@ -1,0 +1,17 @@
+[package]
+name = "electrip-input"
+description = "Gamepads and joysticks through SDL3 for Electrip 2"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+electrip-core = { path = "../core" }
+sdl3-sys = { version = "0.7", features = ["build-from-source", "link-static", "sdl-unix-console-build", "no-sdl-audio", "no-sdl-video", "no-sdl-render", "no-sdl-gpu", "no-sdl-camera"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = "1"
+tempfile = "3"

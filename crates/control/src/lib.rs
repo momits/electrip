@@ -25,18 +25,26 @@ struct Shared {
     clients: Vec<TcpStream>,
 }
 
-/// Serves clients until the listener fails; each client gets a thread.
-pub fn serve(listener: TcpListener, host: Host) -> io::Result<()> {
+/// Serves clients, each in a thread, and polls the host and the input
+/// devices on the calling thread; returns only on an error.
+pub fn serve(
+    listener: TcpListener,
+    host: Host,
+    input: impl FnMut() -> Vec<Command>,
+) -> io::Result<()> {
     let shared = Arc::new(Mutex::new(Shared {
         host,
         clients: Vec::new(),
     }));
-    let poller = Arc::clone(&shared);
-    thread::spawn(move || poll(&poller));
+    let acceptor = Arc::clone(&shared);
+    thread::spawn(move || accept(listener, &acceptor));
+    poll(&shared, input)
+}
+
+fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) -> io::Result<()> {
     for stream in listener.incoming() {
-        let stream = stream?;
-        let shared = Arc::clone(&shared);
-        thread::spawn(move || handle_client(stream, &shared));
+        let shared = Arc::clone(shared);
+        thread::spawn(move || handle_client(stream?, &shared));
     }
     Ok(())
 }
@@ -63,16 +71,23 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     Ok(())
 }
 
-/// Lets the host handle station events and drive the locos, and reports
-/// changes to all clients.
-fn poll(shared: &Mutex<Shared>) -> io::Result<()> {
+/// Executes the commands of the input devices, lets the host handle
+/// station events and drive the locos, and reports changes to all clients.
+/// A failed input command changes nothing, like a control without a
+/// target.
+fn poll(shared: &Mutex<Shared>, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
     let mut last = Instant::now();
     loop {
         thread::sleep(POLL_INTERVAL);
+        let commands = input();
         let mut shared = lock(shared)?;
+        let mut changed = false;
+        for command in commands {
+            changed |= shared.host.apply(command).is_ok();
+        }
         let seconds = last.elapsed().as_secs_f64();
         last = Instant::now();
-        if shared.host.poll(seconds) {
+        if shared.host.poll(seconds) || changed {
             shared.broadcast();
         }
     }

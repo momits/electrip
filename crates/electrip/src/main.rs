@@ -3,6 +3,7 @@
 
 use electrip_core::host::{Driver, Host};
 use electrip_core::session::{Command, Station};
+use electrip_input::Gamepads;
 use electrip_station_srcp::SrcpStation;
 use std::env;
 use std::net::{Ipv4Addr, TcpListener};
@@ -53,7 +54,12 @@ fn run() -> Result<(), String> {
         "Electrip {} control channel on {address}",
         env!("CARGO_PKG_VERSION")
     );
-    electrip_control::serve(listener, host).map_err(|e| e.to_string())
+    // Without SDL the app still runs with the control channel.
+    let mut gamepads = Gamepads::open()
+        .inspect_err(|e| eprintln!("ERROR no gamepads: {e}"))
+        .ok();
+    let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
+    electrip_control::serve(listener, host, input).map_err(|e| e.to_string())
 }
 
 /// Reads the options; `--control-port 0` picks a free port.
