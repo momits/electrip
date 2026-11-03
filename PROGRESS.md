@@ -8,6 +8,14 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-03 – Q-014 beantwortet, Z21-Treiber in Phase 1 (Mo + Claude)
+
+- Mo hat Q-014 wie vorgeschlagen beantwortet: Der Import aus Electrip 1 legt ein Mapping mit dem Gerätetyp „Electrip 1“ an.
+  Ein neuer Gerätetyp ohne eigenes Mapping bekommt eine Kopie davon.
+- Mo hat den Z21-Treiber in Phase 1 vorgezogen (`spec/konzept.md`, Notiz zu N-02).
+  Der Z21-Simulator steht seit Phase 0; der Treiber entsteht in einer eigenen Sitzung nur aus der Roco-Spezifikation.
+- **Nächster Schritt im Loop:** B-21 mit dem Mapping aus Q-014, dann der Z21-Treiber für N-02.
+
 ## 2026-11-03 – Loop hält: Q-014 und Tor zu Phase 2 (Claude)
 
 - CI auf `main` grün.
