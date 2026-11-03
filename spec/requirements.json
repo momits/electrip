@@ -66,8 +66,8 @@
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       },
       "notes": "Alt-Felder: emergency_button, reverse_button, accel_axis, axis_threshold, focus_button, sound_button, use_auto_focus, show_function_nr."
