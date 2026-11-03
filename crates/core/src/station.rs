@@ -2,10 +2,22 @@
 //! its protocol; the session host holds the loco state and sends it whole.
 
 use crate::decoder::Decoder;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Highest loco function a driver must switch (F0–F28).
 pub const MAX_FUNCTION: u8 = 28;
+
+/// Which driver talks to the command station.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StationKind {
+    /// An SRCP 0.8 server such as srcpd.
+    #[default]
+    Srcp,
+    /// A Roco Z21; experimental in Electrip 2.0.
+    Z21,
+}
 
 /// What a loco does: direction, speed step (0 stops) and functions.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

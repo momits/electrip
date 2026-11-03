@@ -49,7 +49,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   "actions": [{"id": 1, "name": "Licht"}],
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
   "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "color": 1}],
-  "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
+  "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "import_report": [],
   "configuration": "Electrip",
   "configurations": ["Electrip"]
@@ -73,7 +73,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   `color` ist die Farbe des Geräts (1 bis 12, wie die zwölf Gamepad-Symbole von Electrip 1); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
-- `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
+- `station`: Zentrale (`kind`: `srcp` oder `z21`; Vorgabe wie Electrip 1: SRCP-Server `localhost`, Port 4303, Bus 1) und ob die App mit ihr verbunden ist (B-01, N-02).
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
 - `power_on_start`: ob `connect` den Gleisstrom einschaltet (Vorgabe an, B-23); `track_power`: Gleisstrom, wie ihn die Zentrale zuletzt gemeldet hat, ohne Verbindung `false`.
   Schaltet eine andere Instanz an derselben Zentrale den Gleisstrom, folgt `track_power` (B-23).
@@ -116,7 +116,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `bind` | `kind`, `control`, `target` (siehe `mappings`); ersetzt die bisherige Belegung des Bedienelements | N-01, B-02 |
 | `unbind` | `kind`, `control` | N-01, B-02 |
 | `input` | `device`, `control`, `value` (Knöpfe und Hat-Richtungen `1` gedrückt, `0` losgelassen; Achsen -1 bis 1, nach oben negativ wie in SDL); wirkt über das Mapping auf die Lok des Geräts, ein unbelegtes Bedienelement tut nichts | N-01, B-02 |
-| `set_server` | `host`, `port`, `bus` (nur ohne Verbindung) | B-01 |
+| `set_server` | `kind` (`srcp` oder `z21`, Vorgabe `srcp`; der Z21-Treiber ist experimentell), `host`, `port` (srcpd 4303, Z21 21105), `bus` (nur SRCP; nur ohne Verbindung) | B-01, N-02 |
 | `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
 | `disconnect` | – | B-01 |
 | `set_power_on_start` | `on` | B-23 |

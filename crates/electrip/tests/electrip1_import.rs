@@ -32,7 +32,7 @@ fn a_file_of_electrip_1_is_imported() {
     );
     assert_eq!(
         state["station"],
-        json!({"host": "192.168.0.111", "port": 4304, "bus": 2, "power_on_start": false, "connected": false, "track_power": false})
+        json!({"kind": "srcp", "host": "192.168.0.111", "port": 4304, "bus": 2, "power_on_start": false, "connected": false, "track_power": false})
     );
     assert_eq!(state["mappings"][0]["kind"], "Electrip 1");
     // Two buttons are functions and built-in actions (Q-015). The pictures

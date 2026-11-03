@@ -10,7 +10,7 @@ use crate::function::{Action, Function};
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
-use crate::station::{LocoState, MAX_FUNCTION, StationError};
+use crate::station::{LocoState, MAX_FUNCTION, StationError, StationKind};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io;
@@ -139,8 +139,10 @@ pub enum Command {
         action: u32,
         pressed: bool,
     },
-    /// Where the SRCP server is; only while disconnected.
+    /// Where the command station is; only while disconnected.
     SetServer {
+        #[serde(default)]
+        kind: StationKind,
         host: String,
         port: u16,
         bus: u16,
@@ -294,11 +296,13 @@ impl fmt::Display for CommandError {
     }
 }
 
-/// The SRCP server and whether the host is connected to it (B-01). Read
-/// from a file, missing values get the defaults and it is disconnected.
+/// The command station and whether the host is connected to it (B-01,
+/// N-02). Read from a file, missing values get the defaults and it is
+/// disconnected.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Station {
+    pub kind: StationKind,
     pub host: String,
     pub port: u16,
     pub bus: u16,
@@ -316,6 +320,7 @@ pub struct Station {
 impl Default for Station {
     fn default() -> Self {
         Station {
+            kind: StationKind::Srcp,
             host: "localhost".into(),
             port: 4303,
             bus: 1,
@@ -525,7 +530,18 @@ impl Session {
                 action,
                 pressed,
             } => self.trigger_action(loco, action, pressed)?,
-            Command::SetServer { host, port, bus } => self.set_server(host, port, bus)?,
+            Command::SetServer {
+                kind,
+                host,
+                port,
+                bus,
+            } => self.set_server(Station {
+                kind,
+                host,
+                port,
+                bus,
+                ..self.station.clone()
+            })?,
             Command::SetPowerOnStart { on } => self.station.power_on_start = on,
             // Handled by Host::apply, which holds the driver and the library.
             Command::Connect
@@ -593,13 +609,11 @@ impl Session {
         });
     }
 
-    fn set_server(&mut self, host: String, port: u16, bus: u16) -> Result<(), CommandError> {
+    fn set_server(&mut self, station: Station) -> Result<(), CommandError> {
         if self.station.connected {
             return Err(CommandError::Connected);
         }
-        self.station.host = host;
-        self.station.port = port;
-        self.station.bus = bus;
+        self.station = station;
         Ok(())
     }
 
