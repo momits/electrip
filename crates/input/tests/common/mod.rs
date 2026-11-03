@@ -65,6 +65,11 @@ impl Rig {
         let devices = self.host.session().devices();
         devices.iter().map(|d| (d.kind.clone(), d.loco)).collect()
     }
+
+    pub fn colors(&self) -> Vec<u8> {
+        let devices = self.host.session().devices();
+        devices.iter().map(|d| d.color).collect()
+    }
 }
 
 /// A command station that accepts everything.

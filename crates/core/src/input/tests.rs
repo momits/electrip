@@ -45,7 +45,7 @@ fn targets_read_from_json() {
 
 #[test]
 fn a_device_reports_only_changes_of_its_buttons() {
-    let mut device = Device::new(1, "pad".into());
+    let mut device = Device::new(1, "pad".into(), 1);
     assert!(device.press("a", true));
     assert!(!device.press("a", true));
     assert!(device.press("b", true));
@@ -55,7 +55,7 @@ fn a_device_reports_only_changes_of_its_buttons() {
 
 #[test]
 fn a_held_scroll_repeats_after_500_ms_every_60_ms() {
-    let mut device = Device::new(1, "pad".into());
+    let mut device = Device::new(1, "pad".into(), 1);
     assert_eq!(device.scroll(1.0), None);
     device.start_scroll("dpright", true);
     assert_eq!(device.scroll(0.5), Some((true, 0)));
