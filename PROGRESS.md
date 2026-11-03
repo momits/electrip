@@ -9,6 +9,18 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-03 – B-03: Farbe je Eingabegerät (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Jedes Gerät hat im Zustand ein Feld `color` (1 bis 12, wie die zwölf Gamepad-Symbole von Electrip 1); ein neues Gerät bekommt die kleinste Farbe, die kein angeschlossenes Gerät hat.
+  Ein 13. Gerät lehnt `add_device` ab (`TooManyDevices`, „there are already 12 devices“).
+- Tests: `host/tests.rs` (Farben 1 bis 12, 13. Gerät abgelehnt, frei gewordene Farbe wird wieder vergeben), `crates/input/tests/hotplug.rs` mit zwölf virtuellen SDL-Gamepads (Farben eindeutig, ein neues Pad bekommt die Farbe des abgezogenen).
+- `cargo xtask test`, `cargo xtask loc` (2626 Zeilen) und `cargo xtask parity` grün.
+- **B-03** `wired`. `verified` fehlt der Screenshot-Test: Farbsymbol unter der gesteuerten Lok kommt mit der UI in Phase 2.
+- Offene Punkte: Ein 13. Gamepad bleibt unbenutzbar, auch wenn danach ein anderes abgezogen wird; es muss neu eingesteckt werden (SDL meldet es nicht noch einmal).
+- Einfachheits-Review: ok (Sub-Agent).
+- **Nächster Schritt:** Antwort auf Q-014 abwarten; bis dahin B-02 (Fokus und Fahrgeräusch an/aus hängen an UI bzw. Sound, Phase 2) oder N-02 (Z21-Treiber erst Phase 2).
+
 ## 2026-11-03 – B-21/B-20: Funktionen beim Import aus Electrip 1 (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
