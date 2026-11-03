@@ -1,6 +1,7 @@
 //! The commands for input devices and their mappings (N-01, B-02).
 
 use super::{Command, CommandError, LocoEntry, Session};
+use crate::electrip1;
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use std::mem;
 
@@ -47,13 +48,22 @@ impl Session {
         Ok(())
     }
 
-    /// The mapping of the device type; an unknown type gets the standard
+    /// The mapping of the device type; an unknown type gets a copy of the
+    /// mapping imported from Electrip 1 (Q-014) or else the standard
     /// mapping.
     pub(super) fn mapping(&mut self, kind: String) -> &mut Mapping {
         let index = match self.mappings.iter().position(|m| m.kind == kind) {
             Some(index) => index,
             None => {
-                self.mappings.push(Mapping::new(kind));
+                let imported = self.mappings.iter().find(|m| m.kind == electrip1::KIND);
+                let mapping = match imported {
+                    Some(imported) => Mapping {
+                        kind,
+                        bindings: imported.bindings.clone(),
+                    },
+                    None => Mapping::new(kind),
+                };
+                self.mappings.push(mapping);
                 self.mappings.len() - 1
             }
         };

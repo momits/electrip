@@ -84,8 +84,8 @@ impl Host {
         let config = Config {
             locos: import.locos,
             actions: import.actions,
+            mappings: vec![import.mapping],
             station: import.station,
-            ..Config::default()
         };
         config::write(&new_path, &config)?;
         self.load(name.into(), config, import.report)
