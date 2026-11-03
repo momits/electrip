@@ -1,18 +1,22 @@
 //! B-01 over the control channel: configure the SRCP server, connect,
 //! notice a broken connection and connect again. A fake server stands in
 //! for srcpd; the tests marked `#[ignore]` need srcpd (`cargo xtask sim up`).
+//! N-02: the app drives a loco on the Z21 simulator.
 
-// Test code: unwrap is allowed (AGENTS.md).
-#![allow(clippy::unwrap_used)]
+// Test code: unwrap and panic are allowed (AGENTS.md).
+#![allow(clippy::unwrap_used, clippy::panic)]
 
 mod common;
 
 use common::{App, Client};
+use electrip_core::station::{CommandStation, StationEvent};
+use electrip_station_z21::Z21Station;
 use serde_json::json;
 use std::io::{BufRead, BufReader, Write};
-use std::net::{Shutdown, TcpListener, TcpStream};
+use std::net::{Shutdown, TcpListener, TcpStream, UdpSocket};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 
 /// Accepts SRCP sessions and confirms every line; `break_sessions` closes
 /// the open ones as a broken connection would.
@@ -71,7 +75,7 @@ fn the_server_is_configurable() {
     let station = &app.connect().state["station"];
     assert_eq!(
         *station,
-        json!({"host": "127.0.0.1", "port": 4304, "bus": 2, "power_on_start": true, "connected": false, "track_power": false})
+        json!({"kind": "srcp", "host": "127.0.0.1", "port": 4304, "bus": 2, "power_on_start": true, "connected": false, "track_power": false})
     );
 }
 
@@ -133,4 +137,42 @@ fn a_missing_bus_of_srcpd_is_reported() {
         "{error}"
     );
     assert_eq!(client.state["station"]["connected"], false);
+}
+
+#[test]
+fn drives_a_loco_on_the_z21_simulator() {
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let port = socket.local_addr().unwrap().port();
+    thread::spawn(move || electrip_sim_z21::serve(socket));
+    let mut observer = Z21Station::connect("127.0.0.1", port).unwrap();
+    let app = App::start();
+    let mut client = app.connect();
+    let server = json!({"command": "set_server", "kind": "z21", "host": "127.0.0.1", "port": port, "bus": 0});
+    client.command(server).unwrap();
+    connect(&mut client).unwrap();
+    assert_eq!(client.state["station"]["connected"], true);
+
+    client.command(json!({"command": "toggle_power"})).unwrap();
+    expect_event(&mut observer, |e| *e == StationEvent::Power(false));
+    client.command(json!({"command": "toggle_power"})).unwrap();
+    expect_event(&mut observer, |e| *e == StationEvent::Power(true));
+    client.command(json!({"command": "add_loco"})).unwrap();
+    let axis = json!({"command": "set_axis", "loco": 1, "deflection": 1.0});
+    client.command(axis).unwrap();
+    expect_event(
+        &mut observer,
+        |e| matches!(e, StationEvent::Loco { address: 1, state } if state.forward && state.step > 0),
+    );
+}
+
+/// Waits until `station` reports an event that `matches`.
+fn expect_event(station: &mut Z21Station, matches: impl Fn(&StationEvent) -> bool) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while Instant::now() < deadline {
+        if station.events().iter().any(&matches) {
+            return;
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    panic!("ERROR the Z21 simulator did not report the expected event");
 }

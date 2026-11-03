@@ -17,6 +17,23 @@ Die Szenario-Tests laufen bisher nur gegen den Loopback-Bus (`cargo xtask sim up
 
 Ergebnis: _offen_
 
+## N-02 – Z21-Treiber an echter Z21 (experimentell)
+
+Vorbereitung: Roco Z21 (Firmware 1.43) im Netz, eine DCC- und eine Motorola-Lok auf dem Gleis, die Z21-App auf einem Handy als zweites Programm.
+`electrip` wird über den Steuerkanal bedient: `set_server` mit `kind: z21`, IP der Z21, Port 21105, dann `connect`.
+Der Treiber entstand ohne Z21 und ohne das PDF der Spezifikation im Container; die Szenario-Tests laufen nur gegen den Simulator.
+
+- [ ] Verbinden gelingt, `track_power` zeigt den Gleisstrom der Z21; eine falsche IP ergibt „no Z21 answers on …“.
+- [ ] Gleisstrom aus und wieder an; die Stopp-Taste an der Z21 und in der Z21-App kommt als `track_power: false` an.
+- [ ] DCC-Lok mit kurzer und langer Adresse (ab 128) fährt vorwärts und rückwärts mit 14, 28 und 128 Fahrstufen.
+- [ ] Motorola-Lok fährt (`LAN_SET_LOCOMODE` setzt MM); MM I mit 14 und MM II mit 28 Fahrstufen.
+- [ ] F0–F28 schalten bei der DCC-Lok; F0–F4 bei der Motorola-Lok.
+- [ ] Lok-Nothalt hält die Lok sofort an, der Gleisstrom bleibt an.
+- [ ] Eine Fahrt oder Funktion aus der Z21-App kommt als Ereignis an (mit einem zweiten Electrip als Beobachter oder im Log).
+- [ ] Nach zwei Minuten ohne Bedienung ist Electrip noch angemeldet (Keepalive alle 20 s); Netzwerkkabel ziehen: nach etwa 70 s `connected: false`.
+
+Ergebnis: _offen_
+
 ## B-01 – Verbindung zum SRCP-Server
 
 Vorbereitung: srcpd auf einem anderen Rechner im Netz (z. B. Raspberry Pi) mit echtem Bus; `electrip` läuft und wird über den Steuerkanal bedient (`spec/steuerkanal.md`).

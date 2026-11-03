@@ -2,7 +2,7 @@ use super::*;
 use crate::decoder::Decoder;
 use crate::function::{Function, Mode};
 use crate::input::Target;
-use crate::station::LocoState;
+use crate::station::{LocoState, StationKind};
 use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
 
@@ -68,6 +68,7 @@ pub(super) fn host() -> (Host, Events, Sent, TempDir) {
 
 pub(super) fn set_server(host: &mut Host, name: &str) -> Result<(), CommandError> {
     host.apply(Command::SetServer {
+        kind: StationKind::Srcp,
         host: name.into(),
         port: 4303,
         bus: 2,

@@ -10,8 +10,10 @@ electrip-control = { path = "../control" }
 electrip-core = { path = "../core" }
 electrip-input = { path = "../input" }
 electrip-station-srcp = { path = "../station-srcp" }
+electrip-station-z21 = { path = "../station-z21" }
 
 [dev-dependencies]
+electrip-sim-z21 = { path = "../../sim/z21" }
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 serde_json = "1"
 tempfile = "3"

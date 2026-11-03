@@ -3,8 +3,10 @@
 
 use electrip_core::host::{Driver, Host};
 use electrip_core::session::{Command, Station};
+use electrip_core::station::StationKind;
 use electrip_input::Gamepads;
 use electrip_station_srcp::SrcpStation;
+use electrip_station_z21::Z21Station;
 use std::env;
 use std::net::{Ipv4Addr, TcpListener};
 use std::path::PathBuf;
@@ -38,9 +40,15 @@ fn run() -> Result<(), String> {
         Some(library) => library,
         None => default_library().ok_or("no data directory, use --library <dir>")?,
     };
-    let connect = Box::new(|station: &Station| {
-        let driver = SrcpStation::connect(&station.host, station.port, station.bus)?;
-        Ok(Box::new(driver) as Driver)
+    let connect = Box::new(|station: &Station| -> Result<Driver, _> {
+        Ok(match station.kind {
+            StationKind::Srcp => Box::new(SrcpStation::connect(
+                &station.host,
+                station.port,
+                station.bus,
+            )?),
+            StationKind::Z21 => Box::new(Z21Station::connect(&station.host, station.port)?),
+        })
     });
     let mut host = Host::new(connect, library).map_err(|e| e.to_string())?;
     if let Some(name) = args.file {

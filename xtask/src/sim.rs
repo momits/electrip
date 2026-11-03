@@ -98,15 +98,6 @@ fn wait_for_srcpd() -> Result {
 /// The scenario tests of the srcpd driver and of the app over the control
 /// channel (srcpd-loopback): all integration tests marked `#[ignore]`.
 fn loopback_tests() -> Result {
-    let args = [
-        "test",
-        "-p",
-        "electrip-station-srcp",
-        "-p",
-        "electrip",
-        "--tests",
-        "--",
-        "--ignored",
-    ];
+    let args = ["test", "-p", "electrip", "--tests", "--", "--ignored"];
     crate::run_logged("srcpd-loopback", &args)
 }
