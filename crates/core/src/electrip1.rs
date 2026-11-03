@@ -158,7 +158,6 @@ fn import(json: &str) -> Result<Import, ImportError> {
         .locos
         .iter()
         .flat_map(|old| &old.functions)
-        .filter(|f| f.nr <= MAX_FUNCTION && f.button >= 0)
         .map(|f| f.button)
         .collect();
     let locos = file
@@ -260,8 +259,9 @@ fn function(
     })
 }
 
-/// Binds each button of a function to its action, then the built-in
-/// actions; a function whose button they take is named in the report.
+/// Binds each button that has an action to it, then the built-in actions;
+/// a function whose button they take is named in the report. Functions
+/// that `function` left out have no action.
 fn mapping(
     joystick: &Joystick,
     buttons: &[i32],
