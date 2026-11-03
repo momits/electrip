@@ -201,7 +201,7 @@
       "hw": true,
       "status": {
         "wired": true,
-        "verified": false,
+        "verified": true,
         "accepted": false
       }
     },
@@ -277,7 +277,7 @@
       "hw": true,
       "status": {
         "wired": true,
-        "verified": false,
+        "verified": true,
         "accepted": false
       },
       "notes": "Kein Golden-Test gegen Electrip 1 nötig; legacy/ dient nur als Referenz für das Verhalten (Mo, Q-003)."
@@ -611,7 +611,7 @@
       "hw": true,
       "status": {
         "wired": true,
-        "verified": false,
+        "verified": true,
         "accepted": false
       }
     },
@@ -682,8 +682,8 @@
       "phase": 1,
       "hw": true,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       }
     },
@@ -844,8 +844,8 @@
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       }
     },

@@ -9,6 +9,31 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-03 – N-01: Gamepads und Joysticks über SDL3 (Claude)
+
+- CI auf `main` beim Start grün; `cmake` ist jetzt im Container, SDL3 baut.
+- Neues Crate `electrip-input` (`crates/input/`) mit `sdl3-sys` (aus der Quelle gebaut, statisch, ohne Video/Audio, siehe SDL3-Eintrag).
+  `Gamepads::poll` macht aus den SDL-Ereignissen die Befehle `add_device`, `remove_device` und `input`.
+  Gerätetyp (`kind`) ist der Name von SDL, z. B. „Xbox Series X Controller“, „PS5 Controller“.
+  Kennt SDL das Layout (Mapping-Datenbank), heißen die Bedienelemente wie in SDL (`a`, `lefty`, `dpleft`); sonst `button0`, `axis1`, `hat0_up/right/down/left`.
+  Geräte-IDs sind die Instanz-IDs von SDL.
+- Die App fragt SDL alle 50 ms im Haupt-Thread ab, zusammen mit `Host::poll`; `electrip_control::serve` nimmt dafür eine Eingabequelle, die Clients laufen in eigenen Threads.
+  Ein fehlgeschlagener Eingabebefehl ändert nichts. Startet SDL nicht, läuft die App mit Steuerkanal weiter (`ERROR no gamepads`).
+  SDL fängt keine Signale ab (`SDL_HINT_NO_SIGNAL_HANDLERS`), sonst beendet Ctrl+C die App nicht mehr.
+- Tests mit virtuellen Geräten von SDL (`crates/input/tests/`): Xbox-Pad, PlayStation-Pad und Joystick fahren drei Loks mit eigenem Mapping (Beschleunigen und Bremsen in der eingestellten Dauer ±10 %, Totzone, Richtungswender, Aktion auf F0, Gleisstrom aus, Lokwechsel per Hat); zwölf Pads gleichzeitig, Ab- und Anstecken im Betrieb.
+- `cargo xtask test`, `cargo xtask loc` (2545 Zeilen) und `cargo xtask parity` grün.
+- **N-01** `wired` und `verified`. Offen für Phase 2: Die UI zeigt die Knopfnamen (dafür gibt es `SDL_GetGamepadButtonLabel`).
+  **N-07** `wired` und `verified`: Aktionen werden gespeichert (B-21) und wirken auf die Lok des auslösenden Geräts.
+  **B-07**, **B-10**, **B-23** `verified`: Der Test mit virtuellem Gamepad fehlte.
+  **B-03** bleibt offen: Farbe/Symbol je Gerät fehlt (Screenshot, Phase 2); zwölf Geräte und Hotplug sind getestet.
+  **B-02** bleibt offen: Die eingebauten Aktionen „Fokus“ und „Fahrgeräusch an/aus“ fehlen noch (kommen mit UI bzw. Sound).
+- Offene Punkte: Belegt ein virtuelles Gerät über den Steuerkanal schon die ID, die SDL vergibt, wird das echte Gerät nicht angelegt.
+  Nicht lokal getestet: Build auf macOS und Windows und der Cross-Build für den Raspberry Pi mit SDL3; das zeigt die CI.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Fehler beim Annehmen von Verbindungen melden statt den Listener-Thread still zu beenden; `Gamepads` ist nicht `Send`; nur das Gamepad-Subsystem beenden statt ganz SDL.
+  Nicht übernommen: `remove_device` nach fehlgeschlagenem Öffnen unterdrücken (der Fehler ändert nichts), Hat-Richtungen nur bei Änderung senden (der Kern zählt jeden Druck nur einmal).
+- **Nächster Schritt:** Farbe je Gerät (B-03) oder Funktionen beim Import aus Electrip 1 (B-21/B-20).
+
 ## 2026-11-02 – B-20: Lok-Export und -Import als ZIP (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).

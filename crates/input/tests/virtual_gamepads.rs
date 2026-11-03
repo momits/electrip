@@ -51,17 +51,29 @@ fn three_device_types_drive_three_locos() {
         rig.apply(json!({"command": "bind", "kind": kind, "control": control, "target": target}));
     }
 
-    // Each device drives its own loco with its own controls, up is negative.
+    // Each device drives its own loco with its own controls, up is
+    // negative. Full deflection reaches full speed in one second ±10 %.
     xbox.axis(SDL_GAMEPAD_AXIS_LEFTY, -1.0);
     ps.axis(SDL_GAMEPAD_AXIS_RIGHTY, -1.0);
     ps.axis(SDL_GAMEPAD_AXIS_LEFTY, -1.0);
     stick.joystick_axis(1, -0.05);
-    rig.update(1.0);
+    rig.update(0.9);
+    let early = rig.loco(1).station_state().step;
+    rig.update(0.2);
     let max = rig.loco(1).station_state().step;
-    assert!(max > 0);
+    rig.update(1.0);
+    assert!(0 < early && early < max);
+    assert_eq!(rig.loco(1).station_state().step, max);
     assert_eq!(rig.loco(2).station_state().step, max);
     // Inside the dead zone of the joystick.
     assert_eq!(rig.loco(3).station_state().step, 0);
+
+    // Full deflection back stops in one second ±10 %.
+    xbox.axis(SDL_GAMEPAD_AXIS_LEFTY, 1.0);
+    rig.update(0.9);
+    assert!(rig.loco(1).station_state().step > 0);
+    rig.update(0.2);
+    assert_eq!(rig.loco(1).station_state().step, 0);
 
     // Reverse on the PlayStation pad, the action on the joystick.
     ps.button(SDL_GAMEPAD_BUTTON_NORTH, true);
