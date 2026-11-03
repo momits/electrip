@@ -8,6 +8,25 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-03 – N-02: Z21-Treiber (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neues Crate `electrip-station-z21` (`crates/station-z21/`): Treiber für die Roco Z21 über UDP, nur mit der Standardbibliothek, ohne Thread (der Host fragt `events` alle 50 ms ab).
+  Anmelden mit Broadcast-Flags 0x00010001 (alle Loks, nicht nur abonnierte) und `LAN_X_GET_STATUS`; ohne Antwort in 3 s „no Z21 answers on …“.
+  Gesendet wird nur, was sich gegenüber dem letzten bekannten Zustand der Lok ändert (Lok-Modus DCC/MM, Fahrbefehl, einzelne Funktionen), weil jeder Befehl eine Lok-Info an alle Clients auslöst.
+  Lok-Nothalt ist der Fahrbefehl mit Fahrstufe „Nothalt“ (geht mit jeder Firmware). Keepalive alle 20 s, nach 70 s ohne Antwort `Disconnected`; beim Trennen `LAN_LOGOFF`.
+- **Quelle:** Das PDF der Spezifikation war im Container nicht erreichbar (kein Internet). Der Treiber entstand aus der Kenntnis der Roco-Spezifikation V1.13, ohne den Code des Simulators zu lesen; die Szenarien liefen danach ohne Änderung grün.
+  Unsicher und deshalb in der Hardware-Checkliste: Motorola-Fahrstufen auf der Z21 (MM I/II), Keepalive und Abbruch.
+- `set_server` hat das Feld `kind` (`srcp` oder `z21`, Vorgabe `srcp`), der Zustand zeigt es unter `station.kind`; die App wählt danach den Treiber.
+- Die Szenario-Suite aus `station-srcp/tests/srcpd_loopback.rs` liegt jetzt in `crates/electrip/tests/station_scenarios.rs` und läuft gegen srcpd (`#[ignore]`, `cargo xtask sim up`) und gegen den Z21-Simulator (je Test ein eigener Simulator, im normalen `cargo xtask test`).
+  Dazu `station_connection.rs`: die App fährt über den Steuerkanal eine Lok auf dem Simulator; Unit-Tests der Telegramme und des Verbindungsabbruchs.
+- `cargo xtask test`, `cargo xtask sim up` (8 srcpd-Szenarien), `cargo xtask loc` (3037 Zeilen) und `cargo xtask parity` grün.
+- **N-02** `wired` und `verified`. Offen für Phase 2: „experimentell“ in der UI anzeigen; Hardware-Checkliste für die Z21 in `spec/hw-checklist.md`.
+- Offene Punkte: Bei 128 Fahrstufen sendet der Treiber höchstens Fahrstufe 126 (DCC kennt 126), der Host rechnet bis 128. Geht ein UDP-Paket verloren, merkt der Treiber das nicht und sendet die Änderung nicht noch einmal.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: ein `expect_event` für alle Zentralen in `tests/common` statt drei Kopien, `common::z21_simulator`, die XOR-Prüfsumme nur an einer Stelle.
+- **Nächster Schritt:** Phase 1 wartet nur noch auf Phase-2-Teile und Q-015 (B-21); Halt mit Eintrag, bis Mo Q-015 beantwortet oder das Tor zu Phase 2 freigibt.
+
 ## 2026-11-03 – B-21: Mapping aus Electrip 1 (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
