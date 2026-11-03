@@ -70,7 +70,7 @@ fn assert_functions(loco: &Loco, actions: &[Action], old: &Value) {
         assert_eq!(function.number, old["nr"]);
         assert_eq!(function.default_on, old["state"]);
         assert_eq!(function.on, old["state"]);
-        let mode = if old["toggle_mode"] == 1 {
+        let mode = if matches!(old["toggle_mode"].as_i64(), Some(1 | 2)) {
             Mode::Push
         } else {
             Mode::Switch
