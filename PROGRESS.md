@@ -6,8 +6,17 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
-- `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
+_Zurzeit keine._
+
+## 2026-11-03 – Aufräumen Phase 1 (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Q-014 ist noch offen; die übrigen offenen Anforderungen der Phase 1 warten auf Phase-2-Teile (B-21 auf Q-014, B-20 auf Sounds, B-03/B-05 auf Screenshot-Tests, N-02 auf den Z21-Treiber). Deshalb die Aufräumkandidaten abgearbeitet:
+  - `crates/electrip/tests/driving.rs` nutzt jetzt `connect_to_srcpd`, `observer` und `expect_event` aus `common::srcpd` statt eigener Kopien.
+  - `Host::apply` und gespeicherte Konfiguration: entfällt. Achsbewegungen vom Gamepad ändern die Sitzung direkt in `Session::input` und laufen nicht über `change`/`save`; nur einzelne Knopfdrücke (Aktion, Richtungswender, Nothalt) vergleichen die Konfiguration. Eine Liste der Befehle, die die Konfiguration ändern, wäre mehr Code und könnte beim Speichern etwas vergessen.
+- `cargo xtask test`, `cargo xtask sim up` (srcpd-Loopback), `cargo xtask loc` (2644 Zeilen) grün. Kein Produktcode geändert.
+- Einfachheits-Review: ok (selbst, Diff von 26 Zeilen nur in Testcode komplett neu gelesen).
+- **Nächster Schritt:** Halt mit Eintrag in `PROGRESS.md`, bis Mo Q-014 beantwortet oder das Tor zu Phase 2 freigibt.
 
 ## 2026-11-03 – B-02: eingebaute Aktionen Fokus und Fahrgeräusch an/aus (Claude)
 
