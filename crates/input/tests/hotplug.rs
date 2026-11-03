@@ -1,5 +1,6 @@
 //! B-03 with virtual gamepads of SDL: twelve gamepads control twelve
-//! locos; plugging and unplugging is noticed while running.
+//! locos, each with its own color; plugging and unplugging is noticed
+//! while running.
 
 // Test code: unwrap is allowed (AGENTS.md).
 #![allow(clippy::unwrap_used)]
@@ -22,6 +23,7 @@ fn twelve_gamepads_come_and_go() {
     rig.update(0.0);
     let locos: Vec<_> = rig.devices().into_iter().map(|(_, loco)| loco).collect();
     assert_eq!(locos, (1..=12).map(Some).collect::<Vec<_>>());
+    assert_eq!(rig.colors(), (1..=12).collect::<Vec<_>>());
 
     // Unplugged while driving, loco 5 keeps its speed.
     pads[4].axis(SDL_GAMEPAD_AXIS_LEFTY, -1.0);
@@ -40,5 +42,6 @@ fn twelve_gamepads_come_and_go() {
         rig.devices().last().unwrap(),
         &("PS5 Controller".into(), Some(5))
     );
+    assert_eq!(rig.colors().last(), Some(&5));
     pad.detach();
 }

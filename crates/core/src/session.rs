@@ -7,7 +7,7 @@ use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
 use crate::electrip1::ImportError;
 use crate::function::{Action, Function};
-use crate::input::{Device, Mapping, Target};
+use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
 use crate::station::{LocoState, MAX_FUNCTION, StationError};
@@ -229,6 +229,7 @@ pub enum CommandError {
     UnknownAction(u32),
     UnknownDevice(u32),
     DeviceExists(u32),
+    TooManyDevices,
     PositionOutOfRange(usize),
     FunctionOutOfRange(u8),
     Loco(LocoError),
@@ -262,6 +263,9 @@ impl fmt::Display for CommandError {
             CommandError::UnknownAction(id) => write!(f, "there is no action with id {id}"),
             CommandError::UnknownDevice(id) => write!(f, "there is no device with id {id}"),
             CommandError::DeviceExists(id) => write!(f, "there is already a device with id {id}"),
+            CommandError::TooManyDevices => {
+                write!(f, "there are already {MAX_DEVICES} devices")
+            }
             CommandError::PositionOutOfRange(position) => {
                 write!(f, "there is no position {position} in the list")
             }

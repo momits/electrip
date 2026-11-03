@@ -48,7 +48,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   }],
   "actions": [{"id": 1, "name": "Licht"}],
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
-  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1}],
+  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "color": 1}],
   "station": {"host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "import_report": [],
   "configuration": "Electrip",
@@ -70,6 +70,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Ein neuer Gerätetyp bekommt das Standard-Mapping nach Electrip 1: `lefty` fährt, `a` Nothalt der Anlage, `b` Richtungswender, `dpleft`/`dpright` Lokwechsel.
 - `devices`: angeschlossene Eingabegeräte, auch virtuelle über den Steuerkanal; `loco` ist die Lok, die das Gerät steuert (`null`, wenn keine frei ist).
   Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
+  `color` ist die Farbe des Geräts (1 bis 12, wie die zwölf Gamepad-Symbole von Electrip 1); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `station`: SRCP-Server (Vorgabe wie Electrip 1: `localhost`, Port 4303, Bus 1) und ob die App mit ihm verbunden ist (B-01).
@@ -110,7 +111,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `remove_function` | `loco`, `index` (Nummer ab 0 in `functions`) | B-07 |
 | `move_function` | `loco`, `index`, `position` (neue Stelle ab 0) | B-07 |
 | `trigger_action` | `loco`, `action`, `pressed` (`true` gedrückt, `false` losgelassen); schaltet die Funktionen der Lok, die auf die Aktion zeigen, eine Aktion ohne Funktion bei dieser Lok tut nichts | N-07, B-07 |
-| `add_device` | `device` (frei gewählte `id`), `kind` (Gerätetyp); schließt ein (virtuelles) Eingabegerät an | N-01 |
+| `add_device` | `device` (frei gewählte `id`), `kind` (Gerätetyp); schließt ein (virtuelles) Eingabegerät an; höchstens 12 gleichzeitig | N-01, B-03 |
 | `remove_device` | `device`; die Achse seiner Lok wird losgelassen, die Lok behält ihre Geschwindigkeit | N-01 |
 | `bind` | `kind`, `control`, `target` (siehe `mappings`); ersetzt die bisherige Belegung des Bedienelements | N-01, B-02 |
 | `unbind` | `kind`, `control` | N-01, B-02 |
