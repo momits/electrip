@@ -5,12 +5,13 @@
 //! current state, so each scenario first expects a state that differs from
 //! the one it leaves behind.
 
-// Test code: unwrap and panic are allowed (AGENTS.md).
-#![allow(clippy::unwrap_used, clippy::panic)]
+// Test code: unwrap is allowed (AGENTS.md).
+#![allow(clippy::unwrap_used)]
+
+mod common;
 
 use electrip_core::decoder::{Decoder, Protocol};
 use electrip_core::station::{CommandStation, LocoState, MAX_FUNCTION, StationEvent};
-use std::time::{Duration, Instant};
 
 /// Opens a new connection to the command station under test.
 type Connect<'a> = &'a dyn Fn() -> Box<dyn CommandStation>;
@@ -19,19 +20,8 @@ fn dcc(address: u16) -> Decoder {
     Decoder::new(Protocol::DccShort, address, 28).unwrap()
 }
 
-/// Waits until `station` reports `expected`.
-fn expect_event(station: &mut dyn CommandStation, expected: StationEvent) {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    let mut seen = Vec::new();
-    while Instant::now() < deadline {
-        let events = station.events();
-        if events.contains(&expected) {
-            return;
-        }
-        seen.extend(events);
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    panic!("ERROR expected {expected:?}, got {seen:?}");
+fn expect(station: &mut dyn CommandStation, expected: StationEvent) {
+    common::expect_event(station, |e| *e == expected);
 }
 
 fn loco_event(address: u16, state: LocoState) -> StationEvent {
@@ -48,9 +38,9 @@ fn connects_and_disconnects(connect: Connect) {
 fn switches_power(connect: Connect) {
     let mut station = connect();
     station.set_power(false).unwrap();
-    expect_event(&mut *station, StationEvent::Power(false));
+    expect(&mut *station, StationEvent::Power(false));
     station.set_power(true).unwrap();
-    expect_event(&mut *station, StationEvent::Power(true));
+    expect(&mut *station, StationEvent::Power(true));
 }
 
 fn drives_a_loco(connect: Connect) {
@@ -62,7 +52,7 @@ fn drives_a_loco(connect: Connect) {
             functions: 0,
         };
         station.set_loco(&dcc(21), &state).unwrap();
-        expect_event(&mut *station, loco_event(21, state));
+        expect(&mut *station, loco_event(21, state));
     }
 }
 
@@ -75,11 +65,11 @@ fn drives_a_loco_after_a_protocol_change(connect: Connect) {
     };
     let dcc128 = Decoder::new(Protocol::DccLong, 22, 128).unwrap();
     station.set_loco(&dcc128, &state).unwrap();
-    expect_event(&mut *station, loco_event(22, state));
+    expect(&mut *station, loco_event(22, state));
     let motorola = Decoder::new(Protocol::Motorola2, 22, 14).unwrap();
     let state = LocoState { step: 9, ..state };
     station.set_loco(&motorola, &state).unwrap();
-    expect_event(&mut *station, loco_event(22, state));
+    expect(&mut *station, loco_event(22, state));
 }
 
 fn switches_functions_f0_to_f28(connect: Connect) {
@@ -88,11 +78,11 @@ fn switches_functions_f0_to_f28(connect: Connect) {
     for number in 0..=MAX_FUNCTION {
         state.set_function(number, true);
         station.set_loco(&dcc(23), &state).unwrap();
-        expect_event(&mut *station, loco_event(23, state));
+        expect(&mut *station, loco_event(23, state));
     }
     state.set_function(5, false);
     station.set_loco(&dcc(23), &state).unwrap();
-    expect_event(&mut *station, loco_event(23, state));
+    expect(&mut *station, loco_event(23, state));
 }
 
 fn stops_a_loco_in_an_emergency(connect: Connect) {
@@ -103,9 +93,9 @@ fn stops_a_loco_in_an_emergency(connect: Connect) {
         functions: 1,
     };
     station.set_loco(&dcc(24), &state).unwrap();
-    expect_event(&mut *station, loco_event(24, state));
+    expect(&mut *station, loco_event(24, state));
     station.emergency_stop(&dcc(24), &state).unwrap();
-    expect_event(
+    expect(
         &mut *station,
         loco_event(24, LocoState { step: 0, ..state }),
     );
@@ -121,7 +111,7 @@ fn receives_changes_of_another_program(connect: Connect) {
             functions: 0b11,
         };
         other.set_loco(&dcc(25), &state).unwrap();
-        expect_event(&mut *station, loco_event(25, state));
+        expect(&mut *station, loco_event(25, state));
     }
 }
 
@@ -201,14 +191,10 @@ mod srcpd {
 mod z21 {
     use super::*;
     use electrip_station_z21::Z21Station;
-    use std::net::UdpSocket;
 
-    /// Runs `scenario` against a new simulator, which runs until the test
-    /// binary ends.
+    /// Runs `scenario` against a new simulator.
     fn on_simulator(scenario: fn(Connect)) {
-        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-        let port = socket.local_addr().unwrap().port();
-        std::thread::spawn(move || electrip_sim_z21::serve(socket));
+        let port = common::z21_simulator();
         scenario(&|| Box::new(Z21Station::connect("127.0.0.1", port).unwrap()));
     }
 

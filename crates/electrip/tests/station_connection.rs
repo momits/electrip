@@ -3,20 +3,19 @@
 //! for srcpd; the tests marked `#[ignore]` need srcpd (`cargo xtask sim up`).
 //! N-02: the app drives a loco on the Z21 simulator.
 
-// Test code: unwrap and panic are allowed (AGENTS.md).
-#![allow(clippy::unwrap_used, clippy::panic)]
+// Test code: unwrap is allowed (AGENTS.md).
+#![allow(clippy::unwrap_used)]
 
 mod common;
 
-use common::{App, Client};
-use electrip_core::station::{CommandStation, StationEvent};
+use common::{App, Client, expect_event, z21_simulator};
+use electrip_core::station::StationEvent;
 use electrip_station_z21::Z21Station;
 use serde_json::json;
 use std::io::{BufRead, BufReader, Write};
-use std::net::{Shutdown, TcpListener, TcpStream, UdpSocket};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
 
 /// Accepts SRCP sessions and confirms every line; `break_sessions` closes
 /// the open ones as a broken connection would.
@@ -141,9 +140,7 @@ fn a_missing_bus_of_srcpd_is_reported() {
 
 #[test]
 fn drives_a_loco_on_the_z21_simulator() {
-    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-    let port = socket.local_addr().unwrap().port();
-    thread::spawn(move || electrip_sim_z21::serve(socket));
+    let port = z21_simulator();
     let mut observer = Z21Station::connect("127.0.0.1", port).unwrap();
     let app = App::start();
     let mut client = app.connect();
@@ -163,16 +160,4 @@ fn drives_a_loco_on_the_z21_simulator() {
         &mut observer,
         |e| matches!(e, StationEvent::Loco { address: 1, state } if state.forward && state.step > 0),
     );
-}
-
-/// Waits until `station` reports an event that `matches`.
-fn expect_event(station: &mut Z21Station, matches: impl Fn(&StationEvent) -> bool) {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while Instant::now() < deadline {
-        if station.events().iter().any(&matches) {
-            return;
-        }
-        thread::sleep(Duration::from_millis(20));
-    }
-    panic!("ERROR the Z21 simulator did not report the expected event");
 }

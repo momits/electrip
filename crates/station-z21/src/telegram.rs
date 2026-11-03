@@ -17,10 +17,14 @@ fn dataset(header: u16, data: &[u8]) -> Vec<u8> {
     [&length.to_le_bytes(), &header.to_le_bytes(), data].concat()
 }
 
-/// An X-Bus dataset (header 0x40) with its XOR checksum.
+/// An X-Bus dataset (header 0x40) with its checksum.
 fn x_bus(bytes: &[u8]) -> Vec<u8> {
-    let checksum = bytes.iter().fold(0, |x, b| x ^ b);
-    dataset(0x40, &[bytes, &[checksum]].concat())
+    dataset(0x40, &[bytes, &[checksum(bytes)]].concat())
+}
+
+/// The XOR of all bytes; 0 over a whole X-Bus message with its checksum.
+fn checksum(bytes: &[u8]) -> u8 {
+    bytes.iter().fold(0, |x, b| x ^ b)
 }
 
 /// LAN_SET_BROADCASTFLAGS (2.16).
@@ -123,7 +127,7 @@ pub fn parse(packet: &[u8]) -> Vec<StationEvent> {
 }
 
 fn parse_x_bus(bytes: &[u8]) -> Option<StationEvent> {
-    if bytes.iter().fold(0, |x, b| x ^ b) != 0 {
+    if checksum(bytes) != 0 {
         return None;
     }
     match *bytes {
