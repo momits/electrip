@@ -440,14 +440,7 @@ fn a_bound_action_switches_the_functions_of_the_device_loco() {
         };
         host.apply(Command::AddFunction { loco, function }).unwrap();
     }
-    let (kind, control) = ("pad".into(), "x".into());
-    let target = Target::Action { action: 1 };
-    host.apply(Command::Bind {
-        kind,
-        control,
-        target,
-    })
-    .unwrap();
+    bind(&mut host, "x", Target::Action { action: 1 });
     input(&mut host, "x", 1.0).unwrap();
     let on = |host: &Host| {
         host.session()
@@ -577,14 +570,7 @@ fn removing_an_action_removes_its_bindings() {
         name: "Licht".into(),
     })
     .unwrap();
-    let (kind, control) = ("pad".into(), "x".into());
-    let target = Target::Action { action: 1 };
-    host.apply(Command::Bind {
-        kind,
-        control,
-        target,
-    })
-    .unwrap();
+    bind(&mut host, "x", Target::Action { action: 1 });
     host.apply(Command::RemoveAction { action: 1 }).unwrap();
     assert_eq!(host.session().mappings()[0].target("x"), None);
 }
