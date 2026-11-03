@@ -707,8 +707,8 @@
       "phase": 1,
       "hw": true,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       },
       "notes": "srcpd- und Z21-Treiber in Phase 1. Z21-Simulator und Z21-Treiber in getrennten Sitzungen bauen."
