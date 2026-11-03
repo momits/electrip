@@ -144,8 +144,8 @@ Die Agenten arbeiten autonom innerhalb einer Phase; zwischen den Phasen gibt Mo 
 | Phase | Wer | Inhalt | Tor am Ende |
 | --- | --- | --- | --- |
 | 0 · Fundament | Mo + 1 Agent, interaktiv | Anforderungskatalog, ADRs, `AGENTS.md`, `xtask`, CI auf 3 Plattformen; srcpd-Loopback, Z21-Simulator, Golden-Tests aus Alt-Electrip, Korpus, Loop-Skript | A: Mo gibt Spezifikation und Prüfmittel frei |
-| 1 · Kern | 1 Agent im Loop | Befehls-Engine, Steuerkanal, srcpd-Treiber, Gamepad-Profile, Kennlinie, Beschleunigung, Import alter JSON- und ZIP-Dateien | B: B-01 bis B-10 verifiziert, Fahrtest an der echten Anlage |
-| 2 · Ausbau | 1 Agent im Loop | Z21-Treiber, Sound-Modelle, Multi-Client, CRDT-Lok-Sync, Oberfläche, Audio-Ziel System-Audiogerät pro Lok | C: alle B- und N-Anforderungen im Paritätsbericht verifiziert |
+| 1 · Kern | 1 Agent im Loop | Befehls-Engine, Steuerkanal, srcpd- und Z21-Treiber, Gamepad-Profile, Kennlinie, Beschleunigung, Import alter JSON- und ZIP-Dateien | B: B-01 bis B-10 verifiziert, Fahrtest an der echten Anlage |
+| 2 · Ausbau | 1 Agent im Loop | Sound-Modelle, Multi-Client, CRDT-Lok-Sync, Oberfläche, Audio-Ziel System-Audiogerät pro Lok | C: alle B- und N-Anforderungen im Paritätsbericht verifiziert |
 | 3 · Abnahme | Mo + Loop für Fixes | Hardware-Checkliste je Release, Befunde als Issues zurück in den Loop; neues Benutzerhandbuch | D: Release Electrip 2.0 |
 
 Phase 0 ist die wichtigste: Ohne Simulatoren, Golden-Tests und Katalog produziert der Loop schnell Code, dessen Richtigkeit niemand prüfen kann.

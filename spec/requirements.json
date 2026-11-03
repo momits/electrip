@@ -711,7 +711,7 @@
         "verified": false,
         "accepted": false
       },
-      "notes": "srcpd-Treiber in Phase 1, Z21-Treiber in Phase 2. Z21-Simulator und Z21-Treiber in getrennten Sitzungen bauen."
+      "notes": "srcpd- und Z21-Treiber in Phase 1. Z21-Simulator und Z21-Treiber in getrennten Sitzungen bauen."
     },
     {
       "id": "N-03",
