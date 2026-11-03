@@ -9,6 +9,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `Host::apply` vergleicht nach jedem Befehl die ganze Konfiguration, auch bei Achsbewegungen vom Gamepad; besser nur nach Befehlen speichern, die die Konfiguration ändern (aus dem Review zu B-21).
 - `crates/electrip/tests/driving.rs`: `expect_loco` wartet wie `common::srcpd::expect_event`; auf den gemeinsamen Helfer umstellen (aus dem Review zu N-07/B-07).
 
+## 2026-11-03 – B-21/B-20: Funktionen beim Import aus Electrip 1 (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- `import_electrip1` und `import_loco` (Pakete von Electrip 1) übernehmen jetzt die Decoder-Funktionen: Name, Nummer, Zustand (als Standardzustand) und Modus (Taster bei „push“ und „push limited“, sonst Schalter).
+  Je verwendeter Knopfnummer entsteht eine logische Aktion „Knopf <n>“ (ADR 0009), die alle Loks teilen; eine Funktion ohne Knopf (`button: -1`) bekommt eine Aktion mit ihrem Namen.
+  Funktionen über F28 werden ausgelassen und im `import_report` genannt.
+- **Q-014** in `spec/questions.md`: Für welchen Gerätetyp legt der Import das Mapping (Knöpfe, Fahrachse, Totzone aus `joystick`) an? Bis zur Antwort legt er noch kein Mapping an.
+- Tests: `electrip1/tests.rs` (Korpus mit Funktionen, gemeinsame Aktion je Knopf, Modi, F29), `package/tests.rs` (Funktionen des Korpus-Pakets VT 98), `host/library/tests.rs` (Aktionen der importierten Konfiguration, neue Aktion bekommt eine freie ID).
+- `cargo xtask test`, `cargo xtask loc` (2616 Zeilen) und `cargo xtask parity` grün.
+- **B-21** und **B-20** bleiben offen: Es fehlen das Mapping (Q-014) und die Sounds (Phase 2).
+- Offene Punkte: Eine Funktion ohne Knopf und ohne Namen bekommt eine Aktion mit leerem Namen.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Der Test zählt den Modus „push limited“ wie der Code als Taster.
+  Nicht übernommen: `electrip1::action_id` und `Session::action_named` zusammenlegen (verschiedene ID-Vergabe, erst zwei Vorkommen).
+- **Nächster Schritt:** Antwort auf Q-014 abwarten; bis dahin B-02 (Totzone je Achse ist schon da, Knopfnamen kommen mit der UI) oder N-02 (Szenario-Testsuite für den srcpd-Treiber).
+
 ## 2026-11-03 – N-01: Gamepads und Joysticks über SDL3 (Claude)
 
 - CI auf `main` beim Start grün; `cmake` ist jetzt im Container, SDL3 baut.
