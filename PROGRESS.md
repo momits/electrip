@@ -8,6 +8,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-03 – B-21: Mapping aus Electrip 1 (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Der Import aus Electrip 1 legt jetzt das Mapping „Electrip 1“ an (Q-014): `button<n>` → Aktion „Knopf <n>“, Notaus-, Richtungs-, Fokus- und Fahrgeräusch-Knopf → eingebaute Aktion, `axis<n>` → Fahren mit `axis_threshold` als Totzone; ohne `joystick` gelten die Standardwerte von Electrip 1, ein Knopf -1 wird nicht belegt.
+  Ein neuer Gerätetyp bekommt eine Kopie dieses Mappings, sonst das Standard-Mapping.
+- Geräte, die beim Öffnen oder Import einer Konfiguration angeschlossen sind, bekommen ein Mapping für ihren Typ; vorher reagierten sie danach auf nichts mehr.
+- **Q-015** in `spec/questions.md`: In Electrip 1 kann ein Knopf zugleich eingebaute Aktion und Funktion sein (im Korpus `settings.json` Knopf 8 und 6). Bis zur Antwort behält die eingebaute Aktion den Knopf, und der `import_report` nennt es.
+- Tests: `electrip1/tests.rs` (Mapping aus dem Korpus, Standardwerte, eingebaute Aktion vor Funktion, Knopf -1), `host/library/tests.rs` (Kopie für neue und schon angeschlossene Gerätetypen), `crates/electrip/tests/electrip1_import.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` (2735 Zeilen) und `cargo xtask parity` grün.
+- **B-21** `wired`. `verified` erst nach Q-015, weil der Korpus nicht verlustfrei importiert wird.
+- Einfachheits-Review: refactored (Sub-Agent).
+  Übernommen: Der Filter auf Knöpfe wiederholte die Regel aus `function` (F28, Knopf -1); jetzt zählt nur, ob es die Aktion gibt.
+  Nicht übernommen: Knöpfe aus den Aktionsnamen zurücklesen (eine Funktion ohne Knopf mit dem Namen „Knopf 3“ würde sonst belegt).
+- **Nächster Schritt:** Z21-Treiber für N-02 (eigene Sitzung, nur aus der Roco-Spezifikation).
+
 ## 2026-11-03 – Q-014 beantwortet, Z21-Treiber in Phase 1 (Mo + Claude)
 
 - Mo hat Q-014 wie vorgeschlagen beantwortet: Der Import aus Electrip 1 legt ein Mapping mit dem Gerätetyp „Electrip 1“ an.
