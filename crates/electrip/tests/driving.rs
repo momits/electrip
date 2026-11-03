@@ -8,11 +8,12 @@
 
 mod common;
 
+use common::srcpd::{connect_to_srcpd, expect_event, observer};
 use common::{App, Client};
-use electrip_core::station::{CommandStation, LocoState, StationEvent};
-use electrip_station_srcp::{DEFAULT_PORT, SrcpStation};
+use electrip_core::station::{LocoState, StationEvent};
+use electrip_station_srcp::SrcpStation;
 use serde_json::json;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Adds loco 1 that takes one second to accelerate and to brake.
 fn add_quick_loco(client: &mut Client) {
@@ -73,32 +74,19 @@ fn reverse_stops_and_changes_the_direction() {
 /// Waits until `station` reports `state` for address 41.
 fn expect_loco(station: &mut SrcpStation, state: LocoState) {
     let expected = StationEvent::Loco { address: 41, state };
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while Instant::now() < deadline {
-        if station.events().contains(&expected) {
-            return;
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    panic!("ERROR srcpd did not report {expected:?}");
+    expect_event(station, |e| *e == expected);
 }
 
 #[test]
 #[ignore = "needs srcpd: cargo xtask sim up"]
 fn srcpd_gets_the_speed_steps() {
     let app = App::start();
-    let mut client = app.connect();
+    let mut client = connect_to_srcpd(&app);
     add_quick_loco(&mut client);
     client
         .command(json!({"command": "set_address", "loco": 1, "address": 41}))
         .unwrap();
-    client
-        .command(
-            json!({"command": "set_server", "host": "127.0.0.1", "port": DEFAULT_PORT, "bus": 1}),
-        )
-        .unwrap();
-    client.command(json!({"command": "connect"})).unwrap();
-    let mut observer = SrcpStation::connect("127.0.0.1", DEFAULT_PORT, 1).unwrap();
+    let mut observer = observer();
 
     set_axis(&mut client, 1.0);
     let full = LocoState {
