@@ -16,6 +16,7 @@ _Zurzeit keine._
 - `cargo xtask test`, `cargo xtask loc` (3059 Zeilen) und `cargo xtask parity` grün.
 - Einfachheits-Review: ok (selbst, Diff komplett neu gelesen; der Diff hat rund 80 Zeilen).
 - **B-18 bleibt offen** (`wired` false): „werden abgespielt“ braucht die Ausgabe über `AudioSink`. Die kommt mit dem ersten Sound-Modell (B-11).
+- `deny.toml` erlaubt jetzt MPL-2.0 (symphonia) und BSD-3-Clause (`encoding_rs`, von symphonia gebraucht). Beide sind mit der GPL-3.0 verträglich, ohne sie geht symphonia nicht. **Mo bitte bestätigen.**
 - **Wartet auf Mo:** Für die Ausgabe auf der Soundkarte müssen `libasound2-dev` ins Devcontainer-`Dockerfile` und in die CI (Ubuntu und die arm64-Cross-Build für den Raspberry Pi). Bis dahin bauen die Sound-Modelle gegen ein `AudioSink`, das nur Ereignisse protokolliert (ADR 0004).
 
 ## 2026-11-05 – Phasen neu geordnet: Sound vor Oberfläche (Mo + Claude)
