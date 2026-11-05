@@ -81,11 +81,13 @@ impl SteamSound {
         while self.idle.advance(&mut rest) {
             self.idle.queue(sink, model.sound(EngineSound::Idle));
         }
-        self.cylinder.advance(&mut elapsed.clone());
-        if speed == 0.0 {
+        let mut rest = elapsed;
+        self.cylinder.advance(&mut rest);
+        let pause = model.steam().pause(speed);
+        let Some(pause) = pause.filter(|_| speed > 0.0) else {
             self.next = None;
             return;
-        }
+        };
         let mut next = match self.next {
             Some(next) => next.saturating_sub(elapsed),
             None if self.cylinder.is_silent() => {
@@ -101,7 +103,7 @@ impl SteamSound {
                 sink.play(self.stroke_channel(self.stroke), sound, next);
             }
             self.stroke = (self.stroke + 1) % self.strokes;
-            next += model.steam().pause(speed);
+            next += pause;
         }
         self.next = Some(next);
     }

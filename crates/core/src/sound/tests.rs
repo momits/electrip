@@ -74,9 +74,20 @@ fn unknown_segments_are_errors() {
 fn strokes_follow_the_turn_of_the_wheels_down_to_the_minimum_frequency() {
     let steam = Steam::default();
     // 1.2 m wheels at 36 km/h turn in 1.2 π / 10 s, split into 4 strokes.
-    let pause = steam.pause(36.0).as_secs_f64();
+    let pause = steam.pause(36.0).unwrap().as_secs_f64();
     assert!((pause - 0.03 * PI).abs() < 1e-9, "{pause}");
-    assert_eq!(steam.pause(0.1), Duration::from_secs(5));
+    assert_eq!(steam.pause(0.1), Some(Duration::from_secs(5)));
+}
+
+#[test]
+fn steam_values_out_of_range_from_a_file_give_no_pause() {
+    let model: SoundModel = serde_json::from_value(serde_json::json!({
+        "engine": "steam",
+        "segments": [{"start": 0.0}],
+        "steam": {"strokes": 4, "wheel_diameter": 0.0, "start_delay": -1.0, "min_frequency": 0.2}
+    }))
+    .unwrap();
+    assert_eq!(model.steam().pause(10.0), None);
 }
 
 #[test]
