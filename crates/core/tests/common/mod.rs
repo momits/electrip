@@ -16,6 +16,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use tempfile::TempDir;
 
 /// Seconds between two polls of the host, as in the app.
 pub const POLL: f64 = 0.05;
@@ -173,14 +174,38 @@ fn input(entry: &Value, axis: u64) -> Command {
     }
 }
 
+/// A host with the configuration of the scenario, connected to a station
+/// that logs to `sent`, playing on `mixer`, and its library directory.
+fn host(
+    scenario: &Value,
+    mixer: &Arc<Mutex<Mixer>>,
+    sent: &Arc<Mutex<Vec<Event>>>,
+) -> (Host, TempDir) {
+    let dir = tempfile::tempdir().unwrap();
+    let config = dir.path().join("config.json");
+    fs::write(&config, scenario["config"].to_string()).unwrap();
+    let mut station = Some(Station(Arc::clone(mixer), Arc::clone(sent)));
+    let connect = Box::new(move |_: &_| {
+        let station = station
+            .take()
+            .ok_or(StationError("connected twice".into()))?;
+        Ok(Box::new(station) as _)
+    });
+    let sink = Box::new(Sink(Arc::clone(mixer)));
+    let mut host = Host::new(connect, sink, dir.path().join("library")).unwrap();
+    host.apply(Command::ImportElectrip1 { path: config })
+        .unwrap();
+    host.apply(Command::Connect).unwrap();
+    let kind = "Electrip 1".into();
+    host.apply(Command::AddDevice { device: 1, kind }).unwrap();
+    (host, dir)
+}
+
 /// Plays the scenario `name` through a host and returns the sound events
 /// in the order of time and the loco states the command station got.
 pub fn play(name: &str) -> (Vec<Event>, Vec<Event>) {
     let scenario: Value =
         serde_json::from_str(&read(&format!("tests/golden/scenarios/{name}.json"))).unwrap();
-    let dir = tempfile::tempdir().unwrap();
-    let config = dir.path().join(format!("{name}.json"));
-    fs::write(&config, scenario["config"].to_string()).unwrap();
     let lengths = scenario["sound_lengths"].as_object().unwrap();
     let mixer = Arc::new(Mutex::new(Mixer {
         lengths: lengths
@@ -190,22 +215,7 @@ pub fn play(name: &str) -> (Vec<Event>, Vec<Event>) {
         ..Mixer::default()
     }));
     let sent = Arc::new(Mutex::new(Vec::new()));
-    let station = Station(Arc::clone(&mixer), Arc::clone(&sent));
-    let mut station = Some(station);
-    let connect = Box::new(move |_: &_| {
-        let station = station
-            .take()
-            .ok_or(StationError("connected twice".into()))?;
-        Ok(Box::new(station) as _)
-    });
-    let sink = Box::new(Sink(Arc::clone(&mixer)));
-    let mut host = Host::new(connect, sink, dir.path().join("library")).unwrap();
-    host.apply(Command::ImportElectrip1 { path: config })
-        .unwrap();
-    host.apply(Command::Connect).unwrap();
-    let kind = "Electrip 1".into();
-    host.apply(Command::AddDevice { device: 1, kind }).unwrap();
-
+    let (mut host, _dir) = host(&scenario, &mixer, &sent);
     let axis = scenario["config"]["joystick"]["accel_axis"]
         .as_u64()
         .unwrap();

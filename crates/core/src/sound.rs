@@ -73,10 +73,10 @@ pub struct Steam {
 }
 
 /// Allowed values of [`Steam`], as in Electrip 1 where it does not crash.
-pub const STROKES_RANGE: RangeInclusive<usize> = 1..=9999;
-pub const WHEEL_DIAMETER_RANGE: RangeInclusive<f64> = 0.1..=99.0;
-pub const START_DELAY_RANGE: RangeInclusive<f64> = 0.0..=9999.0;
-pub const MIN_FREQUENCY_RANGE: RangeInclusive<f64> = 0.1..=9999.0;
+const STROKES_RANGE: RangeInclusive<usize> = 1..=9999;
+const WHEEL_DIAMETER_RANGE: RangeInclusive<f64> = 0.1..=99.0;
+const START_DELAY_RANGE: RangeInclusive<f64> = 0.0..=9999.0;
+const MIN_FREQUENCY_RANGE: RangeInclusive<f64> = 0.1..=9999.0;
 
 impl Default for Steam {
     fn default() -> Self {
@@ -99,11 +99,15 @@ impl Steam {
 
     /// The pause between two strokes at `speed` (km/h, above standstill):
     /// one turn of the wheels split into the strokes, at most the pause of
-    /// the minimum frequency.
-    pub fn pause(&self, speed: f64) -> Duration {
+    /// the minimum frequency. Values out of range, which only a broken file
+    /// brings, give none.
+    pub fn pause(&self, speed: f64) -> Option<Duration> {
+        if !self.is_valid() {
+            return None;
+        }
         let turn = 3.6 * self.wheel_diameter * PI / speed;
         let pause = (turn / self.strokes as f64).min(1.0 / self.min_frequency);
-        Duration::from_secs_f64(pause)
+        Some(Duration::from_secs_f64(pause))
     }
 }
 
