@@ -8,6 +8,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – Phasen neu geordnet: Sound vor Oberfläche (Mo + Claude)
+
+- Phase 1 ließ sich nicht schließen: B-03 und B-05 brauchen Screenshot-Tests der Oberfläche, B-20 braucht Sounds und Audioformate.
+- Mo hat Option D gewählt (ADR 0011): Phase 1 Kern, Phase 2 Sound (B-11 bis B-18, B-20), Phase 3 Ausbau (Oberfläche, Multi-Client, Sync, Audio-Ziel), Phase 4 Abnahme.
+- `phase` in `spec/requirements.json` geändert: B-11 bis B-18 und B-20 → 2; B-03, B-05, B-19, B-22, B-25, N-03, N-04, N-05 → 3.
+  Phase 1 ist damit ganz verifiziert. Mo hat Tor B freigegeben (siehe unten).
+- Tore: B Kern, C Sound (Hörtest bei Mo), D alles verifiziert, E Release. `spec/konzept.md` und `AGENTS.md` angepasst.
+- **Hinweis:** „Phase 2“ in älteren Einträgen meint die Oberfläche, jetzt Phase 3.
+- Mo hat ADR 0011 auf „Angenommen“ gesetzt.
+
+## 2026-11-05 – Tor B freigegeben (Mo)
+
+- Mo hat Tor B freigegeben, Phase 1 ist abgeschlossen.
+  Der Fahrtest an der echten Anlage und die Z21-Prüfung an echter Hardware (`spec/hw-checklist.md`) bleiben Aufgaben von Mo und blockieren Phase 2 nicht.
+- **Nächster Schritt:** Phase 2 im Loop, zuerst B-18 (Audioformate) und der Sound-Golden-Test.
+
+
 ## 2026-11-05 – B-21: verifiziert (Claude)
 
 - Die drei Akzeptanzkriterien sind mit den Prüfarten `corpus` und `unit` abgedeckt:

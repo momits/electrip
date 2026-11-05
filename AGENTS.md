@@ -52,7 +52,7 @@ Jedes Inkrement wird vor dem Abschluss einmal gegen diese Liste geprüft. Grundl
 ## Spezifikation
 
 - `spec/requirements.json`: Agenten ändern **nur** die Felder unter `status`. Anforderungen, Akzeptanzkriterien und Prüfarten ändert nur Mo.
-- `status.wired` = Funktion existiert und ist angebunden. In Phase 1 heißt angebunden: als Befehl im Kern und über den Steuerkanal erreichbar. Akzeptanzkriterien zur Oberfläche bleiben dann als offener Punkt in `PROGRESS.md` und werden in Phase 2 nachgezogen. `status.verified` = alle automatischen Prüffälle grün; nur zusammen mit `wired`, sonst bleibt es `false`, auch wenn die vorhandenen Tests grün sind. `status.accepted` setzt **nur Mo**.
+- `status.wired` = Funktion existiert und ist angebunden. In Phase 1 und 2 heißt angebunden: als Befehl im Kern und über den Steuerkanal erreichbar. Akzeptanzkriterien zur Oberfläche bleiben dann als offener Punkt in `PROGRESS.md` und werden in Phase 3 nachgezogen. `status.verified` = alle automatischen Prüffälle grün; nur zusammen mit `wired`, sonst bleibt es `false`, auch wenn die vorhandenen Tests grün sind. `status.accepted` setzt **nur Mo**.
 - Widerspruch oder Lücke zwischen Handbuch, Alt-Code und Anforderung: nicht selbst entscheiden, sondern als Frage in `spec/questions.md` eintragen und mit einer anderen Aufgabe weitermachen. Vorrang bei klaren Fällen: neue Anforderung vor Alt-Code vor Handbuch.
 - Neue Architekturentscheidungen nur als ADR-Entwurf (`spec/decisions/NNNN-titel.md`, Status „Vorschlag“); Mo setzt auf „Angenommen“.
 

@@ -145,8 +145,13 @@ Die Agenten arbeiten autonom innerhalb einer Phase; zwischen den Phasen gibt Mo 
 | --- | --- | --- | --- |
 | 0 · Fundament | Mo + 1 Agent, interaktiv | Anforderungskatalog, ADRs, `AGENTS.md`, `xtask`, CI auf 3 Plattformen; srcpd-Loopback, Z21-Simulator, Golden-Tests aus Alt-Electrip, Korpus, Loop-Skript | A: Mo gibt Spezifikation und Prüfmittel frei |
 | 1 · Kern | 1 Agent im Loop | Befehls-Engine, Steuerkanal, srcpd- und Z21-Treiber, Gamepad-Profile, Kennlinie, Beschleunigung, Import alter JSON- und ZIP-Dateien | B: B-01 bis B-10 verifiziert, Fahrtest an der echten Anlage |
-| 2 · Ausbau | 1 Agent im Loop | Sound-Modelle, Multi-Client, CRDT-Lok-Sync, Oberfläche, Audio-Ziel System-Audiogerät pro Lok | C: alle B- und N-Anforderungen im Paritätsbericht verifiziert |
-| 3 · Abnahme | Mo + Loop für Fixes | Hardware-Checkliste je Release, Befunde als Issues zurück in den Loop; neues Benutzerhandbuch | D: Release Electrip 2.0 |
+| 2 · Sound | 1 Agent im Loop | Audio-Modelle ohne Oberfläche: Audioformate, Verbrennungs- und Dampfmodell, Geräusch-Funktionen und -Ereignisse, Lok-Export und -Import mit Sounds | C: B-11 bis B-18 und B-20 verifiziert, Hörtest bei Mo |
+| 3 · Ausbau | 1 Agent im Loop | Oberfläche, Multi-Client, CRDT-Lok-Sync, Audio-Ziel System-Audiogerät pro Lok | D: alle B- und N-Anforderungen im Paritätsbericht verifiziert |
+| 4 · Abnahme | Mo + Loop für Fixes | Hardware-Checkliste je Release, Befunde als Issues zurück in den Loop; neues Benutzerhandbuch | E: Release Electrip 2.0 |
+
+Der Sound kommt vor der Oberfläche (ADR 0011): Er braucht sie kaum, und die Sound-Modelle sind das größte Risiko.
+B-03, B-05 und B-19 prüft man mit Screenshots, deshalb gehören sie zur Oberfläche in Phase 3.
+Tor B verlangt zusätzlich einen Fahrtest an der echten Anlage über den Steuerkanal.
 
 Phase 0 ist die wichtigste: Ohne Simulatoren, Golden-Tests und Katalog produziert der Loop schnell Code, dessen Richtigkeit niemand prüfen kann.
 
