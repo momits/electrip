@@ -2,12 +2,13 @@ use super::*;
 use electrip_core::audio::AudioSink;
 use electrip_core::station::StationError;
 use std::path::Path;
+use std::time::Duration;
 use tempfile::TempDir;
 
 struct NoAudio;
 
 impl AudioSink for NoAudio {
-    fn length(&mut self, _: &Path) -> Result<f64, String> {
+    fn length(&mut self, _: &Path) -> Result<Duration, String> {
         Err("no audio".into())
     }
 

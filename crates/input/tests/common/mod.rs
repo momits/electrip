@@ -15,14 +15,15 @@ use sdl3_sys::everything::*;
 use serde_json::Value;
 use std::ffi::CStr;
 use std::path::Path;
+use std::time::Duration;
 use tempfile::TempDir;
 
 /// An audio target where every sound lasts one second.
 struct Audio;
 
 impl AudioSink for Audio {
-    fn length(&mut self, _: &Path) -> Result<f64, String> {
-        Ok(1.0)
+    fn length(&mut self, _: &Path) -> Result<Duration, String> {
+        Ok(Duration::from_secs(1))
     }
 
     fn queue(&mut self, _: u32, _: &Path) {}

@@ -81,13 +81,16 @@ impl DrivingSound {
         match self.state {
             SoundState::Off if standstill => {
                 self.state = SoundState::Starting;
-                (self.level, self.quitting) = (0, false);
+                self.level = 0;
+                self.quitting = false;
                 self.channel.queue(sink, model.sound(EngineSound::Start));
                 self.channel.queue(sink, model.sound(EngineSound::Idle));
             }
             SoundState::Off => {
                 self.state = SoundState::On;
-                (self.level, self.on_load, self.quitting) = (model.level(speed), true, false);
+                self.level = model.level(speed);
+                self.on_load = true;
+                self.quitting = false;
                 self.update(model, speed, sink);
                 self.update(model, speed, sink);
             }

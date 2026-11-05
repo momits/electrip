@@ -31,12 +31,10 @@ impl LogSink {
 }
 
 impl AudioSink for LogSink {
-    fn length(&mut self, sound: &Path) -> Result<f64, String> {
+    fn length(&mut self, sound: &Path) -> Result<Duration, String> {
         let name = sound.to_string_lossy();
-        self.lengths
-            .get(name.as_ref())
-            .copied()
-            .ok_or("unknown sound".into())
+        let length = self.lengths.get(name.as_ref()).ok_or("unknown sound")?;
+        Ok(Duration::from_secs_f64(*length))
     }
 
     fn queue(&mut self, channel: u32, sound: &Path) {

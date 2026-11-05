@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 /// Seconds between two polls of the host, as in the app.
 const POLL: f64 = 0.05;
@@ -57,10 +58,11 @@ impl Mixer {
 struct Sink(Arc<Mutex<Mixer>>);
 
 impl AudioSink for Sink {
-    fn length(&mut self, sound: &Path) -> Result<f64, String> {
+    fn length(&mut self, sound: &Path) -> Result<Duration, String> {
         let mixer = self.0.lock().unwrap();
         let length = mixer.lengths.get(sound.to_str().unwrap());
-        length.copied().ok_or("not in sound_lengths".into())
+        let length = length.ok_or("not in sound_lengths")?;
+        Ok(Duration::from_secs_f64(*length))
     }
 
     fn queue(&mut self, _: u32, sound: &Path) {

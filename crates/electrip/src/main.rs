@@ -12,6 +12,7 @@ use std::env;
 use std::net::{Ipv4Addr, TcpListener};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::time::Duration;
 
 const DEFAULT_CONTROL_PORT: u16 = 4711;
 
@@ -76,7 +77,7 @@ fn run() -> Result<(), String> {
 struct NoAudio;
 
 impl AudioSink for NoAudio {
-    fn length(&mut self, _: &Path) -> Result<f64, String> {
+    fn length(&mut self, _: &Path) -> Result<Duration, String> {
         Err("no audio output yet".into())
     }
 

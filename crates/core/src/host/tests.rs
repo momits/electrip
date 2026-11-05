@@ -55,10 +55,7 @@ impl CommandStation for FakeDriver {
 /// loco states the driver got and its library, deleted when dropped. The
 /// sound "idle" lasts one second, no other sound plays.
 pub(super) fn host() -> (Host, Events, Sent, TempDir) {
-    host_with(LogSink::new(&[("idle", 1.0)]))
-}
-
-pub(super) fn host_with(audio: LogSink) -> (Host, Events, Sent, TempDir) {
+    let audio = LogSink::new(&[("idle", 1.0)]);
     let (events, sent) = (Events::default(), Sent::default());
     let library = TempDir::new().unwrap();
     let (driver_events, driver_sent) = (Arc::clone(&events), Arc::clone(&sent));
