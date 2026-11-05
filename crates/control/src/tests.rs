@@ -1,12 +1,26 @@
 use super::*;
+use electrip_core::audio::AudioSink;
 use electrip_core::station::StationError;
+use std::path::Path;
 use tempfile::TempDir;
 
-/// A host and its library, deleted when dropped.
+struct NoAudio;
+
+impl AudioSink for NoAudio {
+    fn length(&mut self, _: &Path) -> Result<f64, String> {
+        Err("no audio".into())
+    }
+
+    fn queue(&mut self, _: u32, _: &Path) {}
+
+    fn stop(&mut self, _: u32) {}
+}
+
+/// A host without sound and its library, deleted when dropped.
 fn host() -> (Host, TempDir) {
     let library = TempDir::new().unwrap();
     let connect = Box::new(|_: &_| Err(StationError("no station".into())));
-    let host = Host::new(connect, library.path().into()).unwrap();
+    let host = Host::new(connect, Box::new(NoAudio), library.path().into()).unwrap();
     (host, library)
 }
 

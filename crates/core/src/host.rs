@@ -1,6 +1,7 @@
 //! The session host (ADR 0010): it holds the session, the only
 //! connection to the command station and the library of configurations.
 
+use crate::audio::Audio;
 use crate::config::Config;
 use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
@@ -17,6 +18,7 @@ pub struct Host {
     session: Session,
     driver: Option<Driver>,
     connect: Connector,
+    audio: Audio,
     /// The last state of each loco the driver knows, by loco id.
     sent: HashMap<u32, LocoState>,
     /// The directory of the configuration files (B-21).
@@ -28,11 +30,12 @@ pub struct Host {
 impl Host {
     /// Opens the first configuration of the library; an empty library
     /// gets one.
-    pub fn new(connect: Connector, library: PathBuf) -> Result<Self, CommandError> {
+    pub fn new(connect: Connector, audio: Audio, library: PathBuf) -> Result<Self, CommandError> {
         let mut host = Host {
             session: Session::default(),
             driver: None,
             connect,
+            audio,
             sent: HashMap::new(),
             library,
             saved: Config::default(),
@@ -66,6 +69,7 @@ impl Host {
                         .map_err(CommandError::Station)?;
                 }
             }
+            Command::ToggleSound { loco } => self.session.toggle_sound(loco, &mut *self.audio)?,
             Command::Input {
                 device,
                 control,
@@ -147,7 +151,7 @@ impl Host {
             }
             changed = true;
         }
-        let driven = self.session.drive(seconds);
+        let driven = self.session.drive(seconds, &mut *self.audio);
         self.send_locos();
         changed || driven
     }

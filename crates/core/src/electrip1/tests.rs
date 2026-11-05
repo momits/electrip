@@ -1,4 +1,5 @@
 use super::*;
+use crate::sound::{EngineSound, SegmentSound};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 
@@ -68,8 +69,41 @@ fn the_corpus_is_imported_without_loss() {
                 serde_json::from_value(old["speed_control_points"].clone()).unwrap();
             assert_eq!(loco.speed_curve().points(), points);
             assert_functions(loco, &import.actions, &old["functions"]);
+            assert_sounds(loco, &old["engine"]);
         }
         assert_mapping(&import, &file["joystick"]);
+    }
+}
+
+/// The engine, its sounds and its segments arrive; steam engines keep only
+/// their idle sound for now (B-14).
+fn assert_sounds(loco: &Loco, old: &Value) {
+    let Some(model) = loco.sound_model() else {
+        assert!(old.is_null());
+        return;
+    };
+    let path = |sound: Option<&Path>| sound.map(|p| p.to_str().unwrap().to_string());
+    assert_eq!(serde_json::to_value(model.engine()).unwrap(), old["type"]);
+    for (sound, key) in [
+        (EngineSound::Start, "start_sound"),
+        (EngineSound::Idle, "idle_sound"),
+        (EngineSound::Quit, "quit_sound"),
+    ] {
+        assert_eq!(path(model.sound(sound)).as_deref(), old[key].as_str());
+    }
+    let segments = old["sound_segments"].as_array().unwrap();
+    assert_eq!(model.segments().len(), segments.len());
+    for (nr, (segment, old)) in model.segments().iter().zip(segments).enumerate() {
+        assert_eq!(segment.start, old["start"]);
+        for (sound, key) in [
+            (SegmentSound::Load, "load_sound"),
+            (SegmentSound::Idle, "idle_sound"),
+            (SegmentSound::Accel, "accel_sound"),
+            (SegmentSound::Decel, "decel_sound"),
+        ] {
+            let sound = path(model.segment_sound(nr, sound));
+            assert_eq!(sound.as_deref(), old[key].as_str());
+        }
     }
 }
 

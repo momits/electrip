@@ -1,5 +1,6 @@
 //! B-15: sound segments are inserted, removed and moved through the control
-//! channel, and every client sees them.
+//! channel, and every client sees them. B-11, B-12: their sounds and those
+//! of the engine are set the same way.
 
 // Test code: unwrap is allowed (AGENTS.md).
 #![allow(clippy::unwrap_used)]
@@ -67,4 +68,37 @@ fn removing_the_last_segment_asks_for_a_confirmation() {
         json!({"command": "remove_segment", "loco": 1, "segment": 0, "confirmed": true});
     client.command(confirmed).unwrap();
     assert_eq!(client.state["locos"][0]["sound_model"], json!(null));
+}
+
+#[test]
+fn sounds_are_set_and_removed() {
+    let app = App::start();
+    let mut client = app.connect();
+    client.command(json!({"command": "add_loco"})).unwrap();
+    client
+        .command(json!({"command": "set_engine", "loco": 1, "engine": "diesel"}))
+        .unwrap();
+    let engine =
+        json!({"command": "set_engine_sound", "loco": 1, "sound": "start", "path": "/s/start.ogg"});
+    client.command(engine).unwrap();
+    let segment = |path: Value| json!({"command": "set_segment_sound", "loco": 1, "segment": 0, "sound": "load", "path": path});
+    client.command(segment(json!("/s/load.ogg"))).unwrap();
+    let model = &client.state["locos"][0]["sound_model"];
+    assert_eq!(model["sounds"], json!({"start": "/s/start.ogg"}));
+    assert_eq!(
+        model["segments"][0]["sounds"],
+        json!({"load": "/s/load.ogg"})
+    );
+
+    client.command(segment(Value::Null)).unwrap();
+    assert_eq!(
+        client.state["locos"][0]["sound_model"]["segments"][0]["sounds"],
+        json!({})
+    );
+    let unknown = json!({"command": "set_segment_sound", "loco": 1, "segment": 1, "sound": "load", "path": null});
+    assert_eq!(
+        client.command(unknown),
+        Err("there is no sound segment 1".into())
+    );
+    assert_eq!(client.state["locos"][0]["sound"], "off");
 }

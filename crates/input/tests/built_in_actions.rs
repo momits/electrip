@@ -8,6 +8,7 @@
 mod common;
 
 use common::{Rig, Virtual};
+use electrip_core::driving_sound::SoundState;
 use sdl3_sys::everything::*;
 use serde_json::json;
 
@@ -16,6 +17,9 @@ fn built_in_actions_on_buttons_axes_and_hats() {
     let mut rig = Rig::new();
     rig.apply(json!({"command": "add_loco"}));
     rig.apply(json!({"command": "set_accel_duration", "loco": 1, "seconds": 1}));
+    rig.apply(json!({"command": "set_engine", "loco": 1, "engine": "diesel"}));
+    let idle = json!({"command": "set_engine_sound", "loco": 1, "sound": "idle", "path": "idle"});
+    rig.apply(idle);
     let stick = Virtual::joystick(c"Flight Stick", 4, 12, 1);
     rig.update(0.0);
     for (control, target) in [
@@ -41,7 +45,8 @@ fn built_in_actions_on_buttons_axes_and_hats() {
     rig.update(0.0);
     stick.hat(0, SDL_HAT_CENTERED);
     rig.update(0.0);
-    assert!(rig.loco(1).sound);
+    assert_eq!(rig.loco(1).sound.state(), SoundState::Starting);
+    rig.update(1.0);
 
     stick.joystick_axis(1, -1.0);
     rig.update(0.5);
