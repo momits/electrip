@@ -89,7 +89,7 @@
         "virtual-gamepad",
         "screenshot"
       ],
-      "phase": 1,
+      "phase": 3,
       "hw": true,
       "status": {
         "wired": true,
@@ -142,7 +142,7 @@
         "control-channel",
         "screenshot"
       ],
-      "phase": 1,
+      "phase": 3,
       "hw": false,
       "status": {
         "wired": true,
@@ -499,7 +499,7 @@
       "verification": [
         "screenshot"
       ],
-      "phase": 2,
+      "phase": 3,
       "hw": false,
       "status": {
         "wired": false,
@@ -524,7 +524,7 @@
         "corpus",
         "unit"
       ],
-      "phase": 1,
+      "phase": 2,
       "hw": false,
       "status": {
         "wired": false,
@@ -579,7 +579,7 @@
         "screenshot",
         "control-channel"
       ],
-      "phase": 2,
+      "phase": 3,
       "hw": false,
       "status": {
         "wired": false,
@@ -654,7 +654,7 @@
         "unit",
         "screenshot"
       ],
-      "phase": 2,
+      "phase": 3,
       "hw": false,
       "status": {
         "wired": false,
@@ -737,7 +737,7 @@
         "z21-sim",
         "unit"
       ],
-      "phase": 2,
+      "phase": 3,
       "hw": true,
       "status": {
         "wired": false,
@@ -763,7 +763,7 @@
         "multi-client",
         "unit"
       ],
-      "phase": 2,
+      "phase": 3,
       "hw": false,
       "status": {
         "wired": false,
@@ -791,7 +791,7 @@
         "audio-log",
         "hw"
       ],
-      "phase": 2,
+      "phase": 3,
       "hw": true,
       "status": {
         "wired": false,

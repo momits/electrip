@@ -85,7 +85,7 @@ In Electrip 2 heißen die Bedienelemente nur bei Geräten ohne SDL-Layout `butto
 Der Import legt seit dieser Sitzung schon die Aktionen an („Knopf 6“; eine Funktion ohne Knopf bekommt eine Aktion mit ihrem Namen), aber noch kein Mapping.
 **Vorschlag:** Der Import legt ein Mapping mit dem Gerätetyp „Electrip 1“ an (`button<n>` → Aktion „Knopf <n>“ bzw. eingebaute Aktion, `axis<n>` → Fahren mit `axis_threshold` als Totzone).
 Ein neuer Gerätetyp ohne eigenes Mapping bekommt eine Kopie dieses Mappings statt des Standard-Mappings; so funktioniert es sofort für Joysticks und lässt sich für Gamepads in der UI umbelegen.
-`use_auto_focus` und `show_function_nr` sind Einstellungen der Oberfläche und kommen mit B-22 in Phase 2.
+`use_auto_focus` und `show_function_nr` sind Einstellungen der Oberfläche und kommen mit B-22 in Phase 3.
 **Antwort:** Ja, wie vorgeschlagen. (Mo, 2026-11-03)
 
 ## Q-015 – 2026-11-03 – B-21, ADR 0009
