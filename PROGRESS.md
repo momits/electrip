@@ -8,6 +8,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – B-18: WAV und OGG dekodieren (Claude)
+
+- Neues Crate `electrip-audio` (`crates/audio/`): `open(path)` öffnet eine WAV- oder OGG-Datei mit rodio (Dekoder von symphonia). Abtastrate und Kanalzahl kommen aus der Datei, eine Einstellung dafür gibt es nicht.
+- rodio läuft vorerst ohne das Feature `playback`. Das zieht cpal nach, und cpal braucht unter Linux die ALSA-Header (`libasound2-dev`), die weder im Container noch auf den CI-Runnern installiert sind (kein sudo im Container).
+- Tests (`crates/audio/src/tests.rs`): alle Sounds der sechs Lok-Pakete im Korpus werden dekodiert, darunter WAV mit 22.050 Hz 8 Bit mono und 44.100 Hz 16 Bit stereo sowie OGG mono und stereo. Kaputte und fehlende Dateien ergeben einen Fehler.
+- `cargo xtask test`, `cargo xtask loc` (3059 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (selbst, Diff komplett neu gelesen; der Diff hat rund 80 Zeilen).
+- **B-18 bleibt offen** (`wired` false): „werden abgespielt“ braucht die Ausgabe über `AudioSink`. Die kommt mit dem ersten Sound-Modell (B-11).
+- **Wartet auf Mo:** Für die Ausgabe auf der Soundkarte müssen `libasound2-dev` ins Devcontainer-`Dockerfile` und in die CI (Ubuntu und die arm64-Cross-Build für den Raspberry Pi). Bis dahin bauen die Sound-Modelle gegen ein `AudioSink`, das nur Ereignisse protokolliert (ADR 0004).
+
 ## 2026-11-05 – Phasen neu geordnet: Sound vor Oberfläche (Mo + Claude)
 
 - Phase 1 ließ sich nicht schließen: B-03 und B-05 brauchen Screenshot-Tests der Oberfläche, B-20 braucht Sounds und Audioformate.
