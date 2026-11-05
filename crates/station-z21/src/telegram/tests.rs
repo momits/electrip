@@ -123,3 +123,33 @@ fn ignores_bad_checksums_other_headers_and_truncated_datasets() {
     packet.extend([0x09, 0x00, 0x40]);
     assert_eq!(parse(&packet), [StationEvent::Power(true)]);
 }
+
+#[test]
+fn tells_motorola_from_dcc_by_the_format_and_scales_the_steps() {
+    let drive = |decoder: &Decoder, step| {
+        let dataset = set_loco_drive(decoder, true, step, false);
+        (data(&dataset)[1], data(&dataset)[4] & 0x7F)
+    };
+    let mm1 = Decoder::new(Protocol::Motorola1, 5, 14).unwrap();
+    let mm2_14 = Decoder::new(Protocol::Motorola2, 5, 14).unwrap();
+    let mm2_28 = Decoder::new(Protocol::Motorola2, 5, 28).unwrap();
+    assert_eq!(drive(&mm1, 14), (0x10, 15));
+    assert_eq!(drive(&mm2_14, 14), (0x12, 0x1F));
+    assert_eq!(drive(&mm2_28, 28), (0x13, 127));
+}
+
+#[test]
+fn reads_back_the_steps_it_scaled() {
+    for (protocol, steps) in [
+        (Protocol::Motorola1, 14),
+        (Protocol::Motorola2, 14),
+        (Protocol::Motorola2, 28),
+        (Protocol::DccLong, 28),
+    ] {
+        let decoder = Decoder::new(protocol, 5, steps).unwrap();
+        for step in 0..=steps {
+            let sent = scale(step, steps, drive_format(&decoder).1);
+            assert_eq!(host_step(&decoder, sent), step, "{protocol:?} {steps}");
+        }
+    }
+}

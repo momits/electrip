@@ -8,6 +8,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – N-02: Prüfung des Z21-Treibers gegen die Spezifikation (Claude)
+
+- Das PDF (Version 1.13, SHA-256 aus `sim/z21/README.md` stimmt) wurde mit `pdftotext` gelesen und `crates/station-z21` Kapitel für Kapitel verglichen.
+  Der Code des Simulators wurde nicht gelesen.
+- Geprüft und in Ordnung: Datensatz und Prüfsumme (1.2), kombinierte Pakete (1.3), Abmelden und Keepalive (1.1, 2.2), Gleisstrom und Nothalt (2.4–2.14), Broadcast-Flags (2.16), Lok-Modus (3.2), Fahrstufen-Codierung für 14, 28 und 128 (4.2), Einzelfunktionen (4.3.1) und Lok-Info mit Funktionen F0–F28 (4.4).
+- **Abweichung behoben:** Das Format-Byte `0x1S` sagt der Z21 auch, ob die Lok Motorola I oder II ist, und bei Motorola II, ob sie 14 oder 28 reale Fahrstufen hat (4.2).
+  Der Treiber sendete für Motorola II mit 14 Fahrstufen S=0 (Motorola I, nur F0) und für 28 Fahrstufen S=2.
+  Jetzt gilt: Motorola I S=0, Motorola II mit 14 Stufen S=2, mit 28 Stufen S=3.
+  Die Z21 rechnet die DCC-Fahrstufe selbst in die reale um, deshalb skaliert der Treiber die Stufe des Hosts auf die DCC-Stufen des Formats und die Lok-Info zurück.
+- Nicht übernommen: F29–F31 in der Lok-Info (DB8) werden nicht gelesen. Der Treiber schaltet nur bis F28 (`MAX_FUNCTION`).
+- Offen: Die Spezifikation nennt die Umrechnung von DCC- in MM-Stufen nicht; ob die Z21 die Skalierung wie angenommen deutet, prüft Mo an der echten Z21 (`spec/hw-checklist.md`).
+- Tests: `telegram/tests.rs` (Format je Protokoll, Hin- und Rückskalierung aller Stufen). `cargo xtask test`, `cargo xtask loc` (3049 Zeilen) und `cargo xtask parity` grün.
+  Szenario-Suite `station_scenarios` mit `--include-ignored --test-threads=1`: 8 Tests gegen srcpd und 7 gegen den Z21-Simulator grün.
+- **Auffällig, nicht von dieser Änderung:** `cargo xtask sim up` bricht auf `main` und auf diesem Branch bei `tests/actions.rs` (`srcpd_gets_the_functions`) ab; die srcpd-Szenarien laufen parallel nur mit Zeitüberschreitung, einzeln grün.
+- Einfachheits-Review: ok (selbst, Diff komplett neu gelesen).
+
 ## 2026-11-03 – Q-015 beantwortet, Prüfung des Z21-Treibers offen (Mo + Claude)
 
 - Mo hat Q-015 wie vorgeschlagen beantwortet: Beim Import aus Electrip 1 behält die eingebaute Aktion den Knopf, der `import_report` nennt die ausgelassenen Funktionen.

@@ -59,16 +59,11 @@ pub fn set_loco_mode(decoder: &Decoder) -> Vec<u8> {
 
 /// LAN_X_SET_LOCO_DRIVE (4.2); the speed value 1 is the emergency stop.
 pub fn set_loco_drive(decoder: &Decoder, forward: bool, step: u8, emergency: bool) -> Vec<u8> {
-    let steps = decoder.speed_steps();
+    let (format, z21_steps) = drive_format(decoder);
     let speed = if emergency {
         1
     } else {
-        speed_value(steps, step)
-    };
-    let format = match steps {
-        14 => 0x10,
-        28 => 0x12,
-        _ => 0x13,
+        speed_value(z21_steps, scale(step, decoder.speed_steps(), z21_steps))
     };
     let [msb, lsb] = address_bytes(decoder.address());
     x_bus(&[0xE4, format, msb, lsb, u8::from(forward) << 7 | speed])
@@ -84,6 +79,33 @@ pub fn set_loco_function(address: u16, number: u8, on: bool) -> Vec<u8> {
 fn address_bytes(address: u16) -> [u8; 2] {
     let [msb, lsb] = address.to_be_bytes();
     [if address >= 128 { msb | 0xC0 } else { msb }, lsb]
+}
+
+/// The format byte 0x1S of LAN_X_SET_LOCO_DRIVE and the number of steps its
+/// speed values count (4.2). The format also tells the Z21 the protocol:
+/// S=0 is DCC 14 or Motorola I, S=2 is DCC 28 or Motorola II with 14 real
+/// steps, S=3 is DCC 128 or Motorola II with 28 real steps. For Motorola the
+/// Z21 converts the DCC step into the real step, so the host step is scaled
+/// to the DCC steps of the format. DCC 128 sends at most step 126.
+fn drive_format(decoder: &Decoder) -> (u8, u8) {
+    match (decoder.protocol(), decoder.speed_steps()) {
+        (Protocol::Motorola2, 14) => (0x12, 28),
+        (Protocol::Motorola2, 28) => (0x13, 126),
+        (_, 14) => (0x10, 14),
+        (_, 28) => (0x12, 28),
+        _ => (0x13, 128),
+    }
+}
+
+/// A step on a scale of `from` steps as the nearest step on a scale of `to`.
+fn scale(step: u8, from: u8, to: u8) -> u8 {
+    let (step, from, to) = (u16::from(step), u16::from(from), u16::from(to));
+    ((step * to + from / 2) / from) as u8
+}
+
+/// The step of the host for a step that the Z21 reports for this decoder.
+pub fn host_step(decoder: &Decoder, z21_step: u8) -> u8 {
+    scale(z21_step, drive_format(decoder).1, decoder.speed_steps())
 }
 
 /// The speed value of a step: 0 stops, 1 is the emergency stop. With 28

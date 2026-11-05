@@ -1,5 +1,5 @@
 //! Driver for the Roco Z21 over UDP (N-02), built from the specification
-//! alone since there is no Z21 to test with; experimental in Electrip 2.0.
+//! alone and checked against it; experimental in Electrip 2.0.
 //! The host polls `events` often, so the driver needs no thread.
 
 mod telegram;
@@ -83,12 +83,13 @@ impl Z21Station {
         let mut buffer = [0; 1500];
         let length = self.socket.recv(&mut buffer)?;
         self.last_heard = Instant::now();
-        let events = telegram::parse(&buffer[..length]);
-        for event in &events {
+        let mut events = telegram::parse(&buffer[..length]);
+        for event in &mut events {
             if let StationEvent::Loco { address, state } = event
-                && let Some(known) = self.known.get_mut(address)
+                && let Some((decoder, known)) = self.known.get_mut(address)
             {
-                known.1 = *state;
+                state.step = telegram::host_step(decoder, state.step);
+                *known = *state;
             }
         }
         Ok(events)
