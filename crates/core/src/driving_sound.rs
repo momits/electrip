@@ -10,9 +10,14 @@
 //! off at standstill waits for the idle sound and then plays the quit
 //! sound. Meanwhile the speed is locked. Switching on while driving starts
 //! with the load sound, switching off while driving silences at once.
+//!
+//! The loco follows the sound (B-13): it starts only when the sound leading
+//! into the first segment begins and stops only when the sound leading out
+//! of it begins.
 
 use crate::audio::{AudioSink, Channel};
 use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel};
+use crate::station::LocoState;
 use serde::Serialize;
 use std::cmp::Ordering;
 use std::time::Duration;
@@ -35,6 +40,8 @@ pub struct DrivingSound {
     channel: Channel,
     /// Where the queued sounds lead: 0 is standstill, n the n-th segment.
     level: usize,
+    /// Where the playing sound leads.
+    audible: usize,
     /// Whether the engine reached the level accelerating.
     on_load: bool,
     /// Whether the quit sound is queued; the sound ends with it.
@@ -66,6 +73,22 @@ impl DrivingSound {
         matches!(self.state, SoundState::Starting | SoundState::Stopping)
     }
 
+    /// What the command station gets instead of `state` after `last`
+    /// while the sound plays: standstill until the sound leaves the idle,
+    /// and the last step and direction until it returns there.
+    pub fn synchronize(&self, mut state: LocoState, last: &LocoState) -> LocoState {
+        if self.state == SoundState::Off {
+            return state;
+        }
+        if self.audible == 0 {
+            state.step = 0;
+        } else if state.step == 0 {
+            state.step = last.step;
+            state.forward = last.forward;
+        }
+        state
+    }
+
     /// The sound switch. Only combustion engines have a driving sound yet;
     /// steam comes with B-14. Without a sound to play it stays off.
     pub(crate) fn toggle(
@@ -82,6 +105,7 @@ impl DrivingSound {
             SoundState::Off if standstill => {
                 self.state = SoundState::Starting;
                 self.level = 0;
+                self.audible = 0;
                 self.quitting = false;
                 self.channel.queue(sink, model.sound(EngineSound::Start));
                 self.channel.queue(sink, model.sound(EngineSound::Idle));
@@ -89,6 +113,7 @@ impl DrivingSound {
             SoundState::Off => {
                 self.state = SoundState::On;
                 self.level = model.level(speed);
+                self.audible = self.level;
                 self.on_load = true;
                 self.quitting = false;
                 self.update(model, speed, sink);
@@ -119,6 +144,7 @@ impl DrivingSound {
             return;
         };
         while self.channel.advance(&mut elapsed) {
+            self.audible = self.level;
             self.update(model, speed, sink);
         }
         self.off_if_silent();

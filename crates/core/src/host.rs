@@ -164,7 +164,10 @@ impl Host {
             return;
         };
         for entry in self.session.locos() {
-            let state = entry.station_state();
+            let mut state = entry.station_state();
+            if let Some(last) = self.sent.get(&entry.id) {
+                state = entry.sound.synchronize(state, last);
+            }
             let last = self.sent.insert(entry.id, state);
             if last.is_some_and(|last| last != state) {
                 // A broken connection arrives as an event and disconnects.
