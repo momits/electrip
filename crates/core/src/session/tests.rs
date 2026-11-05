@@ -125,6 +125,7 @@ fn the_state_is_written_as_json() {
                 "volume": 0.8,
                 "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
                 "picture": null,
+                "sound_model": null,
                 "speed": 0.0,
                 "forward": true,
                 "sound": false
