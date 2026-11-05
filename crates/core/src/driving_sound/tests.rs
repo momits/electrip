@@ -120,13 +120,45 @@ fn switching_while_driving_starts_with_the_load_sound_and_stops_at_once() {
 }
 
 #[test]
-fn without_sounds_or_with_steam_the_sound_stays_off() {
+fn without_sounds_or_a_model_the_sound_stays_off() {
     let mut sink = LogSink::default();
     let mut sound = DrivingSound::new(1);
     sound.toggle(Some(&model()), 0.0, &mut sink);
-    sound.toggle(Some(&SoundModel::new(Engine::Steam)), 0.0, &mut sink);
     sound.toggle(None, 0.0, &mut sink);
     assert_eq!(sound.state(), SoundState::Off);
+}
+
+#[test]
+fn a_steam_engine_switches_on_and_off_at_once() {
+    let steam = SoundModel::new(Engine::Steam);
+    let mut sink = LogSink::default();
+    let mut sound = DrivingSound::new(1);
+    sound.toggle(Some(&steam), 0.0, &mut sink);
+    assert_eq!(sound.state(), SoundState::On);
+    assert!(!sound.locks_speed());
+    sound.toggle(Some(&steam), 0.0, &mut sink);
+    assert_eq!(sound.state(), SoundState::Off);
+}
+
+#[test]
+fn a_steam_engine_does_not_hold_back_the_loco() {
+    let mut sound = DrivingSound::new(1);
+    sound.toggle(Some(&SoundModel::new(Engine::Steam)), 0.0, &mut sink());
+    let state = LocoState {
+        step: 5,
+        ..LocoState::default()
+    };
+    assert_eq!(sound.synchronize(state, &LocoState::default()), state);
+}
+
+#[test]
+fn a_model_of_another_engine_stops_the_sound() {
+    let mut sink = sink();
+    let mut sound = started(&mut sink);
+    let steam = SoundModel::new(Engine::Steam);
+    sound.play(Some(&steam), 0.0, &mut sink, Duration::ZERO);
+    assert_eq!(sound.state(), SoundState::Off);
+    assert_eq!(sink.take(), ["1 stop"]);
 }
 
 #[test]

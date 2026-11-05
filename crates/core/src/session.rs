@@ -12,7 +12,7 @@ use crate::function::{Action, Function};
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
-use crate::sound::{Engine, EngineSound, SegmentSound};
+use crate::sound::{Engine, EngineSound, SegmentSound, Steam};
 use crate::station::{LocoState, MAX_FUNCTION, StationError, StationKind};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -134,6 +134,20 @@ pub enum Command {
         segment: usize,
         sound: SegmentSound,
         path: Option<PathBuf>,
+    },
+    /// Sets a sound file on the host for the `stroke`-th cylinder stroke
+    /// (from 0) of a steam engine in the sound segment (B-14); `null`
+    /// removes it.
+    SetStrokeSound {
+        loco: u32,
+        segment: usize,
+        stroke: usize,
+        path: Option<PathBuf>,
+    },
+    /// How the steam engine strokes (B-14).
+    SetSteam {
+        loco: u32,
+        steam: Steam,
     },
     /// Deflection of the drive axis from -1 (full back) to 1 (full forward);
     /// the host accelerates the loco with it until the next one (B-10).
@@ -578,6 +592,13 @@ impl Session {
                 sound,
                 path,
             } => self.loco(loco)?.set_segment_sound(segment, sound, path)?,
+            Command::SetStrokeSound {
+                loco,
+                segment,
+                stroke,
+                path,
+            } => self.loco(loco)?.set_stroke_sound(segment, stroke, path)?,
+            Command::SetSteam { loco, steam } => self.loco(loco)?.set_steam(steam)?,
             Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::AddAction { name } => self.add_action(name),

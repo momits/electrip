@@ -5,7 +5,7 @@
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::function::Function;
-use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel};
+use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel, Steam};
 use crate::speed_curve::SpeedCurve;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -38,6 +38,8 @@ pub enum LocoError {
     SoundResetNotConfirmed,
     NoSound,
     UnknownSegment(usize),
+    UnknownStroke(usize),
+    SteamOutOfRange,
 }
 
 impl From<DecoderError> for LocoError {
@@ -78,6 +80,11 @@ impl fmt::Display for LocoError {
             ),
             LocoError::NoSound => write!(f, "the loco has no sound"),
             LocoError::UnknownSegment(nr) => write!(f, "there is no sound segment {nr}"),
+            LocoError::UnknownStroke(nr) => write!(f, "there is no cylinder stroke {nr}"),
+            LocoError::SteamOutOfRange => write!(
+                f,
+                "strokes, wheel diameter, start delay or minimum frequency out of range"
+            ),
         }
     }
 }
@@ -232,6 +239,19 @@ impl Loco {
         path: Option<PathBuf>,
     ) -> Result<(), LocoError> {
         self.sound_model_mut()?.set_segment_sound(nr, sound, path)
+    }
+
+    pub fn set_stroke_sound(
+        &mut self,
+        nr: usize,
+        stroke: usize,
+        path: Option<PathBuf>,
+    ) -> Result<(), LocoError> {
+        self.sound_model_mut()?.set_stroke_sound(nr, stroke, path)
+    }
+
+    pub fn set_steam(&mut self, steam: Steam) -> Result<(), LocoError> {
+        self.sound_model_mut()?.set_steam(steam)
     }
 
     /// See [`SoundModel::insert_segment`].

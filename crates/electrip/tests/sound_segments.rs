@@ -1,6 +1,7 @@
 //! B-15: sound segments are inserted, removed and moved through the control
 //! channel, and every client sees them. B-11, B-12: their sounds and those
-//! of the engine are set the same way.
+//! of the engine are set the same way. B-14: so are the stroke sounds and
+//! how a steam engine strokes.
 
 // Test code: unwrap is allowed (AGENTS.md).
 #![allow(clippy::unwrap_used)]
@@ -101,4 +102,35 @@ fn sounds_are_set_and_removed() {
         Err("there is no sound segment 1".into())
     );
     assert_eq!(client.state["locos"][0]["sound"], "off");
+}
+
+#[test]
+fn a_steam_engine_is_set_up() {
+    let app = App::start();
+    let mut client = app.connect();
+    client.command(json!({"command": "add_loco"})).unwrap();
+    client
+        .command(json!({"command": "set_engine", "loco": 1, "engine": "steam"}))
+        .unwrap();
+    let steam =
+        json!({"strokes": 6, "wheel_diameter": 1.5, "start_delay": 1.0, "min_frequency": 0.5});
+    let set_steam = |steam: &Value| json!({"command": "set_steam", "loco": 1, "steam": steam});
+    client.command(set_steam(&steam)).unwrap();
+    let stroke = |stroke: usize| json!({"command": "set_stroke_sound", "loco": 1, "segment": 0, "stroke": stroke, "path": "/s/stroke.ogg"});
+    client.command(stroke(5)).unwrap();
+    let model = &client.state["locos"][0]["sound_model"];
+    assert_eq!(model["steam"], steam);
+    assert_eq!(
+        model["segments"][0]["strokes"],
+        json!({"5": "/s/stroke.ogg"})
+    );
+
+    assert_eq!(
+        client.command(stroke(6)),
+        Err("there is no cylinder stroke 6".into())
+    );
+    let mut wrong = steam.clone();
+    wrong["strokes"] = json!(0);
+    assert!(client.command(set_steam(&wrong)).is_err());
+    assert_eq!(client.state["locos"][0]["sound_model"]["steam"], steam);
 }

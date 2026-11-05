@@ -16,7 +16,7 @@ use crate::function::{Action, Function, Mode};
 use crate::input::{Mapping, Target};
 use crate::loco::{DEFAULT_NAME, Loco, LocoError};
 use crate::session::Station;
-use crate::sound::{Engine, EngineSound, Segment, SegmentSound, SoundModel, Sounds};
+use crate::sound::{Engine, EngineSound, Segment, SegmentSound, SoundModel, Sounds, Steam};
 use crate::speed_curve::{Point, SpeedCurve};
 use crate::station::MAX_FUNCTION;
 use serde::Deserialize;
@@ -114,8 +114,8 @@ struct OldLoco {
     engine: Option<OldEngine>,
 }
 
-/// The sound of a loco. Steam engines keep only their idle sound and their
-/// segments for now (B-14).
+/// The sound of a loco; steam engines leave out the start and quit sound,
+/// combustion engines the rest.
 #[derive(Deserialize)]
 struct OldEngine {
     #[serde(rename = "type")]
@@ -123,6 +123,11 @@ struct OldEngine {
     start_sound: Option<PathBuf>,
     idle_sound: Option<PathBuf>,
     quit_sound: Option<PathBuf>,
+    cylinder_steam_sound: Option<PathBuf>,
+    nr_strokes: Option<usize>,
+    wheel_diameter: Option<f64>,
+    stroke_start_delay: Option<f64>,
+    min_freq: Option<f64>,
     /// `null` without segments.
     #[serde(default)]
     sound_segments: Option<Vec<OldSegment>>,
@@ -136,6 +141,9 @@ struct OldSegment {
     idle_sound: Option<PathBuf>,
     accel_sound: Option<PathBuf>,
     decel_sound: Option<PathBuf>,
+    /// One per stroke, `null` without a sound.
+    #[serde(default)]
+    stroke_sounds: Option<Vec<Option<PathBuf>>>,
 }
 
 /// A decoder function; `button` is -1 without a button.
@@ -252,12 +260,13 @@ fn convert(
         .into_iter()
         .filter_map(|f| function(f, &old.name, actions, report))
         .collect();
-    loco.set_sound_model(old.engine.map(sound_model));
+    let model = old.engine.map(sound_model).transpose();
+    loco.set_sound_model(model.map_err(loco_error)?);
     loco.set_name(old.name);
     Ok(loco)
 }
 
-fn sound_model(old: OldEngine) -> SoundModel {
+fn sound_model(old: OldEngine) -> Result<SoundModel, LocoError> {
     let segments = old.sound_segments.unwrap_or_default();
     let segments = segments.into_iter().map(|s| Segment {
         start: s.start,
@@ -267,17 +276,27 @@ fn sound_model(old: OldEngine) -> SoundModel {
             (SegmentSound::Accel, s.accel_sound),
             (SegmentSound::Decel, s.decel_sound),
         ]),
+        strokes: sounds(s.stroke_sounds.unwrap_or_default().into_iter().enumerate()),
     });
     let engine_sounds = sounds([
         (EngineSound::Start, old.start_sound),
         (EngineSound::Idle, old.idle_sound),
         (EngineSound::Quit, old.quit_sound),
+        (EngineSound::Cylinder, old.cylinder_steam_sound),
     ]);
-    SoundModel::with(old.engine, engine_sounds, segments.collect())
+    let mut model = SoundModel::with(old.engine, engine_sounds, segments.collect());
+    let default = Steam::default();
+    model.set_steam(Steam {
+        strokes: old.nr_strokes.unwrap_or(default.strokes),
+        wheel_diameter: old.wheel_diameter.unwrap_or(default.wheel_diameter),
+        start_delay: old.stroke_start_delay.unwrap_or(default.start_delay),
+        min_frequency: old.min_freq.unwrap_or(default.min_frequency),
+    })?;
+    Ok(model)
 }
 
 /// The sounds that are set.
-fn sounds<K: Ord, const N: usize>(sounds: [(K, Option<PathBuf>); N]) -> Sounds<K> {
+fn sounds<K: Ord>(sounds: impl IntoIterator<Item = (K, Option<PathBuf>)>) -> Sounds<K> {
     sounds
         .into_iter()
         .filter_map(|(kind, path)| Some((kind, path?)))

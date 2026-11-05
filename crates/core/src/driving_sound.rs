@@ -14,10 +14,13 @@
 //! The loco follows the sound (B-13): it starts only when the sound leading
 //! into the first segment begins and stops only when the sound leading out
 //! of it begins.
+//!
+//! A steam engine plays as [`SteamSound`]; it is on or off.
 
-use crate::audio::{AudioSink, Channel};
+use crate::audio::{AudioSink, Channel, ChannelId};
 use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel};
 use crate::station::LocoState;
+use crate::steam_sound::SteamSound;
 use serde::Serialize;
 use std::cmp::Ordering;
 use std::time::Duration;
@@ -46,6 +49,7 @@ pub struct DrivingSound {
     on_load: bool,
     /// Whether the quit sound is queued; the sound ends with it.
     quitting: bool,
+    steam: SteamSound,
 }
 
 impl From<DrivingSound> for SoundState {
@@ -59,7 +63,8 @@ impl DrivingSound {
     /// same number.
     pub(crate) fn new(id: u32) -> Self {
         DrivingSound {
-            channel: Channel::new(id),
+            channel: Channel::new(ChannelId { loco: id, nr: 0 }),
+            steam: SteamSound::new(id),
             ..DrivingSound::default()
         }
     }
@@ -77,7 +82,7 @@ impl DrivingSound {
     /// while the sound plays: standstill until the sound leaves the idle,
     /// and the last step and direction until it returns there.
     pub(crate) fn synchronize(&self, mut state: LocoState, last: &LocoState) -> LocoState {
-        if self.state == SoundState::Off {
+        if self.state == SoundState::Off || self.steam.is_running() {
             return state;
         }
         if self.audible == 0 {
@@ -89,17 +94,21 @@ impl DrivingSound {
         state
     }
 
-    /// The sound switch. Only combustion engines have a driving sound yet;
-    /// steam comes with B-14. Without a sound to play it stays off.
+    /// The sound switch. A combustion engine without a sound to play stays
+    /// off.
     pub(crate) fn toggle(
         &mut self,
         model: Option<&SoundModel>,
         speed: f64,
         sink: &mut dyn AudioSink,
     ) {
-        let Some(model) = model.filter(|m| m.engine() == Engine::Diesel) else {
+        let Some(model) = model else {
             return;
         };
+        if model.engine() == Engine::Steam {
+            self.toggle_steam(model, speed, sink);
+            return;
+        }
         let standstill = speed == 0.0;
         match self.state {
             SoundState::Off if standstill => {
@@ -126,8 +135,18 @@ impl DrivingSound {
         self.off_if_silent();
     }
 
+    fn toggle_steam(&mut self, model: &SoundModel, speed: f64, sink: &mut dyn AudioSink) {
+        if self.state == SoundState::Off {
+            self.steam.start(model, speed, sink);
+            self.state = SoundState::On;
+        } else {
+            self.stop(sink);
+        }
+    }
+
     /// Lets `elapsed` pass at `speed`; each sound that ends is followed by
-    /// the next. Without a model the sound stops.
+    /// the next. Without a model or with one of another engine the sound
+    /// stops.
     pub(crate) fn play(
         &mut self,
         model: Option<&SoundModel>,
@@ -138,11 +157,15 @@ impl DrivingSound {
         if self.state == SoundState::Off {
             return;
         }
-        let Some(model) = model else {
-            self.channel.stop(sink);
-            self.state = SoundState::Off;
+        let steam = self.steam.is_running();
+        let Some(model) = model.filter(|m| (m.engine() == Engine::Steam) == steam) else {
+            self.stop(sink);
             return;
         };
+        if steam {
+            self.steam.play(model, speed, sink, elapsed);
+            return;
+        }
         while self.channel.advance(&mut elapsed) {
             self.audible = self.level;
             self.update(model, speed, sink);
@@ -191,6 +214,15 @@ impl DrivingSound {
             }
             SoundState::Off | SoundState::On => {}
         }
+    }
+
+    fn stop(&mut self, sink: &mut dyn AudioSink) {
+        if self.steam.is_running() {
+            self.steam.stop(sink);
+        } else {
+            self.channel.stop(sink);
+        }
+        self.state = SoundState::Off;
     }
 
     fn off_if_silent(&mut self) {

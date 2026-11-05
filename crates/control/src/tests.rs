@@ -1,5 +1,5 @@
 use super::*;
-use electrip_core::audio::AudioSink;
+use electrip_core::audio::{AudioSink, ChannelId};
 use electrip_core::station::StationError;
 use std::path::Path;
 use std::time::Duration;
@@ -12,9 +12,11 @@ impl AudioSink for NoAudio {
         Err("no audio".into())
     }
 
-    fn queue(&mut self, _: u32, _: &Path) {}
+    fn queue(&mut self, _: ChannelId, _: &Path) {}
 
-    fn stop(&mut self, _: u32) {}
+    fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn stop(&mut self, _: ChannelId) {}
 }
 
 /// A host without sound and its library, deleted when dropped.
