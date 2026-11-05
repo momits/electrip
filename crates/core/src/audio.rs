@@ -9,8 +9,8 @@ pub type Audio = Box<dyn AudioSink + Send>;
 
 /// Plays the sounds of the locos, each loco on its own channel.
 pub trait AudioSink {
-    /// The length of a sound file in seconds.
-    fn length(&mut self, sound: &Path) -> Result<f64, String>;
+    /// The length of a sound file.
+    fn length(&mut self, sound: &Path) -> Result<Duration, String>;
 
     /// Plays the sound on the channel: at once if the channel is silent,
     /// else without a gap after the current sound. It replaces a sound
@@ -48,9 +48,7 @@ impl Channel {
         let Some(sound) = sound else {
             return;
         };
-        let length = sink.length(sound).ok();
-        let length = length.and_then(|l| Duration::try_from_secs_f64(l).ok());
-        let Some(length) = length.filter(|l| !l.is_zero()) else {
+        let Some(length) = sink.length(sound).ok().filter(|l| !l.is_zero()) else {
             return;
         };
         sink.queue(self.id, sound);
