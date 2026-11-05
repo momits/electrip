@@ -79,3 +79,13 @@ Vorbereitung: wie B-10 verbunden, eine DCC-Lok mit Licht auf F0 und einer weiter
 - [ ] Beim Fahren mit `set_axis` bleiben eingeschaltete Funktionen an.
 
 Ergebnis: _offen_
+
+## B-13 – Anfahren synchron zum Sound (braucht die Soundausgabe aus B-18)
+
+Vorbereitung: wie B-10 verbunden, eine Diesellok mit Geräuschen (z. B. aus einem Lok-Paket des Korpus importiert), Fahrgeräusch an (`toggle_sound`) und der Leerlauf erreicht.
+
+- [ ] `set_axis` mit `deflection: 1`: die Lok steht, bis das Beschleunigungsgeräusch in Segment 1 hörbar beginnt, und fährt genau dann los.
+- [ ] Bremsen bis zum Stillstand (`deflection: -1`): die Lok rollt mit kleiner Fahrstufe weiter, bis das Bremsgeräusch in den Leerlauf beginnt, und hält genau dann.
+- [ ] Fahrgeräusch aus: die Lok fährt und hält wieder sofort mit der Achse.
+
+Ergebnis: _offen_
