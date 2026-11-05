@@ -14,5 +14,6 @@ pub mod loco;
 pub mod package;
 pub mod picture;
 pub mod session;
+pub mod sound;
 pub mod speed_curve;
 pub mod station;

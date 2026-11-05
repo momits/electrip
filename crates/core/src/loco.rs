@@ -1,9 +1,11 @@
 //! A loco with its decoder, maximum speed and speed curve. Changing the
 //! maximum speed, the speed steps or the protocol changes the axes of the
 //! curve and resets it, which needs a confirmation (B-09).
+//! Changing or removing the sound model needs one, too (B-15).
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::function::Function;
+use crate::sound::{Engine, SoundModel};
 use crate::speed_curve::SpeedCurve;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -30,6 +32,11 @@ pub enum LocoError {
     /// The change would reset the speed curve and was not confirmed; nothing
     /// changed.
     ResetNotConfirmed,
+    /// The change would reset the sounds and was not confirmed; nothing
+    /// changed.
+    SoundResetNotConfirmed,
+    NoSound,
+    UnknownSegment(usize),
 }
 
 impl From<DecoderError> for LocoError {
@@ -64,6 +71,12 @@ impl fmt::Display for LocoError {
                 f,
                 "this change resets the speed curve and needs a confirmation"
             ),
+            LocoError::SoundResetNotConfirmed => write!(
+                f,
+                "this change resets the sounds of the loco and needs a confirmation"
+            ),
+            LocoError::NoSound => write!(f, "the loco has no sound"),
+            LocoError::UnknownSegment(nr) => write!(f, "there is no sound segment {nr}"),
         }
     }
 }
@@ -83,6 +96,9 @@ pub struct Loco {
     functions: Vec<Function>,
     /// Name of the picture in the media directory (B-05).
     picture: Option<String>,
+    /// `None` is “no sound”.
+    #[serde(default)]
+    sound_model: Option<SoundModel>,
 }
 
 impl Loco {
@@ -100,6 +116,7 @@ impl Loco {
             volume: 0.8,
             functions: Vec::new(),
             picture: None,
+            sound_model: None,
         })
     }
 
@@ -171,6 +188,55 @@ impl Loco {
         self.picture = picture;
     }
 
+    pub fn sound_model(&self) -> Option<&SoundModel> {
+        self.sound_model.as_ref()
+    }
+
+    fn sound_model_mut(&mut self) -> Result<&mut SoundModel, LocoError> {
+        self.sound_model.as_mut().ok_or(LocoError::NoSound)
+    }
+
+    /// Sets a new sound model with one segment, or none. Replacing a model of
+    /// another engine resets its sounds and needs a confirmation.
+    pub fn set_engine(&mut self, engine: Option<Engine>, confirmed: bool) -> Result<(), LocoError> {
+        let current = self.sound_model.as_ref().map(SoundModel::engine);
+        if current == engine {
+            return Ok(());
+        }
+        if current.is_some() && !confirmed {
+            return Err(LocoError::SoundResetNotConfirmed);
+        }
+        self.sound_model = engine.map(SoundModel::new);
+        Ok(())
+    }
+
+    /// See [`SoundModel::insert_segment`].
+    pub fn insert_segment(&mut self, nr: usize) -> Result<(), LocoError> {
+        let max_speed = self.max_speed;
+        self.sound_model_mut()?.insert_segment(nr, max_speed)
+    }
+
+    /// See [`SoundModel::move_border`].
+    pub fn move_segment_border(&mut self, nr: usize, speed: f64) -> Result<(), LocoError> {
+        let max_speed = self.max_speed;
+        self.sound_model_mut()?.move_border(nr, speed, max_speed)
+    }
+
+    /// Removes the `nr`-th sound segment. Removing the only one sets the
+    /// loco to no sound and needs a confirmation.
+    pub fn remove_segment(&mut self, nr: usize, confirmed: bool) -> Result<(), LocoError> {
+        let model = self.sound_model_mut()?;
+        if model.segments().len() > 1 {
+            return model.remove_segment(nr);
+        }
+        model.check(nr)?;
+        if !confirmed {
+            return Err(LocoError::SoundResetNotConfirmed);
+        }
+        self.sound_model = None;
+        Ok(())
+    }
+
     pub fn set_address(&mut self, address: u16) -> Result<(), LocoError> {
         Ok(self.decoder.set_address(address)?)
     }
@@ -215,6 +281,9 @@ impl Loco {
             return Err(LocoError::ResetNotConfirmed);
         }
         loco.speed_curve = SpeedCurve::straight(loco.max_speed, loco.decoder.speed_steps().into());
+        if let Some(model) = &mut loco.sound_model {
+            model.scale(loco.max_speed / self.max_speed);
+        }
         *self = loco;
         Ok(())
     }

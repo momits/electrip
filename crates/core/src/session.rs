@@ -10,6 +10,7 @@ use crate::function::{Action, Function};
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
+use crate::sound::Engine;
 use crate::station::{LocoState, MAX_FUNCTION, StationError, StationKind};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -90,6 +91,31 @@ pub enum Command {
         point: usize,
         speed: f64,
         step: f64,
+    },
+    /// Sets a new sound model with one segment, or none with `engine`
+    /// `null` (B-15).
+    SetEngine {
+        loco: u32,
+        engine: Option<Engine>,
+        #[serde(default)]
+        confirmed: bool,
+    },
+    /// Splits the sound segment `segment` (from 0) in the middle.
+    InsertSegment {
+        loco: u32,
+        segment: usize,
+    },
+    RemoveSegment {
+        loco: u32,
+        segment: usize,
+        #[serde(default)]
+        confirmed: bool,
+    },
+    /// Moves the border where the sound segment begins to `speed` in km/h.
+    MoveSegmentBorder {
+        loco: u32,
+        segment: usize,
+        speed: f64,
     },
     /// Deflection of the drive axis from -1 (full back) to 1 (full forward);
     /// the host accelerates the loco with it until the next one (B-10).
@@ -509,6 +535,22 @@ impl Session {
                 .loco(loco)?
                 .speed_curve_mut()
                 .move_point(point, speed, step),
+            Command::SetEngine {
+                loco,
+                engine,
+                confirmed,
+            } => self.loco(loco)?.set_engine(engine, confirmed)?,
+            Command::InsertSegment { loco, segment } => self.loco(loco)?.insert_segment(segment)?,
+            Command::RemoveSegment {
+                loco,
+                segment,
+                confirmed,
+            } => self.loco(loco)?.remove_segment(segment, confirmed)?,
+            Command::MoveSegmentBorder {
+                loco,
+                segment,
+                speed,
+            } => self.loco(loco)?.move_segment_border(segment, speed)?,
             Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::ToggleSound { loco } => {

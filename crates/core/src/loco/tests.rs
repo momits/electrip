@@ -1,5 +1,6 @@
 use super::*;
 use crate::decoder::Protocol::*;
+use crate::sound::{Engine, SoundModel};
 
 /// A DCC loco at 100 km/h whose curve has an extra point, so a reset shows.
 fn loco() -> Loco {
@@ -151,4 +152,72 @@ fn durations_and_volume_out_of_range_change_nothing() {
         assert_eq!(loco.set_volume(volume), Err(LocoError::VolumeOutOfRange));
     }
     assert_eq!(loco, before);
+}
+
+#[test]
+fn a_new_loco_has_no_sound() {
+    let mut loco = loco();
+    assert_eq!(loco.sound_model(), None);
+    assert_eq!(loco.insert_segment(0), Err(LocoError::NoSound));
+    assert_eq!(loco.move_segment_border(0, 1.0), Err(LocoError::NoSound));
+    assert_eq!(loco.remove_segment(0, true), Err(LocoError::NoSound));
+}
+
+#[test]
+fn replacing_the_sound_model_needs_a_confirmation() {
+    let mut loco = loco();
+    loco.set_engine(Some(Engine::Diesel), false).unwrap();
+    loco.insert_segment(0).unwrap();
+    let before = loco.clone();
+    for engine in [Some(Engine::Steam), None] {
+        let error = loco.set_engine(engine, false);
+        assert_eq!(error, Err(LocoError::SoundResetNotConfirmed));
+        assert_eq!(loco, before);
+    }
+    loco.set_engine(Some(Engine::Diesel), false).unwrap();
+    assert_eq!(loco, before);
+
+    loco.set_engine(Some(Engine::Steam), true).unwrap();
+    assert_eq!(loco.sound_model(), Some(&SoundModel::new(Engine::Steam)));
+    loco.set_engine(None, true).unwrap();
+    assert_eq!(loco.sound_model(), None);
+}
+
+#[test]
+fn removing_the_last_segment_needs_a_confirmation() {
+    let mut loco = loco();
+    loco.set_engine(Some(Engine::Diesel), false).unwrap();
+    loco.insert_segment(0).unwrap();
+    loco.remove_segment(0, false).unwrap();
+    assert_eq!(loco.sound_model().unwrap().segments().len(), 1);
+
+    let before = loco.clone();
+    assert_eq!(
+        loco.remove_segment(1, true),
+        Err(LocoError::UnknownSegment(1))
+    );
+    assert_eq!(
+        loco.remove_segment(0, false),
+        Err(LocoError::SoundResetNotConfirmed)
+    );
+    assert_eq!(loco, before);
+    loco.remove_segment(0, true).unwrap();
+    assert_eq!(loco.sound_model(), None);
+}
+
+#[test]
+fn a_new_max_speed_stretches_the_segments() {
+    let mut loco = loco();
+    loco.set_engine(Some(Engine::Steam), false).unwrap();
+    loco.insert_segment(0).unwrap();
+    loco.move_segment_border(1, 20.0).unwrap();
+    loco.set_max_speed(150.0, true).unwrap();
+    let starts: Vec<f64> = loco
+        .sound_model()
+        .unwrap()
+        .segments()
+        .iter()
+        .map(|s| s.start)
+        .collect();
+    assert_eq!(starts, [0.0, 30.0]);
 }
