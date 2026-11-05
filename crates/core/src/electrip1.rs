@@ -16,6 +16,7 @@ use crate::function::{Action, Function, Mode};
 use crate::input::{Mapping, Target};
 use crate::loco::{DEFAULT_NAME, Loco, LocoError};
 use crate::session::Station;
+use crate::sound::{Engine, EngineSound, Segment, SegmentSound, SoundModel, Sounds};
 use crate::speed_curve::{Point, SpeedCurve};
 use crate::station::MAX_FUNCTION;
 use serde::Deserialize;
@@ -110,6 +111,31 @@ struct OldLoco {
     speed_control_points: Vec<Point>,
     img_path: Option<PathBuf>,
     functions: Vec<OldFunction>,
+    engine: Option<OldEngine>,
+}
+
+/// The sound of a loco. Steam engines keep only their idle sound and their
+/// segments for now (B-14).
+#[derive(Deserialize)]
+struct OldEngine {
+    #[serde(rename = "type")]
+    engine: Engine,
+    start_sound: Option<PathBuf>,
+    idle_sound: Option<PathBuf>,
+    quit_sound: Option<PathBuf>,
+    /// `null` without segments.
+    #[serde(default)]
+    sound_segments: Option<Vec<OldSegment>>,
+}
+
+/// A sound segment; its end is the start of the next one.
+#[derive(Deserialize)]
+struct OldSegment {
+    start: f64,
+    load_sound: Option<PathBuf>,
+    idle_sound: Option<PathBuf>,
+    accel_sound: Option<PathBuf>,
+    decel_sound: Option<PathBuf>,
 }
 
 /// A decoder function; `button` is -1 without a button.
@@ -138,6 +164,7 @@ impl Default for OldLoco {
             speed_control_points: Vec::new(),
             img_path: None,
             functions: Vec::new(),
+            engine: None,
         }
     }
 }
@@ -225,8 +252,36 @@ fn convert(
         .into_iter()
         .filter_map(|f| function(f, &old.name, actions, report))
         .collect();
+    loco.set_sound_model(old.engine.map(sound_model));
     loco.set_name(old.name);
     Ok(loco)
+}
+
+fn sound_model(old: OldEngine) -> SoundModel {
+    let segments = old.sound_segments.unwrap_or_default();
+    let segments = segments.into_iter().map(|s| Segment {
+        start: s.start,
+        sounds: sounds([
+            (SegmentSound::Load, s.load_sound),
+            (SegmentSound::Idle, s.idle_sound),
+            (SegmentSound::Accel, s.accel_sound),
+            (SegmentSound::Decel, s.decel_sound),
+        ]),
+    });
+    let engine_sounds = sounds([
+        (EngineSound::Start, old.start_sound),
+        (EngineSound::Idle, old.idle_sound),
+        (EngineSound::Quit, old.quit_sound),
+    ]);
+    SoundModel::with(old.engine, engine_sounds, segments.collect())
+}
+
+/// The sounds that are set.
+fn sounds<K: Ord, const N: usize>(sounds: [(K, Option<PathBuf>); N]) -> Sounds<K> {
+    sounds
+        .into_iter()
+        .filter_map(|(kind, path)| Some((kind, path?)))
+        .collect()
 }
 
 /// Functions above F28 are left out and named in the report. Push and

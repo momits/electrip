@@ -5,11 +5,12 @@
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::function::Function;
-use crate::sound::{Engine, SoundModel};
+use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel};
 use crate::speed_curve::SpeedCurve;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::RangeInclusive;
+use std::path::PathBuf;
 
 /// Name of a new loco, as in Electrip 1.
 pub const DEFAULT_NAME: &str = "Unbenannte Lok";
@@ -208,6 +209,29 @@ impl Loco {
         }
         self.sound_model = engine.map(SoundModel::new);
         Ok(())
+    }
+
+    /// Replaces the sound model without asking, for imports.
+    pub(crate) fn set_sound_model(&mut self, model: Option<SoundModel>) {
+        self.sound_model = model;
+    }
+
+    pub fn set_engine_sound(
+        &mut self,
+        sound: EngineSound,
+        path: Option<PathBuf>,
+    ) -> Result<(), LocoError> {
+        self.sound_model_mut()?.set_sound(sound, path);
+        Ok(())
+    }
+
+    pub fn set_segment_sound(
+        &mut self,
+        nr: usize,
+        sound: SegmentSound,
+        path: Option<PathBuf>,
+    ) -> Result<(), LocoError> {
+        self.sound_model_mut()?.set_segment_sound(nr, sound, path)
     }
 
     /// See [`SoundModel::insert_segment`].

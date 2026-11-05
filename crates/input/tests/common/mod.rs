@@ -5,6 +5,7 @@
 // Test code: unwrap is allowed (AGENTS.md); not every test uses every helper.
 #![allow(clippy::unwrap_used, dead_code)]
 
+use electrip_core::audio::AudioSink;
 use electrip_core::decoder::Decoder;
 use electrip_core::host::Host;
 use electrip_core::session::LocoEntry;
@@ -13,7 +14,21 @@ use electrip_input::Gamepads;
 use sdl3_sys::everything::*;
 use serde_json::Value;
 use std::ffi::CStr;
+use std::path::Path;
 use tempfile::TempDir;
+
+/// An audio target where every sound lasts one second.
+struct Audio;
+
+impl AudioSink for Audio {
+    fn length(&mut self, _: &Path) -> Result<f64, String> {
+        Ok(1.0)
+    }
+
+    fn queue(&mut self, _: u32, _: &Path) {}
+
+    fn stop(&mut self, _: u32) {}
+}
 
 /// SDL, a connected host and its library.
 pub struct Rig {
@@ -26,7 +41,7 @@ impl Rig {
     pub fn new() -> Rig {
         let library = TempDir::new().unwrap();
         let connect = Box::new(|_: &_| Ok(Box::new(Station) as _));
-        let mut host = Host::new(connect, library.path().into()).unwrap();
+        let mut host = Host::new(connect, Box::new(Audio), library.path().into()).unwrap();
         host.apply(serde_json::from_str(r#"{"command": "connect"}"#).unwrap())
             .unwrap();
         Rig {

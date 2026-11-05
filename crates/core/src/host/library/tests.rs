@@ -1,4 +1,5 @@
 use super::*;
+use crate::audio::tests::LogSink;
 use crate::function::Function;
 use crate::host::Connector;
 use crate::host::tests::{host, set_server};
@@ -65,7 +66,7 @@ fn every_change_is_saved_and_opened_again() {
     let config = host.session().config();
 
     let connect: Connector = Box::new(|_| Err(StationError("offline".into())));
-    let reopened = Host::new(connect, library.path().into()).unwrap();
+    let reopened = Host::new(connect, Box::new(LogSink::default()), library.path().into()).unwrap();
     assert_eq!(reopened.session().config(), config);
     assert_eq!(loco_names(&reopened), ["V 60", "Ae 6/6"]);
     assert_eq!(reopened.session().station().host, "srcp");

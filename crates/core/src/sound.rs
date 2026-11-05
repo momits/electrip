@@ -5,6 +5,8 @@
 
 use crate::loco::LocoError;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -14,25 +16,65 @@ pub enum Engine {
     Steam,
 }
 
+/// The sounds of a combustion engine at standstill (B-12).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EngineSound {
+    Start,
+    Idle,
+    Quit,
+}
+
+/// The sounds of a segment of a combustion engine (B-11): `load` and
+/// `idle` loop while the speed stays in the segment after accelerating or
+/// braking, `accel` leads into the segment from below and `decel` out of
+/// it downwards.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SegmentSound {
+    Load,
+    Idle,
+    Accel,
+    Decel,
+}
+
+/// Sound files on the host by their use.
+pub type Sounds<K> = BTreeMap<K, PathBuf>;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SoundModel {
     engine: Engine,
+    #[serde(default)]
+    sounds: Sounds<EngineSound>,
     /// Sorted by speed; the first starts at standstill.
     segments: Vec<Segment>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Segment {
     /// Speed in km/h where the segment begins; it ends where the next one
     /// begins, the last one at Vmax.
     pub start: f64,
+    #[serde(default)]
+    pub sounds: Sounds<SegmentSound>,
 }
 
 impl SoundModel {
     pub fn new(engine: Engine) -> Self {
+        SoundModel::with(engine, Sounds::new(), Vec::new())
+    }
+
+    /// A model with the given sounds and segments; the first segment
+    /// begins at standstill, without segments there is one.
+    pub fn with(engine: Engine, sounds: Sounds<EngineSound>, mut segments: Vec<Segment>) -> Self {
+        match segments.first_mut() {
+            Some(first) => first.start = 0.0,
+            None => segments.push(Segment::default()),
+        }
         SoundModel {
             engine,
-            segments: vec![Segment { start: 0.0 }],
+            sounds,
+            segments,
         }
     }
 
@@ -44,13 +86,49 @@ impl SoundModel {
         &self.segments
     }
 
+    pub fn sound(&self, sound: EngineSound) -> Option<&Path> {
+        self.sounds.get(&sound).map(PathBuf::as_path)
+    }
+
+    /// The sound of the `nr`-th segment, none if there is no such segment.
+    pub fn segment_sound(&self, nr: usize, sound: SegmentSound) -> Option<&Path> {
+        let segment = self.segments.get(nr)?;
+        segment.sounds.get(&sound).map(PathBuf::as_path)
+    }
+
+    /// The number of segments that begin below `speed`: 0 at standstill,
+    /// else the segment of the speed counted from 1.
+    pub fn level(&self, speed: f64) -> usize {
+        self.segments.iter().filter(|s| s.start < speed).count()
+    }
+
+    /// Sets the sound file or with `None` removes it.
+    pub(crate) fn set_sound(&mut self, sound: EngineSound, path: Option<PathBuf>) {
+        set(&mut self.sounds, sound, path);
+    }
+
+    pub(crate) fn set_segment_sound(
+        &mut self,
+        nr: usize,
+        sound: SegmentSound,
+        path: Option<PathBuf>,
+    ) -> Result<(), LocoError> {
+        self.check(nr)?;
+        set(&mut self.segments[nr].sounds, sound, path);
+        Ok(())
+    }
+
     /// Splits the `nr`-th segment in the middle like Electrip 1; the new
     /// segment is the right half.
     pub(crate) fn insert_segment(&mut self, nr: usize, max_speed: f64) -> Result<(), LocoError> {
         self.check(nr)?;
         let end = self.segments.get(nr + 1).map_or(max_speed, |s| s.start);
         let start = 0.5 * (self.segments[nr].start + end);
-        self.segments.insert(nr + 1, Segment { start });
+        let segment = Segment {
+            start,
+            ..Segment::default()
+        };
+        self.segments.insert(nr + 1, segment);
         Ok(())
     }
 
@@ -100,6 +178,13 @@ impl SoundModel {
             Err(LocoError::UnknownSegment(nr))
         }
     }
+}
+
+fn set<K: Ord>(sounds: &mut Sounds<K>, sound: K, path: Option<PathBuf>) {
+    match path {
+        Some(path) => sounds.insert(sound, path),
+        None => sounds.remove(&sound),
+    };
 }
 
 #[cfg(test)]

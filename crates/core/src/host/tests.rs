@@ -1,7 +1,10 @@
 use super::*;
+use crate::audio::tests::LogSink;
 use crate::decoder::Decoder;
+use crate::driving_sound::SoundState;
 use crate::function::{Function, Mode};
 use crate::input::Target;
+use crate::sound::{Engine, EngineSound};
 use crate::station::{LocoState, StationKind};
 use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
@@ -49,8 +52,13 @@ impl CommandStation for FakeDriver {
 }
 
 /// A host whose connector reaches only the server "srcp", its events, the
-/// loco states the driver got and its library, deleted when dropped.
+/// loco states the driver got and its library, deleted when dropped. The
+/// sound "idle" lasts one second, no other sound plays.
 pub(super) fn host() -> (Host, Events, Sent, TempDir) {
+    host_with(LogSink::new(&[("idle", 1.0)]))
+}
+
+pub(super) fn host_with(audio: LogSink) -> (Host, Events, Sent, TempDir) {
     let (events, sent) = (Events::default(), Sent::default());
     let library = TempDir::new().unwrap();
     let (driver_events, driver_sent) = (Arc::clone(&events), Arc::clone(&sent));
@@ -62,7 +70,7 @@ pub(super) fn host() -> (Host, Events, Sent, TempDir) {
             Err(StationError(format!("cannot reach {}", station.host)))
         }
     });
-    let host = Host::new(connector, library.path().into()).unwrap();
+    let host = Host::new(connector, Box::new(audio), library.path().into()).unwrap();
     (host, events, sent, library)
 }
 
@@ -309,6 +317,27 @@ fn host_with_pad(locos: usize) -> (Host, Sent, TempDir) {
     (host, sent, library)
 }
 
+/// Gives each loco a combustion engine with only an idle sound.
+fn add_idle_sound(host: &mut Host) {
+    for loco in 1..=host.session().locos().len() as u32 {
+        let engine = Some(Engine::Diesel);
+        let (sound, path) = (EngineSound::Idle, Some("idle".into()));
+        host.apply(Command::SetEngine {
+            loco,
+            engine,
+            confirmed: false,
+        })
+        .unwrap();
+        host.apply(Command::SetEngineSound { loco, sound, path })
+            .unwrap();
+    }
+}
+
+fn sound_states(host: &Host) -> Vec<SoundState> {
+    let locos = host.session().locos();
+    locos.iter().map(|e| e.sound.state()).collect()
+}
+
 fn add_device(host: &mut Host, device: u32) {
     let kind = "pad".into();
     host.apply(Command::AddDevice { device, kind }).unwrap();
@@ -387,19 +416,20 @@ fn focus_holds_while_the_button_is_down() {
 #[test]
 fn toggle_sound_switches_the_sound_of_the_device_loco() {
     let (mut host, _, _library) = host_with_pad(2);
+    add_idle_sound(&mut host);
     bind(&mut host, "y", Target::ToggleSound);
-    let sound = |host: &Host| {
-        host.session()
-            .locos()
-            .iter()
-            .map(|e| e.sound)
-            .collect::<Vec<_>>()
-    };
-    assert_eq!(sound(&host), [false, false]);
+    use SoundState::*;
+    assert_eq!(sound_states(&host), [Off, Off]);
     press(&mut host, "y");
-    assert_eq!(sound(&host), [true, false]);
+    assert_eq!(sound_states(&host), [Starting, Off]);
+    host.poll(1.0);
+    assert_eq!(sound_states(&host), [On, Off]);
     press(&mut host, "y");
-    assert_eq!(sound(&host), [false, false]);
+    assert_eq!(sound_states(&host), [Stopping, Off]);
+    host.poll(1.0);
+    assert_eq!(sound_states(&host), [Stopping, Off]);
+    host.poll(1.0);
+    assert_eq!(sound_states(&host), [Off, Off]);
 }
 
 #[test]
@@ -407,10 +437,11 @@ fn axes_and_hat_directions_trigger_built_in_actions_like_buttons() {
     let (mut host, _, _library) = host_with_pad(1);
     bind(&mut host, "righttrigger", Target::ToggleSound);
     bind(&mut host, "dpup", Target::Reverse);
+    add_idle_sound(&mut host);
     input(&mut host, "righttrigger", 0.4).unwrap();
-    assert!(!host.session().locos()[0].sound);
+    assert_eq!(sound_states(&host), [SoundState::Off]);
     input(&mut host, "righttrigger", 1.0).unwrap();
-    assert!(host.session().locos()[0].sound);
+    assert_eq!(sound_states(&host), [SoundState::Starting]);
     press(&mut host, "dpup");
     assert!(!host.session().locos()[0].motion.forward());
 }
@@ -582,4 +613,17 @@ fn device_ids_are_unique() {
     let kind = "other".into();
     let error = host.apply(Command::AddDevice { device: 1, kind });
     assert_eq!(error, Err(CommandError::DeviceExists(1)));
+}
+
+#[test]
+fn the_speed_stays_while_the_engine_starts() {
+    let (mut host, _, _library) = driving_host();
+    add_idle_sound(&mut host);
+    set_axis(&mut host, 1.0);
+    host.apply(Command::ToggleSound { loco: 1 }).unwrap();
+    host.poll(0.5);
+    assert_eq!(speed(&host), 0.0);
+    host.poll(0.5);
+    host.poll(0.5);
+    assert!(speed(&host) > 0.0);
 }

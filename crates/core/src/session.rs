@@ -2,20 +2,23 @@
 //! gamepads, the control channel and tests change the state only through
 //! [`Host::apply`](crate::host::Host::apply).
 
+use crate::audio::AudioSink;
 use crate::config::Config;
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
+use crate::driving_sound::DrivingSound;
 use crate::electrip1::ImportError;
 use crate::function::{Action, Function};
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
-use crate::sound::Engine;
+use crate::sound::{Engine, EngineSound, SegmentSound};
 use crate::station::{LocoState, MAX_FUNCTION, StationError, StationKind};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io;
 use std::path::PathBuf;
+use std::time::Duration;
 
 /// A user action. Locos are addressed by their id in the session.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -117,6 +120,21 @@ pub enum Command {
         segment: usize,
         speed: f64,
     },
+    /// Sets a sound file on the host for the engine at standstill (B-12);
+    /// `null` removes it.
+    SetEngineSound {
+        loco: u32,
+        sound: EngineSound,
+        path: Option<PathBuf>,
+    },
+    /// Sets a sound file on the host for the sound segment (B-11); `null`
+    /// removes it.
+    SetSegmentSound {
+        loco: u32,
+        segment: usize,
+        sound: SegmentSound,
+        path: Option<PathBuf>,
+    },
     /// Deflection of the drive axis from -1 (full back) to 1 (full forward);
     /// the host accelerates the loco with it until the next one (B-10).
     SetAxis {
@@ -127,7 +145,7 @@ pub enum Command {
     Reverse {
         loco: u32,
     },
-    /// Switches the driving sound of the loco on or off (B-02).
+    /// Switches the driving sound of the loco on or off (B-02, B-11).
     ToggleSound {
         loco: u32,
     },
@@ -364,8 +382,8 @@ pub struct LocoEntry {
     pub loco: Loco,
     #[serde(flatten)]
     pub motion: Motion,
-    /// Whether the driving sound is on; off at the start like Electrip 1.
-    pub sound: bool,
+    /// Off at the start like Electrip 1.
+    pub sound: DrivingSound,
     /// The deflection of the drive axis, 0 within the dead zone.
     #[serde(skip)]
     axis: f64,
@@ -551,12 +569,17 @@ impl Session {
                 segment,
                 speed,
             } => self.loco(loco)?.move_segment_border(segment, speed)?,
+            Command::SetEngineSound { loco, sound, path } => {
+                self.loco(loco)?.set_engine_sound(sound, path)?
+            }
+            Command::SetSegmentSound {
+                loco,
+                segment,
+                sound,
+                path,
+            } => self.loco(loco)?.set_segment_sound(segment, sound, path)?,
             Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
-            Command::ToggleSound { loco } => {
-                let entry = self.entry(loco)?;
-                entry.sound = !entry.sound;
-            }
             Command::AddAction { name } => self.add_action(name),
             Command::RenameAction { action, name } => self.action(action)?.name = name,
             Command::RemoveAction { action } => self.remove_action(action)?,
@@ -590,6 +613,7 @@ impl Session {
             | Command::Disconnect
             | Command::TogglePower
             | Command::EmergencyStop { .. }
+            | Command::ToggleSound { .. }
             | Command::SetPicture { .. }
             | Command::Input { .. }
             | Command::NewConfiguration { .. }
@@ -618,15 +642,31 @@ impl Session {
         Ok(())
     }
 
-    /// Changes the locos of held "previous/next loco" controls and
-    /// accelerates every loco with its axis for `seconds`; returns whether
-    /// the session changed.
-    pub(crate) fn drive(&mut self, seconds: f64) -> bool {
+    pub(crate) fn toggle_sound(
+        &mut self,
+        id: u32,
+        sink: &mut dyn AudioSink,
+    ) -> Result<(), CommandError> {
+        let entry = self.entry(id)?;
+        let speed = entry.motion.speed();
+        entry.sound.toggle(entry.loco.sound_model(), speed, sink);
+        Ok(())
+    }
+
+    /// Changes the locos of held "previous/next loco" controls,
+    /// accelerates every loco with its axis and plays its driving sound
+    /// for `seconds`; returns whether the session changed.
+    pub(crate) fn drive(&mut self, seconds: f64, sink: &mut dyn AudioSink) -> bool {
         let mut changed = self.scroll(seconds);
+        let elapsed = Duration::try_from_secs_f64(seconds).unwrap_or_default();
         for entry in &mut self.locos {
-            let before = entry.motion;
-            entry.motion.accelerate(&entry.loco, entry.axis, seconds);
-            changed |= entry.motion != before;
+            let before = (entry.motion, entry.sound.state());
+            if !entry.sound.locks_speed() {
+                entry.motion.accelerate(&entry.loco, entry.axis, seconds);
+            }
+            let (model, speed) = (entry.loco.sound_model(), entry.motion.speed());
+            entry.sound.play(model, speed, sink, elapsed);
+            changed |= (entry.motion, entry.sound.state()) != before;
         }
         changed
     }
@@ -646,7 +686,7 @@ impl Session {
             id: self.last_id,
             loco,
             motion: Motion::default(),
-            sound: false,
+            sound: DrivingSound::new(self.last_id),
             axis: 0.0,
         });
     }

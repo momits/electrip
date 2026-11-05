@@ -128,7 +128,7 @@ fn the_state_is_written_as_json() {
                 "sound_model": null,
                 "speed": 0.0,
                 "forward": true,
-                "sound": false
+                "sound": "off"
             }],
             "actions": [{"id": 1, "name": "Licht"}],
             "mappings": [{"kind": "Xbox", "bindings": [
