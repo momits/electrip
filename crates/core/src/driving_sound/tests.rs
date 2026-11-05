@@ -143,3 +143,40 @@ fn the_state_shows_only_whether_the_sound_is_on() {
     let value = serde_json::to_value(DrivingSound::new(1)).unwrap();
     assert_eq!(value, "off");
 }
+
+#[test]
+fn the_loco_starts_and_stops_with_the_sound_of_the_first_segment() {
+    let mut sink = sink();
+    let mut sound = started(&mut sink);
+    let last = LocoState {
+        forward: true,
+        step: 0,
+        functions: 1,
+    };
+    let driving = LocoState { step: 5, ..last };
+    play(&mut sound, &mut sink, 10.0, 1);
+    assert_eq!(sink.take(), ["1 accel1"]);
+    assert_eq!(sound.synchronize(driving, &last), last);
+    play(&mut sound, &mut sink, 10.0, 1);
+    assert_eq!(sound.synchronize(driving, &last), driving);
+
+    let stopping = LocoState {
+        forward: false,
+        ..last
+    };
+    play(&mut sound, &mut sink, 0.0, 1);
+    assert_eq!(sink.take(), ["1 load1", "1 decel1"]);
+    assert_eq!(sound.synchronize(stopping, &driving), driving);
+    play(&mut sound, &mut sink, 0.0, 1);
+    assert_eq!(sound.synchronize(stopping, &driving), stopping);
+}
+
+#[test]
+fn without_sound_the_loco_is_not_held() {
+    let state = LocoState {
+        step: 5,
+        ..LocoState::default()
+    };
+    let sound = DrivingSound::new(1);
+    assert_eq!(sound.synchronize(state, &LocoState::default()), state);
+}
