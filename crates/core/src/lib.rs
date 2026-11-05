@@ -19,3 +19,4 @@ pub mod session;
 pub mod sound;
 pub mod speed_curve;
 pub mod station;
+mod steam_sound;

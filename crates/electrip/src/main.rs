@@ -1,7 +1,7 @@
 //! Electrip 2. Without a user interface yet, the app runs headless and is
 //! operated through the control channel on localhost (N-08).
 
-use electrip_core::audio::AudioSink;
+use electrip_core::audio::{AudioSink, ChannelId};
 use electrip_core::host::{Driver, Host};
 use electrip_core::session::{Command, Station};
 use electrip_core::station::StationKind;
@@ -81,9 +81,11 @@ impl AudioSink for NoAudio {
         Err("no audio output yet".into())
     }
 
-    fn queue(&mut self, _: u32, _: &Path) {}
+    fn queue(&mut self, _: ChannelId, _: &Path) {}
 
-    fn stop(&mut self, _: u32) {}
+    fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn stop(&mut self, _: ChannelId) {}
 }
 
 /// Reads the options; `--control-port 0` picks a free port.

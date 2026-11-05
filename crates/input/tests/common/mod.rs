@@ -5,7 +5,7 @@
 // Test code: unwrap is allowed (AGENTS.md); not every test uses every helper.
 #![allow(clippy::unwrap_used, dead_code)]
 
-use electrip_core::audio::AudioSink;
+use electrip_core::audio::{AudioSink, ChannelId};
 use electrip_core::decoder::Decoder;
 use electrip_core::host::Host;
 use electrip_core::session::LocoEntry;
@@ -26,9 +26,11 @@ impl AudioSink for Audio {
         Ok(Duration::from_secs(1))
     }
 
-    fn queue(&mut self, _: u32, _: &Path) {}
+    fn queue(&mut self, _: ChannelId, _: &Path) {}
 
-    fn stop(&mut self, _: u32) {}
+    fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn stop(&mut self, _: ChannelId) {}
 }
 
 /// SDL, a connected host and its library.

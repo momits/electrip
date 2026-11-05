@@ -7,7 +7,15 @@ use std::time::Duration;
 
 pub type Audio = Box<dyn AudioSink + Send>;
 
-/// Plays the sounds of the locos, each loco on its own channel.
+/// A channel of the audio target: the loco and its `nr`-th channel. The
+/// driving sound plays on channel 0, a steam engine also on the following.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+pub struct ChannelId {
+    pub loco: u32,
+    pub nr: usize,
+}
+
+/// Plays the sounds of the locos, each loco on its own channels.
 pub trait AudioSink {
     /// The length of a sound file.
     fn length(&mut self, sound: &Path) -> Result<Duration, String>;
@@ -15,23 +23,27 @@ pub trait AudioSink {
     /// Plays the sound on the channel: at once if the channel is silent,
     /// else without a gap after the current sound. It replaces a sound
     /// that waits there.
-    fn queue(&mut self, channel: u32, sound: &Path);
+    fn queue(&mut self, channel: ChannelId, sound: &Path);
+
+    /// Plays the sound on the channel after `delay`; it cuts off what plays
+    /// there then. Sounds the target cannot read are left out.
+    fn play(&mut self, channel: ChannelId, sound: &Path, delay: Duration);
 
     /// Silences the channel and drops its waiting sound.
-    fn stop(&mut self, channel: u32);
+    fn stop(&mut self, channel: ChannelId);
 }
 
 /// What the host knows of a channel of the audio target: how long its
 /// sound still plays and how long the waiting one lasts.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct Channel {
-    id: u32,
+    id: ChannelId,
     playing: Option<Duration>,
     waiting: Option<Duration>,
 }
 
 impl Channel {
-    pub(crate) fn new(id: u32) -> Self {
+    pub(crate) fn new(id: ChannelId) -> Self {
         Channel {
             id,
             ..Channel::default()

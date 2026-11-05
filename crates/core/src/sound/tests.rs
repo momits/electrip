@@ -69,3 +69,54 @@ fn unknown_segments_are_errors() {
     );
     assert_eq!(model, before);
 }
+
+#[test]
+fn strokes_follow_the_turn_of_the_wheels_down_to_the_minimum_frequency() {
+    let steam = Steam::default();
+    // 1.2 m wheels at 36 km/h turn in 1.2 π / 10 s, split into 4 strokes.
+    let pause = steam.pause(36.0).as_secs_f64();
+    assert!((pause - 0.03 * PI).abs() < 1e-9, "{pause}");
+    assert_eq!(steam.pause(0.1), Duration::from_secs(5));
+}
+
+#[test]
+fn steam_values_out_of_range_are_errors() {
+    let mut model = SoundModel::new(Engine::Steam);
+    for steam in [
+        Steam {
+            strokes: 0,
+            ..Steam::default()
+        },
+        Steam {
+            wheel_diameter: 0.0,
+            ..Steam::default()
+        },
+        Steam {
+            start_delay: -1.0,
+            ..Steam::default()
+        },
+        Steam {
+            min_frequency: 0.0,
+            ..Steam::default()
+        },
+    ] {
+        assert_eq!(model.set_steam(steam), Err(LocoError::SteamOutOfRange));
+    }
+    assert_eq!(model.steam(), &Steam::default());
+}
+
+#[test]
+fn stroke_sounds_exist_only_for_the_strokes() {
+    let mut model = SoundModel::new(Engine::Steam);
+    let path = || Some(PathBuf::from("a"));
+    model.set_stroke_sound(0, 3, path()).unwrap();
+    assert_eq!(model.stroke_sound(0, 3), Some(Path::new("a")));
+    assert_eq!(
+        model.set_stroke_sound(0, 4, path()),
+        Err(LocoError::UnknownStroke(4))
+    );
+    assert_eq!(
+        model.set_stroke_sound(1, 0, path()),
+        Err(LocoError::UnknownSegment(1))
+    );
+}

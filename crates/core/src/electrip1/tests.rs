@@ -1,5 +1,5 @@
 use super::*;
-use crate::sound::{EngineSound, SegmentSound};
+use crate::sound::{Engine, EngineSound, SegmentSound};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 
@@ -75,8 +75,8 @@ fn the_corpus_is_imported_without_loss() {
     }
 }
 
-/// The engine, its sounds and its segments arrive; steam engines keep only
-/// their idle sound for now (B-14).
+/// The engine, its sounds, its segments and how a steam engine strokes
+/// arrive.
 fn assert_sounds(loco: &Loco, old: &Value) {
     let Some(model) = loco.sound_model() else {
         assert!(old.is_null());
@@ -88,8 +88,16 @@ fn assert_sounds(loco: &Loco, old: &Value) {
         (EngineSound::Start, "start_sound"),
         (EngineSound::Idle, "idle_sound"),
         (EngineSound::Quit, "quit_sound"),
+        (EngineSound::Cylinder, "cylinder_steam_sound"),
     ] {
         assert_eq!(path(model.sound(sound)).as_deref(), old[key].as_str());
+    }
+    if model.engine() == Engine::Steam {
+        let steam = model.steam();
+        assert_eq!(steam.strokes, old["nr_strokes"]);
+        assert_eq!(steam.wheel_diameter, old["wheel_diameter"]);
+        assert_eq!(steam.start_delay, old["stroke_start_delay"]);
+        assert_eq!(steam.min_frequency, old["min_freq"]);
     }
     let segments = old["sound_segments"].as_array().unwrap();
     assert_eq!(model.segments().len(), segments.len());
@@ -103,6 +111,11 @@ fn assert_sounds(loco: &Loco, old: &Value) {
         ] {
             let sound = path(model.segment_sound(nr, sound));
             assert_eq!(sound.as_deref(), old[key].as_str());
+        }
+        let strokes = old["stroke_sounds"].as_array().cloned().unwrap_or_default();
+        for (stroke, old) in strokes.iter().enumerate() {
+            let sound = path(model.stroke_sound(nr, stroke));
+            assert_eq!(sound.as_deref(), old.as_str());
         }
     }
 }

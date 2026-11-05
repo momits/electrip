@@ -6,7 +6,10 @@
 use crate::loco::LocoError;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::f64::consts::PI;
+use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -16,13 +19,16 @@ pub enum Engine {
     Steam,
 }
 
-/// The sounds of a combustion engine at standstill (B-12).
+/// The sounds of the engine outside the segments: a combustion engine
+/// starts, idles and quits (B-12); a steam engine idles and blows off
+/// steam from the cylinders when it starts moving (B-14).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EngineSound {
     Start,
     Idle,
     Quit,
+    Cylinder,
 }
 
 /// The sounds of a segment of a combustion engine (B-11): `load` and
@@ -48,6 +54,57 @@ pub struct SoundModel {
     sounds: Sounds<EngineSound>,
     /// Sorted by speed; the first starts at standstill.
     segments: Vec<Segment>,
+    #[serde(default)]
+    steam: Steam,
+}
+
+/// How a steam engine strokes (B-14), with the defaults of Electrip 1.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Steam {
+    /// Cylinder strokes per turn of the driving wheels.
+    pub strokes: usize,
+    /// Diameter of the driving wheels in m.
+    pub wheel_diameter: f64,
+    /// Seconds from blowing off steam to the first stroke.
+    pub start_delay: f64,
+    /// The fewest strokes per second, so the pauses stay short when the
+    /// loco creeps.
+    pub min_frequency: f64,
+}
+
+/// Allowed values of [`Steam`], as in Electrip 1 where it does not crash.
+pub const STROKES_RANGE: RangeInclusive<usize> = 1..=9999;
+pub const WHEEL_DIAMETER_RANGE: RangeInclusive<f64> = 0.1..=99.0;
+pub const START_DELAY_RANGE: RangeInclusive<f64> = 0.0..=9999.0;
+pub const MIN_FREQUENCY_RANGE: RangeInclusive<f64> = 0.1..=9999.0;
+
+impl Default for Steam {
+    fn default() -> Self {
+        Steam {
+            strokes: 4,
+            wheel_diameter: 1.2,
+            start_delay: 2.0,
+            min_frequency: 0.2,
+        }
+    }
+}
+
+impl Steam {
+    fn is_valid(&self) -> bool {
+        STROKES_RANGE.contains(&self.strokes)
+            && WHEEL_DIAMETER_RANGE.contains(&self.wheel_diameter)
+            && START_DELAY_RANGE.contains(&self.start_delay)
+            && MIN_FREQUENCY_RANGE.contains(&self.min_frequency)
+    }
+
+    /// The pause between two strokes at `speed` (km/h, above standstill):
+    /// one turn of the wheels split into the strokes, at most the pause of
+    /// the minimum frequency.
+    pub fn pause(&self, speed: f64) -> Duration {
+        let turn = 3.6 * self.wheel_diameter * PI / speed;
+        let pause = (turn / self.strokes as f64).min(1.0 / self.min_frequency);
+        Duration::from_secs_f64(pause)
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -57,6 +114,9 @@ pub struct Segment {
     pub start: f64,
     #[serde(default)]
     pub sounds: Sounds<SegmentSound>,
+    /// The sounds of the cylinder strokes of a steam engine by number.
+    #[serde(default)]
+    pub strokes: Sounds<usize>,
 }
 
 impl SoundModel {
@@ -75,6 +135,7 @@ impl SoundModel {
             engine,
             sounds,
             segments,
+            steam: Steam::default(),
         }
     }
 
@@ -96,6 +157,24 @@ impl SoundModel {
         segment.sounds.get(&sound).map(PathBuf::as_path)
     }
 
+    /// The sound of the `stroke`-th cylinder stroke in the `nr`-th segment.
+    pub fn stroke_sound(&self, nr: usize, stroke: usize) -> Option<&Path> {
+        let segment = self.segments.get(nr)?;
+        segment.strokes.get(&stroke).map(PathBuf::as_path)
+    }
+
+    pub fn steam(&self) -> &Steam {
+        &self.steam
+    }
+
+    pub(crate) fn set_steam(&mut self, steam: Steam) -> Result<(), LocoError> {
+        if !steam.is_valid() {
+            return Err(LocoError::SteamOutOfRange);
+        }
+        self.steam = steam;
+        Ok(())
+    }
+
     /// The number of segments that begin below `speed`: 0 at standstill,
     /// else the segment of the speed counted from 1.
     pub fn level(&self, speed: f64) -> usize {
@@ -115,6 +194,20 @@ impl SoundModel {
     ) -> Result<(), LocoError> {
         self.check(nr)?;
         set(&mut self.segments[nr].sounds, sound, path);
+        Ok(())
+    }
+
+    pub(crate) fn set_stroke_sound(
+        &mut self,
+        nr: usize,
+        stroke: usize,
+        path: Option<PathBuf>,
+    ) -> Result<(), LocoError> {
+        self.check(nr)?;
+        if stroke >= self.steam.strokes {
+            return Err(LocoError::UnknownStroke(stroke));
+        }
+        set(&mut self.segments[nr].strokes, stroke, path);
         Ok(())
     }
 
