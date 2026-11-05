@@ -8,6 +8,18 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – B-15: Geräuschsegmente bearbeiten (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neues Modul `crates/core/src/sound.rs`: Jede Lok hat ein Sound-Modell (`sound_model`, im Zustand `null` = „Kein Geräusch“) mit Motor `diesel` oder `steam` und Segmenten über den Geschwindigkeitsbereich.
+  Ein Segment speichert nur, bei welcher Geschwindigkeit (km/h) es beginnt; es endet beim nächsten oder bei Vmax. Die Geräusche je Segment kommen mit B-11 und B-14.
+- Befehle: `set_engine { loco, engine, confirmed }` (neues Modell mit einem Segment wie in Electrip 1; ein anderes Modell ersetzen braucht eine Bestätigung), `insert_segment` (teilt das Segment in der Mitte, das neue liegt rechts), `remove_segment { …, confirmed }` (der linke Nachbar übernimmt die Geschwindigkeiten; das letzte Segment löschen setzt nach Bestätigung auf „Kein Geräusch“), `move_segment_border { loco, segment, speed }` (nur zwischen den Nachbargrenzen, sonst ignoriert wie bei den Punkten der Geschwindigkeitskurve).
+- Bewusst anders als Electrip 1: Beim Löschen des ersten Segments übernimmt der rechte Nachbar (Electrip 1 verlängerte durch `index - 1` = -1 das letzte Segment). Eine neue Vmax streckt die Segmentgrenzen mit.
+- Tests: `sound/tests.rs`, `loco/tests.rs` (Bestätigungen, Vmax), `crates/electrip/tests/sound_segments.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` (3225 Zeilen) und `cargo xtask parity` grün.
+- **B-15** `wired` und `verified`. Offen für Phase 3: Segmentleiste mit Ziehen und Bestätigungsdialog in der UI. Der Import aus Electrip 1 übernimmt die Segmente noch nicht (kommt mit den Geräuschen, B-11/B-20).
+- Einfachheits-Review: ok (Sub-Agent).
+
 ## 2026-11-05 – B-18: WAV und OGG dekodieren (Claude)
 
 - Neues Crate `electrip-audio` (`crates/audio/`): `open(path)` öffnet eine WAV- oder OGG-Datei mit rodio (Dekoder von symphonia). Abtastrate und Kanalzahl kommen aus der Datei, eine Einstellung dafür gibt es nicht.
