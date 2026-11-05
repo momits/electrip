@@ -8,6 +8,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – B-21: verifiziert (Claude)
+
+- Die drei Akzeptanzkriterien sind mit den Prüfarten `corpus` und `unit` abgedeckt:
+  - Anlegen, umbenennen, löschen, wechseln: `crates/electrip/tests/configurations.rs` (`configurations_are_managed_and_kept`).
+  - Import aus Electrip 1: `electrip1/tests.rs` (`the_corpus_is_imported_without_loss`) und `crates/electrip/tests/electrip1_import.rs` über den Steuerkanal.
+  - Export als Datei: `export_writes_the_configuration_to_a_file`.
+- „Verlustfrei“ gilt mit Q-015 (beantwortet am 2026-11-03): Was der Import auslässt, nennt der `import_report` (Knopf mit eingebauter Aktion und Funktion, Bilder in den Lok-Paketen).
+- `cargo xtask test` und die genannten Tests grün. Kein Code geändert, daher kein Einfachheits-Review nötig.
+- **B-21** `wired` und `verified`. Offen für Phase 2: Bedienung der Konfigurationen in der UI.
+
 ## 2026-11-05 – N-02: Prüfung des Z21-Treibers gegen die Spezifikation (Claude)
 
 - Das PDF (Version 1.13, SHA-256 aus `sim/z21/README.md` stimmt) wurde mit `pdftotext` gelesen und `crates/station-z21` Kapitel für Kapitel verglichen.
