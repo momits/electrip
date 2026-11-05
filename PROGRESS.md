@@ -8,6 +8,28 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – B-11: Fahrgeräusch Verbrennungsmotor (Claude)
+
+- CI auf `main` grün.
+- Neuer Trait `AudioSink` (`crates/core/src/audio.rs`, ADR 0004): `length`, `queue` (spielt sofort oder lückenlos nach dem laufenden Sound, ersetzt einen wartenden) und `stop`, je Lok ein Kanal mit der Nummer der Lok.
+  Der Host führt je Kanal mit, wie lange der Sound noch läuft (aus der Dateilänge, nicht aus der Wiedergabe).
+- Neues Modul `driving_sound.rs`: das Fahrgeräusch wie `DieselSoundController` in Electrip 1. Der Kanal hält immer den nächsten Sound; je Sound ein Segment hoch (Beschleunigungsgeräusch) oder runter (Bremsgeräusch), dazwischen Last- bzw. Leerlaufgeräusch im Loop.
+  Im Zustand der Lok steht `sound` jetzt als `off`, `starting`, `on` oder `stopping` statt `true`/`false`.
+- Teil von B-12: Anlassen spielt Anlass- und Leerlaufgeräusch, Abschalten im Stand wartet auf den Leerlauf und spielt das Abstellgeräusch. Währenddessen bleibt die Geschwindigkeit stehen, und der Schalter ist gesperrt wie in Electrip 1. Ein- und Ausschalten während der Fahrt startet mit dem Lastgeräusch bzw. verstummt sofort.
+- Befehle `set_engine_sound { loco, sound: start|idle|quit, path }` und `set_segment_sound { loco, segment, sound: load|idle|accel|decel, path }`; `path: null` entfernt den Sound. Die Pfade sind Dateien auf dem Host.
+- Der Import aus Electrip 1 übernimmt Motor, Geräusche und Segmente. Bei Dampf vorerst nur das Leerlaufgeräusch und die Segmente (B-14).
+- Golden-Test `crates/core/tests/golden_diesel_drive.rs`: Das Szenario `diesel_drive` läuft über Import, Gerät „Electrip 1“ und `poll` alle 50 ms. Ein Test-Mixer wie pygame vergleicht alle 54 Sound-Ereignisse mit `tests/golden/diesel_drive.jsonl`; sie stimmen auf die Mikrosekunde.
+- Weitere Tests: `audio/tests.rs`, `driving_sound/tests.rs`, `host/tests.rs` (Geschwindigkeit gesperrt beim Anlassen), `electrip1/tests.rs` (Korpus mit Geräuschen), `crates/electrip/tests/sound_segments.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` (3607 Zeilen) und `cargo xtask parity` grün.
+- **B-11** `wired` und `verified`. **B-12** `wired`; `verified` folgt, wenn die App mit echter Ausgabe die Sperre auch über den Steuerkanal zeigen kann.
+- Einfachheits-Review: refactored (Sub-Agent). `AudioSink::length` liefert eine `Duration`, ein Test-Helfer mit nur einem Aufrufer ist entfallen, Tupel-Zuweisungen sind jetzt einzelne Zuweisungen.
+- **Offen:**
+  - Die App hat noch keine Ausgabe: `main.rs` nutzt `NoAudio` (keine Datei hat eine Länge, das Fahrgeräusch bleibt aus). Die Ausgabe auf der Soundkarte mit rodio kommt mit B-18. Der Kanal muss dort einen wartenden Sound ersetzen können.
+  - Die Lautstärke der Lok geht noch nicht an das `AudioSink`.
+  - Wird eine Lok gelöscht oder eine andere Konfiguration geöffnet, spielt ihr Kanal noch bis zu zwei Sounds zu Ende.
+  - Lok-Pakete (B-20) übernehmen die Sounddateien noch nicht in die Bibliothek; die Pfade bleiben relativ zum Paket.
+  - B-13 (Fahrstufe synchron zum Übergangsgeräusch) ist noch nicht gebaut.
+
 ## 2026-11-05 – B-15: Geräuschsegmente bearbeiten (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
