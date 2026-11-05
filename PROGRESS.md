@@ -8,6 +8,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – B-14: Fahrgeräusch Dampf (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neues Modul `steam_sound.rs` wie `SteamSoundController` in Electrip 1: Bei laufender Maschine läuft das Leerlaufgeräusch in Schleife. Fährt die Lok, folgen die Zylindertakte aufeinander, jeder auf einem eigenen Kanal. Die Pause ist eine Radumdrehung (3,6 · Durchmesser · π / Geschwindigkeit) geteilt durch die Takte, höchstens 1 / minimale Taktfrequenz.
+  Beim Anfahren kommt erst der Zylinderdampf und nach der Verzögerung der erste Takt, außer der Dampf läuft noch. Ein- und Ausschalten wirkt sofort, die Geschwindigkeit bleibt frei, und die Lok wartet nicht auf den Sound (anders als beim Diesel, B-13).
+- `AudioSink` hat jetzt mehrere Kanäle je Lok (`ChannelId { loco, nr }`) und `play(channel, sound, delay)`: Ein Takt, der vor der nächsten Abfrage fällig ist, geht mit seiner Verzögerung raus. Bei hoher Geschwindigkeit sind die Takte kürzer als 50 ms.
+- Sound-Modell: `steam` (`strokes`, `wheel_diameter`, `start_delay`, `min_frequency`, Standard wie Electrip 1), Motorgeräusch `cylinder` und je Segment `strokes` (Sounddatei je Taktnummer). Neue Befehle: `set_steam { loco, steam }` und `set_stroke_sound { loco, segment, stroke, path }`. Der Import aus Electrip 1 übernimmt alles.
+- Golden-Test `golden_steam_drive.rs`: Alle 320 Sound-Ereignisse aus `tests/golden/steam_drive.jsonl` stimmen in Reihenfolge und Sound. Das Leerlaufgeräusch stimmt auf die Mikrosekunde. Dampf und Takte kommen genau eine Abfrage (50 ms) später, auf 20 µs genau; das ist der bekannte Versatz der Beschleunigung (B-10, siehe B-13).
+  Der Test-Mixer aus dem Diesel-Test liegt jetzt in `crates/core/tests/common/mod.rs` und kann mehrere Kanäle und verzögerte Sounds.
+- Weitere Tests: `steam_sound/tests.rs`, `sound/tests.rs`, `driving_sound/tests.rs`, `electrip1/tests.rs` (Korpus mit BR 81), `crates/electrip/tests/sound_segments.rs` über den Steuerkanal.
+- `cargo xtask test`, `cargo xtask loc` (3877 Zeilen) und `cargo xtask parity` grün.
+- **B-14** `wired` und `verified`. `hw: true`, Prüfpunkte in `spec/hw-checklist.md` (Hörtest, Tor C).
+- Einfachheits-Review: refactored (Sub-Agent). Die Wertebereiche sind privat. Ungültige Dampfwerte aus einer kaputten Datei ergeben keine Pause mehr und damit keine Takte; vorher hätte Raddurchmesser 0 den Host in eine Endlosschleife geschickt. Eine Testfunktion ist geteilt.
+- **Offen:**
+  - Ändert sich die Taktzahl, während das Fahrgeräusch läuft, gilt sie erst nach dem nächsten Einschalten.
+  - Weniger Takte lassen die Sounddateien der höheren Taktnummern im Modell stehen; sie werden nicht gespielt.
+  - Die Soundausgabe (B-18) muss `play` mit Verzögerung können (rodio: `Source::delay`).
+
 ## 2026-11-05 – B-13: Anfahren synchron zum Sound (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).

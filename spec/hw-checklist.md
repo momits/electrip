@@ -89,3 +89,15 @@ Vorbereitung: wie B-10 verbunden, eine Diesellok mit Geräuschen (z. B. aus eine
 - [ ] Fahrgeräusch aus: die Lok fährt und hält wieder sofort mit der Achse.
 
 Ergebnis: _offen_
+
+## B-14 – Fahrgeräusch Dampf (braucht die Soundausgabe aus B-18)
+
+Vorbereitung: wie B-10 verbunden, eine Dampflok mit Geräuschen (z. B. BR 81 aus einem Lok-Paket des Korpus importiert).
+
+- [ ] Fahrgeräusch an (`toggle_sound`) im Stand: das Leerlaufgeräusch läuft ohne Lücke in Schleife, keine Takte.
+- [ ] Anfahren mit kleiner Auslenkung: zuerst ist der Zylinderdampf zu hören, die ersten Takte folgen nach der Verzögerung (Standard 2 s); bei sehr kleiner Geschwindigkeit kommen die Takte höchstens im Abstand der minimalen Taktfrequenz (Standard 0,2 Hz = 5 s).
+- [ ] Beschleunigen bis Vmax: die Takte werden gleichmäßig schneller, auch über den Abfragetakt von 50 ms hinaus ohne Stolpern; an Segmentgrenzen wechseln die Taktgeräusche.
+- [ ] `set_steam` mit größerem Raddurchmesser oder weniger Takten pro Umdrehung: bei gleicher Geschwindigkeit hörbar langsamere Takte.
+- [ ] Anhalten: die Takte hören auf, das Leerlaufgeräusch läuft weiter; Fahrgeräusch aus: alles verstummt sofort.
+
+Ergebnis: _offen_
