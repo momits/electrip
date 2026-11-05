@@ -8,6 +8,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-05 – B-13: Anfahren synchron zum Sound (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Läuft das Fahrgeräusch, folgt die Lok dem Sound wie in Electrip 1: Sie bekommt eine Fahrstufe > 0 erst, wenn das Beschleunigungsgeräusch Leerlauf → Segment 1 beginnt, und Fahrstufe 0 erst, wenn das Bremsgeräusch Segment 1 → Leerlauf beginnt.
+  Bis dahin behält sie die zuletzt gesendete Fahrstufe und Richtung, wie Electrip 1, das in dieser Zeit gar nichts sendet. Funktionen gehen sofort raus.
+- `DrivingSound` merkt sich, wohin der gerade spielende Sound führt (aus der Länge der Dateien, ADR 0004). `DrivingSound::synchronize` macht daraus den Zustand, den der Host an die Zentrale schickt.
+- Golden-Test `golden_diesel_drive.rs` vergleicht jetzt auch die Befehle an die Zentrale mit den SRCP-Befehlen von Electrip 1 in `tests/golden/diesel_drive.jsonl`: Start bei 7,7 s mit Stufe 36 und Halt bei 31,2 s stimmen genau. Ohne die Änderung startet die Lok schon bei 4,75 s.
+  Verglichen werden nur Anfahren und Anhalten. Die Stufen dazwischen kommen in Electrip 2 eine Abfrage (50 ms) später als in Electrip 1; das kommt von der Beschleunigung (B-10), nicht vom Sound.
+- Unit-Tests in `driving_sound/tests.rs`.
+- `cargo xtask test`, `cargo xtask loc` (3627 Zeilen) und `cargo xtask parity` grün.
+- **B-13** `wired`; `verified` folgt wie bei B-12, wenn die App eine echte Ausgabe hat und das über srcpd prüfbar ist (Prüfart `srcpd-loopback`). `hw: true` – Prüfpunkt für Mo kommt mit dem Hörtest (Tor C).
+- Einfachheits-Review: refactored (Sub-Agent). `synchronize` ist nur noch im Crate sichtbar.
+- **Offen:** Befehle wie Richtungswechsel und Funktionen gehen in Electrip 2 erst mit der nächsten Abfrage an die Zentrale (bis 50 ms später als in Electrip 1). Das betrifft ältere Anforderungen; bei Bedarf als eigene Aufgabe.
+
 ## 2026-11-05 – B-11: Fahrgeräusch Verbrennungsmotor (Claude)
 
 - CI auf `main` grün.
@@ -28,7 +42,7 @@ _Zurzeit keine._
   - Die Lautstärke der Lok geht noch nicht an das `AudioSink`.
   - Wird eine Lok gelöscht oder eine andere Konfiguration geöffnet, spielt ihr Kanal noch bis zu zwei Sounds zu Ende.
   - Lok-Pakete (B-20) übernehmen die Sounddateien noch nicht in die Bibliothek; die Pfade bleiben relativ zum Paket.
-  - B-13 (Fahrstufe synchron zum Übergangsgeräusch) ist noch nicht gebaut.
+  - B-13 (Fahrstufe synchron zum Übergangsgeräusch) ist noch nicht gebaut (inzwischen erledigt, siehe oben).
 
 ## 2026-11-05 – B-15: Geräuschsegmente bearbeiten (Claude)
 
