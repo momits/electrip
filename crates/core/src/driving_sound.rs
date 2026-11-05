@@ -76,7 +76,7 @@ impl DrivingSound {
     /// What the command station gets instead of `state` after `last`
     /// while the sound plays: standstill until the sound leaves the idle,
     /// and the last step and direction until it returns there.
-    pub fn synchronize(&self, mut state: LocoState, last: &LocoState) -> LocoState {
+    pub(crate) fn synchronize(&self, mut state: LocoState, last: &LocoState) -> LocoState {
         if self.state == SoundState::Off {
             return state;
         }
