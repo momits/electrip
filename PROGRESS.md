@@ -16,6 +16,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - CI des Aufräum-Branchs rot auf macOS: `input_devices.rs` (`holding_next_loco_scrolls_after_500_ms`) wechselte die Lok vor 560 ms.
 - Ursache: Der Steuerkanal führt einen Befehl zwischen zwei Abfragen aus, die nächste Abfrage zählt aber die ganze Zeit seit der vorigen, also auch die vor dem Befehl. Gehaltene Lokwechsel, Rampen und Sperren beim Anlassen begannen so bis zu einer Abfrage (auf langsamen Rechnern mehr) zu früh.
 - `crates/control`: Vor jedem Befehl über den Steuerkanal fährt der Host bis jetzt (`Shared::poll`), danach zählt die Zeit ab dem Befehl. Befehle der Gamepads kommen ohnehin mit der Abfrage.
+- Danach fiel auf macOS `engine_start.rs` auf (Abstellen nach 0,18 s): Der Test-Diesel hatte keine Segmentgeräusche, also verstummt er beim Fahren nach dem laufenden Leerlaufgeräusch (wie Electrip 1). Dauerte die kurze Fahrt länger als ein Leerlaufgeräusch (0,3 s), endete `stopping` schon mit dessen Rest. Der Test gibt dem Diesel jetzt Segmentgeräusche; mit künstlich verlängerter Fahrt lokal nachgestellt.
 - Prüffall ist der bestehende Test, der jetzt nicht mehr vom Takt abhängt. `cargo xtask test` (zehnmal `input_devices`, `engine_start`, `driving`), `cargo xtask sim up` und `cargo xtask loc` grün.
 - Einfachheits-Review: ok (selbst, Diff von 20 Zeilen komplett neu gelesen).
 
