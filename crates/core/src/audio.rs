@@ -8,7 +8,8 @@ use std::time::Duration;
 pub type Audio = Box<dyn AudioSink + Send>;
 
 /// A channel of the audio target: the loco and its `nr`-th channel. The
-/// driving sound plays on channel 0, a steam engine also on the following.
+/// driving sound plays on channel 0, a steam engine also on the following;
+/// sound functions play above them.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct ChannelId {
     pub loco: u32,
@@ -48,6 +49,10 @@ impl Channel {
             id,
             ..Channel::default()
         }
+    }
+
+    pub(crate) fn id(&self) -> ChannelId {
+        self.id
     }
 
     pub(crate) fn is_silent(&self) -> bool {

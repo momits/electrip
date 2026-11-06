@@ -209,19 +209,23 @@ fn import_creates_a_configuration_named_like_the_file() {
     assert_eq!(
         actions,
         [
+            "Knopf 1",
             "Knopf 6",
             "Knopf 7",
             "Knopf 8",
             "Rangiergang",
             "ABV Aus",
-            "Knopf 3"
+            "Knopf 3",
+            "Knopf 2",
+            "Knopf 4",
+            "Knopf 5"
         ]
     );
     host.apply(Command::AddAction {
         name: "Horn".into(),
     })
     .unwrap();
-    assert_eq!(host.session().actions()[6].id, 7);
+    assert_eq!(host.session().actions()[10].id, 11);
     let saved = config::read(&host.path("settings").unwrap()).unwrap();
     assert_eq!(saved, host.session().config());
     let exists = Err(CommandError::ConfigurationExists("settings".into()));
@@ -360,9 +364,9 @@ fn imported_pictures_are_cropped_in_the_middle() {
         (picture::WIDTH, picture::HEIGHT)
     );
     let report = serde_json::to_value(host.session()).unwrap()["import_report"].clone();
-    // The first two lines are the buttons of Q-015.
-    assert_eq!(report.as_array().unwrap().len(), 3);
-    let line = report[2].as_str().unwrap();
+    // The first three lines are the buttons of Q-015.
+    assert_eq!(report.as_array().unwrap().len(), 4);
+    let line = report[3].as_str().unwrap();
     assert!(
         line.starts_with("BR 216: cannot read the picture"),
         "{line}"

@@ -1,4 +1,5 @@
 use super::*;
+use crate::audio::tests::LogSink;
 use serde_json::{Value, json};
 
 fn session_with_loco() -> Session {
@@ -124,6 +125,7 @@ fn the_state_is_written_as_json() {
                 "brake_duration": 8.5,
                 "volume": 0.8,
                 "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
+                "sound_functions": [],
                 "picture": null,
                 "sound_model": null,
                 "speed": 0.0,
@@ -254,12 +256,9 @@ fn add_function(session: &mut Session, loco: u32, action: u32, number: u8) {
 }
 
 fn trigger(session: &mut Session, loco: u32, action: u32, pressed: bool) {
+    let mut sink = LogSink::default();
     session
-        .apply(Command::TriggerAction {
-            loco,
-            action,
-            pressed,
-        })
+        .trigger_action(loco, action, pressed, &mut sink)
         .unwrap();
 }
 
@@ -381,4 +380,54 @@ fn removing_an_action_removes_its_functions() {
     session.apply(Command::RemoveAction { action: 1 }).unwrap();
     assert_eq!(function_numbers(&session), [1]);
     assert!(session.locos()[1].loco.functions().is_empty());
+}
+
+fn add_sound_function(session: &mut Session, action: u32, name: &str) -> Result<(), CommandError> {
+    let function =
+        json!({"action": action, "name": name, "mode": "switch", "path": "horn", "on": true});
+    session.apply(command(
+        json!({"command": "add_sound_function", "loco": 1, "function": function}),
+    ))
+}
+
+fn sound_function_names(session: &Session) -> Vec<&str> {
+    let functions = session.locos()[0].loco.sound_functions();
+    functions.iter().map(|f| f.name.as_str()).collect()
+}
+
+#[test]
+fn sound_functions_are_added_removed_and_moved_like_functions() {
+    let mut session = session_with_actions();
+    for (action, name) in [(2, "Horn"), (1, "Glocke"), (2, "Pfiff")] {
+        add_sound_function(&mut session, action, name).unwrap();
+    }
+    assert!(!session.locos()[0].loco.sound_functions()[0].on);
+    let error = add_sound_function(&mut session, 7, "Kette");
+    assert_eq!(error, Err(CommandError::UnknownAction(7)));
+
+    let moved = json!({"command": "move_sound_function", "loco": 1, "index": 2, "position": 0});
+    session.apply(command(moved)).unwrap();
+    assert_eq!(sound_function_names(&session), ["Pfiff", "Horn", "Glocke"]);
+    let removed = json!({"command": "remove_sound_function", "loco": 1, "index": 1});
+    session.apply(command(removed)).unwrap();
+    assert_eq!(sound_function_names(&session), ["Pfiff", "Glocke"]);
+    let error = session.apply(Command::RemoveSoundFunction { loco: 1, index: 2 });
+    assert_eq!(error, Err(CommandError::PositionOutOfRange(2)));
+
+    session.apply(Command::RemoveAction { action: 2 }).unwrap();
+    assert_eq!(sound_function_names(&session), ["Glocke"]);
+}
+
+#[test]
+fn sound_functions_are_saved_off() {
+    let mut session = session_with_actions();
+    add_sound_function(&mut session, 1, "Glocke").unwrap();
+    let mut sink = LogSink::new(&[("horn", 1.0)]);
+    session.trigger_action(1, 1, true, &mut sink).unwrap();
+    assert!(session.locos()[0].loco.sound_functions()[0].on);
+    let function = &session.locos()[0].loco.sound_functions()[0];
+    assert_eq!(
+        session.config().locos[0].sound_functions(),
+        [function.off()]
+    );
 }

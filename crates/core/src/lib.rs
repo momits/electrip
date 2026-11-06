@@ -10,6 +10,7 @@ pub mod drive;
 pub mod driving_sound;
 pub mod electrip1;
 pub mod function;
+pub mod function_sound;
 pub mod host;
 pub mod input;
 pub mod loco;

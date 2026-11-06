@@ -1,5 +1,5 @@
 use super::*;
-use crate::audio::tests::LogSink;
+use crate::audio::tests::{LogSink, Played};
 use crate::decoder::Decoder;
 use crate::driving_sound::SoundState;
 use crate::function::{Function, Mode};
@@ -623,4 +623,53 @@ fn the_speed_stays_while_the_engine_starts() {
     host.poll(0.5);
     host.poll(0.5);
     assert!(speed(&host) > 0.0);
+}
+
+/// A host with one loco, a pad (id 1) whose "x" triggers the action
+/// "Hupe" (1), and the log of its audio target, where "horn" lasts one
+/// second.
+fn host_with_horn(mode: &str) -> (Host, Played, TempDir) {
+    let audio = LogSink::new(&[("horn", 1.0)]);
+    let played = Arc::clone(&audio.played);
+    let library = TempDir::new().unwrap();
+    let connector: Connector = Box::new(|_| Err(StationError("offline".into())));
+    let mut host = Host::new(connector, Box::new(audio), library.path().into()).unwrap();
+    host.apply(Command::AddLoco).unwrap();
+    add_device(&mut host, 1);
+    let name = "Hupe".into();
+    host.apply(Command::AddAction { name }).unwrap();
+    let function = serde_json::json!({"action": 1, "mode": mode, "path": "horn"});
+    let function = serde_json::from_value(function).unwrap();
+    host.apply(Command::AddSoundFunction { loco: 1, function })
+        .unwrap();
+    bind(&mut host, "x", Target::Action { action: 1 });
+    (host, played, library)
+}
+
+fn take(played: &Played) -> Vec<String> {
+    std::mem::take(&mut played.lock().unwrap())
+}
+
+#[test]
+fn a_bound_action_plays_the_sound_functions_of_the_device_loco() {
+    let (mut host, played, _library) = host_with_horn("switch");
+    press(&mut host, "x");
+    assert_eq!(take(&played), ["1.10001 horn", "1.10001 horn"]);
+    host.poll(1.0);
+    assert_eq!(take(&played), ["1.10001 horn"]);
+    press(&mut host, "x");
+    assert_eq!(take(&played), ["1.10001 stop"]);
+}
+
+#[test]
+fn a_tapped_sound_function_switches_off_at_the_end() {
+    let (mut host, played, _library) = host_with_horn("tap");
+    let on = |host: &Host| host.session().locos()[0].loco.sound_functions()[0].on;
+    press(&mut host, "x");
+    assert!(on(&host));
+    assert!(!host.poll(0.5));
+    press(&mut host, "x");
+    assert!(host.poll(0.5));
+    assert!(!on(&host));
+    assert_eq!(take(&played), ["1.10001 horn"]);
 }

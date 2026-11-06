@@ -70,6 +70,14 @@ impl Host {
                 }
             }
             Command::ToggleSound { loco } => self.session.toggle_sound(loco, &mut *self.audio)?,
+            Command::TriggerAction {
+                loco,
+                action,
+                pressed,
+            } => {
+                let audio = &mut *self.audio;
+                self.session.trigger_action(loco, action, pressed, audio)?
+            }
             Command::Input {
                 device,
                 control,

@@ -1,8 +1,10 @@
-//! The commands for logical actions (N-07) and the functions of a loco
-//! mapped to them (B-07).
+//! The commands for logical actions (N-07) and the functions and sound
+//! functions of a loco mapped to them (B-07, B-16).
 
-use super::{CommandError, Session, check_index};
+use super::{CommandError, Session};
+use crate::audio::AudioSink;
 use crate::function::{Action, Function};
+use crate::function_sound::{self, SoundFunction};
 use crate::input::Target;
 use crate::loco::Loco;
 use crate::station::MAX_FUNCTION;
@@ -24,14 +26,25 @@ impl Session {
     /// this configuration with the names of their `actions`, which are added
     /// if missing. Functions with an unknown action are left out.
     pub(crate) fn import_loco(&mut self, mut loco: Loco, actions: &[Action], report: Vec<String>) {
+        let mut action = |old: u32| {
+            let name = &actions.iter().find(|a| a.id == old)?.name;
+            Some(self.action_named(name))
+        };
         let functions = std::mem::take(loco.functions_mut());
         *loco.functions_mut() = functions
             .into_iter()
             .filter_map(|f| {
-                let name = &actions.iter().find(|a| a.id == f.action)?.name;
-                let action = self.action_named(name);
-                let on = f.default_on;
+                let (action, on) = (action(f.action)?, f.default_on);
                 Some(Function { action, on, ..f })
+            })
+            .collect();
+        let sounds = std::mem::take(loco.sound_functions_mut());
+        *loco.sound_functions_mut() = sounds
+            .into_iter()
+            .filter_map(|f| {
+                let mut function = f.off();
+                function.action = action(f.action)?;
+                Some(function)
             })
             .collect();
         self.push(loco);
@@ -55,6 +68,7 @@ impl Session {
             .remove(index.ok_or(CommandError::UnknownAction(id))?);
         for entry in &mut self.locos {
             entry.loco.functions_mut().retain(|f| f.action != id);
+            entry.loco.sound_functions_mut().retain(|f| f.action != id);
         }
         let target = Target::Action { action: id };
         for mapping in &mut self.mappings {
@@ -87,39 +101,34 @@ impl Session {
         Ok(())
     }
 
-    pub(super) fn remove_function(&mut self, loco: u32, index: usize) -> Result<(), CommandError> {
-        let functions = self.loco(loco)?.functions_mut();
-        check_index(functions, index)?;
-        functions.remove(index);
-        Ok(())
-    }
-
-    pub(super) fn move_function(
+    /// Appends the sound function, switched off.
+    pub(super) fn add_sound_function(
         &mut self,
         loco: u32,
-        index: usize,
-        position: usize,
+        function: SoundFunction,
     ) -> Result<(), CommandError> {
-        let functions = self.loco(loco)?.functions_mut();
-        check_index(functions, index)?;
-        check_index(functions, position)?;
-        let function = functions.remove(index);
-        functions.insert(position, function);
+        self.action(function.action)?;
+        let function = function.off();
+        self.loco(loco)?.sound_functions_mut().push(function);
         Ok(())
     }
 
     /// An action without a function at this loco does nothing.
-    pub(super) fn trigger_action(
+    pub(crate) fn trigger_action(
         &mut self,
         loco: u32,
         action: u32,
         pressed: bool,
+        sink: &mut dyn AudioSink,
     ) -> Result<(), CommandError> {
         self.action(action)?;
-        let functions = self.loco(loco)?.functions_mut();
+        let loco_entry = self.loco(loco)?;
+        let functions = loco_entry.functions_mut();
         for function in functions.iter_mut().filter(|f| f.action == action) {
             function.trigger(pressed);
         }
+        let sounds = loco_entry.sound_functions_mut();
+        function_sound::trigger(sounds, loco, action, pressed, sink);
         Ok(())
     }
 }
