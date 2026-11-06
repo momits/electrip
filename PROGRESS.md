@@ -6,7 +6,23 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-_Keine offen._
+- **Ausgabegerät wechseln (Audio):** `electrip_audio::sound_card` öffnet beim Start einmal das Standardgerät (`open_default_sink`) und merkt sich Kanalzahl und Abtastrate.
+  Wählt Mo danach in den Mac-Systemeinstellungen ein anderes Ausgabegerät, bleibt der Ton auf dem alten Gerät und ist stumm. Gefunden beim Hörtest zu Tor C.
+  Der Fehler ist vermutet und nicht nachgestellt.
+  Behelf: App nach dem Wechsel neu starten.
+  Lösung mit N-05 in Phase 3: Gerät pro Lok wählen, bei Fehler oder Wechsel neu öffnen.
+- **Fehlende Sounddateien melden:** `import_electrip1` übernimmt die alten Pfade der Sounddateien (z. B. `/home/electrip/Lokomotiven/V 60/sound/FS1.ogg`) und prüft sie nicht.
+  Fehlen die Dateien, antwortet `toggle_sound` mit `ok`, aber das Fahrgeräusch bleibt `off`, und der `import_report` bleibt leer.
+  Bei Bildern steht dagegen „cannot read the picture“ im Bericht.
+  Gewünscht: `import_electrip1` nennt jede fehlende Sounddatei im `import_report`, und `toggle_sound` meldet, wenn nichts gespielt werden kann.
+  Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
+- **Sounds vor dem Spielen laden:** `Speaker::decode` dekodiert jede Datei beim ersten Einreihen ganz und im Host-Thread (`length()` und `samples()` in `crates/audio/src/speaker.rs`).
+  Gemessen für Dateien von V 60: 25 bis 46 ms je Segmentdatei, 163 ms für `stop2.ogg` im Debug-Build, 2,5 bis 11 ms im Release-Build.
+  Der Mixer selbst ist lückenlos: zwei eingereihte Sounds ergaben keine Lücke auf Sample-Ebene.
+  Mo hört beim Hörtest sporadisch Pausen und Knacken, vor allem wenn ein noch nie gespieltes Segment startet.
+  Ob das Dekodieren die Ursache ist, ist vermutet und nicht nachgewiesen.
+  Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
+  Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
 ## 2026-11-06 – Loop hält: Tor C (Claude)
 
