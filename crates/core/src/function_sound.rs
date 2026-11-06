@@ -91,8 +91,6 @@ impl SoundFunction {
 }
 
 /// Triggers the sound functions of the loco `loco` mapped to `action`.
-/// One that starts plays on the first channel after the driving sound
-/// where no other one plays.
 pub(crate) fn trigger(
     functions: &mut [SoundFunction],
     loco: u32,
@@ -101,18 +99,25 @@ pub(crate) fn trigger(
     sink: &mut dyn AudioSink,
 ) {
     for index in 0..functions.len() {
-        if functions[index].action != action {
-            continue;
+        if functions[index].action == action {
+            let nr = free_channel(functions);
+            functions[index].trigger(pressed, ChannelId { loco, nr }, sink);
         }
-        let taken = |nr: &usize| {
-            let busy = functions.iter().filter(|f| !f.channel.is_silent());
-            busy.map(|f| f.channel.id()).any(|id| id.nr == *nr)
-        };
-        let nr = (steam_sound::CHANNELS..)
-            .find(|nr| !taken(nr))
-            .unwrap_or_default();
-        functions[index].trigger(pressed, ChannelId { loco, nr }, sink);
     }
+}
+
+/// The first channel after the driving sound where no sound function plays.
+fn free_channel(functions: &[SoundFunction]) -> usize {
+    let busy: Vec<usize> = functions
+        .iter()
+        .filter(|f| !f.channel.is_silent())
+        .map(|f| f.channel.id().nr)
+        .collect();
+    let mut nr = steam_sound::CHANNELS;
+    while busy.contains(&nr) {
+        nr += 1;
+    }
+    nr
 }
 
 #[cfg(test)]
