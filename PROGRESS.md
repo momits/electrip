@@ -6,7 +6,21 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
+- `spec/steuerkanal.md` beschreibt die Befehle des Sound-Modells noch nicht: `set_engine`, `insert_segment`, `remove_segment`, `move_segment_border`, `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `set_steam` und das Feld `sound_model` im Zustand (gefunden bei B-12).
 - `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
+
+## 2026-11-06 – B-12: Anlassen und Abstellen verifiziert (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neuer Prüffall `crates/electrip/tests/engine_start.rs` über den Steuerkanal: Die App (ohne Soundkarte, sie kennt die Längen der Dateien) bekommt einen Diesel mit Anlass-, Leerlauf- und Abstellgeräusch als WAV. Beim Anlassen und beim Abstellen bleibt die Geschwindigkeit trotz voll ausgelenkter Fahrachse 0, bis `sound` auf `on` bzw. `off` steht; danach fährt die Lok los. Die Dauer passt zur Länge der Dateien.
+- Den Teil `audio-log` decken die Tests aus B-11 ab (`driving_sound/tests.rs`, `host/tests.rs`), das Konfigurieren der Geräusche `sound_segments.rs`.
+- `spec/steuerkanal.md`: Befehl `toggle_sound` und Feld `sound` im Zustand ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (4579 Zeilen, unverändert) und `cargo xtask parity` grün.
+- **B-12** `wired` und `verified`.
+- Einfachheits-Review: refactored (Sub-Agent). `add_quick_loco` und `set_axis` liegen jetzt in `tests/common` (auch von `driving.rs` genutzt), ein Helfer mit `Option`-Parameter ist zwei einfachen gewichen, die Doku-Zeile zu `sound` steht hinter dem Eintrag zu `speed`.
+- **Offen:**
+  - Phase 3: Sperre des Reglers in der UI.
+  - **Nächster Schritt:** B-13 `verified` mit dem Prüffall `srcpd-loopback` (Fahrstufe an srcpd erst mit dem Übergangsgeräusch).
 
 ## 2026-11-06 – B-18: Ausgabe auf der Soundkarte (Claude)
 
