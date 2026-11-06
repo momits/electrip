@@ -21,8 +21,9 @@ use tempfile::TempDir;
 /// Seconds between two polls of the host, as in the app.
 pub const POLL: f64 = 0.05;
 
-/// Time, sound and event ("start", "end", "stop" or "replaced") as in the
-/// golden file, or time, "GL" and loco state.
+/// Time, sound and event ("start", "end", "stop", "replaced" or
+/// "fade_out", the fades with their milliseconds) as in the golden file,
+/// or time, "GL" and loco state.
 pub type Event = (f64, String, String);
 
 /// A channel that plays a sound and holds one waiting sound, like pygame,
@@ -120,6 +121,37 @@ impl AudioSink for Sink {
         if let Some((sound, _)) = stopped {
             mixer.events.push((now, sound, "stop".into()));
         }
+    }
+
+    fn fade_in(&mut self, channel: ChannelId, sound: &Path, fade: Duration) {
+        let sound = sound.to_str().unwrap().to_string();
+        let mut mixer = self.0.lock().unwrap();
+        let now = mixer.now;
+        let end = now + mixer.lengths[&sound];
+        mixer.track(channel).playing = Some((sound.clone(), end));
+        let event = with_ms("start", fade);
+        mixer.events.push((now, sound, event));
+    }
+
+    fn fade_out(&mut self, channel: ChannelId, fade: Duration) {
+        let mut mixer = self.0.lock().unwrap();
+        let now = mixer.now;
+        let track = mixer.track(channel);
+        track.waiting = None;
+        let Some((sound, end)) = track.playing.as_mut() else {
+            return;
+        };
+        *end = end.min(now + fade.as_secs_f64());
+        let sound = sound.clone();
+        mixer.events.push((now, sound, with_ms("fade_out", fade)));
+    }
+}
+
+/// The event with the milliseconds of its fade, if it has one.
+fn with_ms(event: &str, fade: Duration) -> String {
+    match fade.as_millis() {
+        0 => event.into(),
+        ms => format!("{event} {ms}"),
     }
 }
 
@@ -253,7 +285,10 @@ pub fn golden(name: &str, address: u16) -> (Vec<Event>, Vec<Event>) {
         .filter(|entry| entry["sound"].is_string())
         .map(|e| {
             let text = |key: &str| e[key].as_str().unwrap().to_string();
-            (e["t"].as_f64().unwrap(), text("sound"), text("ev"))
+            let ms = e["fade_in_ms"].as_u64().or(e["ms"].as_u64());
+            let event = text("ev");
+            let event = ms.map_or(event.clone(), |ms| format!("{event} {ms}"));
+            (e["t"].as_f64().unwrap(), text("sound"), event)
         })
         .collect();
     let prefix = format!("SET 1 GL {address} ");

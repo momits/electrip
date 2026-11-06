@@ -4,6 +4,7 @@
 //! Changing or removing the sound model needs one, too (B-15).
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
+use crate::event_sound::EventSound;
 use crate::function::Function;
 use crate::function_sound::SoundFunction;
 use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel, Steam};
@@ -106,6 +107,9 @@ pub struct Loco {
     /// In the order the user sorted them (B-16).
     #[serde(default)]
     sound_functions: Vec<SoundFunction>,
+    /// Played only with a driving sound (B-17).
+    #[serde(default)]
+    event_sounds: Vec<EventSound>,
     /// Name of the picture in the media directory (B-05).
     picture: Option<String>,
     /// `None` is “no sound”.
@@ -128,6 +132,7 @@ impl Loco {
             volume: 0.8,
             functions: Vec::new(),
             sound_functions: Vec::new(),
+            event_sounds: Vec::new(),
             picture: None,
             sound_model: None,
         })
@@ -199,6 +204,14 @@ impl Loco {
 
     pub fn sound_functions_mut(&mut self) -> &mut Vec<SoundFunction> {
         &mut self.sound_functions
+    }
+
+    pub fn event_sounds(&self) -> &[EventSound] {
+        &self.event_sounds
+    }
+
+    pub fn event_sounds_mut(&mut self) -> &mut Vec<EventSound> {
+        &mut self.event_sounds
     }
 
     pub fn picture(&self) -> Option<&str> {

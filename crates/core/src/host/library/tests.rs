@@ -218,7 +218,8 @@ fn import_creates_a_configuration_named_like_the_file() {
             "Knopf 3",
             "Knopf 2",
             "Knopf 4",
-            "Knopf 5"
+            "Knopf 5",
+            "Bremsen",
         ]
     );
     host.apply(Command::AddAction {

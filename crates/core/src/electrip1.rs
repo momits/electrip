@@ -5,7 +5,8 @@
 //! Electrip 1 allowed DCC short addresses up to 10239. Such locos become DCC
 //! long and are named in the report (B-06).
 //!
-//! Each button number that a function or sound function (B-16) uses
+//! Each button number that a function, sound function (B-16) or event
+//! sound (B-17) uses
 //! becomes a logical action "Knopf <n>" (ADR 0009); a function without a
 //! button gets an action with its own name. The buttons and the drive axis
 //! of `joystick` become the mapping of the device type "Electrip 1"
@@ -13,6 +14,7 @@
 //! the built-in action.
 
 use crate::decoder::{Decoder, Protocol};
+use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function, Mode};
 use crate::function_sound::{SoundFunction, SoundMode};
 use crate::input::{Mapping, Target};
@@ -114,6 +116,7 @@ struct OldLoco {
     img_path: Option<PathBuf>,
     functions: Vec<OldFunction>,
     function_sounds: Vec<OldFunctionSound>,
+    event_sounds: Vec<OldEventSound>,
     engine: Option<OldEngine>,
 }
 
@@ -170,6 +173,30 @@ struct OldFunctionSound {
     toggle_mode: u8,
 }
 
+/// An event sound; `button` is -1 without a button, `direction` `true`
+/// forward. Fades are in seconds.
+#[derive(Deserialize)]
+struct OldEventSound {
+    #[serde(default)]
+    name: String,
+    #[serde(default = "event_sound::default_active")]
+    state: bool,
+    #[serde(default)]
+    button: i32,
+    file_path: Option<PathBuf>,
+    direction: Option<bool>,
+    min_speed: Option<f64>,
+    max_speed: Option<f64>,
+    min_accel: Option<f64>,
+    max_accel: Option<f64>,
+    #[serde(default)]
+    fade_in: f64,
+    #[serde(default)]
+    fade_out: f64,
+    #[serde(default)]
+    play_to_end: bool,
+}
+
 /// Defaults of Electrip 1 (`legacy/src/electrip/config/json_model.py`).
 impl Default for OldLoco {
     fn default() -> Self {
@@ -186,6 +213,7 @@ impl Default for OldLoco {
             img_path: None,
             functions: Vec::new(),
             function_sounds: Vec::new(),
+            event_sounds: Vec::new(),
             engine: None,
         }
     }
@@ -208,7 +236,9 @@ fn import(json: &str) -> Result<Import, ImportError> {
         .iter()
         .flat_map(|old| {
             let sounds = old.function_sounds.iter().map(|f| f.button);
-            old.functions.iter().map(|f| f.button).chain(sounds)
+            let events = old.event_sounds.iter().map(|s| s.button);
+            let functions = old.functions.iter().map(|f| f.button);
+            functions.chain(sounds).chain(events)
         })
         .collect();
     let locos = file
@@ -280,6 +310,11 @@ fn convert(
         .function_sounds
         .into_iter()
         .map(|f| sound_function(f, actions))
+        .collect();
+    *loco.event_sounds_mut() = old
+        .event_sounds
+        .into_iter()
+        .map(|s| event_sound(s, actions))
         .collect();
     let model = old.engine.map(sound_model).transpose();
     loco.set_sound_model(model.map_err(loco_error)?);
@@ -364,6 +399,25 @@ fn sound_function(old: OldFunctionSound, actions: &mut Vec<Action>) -> SoundFunc
         path: old.file_path,
         name: old.name,
         ..SoundFunction::default()
+    }
+}
+
+fn event_sound(old: OldEventSound, actions: &mut Vec<Action>) -> EventSound {
+    EventSound {
+        action: action_id(actions, old.button, &old.name),
+        name: old.name,
+        path: old.file_path,
+        default_active: old.state,
+        active: old.state,
+        forward: old.direction,
+        min_speed: old.min_speed,
+        max_speed: old.max_speed,
+        min_accel: old.min_accel,
+        max_accel: old.max_accel,
+        fade_in: old.fade_in,
+        fade_out: old.fade_out,
+        play_to_end: old.play_to_end,
+        ..EventSound::default()
     }
 }
 

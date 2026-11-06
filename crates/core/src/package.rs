@@ -33,12 +33,15 @@ struct Content {
     actions: Vec<Action>,
 }
 
-/// Writes the loco, the `actions` its functions and sound functions use
-/// and its picture from the media directory `media` to a package at `path`.
+/// Writes the loco, the `actions` its functions, sound functions and event
+/// sounds use and its picture from the media directory `media` to a package
+/// at `path`.
 pub fn write(path: &Path, loco: &Loco, actions: &[Action], media: &Path) -> io::Result<()> {
     let used = |a: &&Action| {
         let sounds = loco.sound_functions().iter().map(|f| f.action);
-        let mut ids = loco.functions().iter().map(|f| f.action).chain(sounds);
+        let events = loco.event_sounds().iter().map(|s| s.action);
+        let functions = loco.functions().iter().map(|f| f.action);
+        let mut ids = functions.chain(sounds).chain(events);
         ids.any(|id| id == a.id)
     };
     let content = Content {

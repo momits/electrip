@@ -126,6 +126,7 @@ fn the_state_is_written_as_json() {
                 "volume": 0.8,
                 "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
                 "sound_functions": [],
+                "event_sounds": [],
                 "picture": null,
                 "sound_model": null,
                 "speed": 0.0,
@@ -429,5 +430,84 @@ fn sound_functions_are_saved_off() {
     assert_eq!(
         session.config().locos[0].sound_functions(),
         [function.off()]
+    );
+}
+
+fn add_event_sound(session: &mut Session, action: u32, name: &str) -> Result<(), CommandError> {
+    let sound = json!({"action": action, "name": name, "path": "squeal", "max_accel": -1.0});
+    session.apply(command(
+        json!({"command": "add_event_sound", "loco": 1, "sound": sound}),
+    ))
+}
+
+fn event_sound_names(session: &Session) -> Vec<&str> {
+    let sounds = session.locos()[0].loco.event_sounds();
+    sounds.iter().map(|s| s.name.as_str()).collect()
+}
+
+#[test]
+fn event_sounds_are_added_and_removed() {
+    let mut session = session_with_actions();
+    for (action, name) in [(2, "Quietschen"), (1, "Pfiff"), (2, "Rollen")] {
+        add_event_sound(&mut session, action, name).unwrap();
+    }
+    assert!(session.locos()[0].loco.event_sounds()[0].active);
+    let error = add_event_sound(&mut session, 7, "Kette");
+    assert_eq!(error, Err(CommandError::UnknownAction(7)));
+
+    let removed = json!({"command": "remove_event_sound", "loco": 1, "index": 1});
+    session.apply(command(removed)).unwrap();
+    assert_eq!(event_sound_names(&session), ["Quietschen", "Rollen"]);
+    let error = session.apply(Command::RemoveEventSound { loco: 1, index: 2 });
+    assert_eq!(error, Err(CommandError::PositionOutOfRange(2)));
+
+    session.apply(Command::RemoveAction { action: 2 }).unwrap();
+    assert!(event_sound_names(&session).is_empty());
+}
+
+#[test]
+fn an_action_switches_event_sounds_and_they_are_saved_as_at_the_start() {
+    let mut session = session_with_actions();
+    add_event_sound(&mut session, 1, "Quietschen").unwrap();
+    let mut sink = LogSink::new(&[("squeal", 1.0)]);
+    session.trigger_action(1, 1, true, &mut sink).unwrap();
+    session.trigger_action(1, 1, false, &mut sink).unwrap();
+    let sound = &session.locos()[0].loco.event_sounds()[0];
+    assert!(!sound.active);
+    assert!(session.config().locos[0].event_sounds()[0].active);
+    session.trigger_action(1, 1, true, &mut sink).unwrap();
+    assert!(session.locos()[0].loco.event_sounds()[0].active);
+}
+
+#[test]
+fn event_sounds_play_only_with_a_driving_sound() {
+    let mut session = session_with_actions();
+    add_event_sound(&mut session, 1, "Quietschen").unwrap();
+    let mut sink = LogSink::new(&[("squeal", 1.0)]);
+    let accelerate = json!({"command": "set_axis", "loco": 1, "deflection": 1.0});
+    session.apply(command(accelerate)).unwrap();
+    session.drive(1.0, &mut sink);
+    let brake = json!({"command": "set_axis", "loco": 1, "deflection": -1.0});
+    session.apply(command(brake)).unwrap();
+    session.drive(0.05, &mut sink);
+    assert!(sink.take().is_empty());
+    let engine = json!({"command": "set_engine", "loco": 1, "engine": "diesel"});
+    session.apply(command(engine)).unwrap();
+    session.drive(0.05, &mut sink);
+    let channel = crate::event_sound::channel_nr(0);
+    assert_eq!(sink.take(), [format!("1.{channel} squeal fade in 0ns")]);
+}
+
+#[test]
+fn sound_functions_play_above_the_event_sounds() {
+    let mut session = session_with_actions();
+    add_event_sound(&mut session, 2, "Quietschen").unwrap();
+    add_sound_function(&mut session, 1, "Glocke").unwrap();
+    let mut sink = LogSink::new(&[("horn", 1.0)]);
+    session.trigger_action(1, 1, true, &mut sink).unwrap();
+    let channel = crate::event_sound::channel_nr(1);
+    assert_eq!(
+        sink.take(),
+        [format!("1.{channel} horn"), format!("1.{channel} horn")]
     );
 }

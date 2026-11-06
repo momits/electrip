@@ -15,8 +15,14 @@ fn sink() -> LogSink {
     LogSink::new(&[("horn", 1.0), ("bell", 3.0)])
 }
 
+/// The first channel of sound functions of loco 7 without event sounds.
+const FIRST: ChannelId = ChannelId {
+    loco: 7,
+    nr: crate::steam_sound::CHANNELS,
+};
+
 fn trigger_horn(functions: &mut [SoundFunction], pressed: bool, sink: &mut LogSink) {
-    trigger(functions, 7, 1, pressed, sink);
+    trigger(functions, FIRST, 1, pressed, sink);
 }
 
 fn play(functions: &mut [SoundFunction], seconds: f64, sink: &mut LogSink) {
@@ -112,7 +118,7 @@ fn each_playing_function_has_its_own_channel() {
     let mut functions = [bell, horn(SoundMode::Tap), other];
     trigger_horn(&mut functions, true, &mut sink);
     play(&mut functions, 1.5, &mut sink);
-    trigger(&mut functions, 7, 2, true, &mut sink);
+    trigger(&mut functions, FIRST, 2, true, &mut sink);
     assert_eq!(
         sink.take(),
         ["7.10001 bell", "7.10002 horn", "7.10002 horn"]

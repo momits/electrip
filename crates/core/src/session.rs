@@ -8,6 +8,7 @@ use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
 use crate::driving_sound::DrivingSound;
 use crate::electrip1::ImportError;
+use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function};
 use crate::function_sound::SoundFunction;
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
@@ -207,8 +208,18 @@ pub enum Command {
         index: usize,
         position: usize,
     },
+    /// Appends an event sound (B-17), as active as at the start.
+    AddEventSound {
+        loco: u32,
+        sound: EventSound,
+    },
+    RemoveEventSound {
+        loco: u32,
+        index: usize,
+    },
     /// Presses (`pressed`) or releases an action for a loco; it switches
-    /// the functions and sound functions of the loco mapped to it.
+    /// the functions, sound functions and event sounds of the loco mapped
+    /// to it.
     TriggerAction {
         loco: u32,
         action: u32,
@@ -485,6 +496,9 @@ impl Session {
             for function in loco.sound_functions_mut() {
                 *function = function.off();
             }
+            for sound in loco.event_sounds_mut() {
+                *sound = sound.reset();
+            }
         }
         let station = Station {
             connected: false,
@@ -646,6 +660,10 @@ impl Session {
                 index,
                 position,
             } => move_item(self.loco(loco)?.sound_functions_mut(), index, position)?,
+            Command::AddEventSound { loco, sound } => self.add_event_sound(loco, sound)?,
+            Command::RemoveEventSound { loco, index } => {
+                remove(self.loco(loco)?.event_sounds_mut(), index)?
+            }
             Command::SetServer {
                 kind,
                 host,
@@ -706,8 +724,8 @@ impl Session {
     }
 
     /// Changes the locos of held "previous/next loco" controls,
-    /// accelerates every loco with its axis and plays its driving sound
-    /// for `seconds`; returns whether the session changed.
+    /// accelerates every loco with its axis and plays its sounds for
+    /// `seconds`; returns whether the session changed.
     pub(crate) fn drive(&mut self, seconds: f64, sink: &mut dyn AudioSink) -> bool {
         let mut changed = self.scroll(seconds);
         let elapsed = Duration::try_from_secs_f64(seconds).unwrap_or_default();
@@ -718,10 +736,14 @@ impl Session {
             }
             let (model, speed) = (entry.loco.sound_model(), entry.motion.speed());
             entry.sound.play(model, speed, sink, elapsed);
+            let accel = (speed - before.0.speed()) / seconds.max(f64::MIN_POSITIVE);
+            let motion = model.is_some().then_some((entry.motion, accel));
             changed |= (entry.motion, entry.sound.state()) != before;
             for function in entry.loco.sound_functions_mut() {
                 changed |= function.play(sink, elapsed);
             }
+            let sounds = entry.loco.event_sounds_mut();
+            event_sound::play(sounds, entry.id, motion, sink, elapsed);
         }
         changed
     }

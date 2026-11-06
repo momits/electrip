@@ -3,8 +3,10 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 /// What an audio target got, one line per call: "<channel> <sound>",
-/// "<channel> <sound> after <delay>" or "<channel> stop". Channel 0 of a
-/// loco is named by the loco, others by loco and number ("1.2").
+/// "<channel> <sound> after <delay>", "<channel> stop",
+/// "<channel> <sound> fade in <fade>" or "<channel> fade out <fade>".
+/// Channel 0 of a loco is named by the loco, others by loco and number
+/// ("1.2").
 pub(crate) type Played = Arc<Mutex<Vec<String>>>;
 
 /// An audio target that knows the length of the sounds in `lengths` and
@@ -53,6 +55,16 @@ impl AudioSink for LogSink {
             .lock()
             .unwrap()
             .push(format!("{} stop", name(channel)));
+    }
+
+    fn fade_in(&mut self, channel: ChannelId, sound: &Path, fade: Duration) {
+        let line = format!("{} {} fade in {fade:?}", name(channel), sound.display());
+        self.played.lock().unwrap().push(line);
+    }
+
+    fn fade_out(&mut self, channel: ChannelId, fade: Duration) {
+        let line = format!("{} fade out {fade:?}", name(channel));
+        self.played.lock().unwrap().push(line);
     }
 }
 

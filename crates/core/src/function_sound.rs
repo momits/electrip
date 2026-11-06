@@ -3,7 +3,6 @@
 //! `legacy/src/electrip/pygame_io.py`). Each plays on its own channel.
 
 use crate::audio::{AudioSink, Channel, ChannelId};
-use crate::steam_sound;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::Duration;
@@ -90,30 +89,32 @@ impl SoundFunction {
     }
 }
 
-/// Triggers the sound functions of the loco `loco` mapped to `action`.
+/// Triggers the sound functions of a loco mapped to `action`; they play
+/// on its channels from `first` up.
 pub(crate) fn trigger(
     functions: &mut [SoundFunction],
-    loco: u32,
+    first: ChannelId,
     action: u32,
     pressed: bool,
     sink: &mut dyn AudioSink,
 ) {
     for index in 0..functions.len() {
         if functions[index].action == action {
-            let nr = free_channel(functions);
-            functions[index].trigger(pressed, ChannelId { loco, nr }, sink);
+            let nr = free_channel(functions, first.nr);
+            let channel = ChannelId { nr, ..first };
+            functions[index].trigger(pressed, channel, sink);
         }
     }
 }
 
-/// The first channel after the driving sound where no sound function plays.
-fn free_channel(functions: &[SoundFunction]) -> usize {
+/// The first channel from `first` up where no sound function plays.
+fn free_channel(functions: &[SoundFunction], first: usize) -> usize {
     let busy: Vec<usize> = functions
         .iter()
         .filter(|f| !f.channel.is_silent())
         .map(|f| f.channel.id().nr)
         .collect();
-    let mut nr = steam_sound::CHANNELS;
+    let mut nr = first;
     while busy.contains(&nr) {
         nr += 1;
     }

@@ -1,5 +1,6 @@
 use super::*;
 use crate::decoder::Protocol;
+use crate::event_sound::EventSound;
 use crate::function::Function;
 use image::RgbImage;
 use std::path::PathBuf;
@@ -93,7 +94,13 @@ fn an_exported_loco_is_imported_again() {
         default_on: true,
         on: true,
     }];
-    let actions = [1, 2].map(|id| Action {
+    *loco.event_sounds_mut() = vec![EventSound {
+        action: 3,
+        name: "Quietschen".into(),
+        max_accel: Some(-2.0),
+        ..EventSound::default()
+    }];
+    let actions = [1, 2, 3].map(|id| Action {
         id,
         name: format!("Aktion {id}"),
     });
@@ -103,7 +110,7 @@ fn an_exported_loco_is_imported_again() {
     let other_media = dir.path().join("other");
     let package = read(&path, &other_media).unwrap();
     assert_eq!(package.loco, loco);
-    assert_eq!(package.actions, [actions[1].clone()]);
+    assert_eq!(package.actions, actions[1..]);
     assert_eq!(package.report, Vec::<String>::new());
     let picture = picture::path(&other_media, loco.picture().unwrap());
     assert_eq!(

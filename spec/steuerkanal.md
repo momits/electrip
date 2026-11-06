@@ -43,6 +43,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "volume": 0.8,
     "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
     "sound_functions": [],
+    "event_sounds": [],
     "picture": null,
     "speed": 0.0,
     "forward": true
@@ -64,6 +65,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `accel_duration`, `brake_duration`: Sekunden von 0 auf Vmax bei voller Beschleunigung bzw. von Vmax auf 0 bei voller Bremsung, 1–9999 s; `volume`: Lautstärke von 0 (stumm) bis 1 (B-05).
 - `functions`: Decoder-Funktionen der Lok in der vom Nutzer sortierten Reihenfolge (B-07): logische Aktion `action`, Funktionsnummer `number` (F0–F28), `name`, `mode` (`switch` Umschalter: erste Auslösung an, zweite aus; `push` Taster: an, solange gehalten), `default_on` (Standardzustand „An“ kehrt beide Modi um) und `on` (ob die Funktion gerade an ist; die Zentrale bekommt alle Funktionen, die an sind).
 - `sound_functions`: Geräusch-Funktionen der Lok in der vom Nutzer sortierten Reihenfolge (B-16): logische Aktion `action`, `name`, Sounddatei `path` auf dem Host (oder `null`), `mode` (`switch` Umschalter: Loop bis zur zweiten Auslösung; `push_once` Taster einmal: höchstens einmal, Abbruch beim Loslassen; `push` Taster wiederholt: Loop, solange gehalten; `tap` Anschalter: bis Dateiende, Auslösungen dazwischen tun nichts) und `on` (ob sie gerade an ist; zu Beginn aus, ein Anschalter geht am Dateiende aus).
+- `event_sounds`: Geräusch-Ereignisse der Lok (B-17): logische Aktion `action` (jedes Drücken schaltet aktiv/inaktiv), `name`, Sounddatei `path` auf dem Host (oder `null`), `default_active` (aktiv zu Beginn, Standard `true`; wird gespeichert), `active` (ob es gerade aktiv ist), `forward` (`true` nur vorwärts, `false` nur rückwärts, `null` beliebig), `min_speed`/`max_speed` in km/h, `min_accel`/`max_accel` in km/h pro Sekunde (`null` = keine Grenze), `fade_in`/`fade_out` in Sekunden und `play_to_end` (einmal gestartet bis zum Ende, ohne Ausblenden).
+  Es spielt nur, wenn die Lok ein Sound-Modell hat, und läuft im Loop, solange alle Bedingungen gelten; gelten sie nicht mehr, blendet es aus. Der Host prüft bei jeder Abfrage (50 ms); die Beschleunigung ist die Änderung der Geschwindigkeit seit der letzten Abfrage.
 - `picture`: Name des Lokbilds (B-05) oder `null`. Die Datei `media/<picture>.png` in der Bibliothek ist der gespeicherte Ausschnitt in 440×340 px; der Name ist ihr SHA-256, so liegt jedes Bild nur einmal dort.
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
@@ -115,7 +118,9 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `add_sound_function` | `loco`, `function` (Objekt mit `action`, `path`, optional `name` (Standard leer), `mode` (Standard `tap` wie Electrip 1)); hängt die Geräusch-Funktion aus an | B-16 |
 | `remove_sound_function` | `loco`, `index` (Nummer ab 0 in `sound_functions`) | B-16 |
 | `move_sound_function` | `loco`, `index`, `position` (neue Stelle ab 0) | B-16 |
-| `trigger_action` | `loco`, `action`, `pressed` (`true` gedrückt, `false` losgelassen); schaltet die Funktionen und Geräusch-Funktionen der Lok, die auf die Aktion zeigen, eine Aktion ohne Funktion bei dieser Lok tut nichts | N-07, B-07, B-16 |
+| `add_event_sound` | `loco`, `sound` (Objekt wie in `event_sounds` mit `action` und `path`, alles andere optional); hängt das Geräusch-Ereignis an, `active` wie `default_active` | B-17 |
+| `remove_event_sound` | `loco`, `index` (Nummer ab 0 in `event_sounds`) | B-17 |
+| `trigger_action` | `loco`, `action`, `pressed` (`true` gedrückt, `false` losgelassen); schaltet die Funktionen, Geräusch-Funktionen und Geräusch-Ereignisse der Lok, die auf die Aktion zeigen, eine Aktion ohne Funktion bei dieser Lok tut nichts | N-07, B-07, B-16, B-17 |
 | `add_device` | `device` (frei gewählte `id`), `kind` (Gerätetyp); schließt ein (virtuelles) Eingabegerät an; höchstens 12 gleichzeitig | N-01, B-03 |
 | `remove_device` | `device`; die Achse seiner Lok wird losgelassen, die Lok behält ihre Geschwindigkeit | N-01 |
 | `bind` | `kind`, `control`, `target` (siehe `mappings`); ersetzt die bisherige Belegung des Bedienelements | N-01, B-02 |

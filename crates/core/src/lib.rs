@@ -9,6 +9,7 @@ pub mod decoder;
 pub mod drive;
 pub mod driving_sound;
 pub mod electrip1;
+pub mod event_sound;
 pub mod function;
 pub mod function_sound;
 pub mod host;
