@@ -24,6 +24,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-06 – B-22: Steuerungsansicht, erstes Inkrement (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Phase 3 beginnt mit der Oberfläche.
+- Neues Crate `electrip-ui` (Slint, ADR 0001): Regler aller Loks nebeneinander in der Reihenfolge der Konfiguration, horizontal scrollbar. Pro Lok Name, Bild, Geschwindigkeit mit senkrechter Skala, Richtungsknopf, Knöpfe (Fahrgeräusch, Geräusch-Funktionen, Geräusch-Ereignisse, Lokfunktionen in je eigener Farbe wie Electrip 1) und Symbole der steuernden Eingabegeräte. Eine gesteuerte Lok ist in der Farbe ihres Geräts hinterlegt. Nothalt-Knopf am unteren Rand, rot bei abgeschaltetem Gleisstrom.
+- Das Fenster ist ein Client des Steuerkanals (ADR 0010: ein Protokoll): Es zeigt den Zustand und sendet `reverse`, `toggle_sound`, `trigger_action` und `toggle_power`. `control` ist unverändert. Der Host läuft mit den Gamepads in einem eigenen Thread, das Fenster im Haupt-Thread. `--headless` oder fehlende Anzeige: ohne Fenster; die Tests starten die App mit `--headless`.
+- `cargo xtask loc` zählt jetzt auch `.slint`-Dateien. `deny.toml` erlaubt GPL-3.0-only (Slint) und BSL-1.0, ISC, BSD-2-Clause (Crates hinter winit).
+- Tests `crates/ui/src/view/tests.rs`: Reihenfolge und Beschriftung der Knöpfe, Gerätesymbole, fehlendes Bild, Knöpfe bleiben beim Fahren und Schalten dieselben Elemente, Screenshot ohne Anzeige (Software-Renderer, `target/test-logs/screenshots/control_view.png`, Farben geprüft) und die gesendeten Befehle als `Command` des Kerns.
+- `cargo xtask test`, `cargo xtask loc` (5040 Zeilen), `cargo xtask parity`, `cargo deny check licenses bans sources` grün. Im Container gibt es keine Anzeige; das echte Fenster prüft Mo (`spec/hw-checklist.md`).
+- Einfachheits-Review: refactored (Sub-Agent). Befund: Ein gehaltener Taster änderte seinen Zustand, das Fenster ersetzte dabei alle Knöpfe, und das Loslassen ging verloren; jetzt zeilenweise Aktualisierung mit Test. Außerdem leeres Bild statt `has-picture`, `pressed` der TouchArea, Doku zu `--headless`.
+- **B-22** bleibt offen (`wired` erst, wenn alles da ist).
+- **Offen:**
+  - B-22: Aktion „Fokus“ und Option „Auto-Fokus“ (Standard an) scrollen die Lok in den sichtbaren Bereich; kompakte Regler bei Platzmangel; Filter „nur gesteuerte oder fahrende Loks“; Prüffall `control-channel` dafür; optional Geräuschpegel-Balken.
+  - Maussteuerung der Geschwindigkeit (B-24): Die Skala zeigt die Geschwindigkeit nur an; dafür fehlt ein Befehl im Kern.
+  - B-19: Reihenfolge und Farben sind schon so; es fehlt der eigene Screenshot-Prüffall.
+  - B-25: Texte im Fenster stehen mit `@tr` bereit, Übersetzungen fehlen.
+  - Gamepads laufen nicht mehr im Haupt-Thread; auf macOS ungeprüft (`spec/hw-checklist.md`).
+  - **Nächster Schritt:** B-22 fertigstellen (Fokus, Auto-Fokus, Filter, kompakte Regler).
+
 ## 2026-11-06 – Tor C freigegeben (Mo)
 
 - Mo hat Tor C freigegeben, Phase 2 ist abgeschlossen.
