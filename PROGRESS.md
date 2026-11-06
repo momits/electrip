@@ -8,6 +8,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
 
+## 2026-11-06 – B-18: Ausgabe auf der Soundkarte (Claude)
+
+- CI auf `main` grün.
+- `electrip-audio` hat jetzt `Speaker`, das `AudioSink` auf der Soundkarte (rodio mit Feature `playback`, also cpal). `main.rs` nutzt ihn statt `NoAudio`. Ohne Soundkarte meldet die App `ERROR no sound card` und läuft weiter: Der Speaker kennt dann die Längen der Sounds, spielt aber nichts. Damit laufen die Sound-Modelle auch in der CI und im Container.
+- Jeder Kanal ist eine Quelle im Mixer von rodio mit spielendem und wartendem Sound. Jeder Sound wird einmal ganz dekodiert (Cache je Datei) und ins Format der Soundkarte umgerechnet; die Abtastrate kommt aus der Datei. So folgt `queue` ohne Lücke, und `play` mit Verzögerung, `stop`, Ein- und Ausblenden wirken auf das Sample genau. Der Kanal gibt immer ganze Frames weiter, damit links und rechts beim Wechsel nicht tauschen.
+- Zwei Fehler in rodio 0.23 umgangen (beides im Commit beschrieben): `Player` verliert den Anfang eines Sounds, und die Umrechnung eines OGG-Dekoders endet nach dessen leerem ersten Abschnitt. Außerdem bricht `fade_in` von rodio bei Dauer 0 ab; das Ein- und Ausblenden rechnet der Speaker selbst.
+- Tests (`crates/audio/src/speaker/tests.rs`, ziehen die Samples direkt aus dem Mixer): WAV mit anderer Abtastrate als die Ausgabe, OGG aus dem Korpus, `queue` lückenlos und Ersetzen des wartenden Sounds, Kanäle gleichzeitig, `stop`, `play` mit Verzögerung, Ein- und Ausblenden, Stereo-Frames, ohne Ausgabe nur Längen.
+- `cargo xtask test`, `cargo xtask loc` (4579 Zeilen) und `cargo xtask parity` grün.
+- **B-18** `wired` und `verified`.
+- Einfachheits-Review: refactored (Sub-Agent). Befund: Ein Sound konnte mitten im Frame beginnen (links und rechts vertauscht); behoben mit Test. `stop` als let-chain, Blende über 0 Samples ausdrücklich.
+- Erledigt aus älteren offenen Punkten: Ersetzen des wartenden Sounds (B-11), `play` mit Verzögerung (B-14), Ein- und Ausblenden (B-17).
+- **Offen:**
+  - Die Lautstärke der Lok geht noch nicht an das `AudioSink` (wie B-11).
+  - Kanäle, die nach dem Ausblenden still sind, bleiben bis zum Ende der App im Mixer (Stille, wenige je Lok).
+  - Hörtest an echter Soundkarte mit Tor C (`spec/hw-checklist.md`).
+  - **Nächster Schritt:** B-12 und B-13 `verified`: Die App kennt jetzt die Längen der Sounds, die Sperre beim Anlassen ist damit über den Steuerkanal prüfbar; für B-13 fehlt noch der Prüffall `srcpd-loopback`.
+
 ## 2026-11-06 – B-20: Sounds in Lok-Paketen (Claude)
 
 - CI auf `main` grün.
