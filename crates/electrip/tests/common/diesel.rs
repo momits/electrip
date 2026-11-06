@@ -1,9 +1,6 @@
 //! A diesel loco with sound files of known length; the app knows how long
 //! they are, also without a sound card.
 
-// Test code: unwrap is allowed (AGENTS.md).
-#![allow(clippy::unwrap_used)]
-
 use super::{Client, add_quick_loco};
 use serde_json::json;
 use std::fs;
