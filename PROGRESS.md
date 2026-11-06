@@ -8,6 +8,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Zurzeit keine._
 
+## 2026-11-06 – B-16: Geräusch-Funktionen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neues Modul `function_sound.rs` wie `FunctionSoundPlayer` in Electrip 1: Jede Lok hat `sound_functions` mit Aktion, Name, Sounddatei und Modus `switch` (Loop bis zur zweiten Auslösung), `push_once` (höchstens einmal, Abbruch beim Loslassen), `push` (Loop, solange gehalten) und `tap` (bis Dateiende, Auslösungen dazwischen tun nichts; Standard wie Electrip 1).
+  Jede spielende Geräusch-Funktion hat einen eigenen Kanal oberhalb der Kanäle des Fahrgeräuschs (der erste freie). Sie spielen wie in Electrip 1 auch ohne laufendes Fahrgeräusch und ohne Sound-Modell.
+- Befehle `add_sound_function`, `remove_sound_function`, `move_sound_function` (wie bei Lokfunktionen; Entfernen und Verschieben teilen sich jetzt zwei kleine Listenhelfer mit Lokfunktionen und Loks). `trigger_action` schaltet auch die Geräusch-Funktionen und läuft deshalb im Host (braucht das `AudioSink`); es speichert die Konfiguration nicht mehr, weil sich dabei nichts Gespeichertes ändert.
+- Der Import aus Electrip 1 und die Lok-Pakete übernehmen die Geräusch-Funktionen mit Knopf-Aktion wie bei Lokfunktionen. Damit nennt der `import_report` im Korpus mehr Knöpfe, die zugleich eingebaute Aktion sind (Q-015): in `settings.json` zusätzlich Knopf 5, in `packages.json` die Knöpfe 0, 1, 3 und 4.
+- Tests: `function_sound/tests.rs` (alle Modi, Kanäle), `host/tests.rs` (virtuelles Gamepad und Audio-Log), `session/tests.rs`, `electrip1/tests.rs` (Korpus), `package/tests.rs`, `crates/electrip/tests/sound_functions.rs` über den Steuerkanal. `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (4083 Zeilen) und `cargo xtask parity` grün.
+- **B-16** `wired` und `verified`.
+- Einfachheits-Review: refactored (Sub-Agent). Die Suche nach dem freien Kanal ist eine eigene kleine Funktion.
+- **Offen:**
+  - Phase 3: Knöpfe der Geräusch-Funktionen in der UI (Anschalter gesperrt, solange er spielt).
+  - Wird eine Geräusch-Funktion, ihre Aktion oder die Lok gelöscht, während ein Loop spielt, spielt der Kanal noch bis zu zwei Sounds zu Ende (wie beim Fahrgeräusch, B-11).
+  - Die Lautstärke der Lok geht noch nicht an das `AudioSink` (wie B-11).
+
 ## 2026-11-05 – B-14: Fahrgeräusch Dampf (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
