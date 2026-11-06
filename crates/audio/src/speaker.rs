@@ -8,6 +8,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use std::vec;
 
 use electrip_core::audio::{AudioSink, ChannelId};
 use rodio::buffer::SamplesBuffer;
@@ -103,6 +104,7 @@ impl Speaker {
             let sounds = Arc::default();
             output.mixer.add(ChannelSource {
                 sounds: Arc::clone(&sounds),
+                frame: Vec::new().into_iter(),
                 channels: output.channels,
                 rate: output.rate,
             });
@@ -142,7 +144,9 @@ impl AudioSink for Speaker {
     }
 
     fn stop(&mut self, id: ChannelId) {
-        if let Some(Ok(mut sounds)) = self.channels.remove(&id).as_ref().map(|s| s.lock()) {
+        if let Some(sounds) = self.channels.remove(&id)
+            && let Ok(mut sounds) = sounds.lock()
+        {
             sounds.stopped = true;
         }
     }
@@ -173,13 +177,30 @@ impl AudioSink for Speaker {
 
 /// The share of a fade over `n` samples reached at sample `i`.
 fn gain(i: usize, n: usize) -> f32 {
-    (i as f32 / n as f32).min(1.0)
+    if i >= n { 1.0 } else { i as f32 / n as f32 }
 }
 
-/// A channel in the mixer: its playing sound, then the waiting one, then
-/// silence until it stops.
+impl Sounds {
+    /// The next sample of the playing sound, then of the waiting one, then
+    /// silence.
+    fn next_sample(&mut self) -> Sample {
+        loop {
+            if let Some(sample) = self.playing.as_mut().and_then(Iterator::next) {
+                return sample;
+            }
+            self.playing = self.waiting.take();
+            if self.playing.is_none() {
+                return 0.0;
+            }
+        }
+    }
+}
+
+/// A channel in the mixer. It takes whole frames from its sounds, so a
+/// change of the sounds keeps left and right in place.
 struct ChannelSource {
     sounds: Arc<Mutex<Sounds>>,
+    frame: vec::IntoIter<Sample>,
     channels: ChannelCount,
     rate: SampleRate,
 }
@@ -188,19 +209,18 @@ impl Iterator for ChannelSource {
     type Item = Sample;
 
     fn next(&mut self) -> Option<Sample> {
+        if let Some(sample) = self.frame.next() {
+            return Some(sample);
+        }
         let mut sounds = self.sounds.lock().ok()?;
         if sounds.stopped {
             return None;
         }
-        loop {
-            if let Some(sample) = sounds.playing.as_mut().and_then(Iterator::next) {
-                return Some(sample);
-            }
-            sounds.playing = sounds.waiting.take();
-            if sounds.playing.is_none() {
-                return Some(0.0);
-            }
-        }
+        let frame: Vec<_> = (0..self.channels.get())
+            .map(|_| sounds.next_sample())
+            .collect();
+        self.frame = frame.into_iter();
+        self.frame.next()
     }
 }
 

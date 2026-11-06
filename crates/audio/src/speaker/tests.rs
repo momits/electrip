@@ -15,7 +15,11 @@ const CHANNEL: ChannelId = ChannelId { loco: 1, nr: 0 };
 
 /// A speaker on a mono mixer at `RATE` and the output of the mixer.
 fn speaker() -> (Speaker, MixerSource) {
-    let (channels, rate) = (NonZero::<u16>::MIN, NonZero::new(RATE).unwrap());
+    speaker_with(NonZero::<u16>::MIN)
+}
+
+fn speaker_with(channels: NonZero<u16>) -> (Speaker, MixerSource) {
+    let rate = NonZero::new(RATE).unwrap();
     let (mixer, output) = mixer(channels, rate);
     let output_format = Output {
         mixer,
@@ -25,23 +29,24 @@ fn speaker() -> (Speaker, MixerSource) {
     (Speaker::new(Some(output_format)), output)
 }
 
-/// Writes a mono 16 bit WAV file of `samples` samples, all at `level`.
-fn wav(dir: &Path, name: &str, rate: u32, level: i16, samples: u32) -> PathBuf {
-    let data = samples * 2;
+/// Writes a 16 bit WAV file of `frames` frames, all equal to `frame`.
+fn wav(dir: &Path, name: &str, rate: u32, frame: &[i16], frames: u32) -> PathBuf {
+    let channels = frame.len() as u16;
+    let data = frames * u32::from(channels) * 2;
     let mut bytes = b"RIFF".to_vec();
     bytes.extend((36 + data).to_le_bytes());
     bytes.extend(b"WAVEfmt ");
     bytes.extend(16u32.to_le_bytes());
     bytes.extend(1u16.to_le_bytes());
-    bytes.extend(1u16.to_le_bytes());
+    bytes.extend(channels.to_le_bytes());
     bytes.extend(rate.to_le_bytes());
-    bytes.extend((rate * 2).to_le_bytes());
-    bytes.extend(2u16.to_le_bytes());
+    bytes.extend((rate * u32::from(channels) * 2).to_le_bytes());
+    bytes.extend((channels * 2).to_le_bytes());
     bytes.extend(16u16.to_le_bytes());
     bytes.extend(b"data");
     bytes.extend(data.to_le_bytes());
-    for _ in 0..samples {
-        bytes.extend(level.to_le_bytes());
+    for _ in 0..frames {
+        bytes.extend(frame.iter().flat_map(|s| s.to_le_bytes()));
     }
     let path = dir.join(name);
     fs::write(&path, bytes).unwrap();
@@ -77,7 +82,7 @@ fn sound(output: &mut MixerSource, n: usize) -> Vec<(f32, usize)> {
 #[test]
 fn wav_plays_at_the_sample_rate_of_the_file() {
     let dir = tempfile::tempdir().unwrap();
-    let file = wav(dir.path(), "a.wav", RATE / 2, 0x4000, 100);
+    let file = wav(dir.path(), "a.wav", RATE / 2, &[0x4000], 100);
     let (mut speaker, mut output) = speaker();
     assert_eq!(speaker.length(&file).unwrap(), Duration::from_millis(25));
     speaker.queue(CHANNEL, &file);
@@ -100,9 +105,9 @@ fn ogg_plays() {
 #[test]
 fn queue_follows_without_a_gap_and_replaces_the_waiting_sound() {
     let dir = tempfile::tempdir().unwrap();
-    let first = wav(dir.path(), "first.wav", RATE, 0x2000, 100);
-    let waiting = wav(dir.path(), "waiting.wav", RATE, 0x4000, 100);
-    let last = wav(dir.path(), "last.wav", RATE, 0x6000, 100);
+    let first = wav(dir.path(), "first.wav", RATE, &[0x2000], 100);
+    let waiting = wav(dir.path(), "waiting.wav", RATE, &[0x4000], 100);
+    let last = wav(dir.path(), "last.wav", RATE, &[0x6000], 100);
     let (mut speaker, mut output) = speaker();
     speaker.queue(CHANNEL, &first);
     speaker.queue(CHANNEL, &waiting);
@@ -113,7 +118,7 @@ fn queue_follows_without_a_gap_and_replaces_the_waiting_sound() {
 #[test]
 fn channels_play_at_the_same_time() {
     let dir = tempfile::tempdir().unwrap();
-    let file = wav(dir.path(), "a.wav", RATE, 0x2000, 100);
+    let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 100);
     let (mut speaker, mut output) = speaker();
     speaker.queue(CHANNEL, &file);
     speaker.queue(ChannelId { nr: 1, ..CHANNEL }, &file);
@@ -123,7 +128,7 @@ fn channels_play_at_the_same_time() {
 #[test]
 fn stop_silences_the_channel() {
     let dir = tempfile::tempdir().unwrap();
-    let file = wav(dir.path(), "a.wav", RATE, 0x2000, 1000);
+    let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 1000);
     let (mut speaker, mut output) = speaker();
     speaker.queue(CHANNEL, &file);
     assert_eq!(runs(&mut output, 100), [(0.25, 100)]);
@@ -134,8 +139,8 @@ fn stop_silences_the_channel() {
 #[test]
 fn play_starts_after_the_delay_and_cuts_off_the_channel() {
     let dir = tempfile::tempdir().unwrap();
-    let old = wav(dir.path(), "old.wav", RATE, 0x2000, 1000);
-    let new = wav(dir.path(), "new.wav", RATE, 0x4000, 100);
+    let old = wav(dir.path(), "old.wav", RATE, &[0x2000], 1000);
+    let new = wav(dir.path(), "new.wav", RATE, &[0x4000], 100);
     let (mut speaker, mut output) = speaker();
     speaker.play(CHANNEL, &old, Duration::ZERO);
     assert_eq!(runs(&mut output, 100), [(0.25, 100)]);
@@ -149,7 +154,7 @@ fn play_starts_after_the_delay_and_cuts_off_the_channel() {
 #[test]
 fn fade_in_rises_to_full_volume() {
     let dir = tempfile::tempdir().unwrap();
-    let file = wav(dir.path(), "a.wav", RATE, 0x4000, 200);
+    let file = wav(dir.path(), "a.wav", RATE, &[0x4000], 200);
     let (mut speaker, mut output) = speaker();
     speaker.fade_in(CHANNEL, &file, Duration::from_millis(10));
     let runs = sound(&mut output, 1000);
@@ -159,7 +164,7 @@ fn fade_in_rises_to_full_volume() {
 #[test]
 fn fade_out_ends_in_silence() {
     let dir = tempfile::tempdir().unwrap();
-    let file = wav(dir.path(), "a.wav", RATE, 0x4000, 10_000);
+    let file = wav(dir.path(), "a.wav", RATE, &[0x4000], 10_000);
     let (mut speaker, mut output) = speaker();
     speaker.queue(CHANNEL, &file);
     speaker.fade_out(CHANNEL, Duration::from_millis(20));
@@ -173,10 +178,22 @@ fn fade_out_ends_in_silence() {
 #[test]
 fn without_a_mixer_only_lengths_are_known() {
     let dir = tempfile::tempdir().unwrap();
-    let file = wav(dir.path(), "a.wav", RATE, 0x4000, 800);
+    let file = wav(dir.path(), "a.wav", RATE, &[0x4000], 800);
     let mut speaker = Speaker::new(None);
     assert_eq!(speaker.length(&file).unwrap(), Duration::from_millis(100));
     speaker.queue(CHANNEL, &file);
     assert!(speaker.channels.is_empty());
     assert!(speaker.length(&dir.path().join("missing.wav")).is_err());
+}
+
+#[test]
+fn a_sound_starts_with_a_whole_frame() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = wav(dir.path(), "stereo.wav", RATE, &[0x2000, 0x6000], 2);
+    let (mut speaker, mut output) = speaker_with(NonZero::new(2).unwrap());
+    speaker.play(CHANNEL, &file, Duration::ZERO);
+    assert_eq!(output.next(), Some(0.25));
+    speaker.play(CHANNEL, &file, Duration::ZERO);
+    let samples: Vec<f32> = output.take(5).collect();
+    assert_eq!(samples, [0.75, 0.25, 0.75, 0.25, 0.75]);
 }
