@@ -97,14 +97,19 @@ pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<Strin
         .resize_exact(WIDTH, HEIGHT, FilterType::Lanczos3)
         .write_to(&mut Cursor::new(&mut png), ImageFormat::Png)
         .map_err(|e| PictureError::Write(e.to_string()))?;
-    let name: String = Sha256::digest(&png)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect();
+    let name = content_name(&png);
     fs::create_dir_all(dir)
         .and_then(|()| fs::write(path(dir, &name), &png))
         .map_err(|e| PictureError::Write(e.to_string()))?;
     Ok(name)
+}
+
+/// A file name from the content, the same for the same content.
+pub(crate) fn content_name(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 #[cfg(test)]

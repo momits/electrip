@@ -337,6 +337,19 @@ fn missing_values_get_the_defaults_of_electrip_1() {
 }
 
 #[test]
+fn event_sounds_of_the_engine_are_used_without_those_of_the_loco() {
+    let engine = json!({"type": "diesel", "event_sounds": [{"name": "Bremsen", "button": 3}]});
+    let loco = json!({"speed_control_points": [[0, 0], [100, 128]], "engine": engine});
+    let import = import_value(file_with_loco(loco.clone())).unwrap();
+    assert_eq!(import.locos[0].event_sounds()[0].name, "Bremsen");
+    assert_eq!(import.actions[0].name, "Knopf 3");
+    let mut loco = loco;
+    loco["event_sounds"] = json!([]);
+    let import = import_value(file_with_loco(loco)).unwrap();
+    assert!(import.locos[0].event_sounds().is_empty());
+}
+
+#[test]
 fn a_dcc_short_address_above_127_becomes_dcc_long() {
     let file = file_with_loco(json!({
         "name": "V 100", "protocol": "N 1", "address": 200,

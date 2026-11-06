@@ -215,6 +215,15 @@ impl SoundModel {
         Ok(())
     }
 
+    /// Replaces each sound file by `f` of it or with `None` removes it.
+    pub(crate) fn map_sounds(&mut self, f: &mut impl FnMut(&Path) -> Option<PathBuf>) {
+        map(&mut self.sounds, f);
+        for segment in &mut self.segments {
+            map(&mut segment.sounds, f);
+            map(&mut segment.strokes, f);
+        }
+    }
+
     /// Splits the `nr`-th segment in the middle like Electrip 1; the new
     /// segment is the right half.
     pub(crate) fn insert_segment(&mut self, nr: usize, max_speed: f64) -> Result<(), LocoError> {
@@ -282,6 +291,10 @@ fn set<K: Ord>(sounds: &mut Sounds<K>, sound: K, path: Option<PathBuf>) {
         Some(path) => sounds.insert(sound, path),
         None => sounds.remove(&sound),
     };
+}
+
+fn map<K: Ord>(sounds: &mut Sounds<K>, f: &mut impl FnMut(&Path) -> Option<PathBuf>) {
+    sounds.retain(|_, path| f(path).map(|new| *path = new).is_some());
 }
 
 #[cfg(test)]
