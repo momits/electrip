@@ -8,6 +8,13 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 _Keine offen._
 
+## 2026-11-06 – Loop hält: Tor C (Claude)
+
+- CI auf `main` grün.
+- Phase 0 bis 2 sind ganz verifiziert, keine Aufräumkandidaten offen, keine offenen Fragen in `spec/questions.md`.
+- Phase 3 beginnt erst, wenn Mo Tor C abhakt (Hörtest und Prüfpunkte in `spec/hw-checklist.md`).
+- **Wartet auf Mo:** Tor C freigeben, danach `STOP` löschen.
+
 ## 2026-11-06 – Aufräumen Phase 2 (Claude)
 
 - CI auf `main` war rot (srcpd-Loopback), danach fiel macOS mit zwei Zeitfehlern auf; zuerst repariert, siehe Einträge B-01 und B-23 darunter.
