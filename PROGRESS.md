@@ -10,7 +10,7 @@ _Keine offen._
 
 ## 2026-11-06 – Aufräumen Phase 2 (Claude)
 
-- CI auf `main` war rot (srcpd-Loopback); zuerst repariert, siehe Eintrag B-01 darunter.
+- CI auf `main` war rot (srcpd-Loopback), danach fiel macOS mit zwei Zeitfehlern auf; zuerst repariert, siehe Einträge B-01 und B-23 darunter.
 - Phase 2 ist ganz verifiziert, Phase 3 wartet auf Tor C. Deshalb die Aufräumkandidaten abgearbeitet:
   - `spec/steuerkanal.md`: Befehle `set_engine`, `insert_segment`, `remove_segment`, `move_segment_border`, `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `set_steam` und das Feld `sound_model` im Zustand beschrieben.
   - `driving.rs` (`time_to`) und `engine_start.rs` warten mit `Client::wait_for_loco`. `track_power.rs` wartet auf ein Feld der Zentrale, `input_devices.rs` auf mehrere Loks bzw. ein Gerät, `engine_start.rs` (`standing_until`, `drives_off`) prüft unterwegs bzw. wartet auf „ungleich“; dort passt der Helfer nicht, sie bleiben.
