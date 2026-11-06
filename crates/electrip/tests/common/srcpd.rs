@@ -1,9 +1,6 @@
 //! Helpers for the tests marked `#[ignore]` that need srcpd on bus 1
 //! (`cargo xtask sim up`).
 
-// Test code: unwrap and panic are allowed (AGENTS.md).
-#![allow(clippy::unwrap_used)]
-
 use super::{App, Client};
 use electrip_station_srcp::{DEFAULT_PORT, SrcpStation};
 use serde_json::json;

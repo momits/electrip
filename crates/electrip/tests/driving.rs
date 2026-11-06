@@ -19,9 +19,7 @@ use std::time::Instant;
 /// Seconds until loco 1 reaches `speed`.
 fn time_to(client: &mut Client, speed: f64) -> f64 {
     let start = Instant::now();
-    while client.state["locos"][0]["speed"] != speed {
-        client.expect_state();
-    }
+    client.wait_for_loco("speed", json!(speed));
     start.elapsed().as_secs_f64()
 }
 
