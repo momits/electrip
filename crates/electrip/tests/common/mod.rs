@@ -6,6 +6,7 @@
 // every helper.
 #![allow(clippy::unwrap_used, clippy::panic, dead_code)]
 
+pub mod diesel;
 pub mod srcpd;
 
 use electrip_core::station::{CommandStation, StationEvent};
