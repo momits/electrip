@@ -8,6 +8,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
 
+## 2026-11-06 – B-20: Sounds in Lok-Paketen (Claude)
+
+- CI auf `main` grün.
+- `export_loco` schreibt jetzt jede Sounddatei der Lok (Fahrgeräusch, Takte, Geräusch-Funktionen, Geräusch-Ereignisse) als `sounds/<SHA-256>.<Endung>` ins ZIP; `loco.json` zeigt auf diese Einträge. Fehlt eine Sounddatei, schlägt der Export fehl wie bei einem fehlenden Bild.
+- `import_loco` legt die Sounds aus Paketen von Electrip 2 und 1 in die Bibliothek (`sounds/`, Name nach Inhalt, gleiche Dateien nur einmal) und setzt die Pfade dorthin. Ein fehlender Sound steht im `import_report` und wird weggelassen.
+- `Loco::map_sounds` erreicht alle Sounddateien einer Lok an einer Stelle; `picture::content_name` teilen sich Bilder und Sounds.
+- Lücke gefunden und geschlossen: Electrip 1 speicherte die Geräusch-Ereignisse bis v5.0.8 im `engine` und liest sie dort noch, wenn die Lok selbst keine `event_sounds` hat (`json_model.py`). Bei BR 81, Koef II und V 60 im Korpus ist das so; der Import hat sie bisher verloren. Jetzt übernimmt er sie wie Electrip 1 (auch beim Import von Konfigurationen).
+- Tests: `package/tests.rs` (Sounds aller sechs Korpus-Pakete in der Bibliothek, Inhalt gleich dem Archiv, Export und Import mit Sounds, fehlender Sound beim Import und Export), `electrip1/tests.rs` (Geräusch-Ereignisse im `engine`), `crates/electrip/tests/loco_packages.rs` über den Steuerkanal. `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (4387 Zeilen) und `cargo xtask parity` grün.
+- **B-20** `wired` und `verified`.
+- Einfachheits-Review: ok (Sub-Agent). Der optionale Vorschlag, die Geräusch-Ereignisse gleich nach dem Lesen aus dem `engine` zu verschieben, wäre nicht kürzer geworden (zwei Lesestellen).
+- **Offen:**
+  - Sounds, die keine Lok mehr nutzt, bleiben in `sounds/` der Bibliothek liegen (wie Bilder in `media/`).
+  - Phase 3: Export und Import in der UI.
+
 ## 2026-11-06 – B-17: Geräusch-Ereignisse (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
