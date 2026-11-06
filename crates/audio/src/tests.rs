@@ -9,15 +9,20 @@ fn corpus_package(name: &str) -> PathBuf {
         .join(name)
 }
 
-/// Unpacks one sound of a corpus package and returns its decoded format.
-fn decode(package: &str, sound: &str) -> (u32, u16, usize) {
+/// Unpacks one sound of a corpus package into `dir`.
+pub(crate) fn extract(dir: &Path, package: &str, sound: &str) -> PathBuf {
     let mut archive =
         zip::ZipArchive::new(fs::File::open(corpus_package(package)).unwrap()).unwrap();
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("sound");
+    let path = dir.join("sound");
     let mut entry = archive.by_name(&format!("sound/{sound}")).unwrap();
     std::io::copy(&mut entry, &mut fs::File::create(&path).unwrap()).unwrap();
-    let decoder = open(&path).unwrap();
+    path
+}
+
+/// Unpacks one sound of a corpus package and returns its decoded format.
+fn decode(package: &str, sound: &str) -> (u32, u16, usize) {
+    let dir = tempfile::tempdir().unwrap();
+    let decoder = open(&extract(dir.path(), package, sound)).unwrap();
     let (rate, channels) = (decoder.sample_rate().get(), decoder.channels().get());
     (rate, channels, decoder.count())
 }

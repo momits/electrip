@@ -6,6 +6,9 @@ use std::io::BufReader;
 use std::path::Path;
 
 pub use rodio::{Decoder, Source};
+pub use speaker::{Speaker, sound_card};
+
+mod speaker;
 
 /// Opens a WAV or OGG file as a stream of samples.
 pub fn open(path: &Path) -> Result<Decoder<BufReader<File>>, String> {

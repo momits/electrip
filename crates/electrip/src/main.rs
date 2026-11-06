@@ -1,7 +1,7 @@
 //! Electrip 2. Without a user interface yet, the app runs headless and is
 //! operated through the control channel on localhost (N-08).
 
-use electrip_core::audio::{AudioSink, ChannelId};
+use electrip_audio::Speaker;
 use electrip_core::host::{Driver, Host};
 use electrip_core::session::{Command, Station};
 use electrip_core::station::StationKind;
@@ -10,9 +10,8 @@ use electrip_station_srcp::SrcpStation;
 use electrip_station_z21::Z21Station;
 use std::env;
 use std::net::{Ipv4Addr, TcpListener};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
-use std::time::Duration;
 
 const DEFAULT_CONTROL_PORT: u16 = 4711;
 
@@ -52,7 +51,15 @@ fn run() -> Result<(), String> {
             StationKind::Z21 => Box::new(Z21Station::connect(&station.host, station.port)?),
         })
     });
-    let mut host = Host::new(connect, Box::new(NoAudio), library).map_err(|e| e.to_string())?;
+    // Without a sound card the sound models still run, silently.
+    let (speaker, _device) = match electrip_audio::sound_card() {
+        Ok((speaker, device)) => (speaker, Some(device)),
+        Err(e) => {
+            eprintln!("ERROR no sound card: {e}");
+            (Speaker::new(None), None)
+        }
+    };
+    let mut host = Host::new(connect, Box::new(speaker), library).map_err(|e| e.to_string())?;
     if let Some(name) = args.file {
         let command = Command::OpenConfiguration { name };
         host.apply(command).map_err(|e| e.to_string())?;
@@ -70,26 +77,6 @@ fn run() -> Result<(), String> {
         .ok();
     let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
     electrip_control::serve(listener, host, input).map_err(|e| e.to_string())
-}
-
-/// The audio target until the sound card is connected (B-18): no sound
-/// has a length, so the driving sound stays off.
-struct NoAudio;
-
-impl AudioSink for NoAudio {
-    fn length(&mut self, _: &Path) -> Result<Duration, String> {
-        Err("no audio output yet".into())
-    }
-
-    fn queue(&mut self, _: ChannelId, _: &Path) {}
-
-    fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
-
-    fn stop(&mut self, _: ChannelId) {}
-
-    fn fade_in(&mut self, _: ChannelId, _: &Path, _: Duration) {}
-
-    fn fade_out(&mut self, _: ChannelId, _: Duration) {}
 }
 
 /// Reads the options; `--control-port 0` picks a free port.
