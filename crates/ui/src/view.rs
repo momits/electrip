@@ -2,6 +2,7 @@
 
 use crate::generated::{ButtonKind, ControlButton, Controller, MainWindow};
 use serde::Deserialize;
+use serde::de::IgnoredAny;
 use slint::{Image, Model, ModelRc, SharedString, VecModel};
 use std::path::Path;
 
@@ -21,7 +22,7 @@ struct Loco {
     speed: f32,
     forward: bool,
     picture: Option<String>,
-    sound_model: Option<serde_json::Value>,
+    sound_model: Option<IgnoredAny>,
     sound: String,
     sound_functions: Vec<Switch>,
     event_sounds: Vec<Switch>,
@@ -55,40 +56,38 @@ struct Station {
 pub fn show(window: &MainWindow, state: &State, media: &Path) {
     window.set_connected(state.station.connected);
     window.set_track_power(state.station.track_power);
-    let controllers = controllers(state, media);
-    let rows = controllers.iter().map(|c| c.buttons.row_count()).max();
-    window.set_button_rows(rows.unwrap_or(0) as i32);
-    let model = window.get_controllers();
-    if let Some(model) = model.as_any().downcast_ref::<VecModel<Controller>>() {
-        update(model, controllers);
-    }
+    let rows = controllers(state, media);
+    let buttons = rows.iter().map(|c| c.buttons.row_count()).max();
+    window.set_button_rows(buttons.unwrap_or(0) as i32);
+    update_controllers(&window.get_controllers(), rows);
 }
 
-/// Changes only the rows that changed, so the buttons in the window stay
-/// the same while the speed changes and a held button is released.
-fn update(model: &VecModel<Controller>, rows: Vec<Controller>) {
+/// Keeps the models of the buttons and devices, see [`update`].
+fn update_controllers(model: &ModelRc<Controller>, mut rows: Vec<Controller>) {
+    for (row, old) in rows.iter_mut().zip(model.iter()) {
+        update(&old.buttons, row.buttons.iter().collect());
+        update(&old.devices, row.devices.iter().collect());
+        row.buttons = old.buttons;
+        row.devices = old.devices;
+    }
+    update(model, rows);
+}
+
+/// Changes only the rows that changed, so the elements in the window stay;
+/// a button held down gets its release even when its state changes.
+fn update<T: Clone + PartialEq + 'static>(model: &ModelRc<T>, rows: Vec<T>) {
+    let Some(model) = model.as_any().downcast_ref::<VecModel<T>>() else {
+        return;
+    };
     if model.row_count() != rows.len() {
         model.set_vec(rows);
         return;
     }
-    for (index, mut row) in rows.into_iter().enumerate() {
-        let Some(old) = model.row_data(index) else {
-            continue;
-        };
-        if same(&old.buttons, &row.buttons) {
-            row.buttons = old.buttons.clone();
-        }
-        if same(&old.devices, &row.devices) {
-            row.devices = old.devices.clone();
-        }
-        if old != row {
+    for (index, row) in rows.into_iter().enumerate() {
+        if model.row_data(index).as_ref() != Some(&row) {
             model.set_row_data(index, row);
         }
     }
-}
-
-fn same<T: PartialEq>(a: &ModelRc<T>, b: &ModelRc<T>) -> bool {
-    a.iter().eq(b.iter())
 }
 
 pub(crate) fn controllers(state: &State, media: &Path) -> Vec<Controller> {
@@ -103,7 +102,8 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
     let picture = loco
         .picture
         .as_ref()
-        .and_then(|name| Image::load_from_path(&media.join(name)).ok());
+        .and_then(|name| Image::load_from_path(&media.join(name)).ok())
+        .unwrap_or_default();
     let devices: Vec<i32> = state
         .devices
         .iter()
@@ -113,8 +113,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
     Controller {
         id: loco.id,
         name: loco.name.as_str().into(),
-        has_picture: picture.is_some(),
-        picture: picture.unwrap_or_default(),
+        picture,
         speed: loco.speed,
         max_speed: loco.max_speed,
         forward: loco.forward,
