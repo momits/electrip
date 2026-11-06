@@ -13,3 +13,15 @@ private = { ignore = true }
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
+
+[advisories]
+# Unmaintained (no known vulnerability) and pulled in only by Slint's winit backend (ADR 0001):
+# zbus for the desktop settings on Linux, ab_glyph for the window decorations on Wayland,
+# spin_on in the renderer. Check again when Slint is updated.
+ignore = [
+    { id = "RUSTSEC-2026-0441", reason = "pin-utils via spin_on in Slint" },
+    { id = "RUSTSEC-2026-0192", reason = "ttf-parser via ab_glyph in winit's Wayland decorations" },
+    { id = "RUSTSEC-2026-0371", reason = "zbus_names via zbus in Slint's winit backend" },
+    { id = "RUSTSEC-2026-0370", reason = "zvariant via zbus in Slint's winit backend" },
+    { id = "RUSTSEC-2026-0372", reason = "zvariant_derive via zbus in Slint's winit backend" },
+]

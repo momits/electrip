@@ -1132,6 +1132,7 @@ name = "electrip-ui"
 version = "0.1.0"
 dependencies = [
  "electrip-core",
+ "fontique",
  "image",
  "serde",
  "serde_json",
