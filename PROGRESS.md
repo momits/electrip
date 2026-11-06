@@ -6,10 +6,19 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- `spec/steuerkanal.md` beschreibt die Befehle des Sound-Modells noch nicht: `set_engine`, `insert_segment`, `remove_segment`, `move_segment_border`, `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `set_steam` und das Feld `sound_model` im Zustand (gefunden bei B-12).
-- Die Schleife „warten, bis ein Feld der Lok einen Wert hat“ steht noch in `driving.rs` (`time_to`), `engine_start.rs`, `track_power.rs` und `input_devices.rs`; dafür gibt es jetzt `Client::wait_for_loco` (Review B-13).
-- `tests/common/srcpd.rs` wiederholt `#![allow(clippy::unwrap_used)]`, das schon `common/mod.rs` setzt (Review B-13).
-- `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
+_Keine offen._
+
+## 2026-11-06 – Aufräumen Phase 2 (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Phase 2 ist ganz verifiziert, Phase 3 wartet auf Tor C. Deshalb die Aufräumkandidaten abgearbeitet:
+  - `spec/steuerkanal.md`: Befehle `set_engine`, `insert_segment`, `remove_segment`, `move_segment_border`, `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `set_steam` und das Feld `sound_model` im Zustand beschrieben.
+  - `driving.rs` (`time_to`) und `engine_start.rs` warten mit `Client::wait_for_loco`. `track_power.rs` wartet auf ein Feld der Zentrale, `input_devices.rs` auf mehrere Loks bzw. ein Gerät, `engine_start.rs` (`standing_until`, `drives_off`) prüft unterwegs bzw. wartet auf „ungleich“; dort passt der Helfer nicht, sie bleiben.
+  - Doppeltes `allow` in `tests/common/srcpd.rs` entfernt.
+  - `Loco::action_ids()`: entfällt. Nur `package.rs` liest die Aktionen; `remove_action` löscht mit `retain` aus jeder Liste und hätte von der Methode nichts.
+- `cargo xtask test`, `cargo xtask sim up` (srcpd-Loopback), `cargo xtask loc` (4579 Zeilen, unverändert) und `cargo xtask parity` grün. Kein Produktcode geändert.
+- Einfachheits-Review: ok (selbst, Diff von 13 Zeilen Testcode und der Doku komplett neu gelesen).
+- **Nächster Schritt:** Halt mit Eintrag in `PROGRESS.md`, bis Mo Tor C abhakt.
 
 ## 2026-11-06 – B-23: Zeit ab dem Befehl zählen (Claude)
 
