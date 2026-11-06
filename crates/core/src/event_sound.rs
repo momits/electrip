@@ -87,9 +87,8 @@ impl EventSound {
         holds: bool,
         channel: ChannelId,
         sink: &mut dyn AudioSink,
-        elapsed: Duration,
+        mut elapsed: Duration,
     ) {
-        let mut elapsed = elapsed;
         while self.channel.advance(&mut elapsed) {}
         if self.channel.is_silent() {
             self.fading = false;
