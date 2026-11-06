@@ -24,6 +24,12 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-06 – Tor C freigegeben (Mo)
+
+- Mo hat Tor C freigegeben, Phase 2 ist abgeschlossen.
+- Der Hörtest hat drei Befunde ergeben; sie stehen unter Aufräumkandidaten.
+- Phase 3 beginnt mit dem Loop.
+
 ## 2026-11-06 – Loop hält: Tor C (Claude)
 
 - CI auf `main` grün.
