@@ -139,8 +139,9 @@ impl Session {
         for function in functions.iter_mut().filter(|f| f.action == action) {
             function.trigger(pressed);
         }
-        for sound in loco_entry.event_sounds_mut() {
-            sound.active ^= pressed && sound.action == action;
+        let sounds = loco_entry.event_sounds_mut().iter_mut();
+        for sound in sounds.filter(|s| pressed && s.action == action) {
+            sound.active = !sound.active;
         }
         let nr = event_sound::channel_nr(loco_entry.event_sounds().len());
         let sounds = loco_entry.sound_functions_mut();
@@ -150,9 +151,6 @@ impl Session {
 }
 
 /// Converts each item of the list; those that give `None` are left out.
-fn convert<T>(list: &mut Vec<T>, convert: impl FnMut(T) -> Option<T>) {
-    *list = std::mem::take(list)
-        .into_iter()
-        .filter_map(convert)
-        .collect();
+fn convert<T>(list: &mut Vec<T>, f: impl FnMut(T) -> Option<T>) {
+    *list = std::mem::take(list).into_iter().filter_map(f).collect();
 }

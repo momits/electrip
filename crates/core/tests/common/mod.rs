@@ -286,8 +286,10 @@ pub fn golden(name: &str, address: u16) -> (Vec<Event>, Vec<Event>) {
         .map(|e| {
             let text = |key: &str| e[key].as_str().unwrap().to_string();
             let ms = e["fade_in_ms"].as_u64().or(e["ms"].as_u64());
-            let event = text("ev");
-            let event = ms.map_or(event.clone(), |ms| format!("{event} {ms}"));
+            let event = match ms {
+                Some(ms) => format!("{} {ms}", text("ev")),
+                None => text("ev"),
+            };
             (e["t"].as_f64().unwrap(), text("sound"), event)
         })
         .collect();
