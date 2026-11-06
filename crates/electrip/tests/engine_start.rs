@@ -7,7 +7,7 @@
 
 mod common;
 
-use common::{App, Client};
+use common::{App, Client, add_quick_loco, set_axis};
 use serde_json::json;
 use std::fs;
 use std::path::Path;
@@ -34,15 +34,10 @@ fn wav(path: &Path, seconds: f64) {
     fs::write(path, bytes).unwrap();
 }
 
-/// Adds loco 1 with a diesel engine whose start and quit sounds last
-/// 0.6 s and whose idle sound lasts 0.3 s.
+/// Adds loco 1 as in [`add_quick_loco`] with a diesel engine whose start
+/// and quit sounds last 0.6 s and whose idle sound lasts 0.3 s.
 fn add_diesel(client: &mut Client, dir: &Path) {
-    client.command(json!({"command": "add_loco"})).unwrap();
-    for command in ["set_accel_duration", "set_brake_duration"] {
-        client
-            .command(json!({"command": command, "loco": 1, "seconds": 1}))
-            .unwrap();
-    }
+    add_quick_loco(client);
     client
         .command(json!({"command": "set_engine", "loco": 1, "engine": "diesel"}))
         .unwrap();
@@ -55,12 +50,10 @@ fn add_diesel(client: &mut Client, dir: &Path) {
     }
 }
 
-fn command(client: &mut Client, name: &str, deflection: Option<f64>) {
-    let mut command = json!({"command": name, "loco": 1});
-    if let Some(deflection) = deflection {
-        command["deflection"] = json!(deflection);
-    }
-    client.command(command).unwrap();
+fn toggle_sound(client: &mut Client) {
+    client
+        .command(json!({"command": "toggle_sound", "loco": 1}))
+        .unwrap();
 }
 
 /// Seconds until the sound of loco 1 is `sound`; the loco stands meanwhile.
@@ -86,20 +79,20 @@ fn the_speed_is_locked_while_the_engine_starts_and_quits() {
     let mut client = app.connect();
     add_diesel(&mut client, dir.path());
 
-    command(&mut client, "toggle_sound", None);
+    toggle_sound(&mut client);
     assert_eq!(client.state["locos"][0]["sound"], "starting");
-    command(&mut client, "set_axis", Some(1.0));
+    set_axis(&mut client, 1.0);
     let seconds = standing_until(&mut client, "on");
     assert!((0.5..1.0).contains(&seconds), "{seconds} s to start");
     drives_off(&mut client);
 
-    command(&mut client, "set_axis", Some(-1.0));
+    set_axis(&mut client, -1.0);
     while client.state["locos"][0]["speed"] != 0.0 {
         client.expect_state();
     }
-    command(&mut client, "toggle_sound", None);
+    toggle_sound(&mut client);
     assert_eq!(client.state["locos"][0]["sound"], "stopping");
-    command(&mut client, "set_axis", Some(1.0));
+    set_axis(&mut client, 1.0);
     let seconds = standing_until(&mut client, "off");
     assert!((0.5..1.4).contains(&seconds), "{seconds} s to quit");
     drives_off(&mut client);

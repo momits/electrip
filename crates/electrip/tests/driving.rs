@@ -10,27 +10,11 @@ mod common;
 
 use common::expect_event;
 use common::srcpd::{connect_to_srcpd, observer};
-use common::{App, Client};
+use common::{App, Client, add_quick_loco, set_axis};
 use electrip_core::station::{LocoState, StationEvent};
 use electrip_station_srcp::SrcpStation;
 use serde_json::json;
 use std::time::Instant;
-
-/// Adds loco 1 that takes one second to accelerate and to brake.
-fn add_quick_loco(client: &mut Client) {
-    client.command(json!({"command": "add_loco"})).unwrap();
-    for command in ["set_accel_duration", "set_brake_duration"] {
-        client
-            .command(json!({"command": command, "loco": 1, "seconds": 1}))
-            .unwrap();
-    }
-}
-
-fn set_axis(client: &mut Client, deflection: f64) {
-    client
-        .command(json!({"command": "set_axis", "loco": 1, "deflection": deflection}))
-        .unwrap();
-}
 
 /// Seconds until loco 1 reaches `speed`.
 fn time_to(client: &mut Client, speed: f64) -> f64 {
