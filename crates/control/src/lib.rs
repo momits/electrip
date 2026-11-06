@@ -23,6 +23,7 @@ const POLL_INTERVAL: Duration = Duration::from_millis(50);
 struct Shared {
     host: Host,
     clients: Vec<TcpStream>,
+    last_poll: Instant,
 }
 
 /// Serves clients, each in a thread, and polls the host and the input
@@ -36,6 +37,7 @@ pub fn serve(
     let shared = Arc::new(Mutex::new(Shared {
         host,
         clients: Vec::new(),
+        last_poll: Instant::now(),
     }));
     let acceptor = Arc::clone(&shared);
     thread::spawn(move || accept(listener, &acceptor));
@@ -68,9 +70,11 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     for line in BufReader::new(stream).lines() {
         let line = line?;
         let mut shared = lock(shared)?;
+        // Drives up to now first, so the command counts from its arrival.
+        let polled = shared.poll();
         let result = execute(&mut shared.host, &line);
         send(&mut writer, &reply(&result))?;
-        if result.is_ok() {
+        if result.is_ok() || polled {
             shared.broadcast();
         }
     }
@@ -82,7 +86,6 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
 /// A failed input command changes nothing, like a control without a
 /// target.
 fn poll(shared: &Mutex<Shared>, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
-    let mut last = Instant::now();
     loop {
         thread::sleep(POLL_INTERVAL);
         let commands = input();
@@ -91,15 +94,22 @@ fn poll(shared: &Mutex<Shared>, mut input: impl FnMut() -> Vec<Command>) -> io::
         for command in commands {
             changed |= shared.host.apply(command).is_ok();
         }
-        let seconds = last.elapsed().as_secs_f64();
-        last = Instant::now();
-        if shared.host.poll(seconds) || changed {
+        if shared.poll() || changed {
             shared.broadcast();
         }
     }
 }
 
 impl Shared {
+    /// Lets the host handle the events of the command station and drive
+    /// the locos for the time since the last poll; returns whether the
+    /// session changed.
+    fn poll(&mut self) -> bool {
+        let seconds = self.last_poll.elapsed().as_secs_f64();
+        self.last_poll = Instant::now();
+        self.host.poll(seconds)
+    }
+
     /// Sends the state to all clients and forgets the disconnected ones.
     fn broadcast(&mut self) {
         let state = state(self.host.session());
