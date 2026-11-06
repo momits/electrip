@@ -83,26 +83,29 @@ fn missing_picture_shows_none() {
     let mut loco = loco(1, "A");
     loco["picture"] = json!("missing.png");
     let state = state(vec![loco], json!([]));
-    assert!(!controllers(&state, Path::new(""))[0].has_picture);
+    assert_eq!(
+        controllers(&state, Path::new(""))[0].picture.size().width,
+        0
+    );
 }
 
 #[test]
-fn driving_keeps_the_buttons() {
-    let model = VecModel::<Controller>::default();
+fn driving_and_switching_keep_the_buttons() {
+    let model = ModelRc::new(VecModel::<Controller>::default());
     let mut loco = loco_with_buttons();
-    update(
-        &model,
-        controllers(&state(vec![loco.clone()], json!([])), Path::new("")),
-    );
-    let before = model.row_data(0).unwrap();
+    let show = |loco: &Value| {
+        let rows = controllers(&state(vec![loco.clone()], json!([])), Path::new(""));
+        update_controllers(&model, rows);
+        model.row_data(0).unwrap()
+    };
+    let before = show(&loco);
     loco["speed"] = json!(20.0);
-    update(
-        &model,
-        controllers(&state(vec![loco], json!([])), Path::new("")),
-    );
-    let after = model.row_data(0).unwrap();
+    loco["functions"][1]["on"] = json!(true);
+    let after = show(&loco);
     assert_eq!(after.speed, 20.0);
-    // The same model, so the window keeps the button elements.
+    assert!(after.buttons.row_data(4).unwrap().on);
+    // The same model, so the window keeps the button elements and a held
+    // button gets its release.
     assert!(before.buttons == after.buttons);
 }
 

@@ -7,7 +7,7 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 
 - `electrip [--headless] [--control-port <port>] [--library <verzeichnis>] [-f|--file <konfiguration>]` startet die App; Standardport 4711, Port 0 wählt einen freien Port.
 - Das Fenster ist selbst ein Client des Steuerkanals und sendet dieselben Befehle (B-22).
-  Mit `--headless` oder ohne Anzeige läuft die App ohne Fenster und meldet dann `ERROR no window`; die Tests starten sie so.
+  Mit `--headless` läuft die App ohne Fenster; die Tests starten sie so. Ohne Anzeige meldet sie `ERROR no window` und läuft ebenfalls ohne Fenster weiter.
 - `--library`: Verzeichnis der Konfigurationen, eine Datei `<name>.json` je Konfiguration (B-21).
   Vorgabe ist `electrip` im Datenverzeichnis des Nutzers (Linux `$XDG_DATA_HOME` bzw. `~/.local/share`, macOS `~/Library/Application Support`, Windows `%APPDATA%`).
   Ein leeres Verzeichnis bekommt die Konfiguration „Electrip“.

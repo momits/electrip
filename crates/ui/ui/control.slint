@@ -19,8 +19,8 @@ export struct ControlButton {
 export struct Controller {
     id: int,
     name: string,
+    // Empty without a picture.
     picture: image,
-    has-picture: bool,
     speed: float,
     max-speed: float,
     forward: bool,
@@ -96,13 +96,8 @@ component ButtonView inherits Rectangle {
         horizontal-alignment: center;
     }
     TouchArea {
-        pointer-event(event) => {
-            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
-                root.pressed(true);
-            }
-            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.up) {
-                root.pressed(false);
-            }
+        changed pressed => {
+            root.pressed(self.pressed);
         }
     }
 }
@@ -145,7 +140,6 @@ component ControllerView inherits Rectangle {
             background: #e0e0e0;
             Image {
                 source: controller.picture;
-                visible: controller.has-picture;
                 width: parent.width;
                 height: parent.height;
                 image-fit: cover;
