@@ -455,8 +455,8 @@
       "phase": 2,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       },
       "notes": "Verhalten im Zweifel aus legacy/ ableiten (control_ui.py, pygame_io.py)."

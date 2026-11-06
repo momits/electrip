@@ -6,7 +6,26 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-_Zurzeit keine._
+- `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
+
+## 2026-11-06 – B-17: Geräusch-Ereignisse (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neues Modul `event_sound.rs` wie `EventSoundPlayer` in Electrip 1: Jede Lok hat `event_sounds` mit Aktion, Name, Sounddatei, `default_active`/`active`, Richtung `forward` (`true`, `false` oder `null`), `min_speed`/`max_speed`, `min_accel`/`max_accel` (`null` = beliebig), `fade_in`/`fade_out` in Sekunden und `play_to_end`.
+  Es spielt nur, wenn die Lok ein Sound-Modell hat (auch bei ausgeschaltetem Fahrgeräusch, wie Electrip 1), jedes auf einem festen Kanal über dem Fahrgeräusch; die Geräusch-Funktionen spielen jetzt darüber. Solange die Bedingungen gelten, läuft es im Loop (mit Einblenden bei jedem Start wie Electrip 1); gelten sie nicht mehr, blendet es einmal aus, außer bei `play_to_end`.
+- Wie in Q-013 entschieden prüft der Host bei jeder Abfrage mit den aktuellen Werten. Die Beschleunigung ist die Änderung der Geschwindigkeit seit der letzten Abfrage (wie im Docstring von `EventSound` in Electrip 1: „derivation of loco.speed“). Anders als Electrip 1 heißt das: Steht die Lok bei gehaltener Bremse, ist a = 0 und das Bremsenquietschen blendet aus. Ebenfalls anders (gleiche Art Fehler wie Q-013 Punkt 3): Electrip 1 prüfte die Richtung „rückwärts“ (`false`) nie; Electrip 2 prüft sie.
+- `AudioSink` hat `fade_in(channel, sound, fade)` und `fade_out(channel, fade)`. Befehle `add_event_sound` und `remove_event_sound`; `trigger_action` schaltet beim Drücken auch die Geräusch-Ereignisse aktiv/inaktiv. Gespeichert wird `active` wie `default_active`.
+- Import aus Electrip 1 und Lok-Pakete übernehmen die Geräusch-Ereignisse; ein Ereignis ohne Knopf bekommt eine Aktion mit seinem Namen (V 60 „Bremsen“). Im Korpus hat die V 60 „Anfahren“ `fade_in` 500 und `fade_out` 1000 – in Electrip 1 sind das Sekunden; übernommen wie in der Datei.
+- Golden-Test `golden_event_sounds.rs`: Anfahrpfiff (Start mit Einblenden 300 ms, Ende nach `play_to_end`) und Start des Bremsenquietschens stimmen auf eine Abfrage (50 ms) genau mit `tests/golden/event_sounds.jsonl`. „Rollen“ und das Ende des Quietschens weichen wie oben und in Q-013 beschrieben ab; der Test prüft dafür das Verhalten von Electrip 2.
+- Weitere Tests: `event_sound/tests.rs`, `session/tests.rs`, `electrip1/tests.rs` (Korpus), `package/tests.rs`, `crates/electrip/tests/event_sounds.rs` über den Steuerkanal. `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (4304 Zeilen) und `cargo xtask parity` grün.
+- **B-17** `wired` und `verified`.
+- Einfachheits-Review: refactored (Sub-Agent). Kleinigkeiten: Umschalten als Filter-Schleife, ein unnötiges `let mut` und ein `clone` im Test entfernt.
+- **Offen:**
+  - Phase 3: Knöpfe der Geräusch-Ereignisse und ihr Bearbeiten in der UI; dort auch nur anbieten, wenn ein Fahrgeräusch konfiguriert ist.
+  - Wird ein Geräusch-Ereignis entfernt, während es spielt, spielt sein Kanal zu Ende; die folgenden rücken einen Kanal nach.
+  - Die Lautstärke der Lok geht noch nicht an das `AudioSink` (wie B-11).
+  - Die Soundausgabe (B-18) muss Ein- und Ausblenden können.
 
 ## 2026-11-06 – B-16: Geräusch-Funktionen (Claude)
 
