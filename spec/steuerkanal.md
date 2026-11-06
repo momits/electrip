@@ -77,6 +77,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
   `color` ist die Farbe des Geräts (1 bis 12, wie die zwölf Gamepad-Symbole von Electrip 1); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
+- `sound`: Fahrgeräusch `off`, `starting`, `on` oder `stopping` (B-11, B-12). Beim Diesel spielt `starting` das Anlassgeräusch bis zum Leerlauf; `stopping` wartet auf das Ende des Leerlaufgeräuschs und spielt das Abstellgeräusch. Währenddessen bleibt die Geschwindigkeit stehen, auch bei ausgelenkter Fahrachse; die Dauer kommt aus der Länge der Dateien.
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `station`: Zentrale (`kind`: `srcp` oder `z21`; Vorgabe wie Electrip 1: SRCP-Server `localhost`, Port 4303, Bus 1) und ob die App mit ihr verbunden ist (B-01, N-02).
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
@@ -109,6 +110,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
 | `set_axis` | `loco`, `deflection` (Auslenkung der Fahrachse von -1 voll zurück bis 1 voll vor; bis 0,06 wird sie ignoriert wie in Electrip 1) | B-10 |
 | `reverse` | `loco` (Richtungswender: Geschwindigkeit 0, dann andere Richtung) | B-10 |
+| `toggle_sound` | `loco` (schaltet das Fahrgeräusch ein oder aus; ohne Sound-Modell tut es nichts) | B-02, B-11, B-12 |
 | `add_action` | `name` | N-07 |
 | `rename_action` | `action`, `name` | N-07 |
 | `remove_action` | `action` (löscht auch alle Funktionen und Belegungen, die auf die Aktion zeigen) | N-07 |
