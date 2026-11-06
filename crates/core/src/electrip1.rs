@@ -116,8 +116,20 @@ struct OldLoco {
     img_path: Option<PathBuf>,
     functions: Vec<OldFunction>,
     function_sounds: Vec<OldFunctionSound>,
-    event_sounds: Vec<OldEventSound>,
+    /// Until Electrip 1 v5.0.8 in the engine, see [`OldLoco::event_sounds`].
+    event_sounds: Option<Vec<OldEventSound>>,
     engine: Option<OldEngine>,
+}
+
+impl OldLoco {
+    /// The event sounds of the loco, else of the engine like Electrip 1.
+    fn event_sounds(&self) -> &[OldEventSound] {
+        match (&self.event_sounds, &self.engine) {
+            (Some(sounds), _) => sounds,
+            (None, Some(engine)) => &engine.event_sounds,
+            (None, None) => &[],
+        }
+    }
 }
 
 /// The sound of a loco; steam engines leave out the start and quit sound,
@@ -137,6 +149,8 @@ struct OldEngine {
     /// `null` without segments.
     #[serde(default)]
     sound_segments: Option<Vec<OldSegment>>,
+    #[serde(default)]
+    event_sounds: Vec<OldEventSound>,
 }
 
 /// A sound segment; its end is the start of the next one.
@@ -175,7 +189,7 @@ struct OldFunctionSound {
 
 /// An event sound; `button` is -1 without a button, `direction` `true`
 /// forward. Fades are in seconds.
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct OldEventSound {
     #[serde(default)]
     name: String,
@@ -213,7 +227,7 @@ impl Default for OldLoco {
             img_path: None,
             functions: Vec::new(),
             function_sounds: Vec::new(),
-            event_sounds: Vec::new(),
+            event_sounds: None,
             engine: None,
         }
     }
@@ -236,7 +250,7 @@ fn import(json: &str) -> Result<Import, ImportError> {
         .iter()
         .flat_map(|old| {
             let sounds = old.function_sounds.iter().map(|f| f.button);
-            let events = old.event_sounds.iter().map(|s| s.button);
+            let events = old.event_sounds().iter().map(|s| s.button);
             let functions = old.functions.iter().map(|f| f.button);
             functions.chain(sounds).chain(events)
         })
@@ -277,6 +291,7 @@ fn convert(
     actions: &mut Vec<Action>,
     report: &mut Vec<String>,
 ) -> Result<Loco, ImportError> {
+    let events = old.event_sounds().to_vec();
     let mut protocol = protocol(&old)?;
     if protocol == Protocol::DccShort && old.address > protocol.max_address() {
         protocol = Protocol::DccLong;
@@ -311,8 +326,7 @@ fn convert(
         .into_iter()
         .map(|f| sound_function(f, actions))
         .collect();
-    *loco.event_sounds_mut() = old
-        .event_sounds
+    *loco.event_sounds_mut() = events
         .into_iter()
         .map(|s| event_sound(s, actions))
         .collect();

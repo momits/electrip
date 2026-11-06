@@ -12,7 +12,7 @@ use crate::speed_curve::SpeedCurve;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::RangeInclusive;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Name of a new loco, as in Electrip 1.
 pub const DEFAULT_NAME: &str = "Unbenannte Lok";
@@ -220,6 +220,19 @@ impl Loco {
 
     pub fn set_picture(&mut self, picture: Option<String>) {
         self.picture = picture;
+    }
+
+    /// Replaces each sound file by `f` of it or with `None` removes it
+    /// (B-20).
+    pub(crate) fn map_sounds(&mut self, mut f: impl FnMut(&Path) -> Option<PathBuf>) {
+        if let Some(model) = &mut self.sound_model {
+            model.map_sounds(&mut f);
+        }
+        let functions = self.sound_functions.iter_mut().map(|s| &mut s.path);
+        let events = self.event_sounds.iter_mut().map(|s| &mut s.path);
+        for path in functions.chain(events) {
+            *path = path.take().and_then(|p| f(&p));
+        }
     }
 
     pub fn sound_model(&self) -> Option<&SoundModel> {

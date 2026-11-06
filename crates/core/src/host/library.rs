@@ -102,7 +102,8 @@ impl Host {
     }
 
     pub(super) fn import_loco(&mut self, path: &Path) -> Result<(), CommandError> {
-        let package = package::read(path, &self.media()).map_err(CommandError::Import)?;
+        let package =
+            package::read(path, &self.media(), &self.sounds()).map_err(CommandError::Import)?;
         self.change(|session| {
             session.import_loco(package.loco, &package.actions, package.report);
             Ok(())
@@ -112,6 +113,11 @@ impl Host {
     /// The directory of the pictures (B-05).
     pub(super) fn media(&self) -> PathBuf {
         self.library.join("media")
+    }
+
+    /// The directory of the sounds from loco packages (B-20).
+    fn sounds(&self) -> PathBuf {
+        self.library.join("sounds")
     }
 
     fn load(
