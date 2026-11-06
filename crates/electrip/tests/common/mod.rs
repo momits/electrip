@@ -9,7 +9,7 @@
 pub mod srcpd;
 
 use electrip_core::station::{CommandStation, StationEvent};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpStream, UdpSocket};
 use std::path::Path;
@@ -130,6 +130,23 @@ impl Client {
         self.reader.read_line(&mut line).unwrap();
         serde_json::from_str(&line).unwrap()
     }
+}
+
+/// Adds loco 1 that takes one second to accelerate and to brake.
+pub fn add_quick_loco(client: &mut Client) {
+    client.command(json!({"command": "add_loco"})).unwrap();
+    for command in ["set_accel_duration", "set_brake_duration"] {
+        client
+            .command(json!({"command": command, "loco": 1, "seconds": 1}))
+            .unwrap();
+    }
+}
+
+/// Deflects the drive axis of loco 1.
+pub fn set_axis(client: &mut Client, deflection: f64) {
+    client
+        .command(json!({"command": "set_axis", "loco": 1, "deflection": deflection}))
+        .unwrap();
 }
 
 /// Waits until `station` reports an event that `matches`.
