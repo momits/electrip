@@ -12,6 +12,7 @@ electrip-core = { path = "../core" }
 electrip-input = { path = "../input" }
 electrip-station-srcp = { path = "../station-srcp" }
 electrip-station-z21 = { path = "../station-z21" }
+electrip-ui = { path = "../ui" }
 
 [dev-dependencies]
 electrip-sim-z21 = { path = "../../sim/z21" }

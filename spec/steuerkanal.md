@@ -5,7 +5,9 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 
 ## Verbindung
 
-- `electrip [--control-port <port>] [--library <verzeichnis>] [-f|--file <konfiguration>]` startet die App ohne Oberfläche; Standardport 4711, Port 0 wählt einen freien Port.
+- `electrip [--headless] [--control-port <port>] [--library <verzeichnis>] [-f|--file <konfiguration>]` startet die App; Standardport 4711, Port 0 wählt einen freien Port.
+- Das Fenster ist selbst ein Client des Steuerkanals und sendet dieselben Befehle (B-22).
+  Mit `--headless` oder ohne Anzeige läuft die App ohne Fenster und meldet dann `ERROR no window`; die Tests starten sie so.
 - `--library`: Verzeichnis der Konfigurationen, eine Datei `<name>.json` je Konfiguration (B-21).
   Vorgabe ist `electrip` im Datenverzeichnis des Nutzers (Linux `$XDG_DATA_HOME` bzw. `~/.local/share`, macOS `~/Library/Application Support`, Windows `%APPDATA%`).
   Ein leeres Verzeichnis bekommt die Konfiguration „Electrip“.
@@ -173,4 +175,4 @@ Beispiel:
 `crates/electrip/tests/common/mod.rs` startet die App auf einem freien Port und spricht den Steuerkanal an (`App::start`, `App::connect`, `Client::command`).
 Tests mit der Prüfart `control-channel` liegen unter `crates/electrip/tests/` und binden den Helfer mit `mod common;` ein.
 
-Noch nicht enthalten: Screenshots; sie kommen mit der Oberfläche.
+Noch nicht enthalten: Screenshots über den Steuerkanal; die Tests der Oberfläche zeichnen das Fenster ohne Anzeige (`crates/ui`) und legen das Bild unter `target/test-logs/screenshots/` ab.
