@@ -17,6 +17,10 @@ impl AudioSink for NoAudio {
     fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
 
     fn stop(&mut self, _: ChannelId) {}
+
+    fn fade_in(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn fade_out(&mut self, _: ChannelId, _: Duration) {}
 }
 
 /// A host without sound and its library, deleted when dropped.

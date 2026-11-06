@@ -86,6 +86,10 @@ impl AudioSink for NoAudio {
     fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
 
     fn stop(&mut self, _: ChannelId) {}
+
+    fn fade_in(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn fade_out(&mut self, _: ChannelId, _: Duration) {}
 }
 
 /// Reads the options; `--control-port 0` picks a free port.

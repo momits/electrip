@@ -79,6 +79,7 @@ fn the_corpus_is_imported_without_loss() {
             assert_eq!(loco.speed_curve().points(), points);
             assert_functions(loco, &import.actions, &old["functions"]);
             assert_sound_functions(loco, &import.actions, &old["function_sounds"]);
+            assert_event_sounds(loco, &import.actions, &old["event_sounds"]);
             assert_sounds(loco, &old["engine"]);
         }
         assert_mapping(&import, &file["joystick"]);
@@ -213,6 +214,31 @@ fn assert_sound_functions(loco: &Loco, actions: &[Action], old: &Value) {
         );
         assert!(!function.on);
         assert_action(function.action, actions, old);
+    }
+}
+
+/// Each event sound keeps all its values, and its action names the button
+/// or, without one, the event sound.
+fn assert_event_sounds(loco: &Loco, actions: &[Action], old: &Value) {
+    let old = old.as_array().map_or(&[][..], Vec::as_slice);
+    assert_eq!(loco.event_sounds().len(), old.len());
+    for (sound, old) in loco.event_sounds().iter().zip(old) {
+        assert_eq!(sound.name, old["name"]);
+        assert_eq!(
+            sound.path.as_deref().and_then(Path::to_str),
+            old["file_path"].as_str()
+        );
+        assert_eq!(sound.default_active, old["state"]);
+        assert_eq!(sound.active, old["state"]);
+        assert_eq!(sound.forward, old["direction"].as_bool());
+        assert_eq!(sound.min_speed, old["min_speed"].as_f64());
+        assert_eq!(sound.max_speed, old["max_speed"].as_f64());
+        assert_eq!(sound.min_accel, old["min_accel"].as_f64());
+        assert_eq!(sound.max_accel, old["max_accel"].as_f64());
+        assert_eq!(sound.fade_in, old["fade_in"]);
+        assert_eq!(sound.fade_out, old["fade_out"]);
+        assert_eq!(sound.play_to_end, old["play_to_end"]);
+        assert_action(sound.action, actions, old);
     }
 }
 

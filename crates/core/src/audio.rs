@@ -32,6 +32,14 @@ pub trait AudioSink {
 
     /// Silences the channel and drops its waiting sound.
     fn stop(&mut self, channel: ChannelId);
+
+    /// Plays the sound on the silent channel at once, rising from silence
+    /// to full volume over `fade` (B-17).
+    fn fade_in(&mut self, channel: ChannelId, sound: &Path, fade: Duration);
+
+    /// Lowers the channel to silence over `fade`, then silences it like
+    /// [`AudioSink::stop`] (B-17).
+    fn fade_out(&mut self, channel: ChannelId, fade: Duration);
 }
 
 /// What the host knows of a channel of the audio target: how long its
@@ -62,10 +70,7 @@ impl Channel {
     /// Queues the sound like [`AudioSink::queue`]. Missing sounds and files
     /// the target cannot read are left out, like in Electrip 1.
     pub(crate) fn queue(&mut self, sink: &mut dyn AudioSink, sound: Option<&Path>) {
-        let Some(sound) = sound else {
-            return;
-        };
-        let Some(length) = sink.length(sound).ok().filter(|l| !l.is_zero()) else {
+        let Some((sound, length)) = playable(sink, sound) else {
             return;
         };
         sink.queue(self.id, sound);
@@ -74,6 +79,30 @@ impl Channel {
         } else {
             self.waiting = Some(length);
         }
+    }
+
+    /// Plays the sound like [`AudioSink::fade_in`]; missing sounds and
+    /// files the target cannot read are left out.
+    pub(crate) fn fade_in(
+        &mut self,
+        sink: &mut dyn AudioSink,
+        sound: Option<&Path>,
+        fade: Duration,
+    ) {
+        let Some((sound, length)) = playable(sink, sound) else {
+            return;
+        };
+        sink.fade_in(self.id, sound, fade);
+        self.playing = Some(length);
+        self.waiting = None;
+    }
+
+    /// Fades out like [`AudioSink::fade_out`]; the sound ends with the fade
+    /// at the latest.
+    pub(crate) fn fade_out(&mut self, sink: &mut dyn AudioSink, fade: Duration) {
+        sink.fade_out(self.id, fade);
+        self.playing = self.playing.map(|p| p.min(fade)).filter(|p| !p.is_zero());
+        self.waiting = None;
     }
 
     pub(crate) fn stop(&mut self, sink: &mut dyn AudioSink) {
@@ -103,6 +132,14 @@ impl Channel {
         }
         true
     }
+}
+
+/// The sound and its length, unless it is missing or the target cannot
+/// read it.
+fn playable<'a>(sink: &mut dyn AudioSink, sound: Option<&'a Path>) -> Option<(&'a Path, Duration)> {
+    let sound = sound?;
+    let length = sink.length(sound).ok().filter(|l| !l.is_zero())?;
+    Some((sound, length))
 }
 
 #[cfg(test)]

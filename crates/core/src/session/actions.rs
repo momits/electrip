@@ -1,8 +1,9 @@
-//! The commands for logical actions (N-07) and the functions and sound
-//! functions of a loco mapped to them (B-07, B-16).
+//! The commands for logical actions (N-07) and the functions, sound
+//! functions and event sounds of a loco mapped to them (B-07, B-16, B-17).
 
 use super::{CommandError, Session};
-use crate::audio::AudioSink;
+use crate::audio::{AudioSink, ChannelId};
+use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function};
 use crate::function_sound::{self, SoundFunction};
 use crate::input::Target;
@@ -30,23 +31,21 @@ impl Session {
             let name = &actions.iter().find(|a| a.id == old)?.name;
             Some(self.action_named(name))
         };
-        let functions = std::mem::take(loco.functions_mut());
-        *loco.functions_mut() = functions
-            .into_iter()
-            .filter_map(|f| {
-                let (action, on) = (action(f.action)?, f.default_on);
-                Some(Function { action, on, ..f })
+        convert(loco.functions_mut(), |f| {
+            let (action, on) = (action(f.action)?, f.default_on);
+            Some(Function { action, on, ..f })
+        });
+        convert(loco.sound_functions_mut(), |f| {
+            let action = action(f.action)?;
+            Some(SoundFunction { action, ..f.off() })
+        });
+        convert(loco.event_sounds_mut(), |s| {
+            let action = action(s.action)?;
+            Some(EventSound {
+                action,
+                ..s.reset()
             })
-            .collect();
-        let sounds = std::mem::take(loco.sound_functions_mut());
-        *loco.sound_functions_mut() = sounds
-            .into_iter()
-            .filter_map(|f| {
-                let mut function = f.off();
-                function.action = action(f.action)?;
-                Some(function)
-            })
-            .collect();
+        });
         self.push(loco);
         self.import_report = report;
     }
@@ -69,6 +68,7 @@ impl Session {
         for entry in &mut self.locos {
             entry.loco.functions_mut().retain(|f| f.action != id);
             entry.loco.sound_functions_mut().retain(|f| f.action != id);
+            entry.loco.event_sounds_mut().retain(|s| s.action != id);
         }
         let target = Target::Action { action: id };
         for mapping in &mut self.mappings {
@@ -113,7 +113,19 @@ impl Session {
         Ok(())
     }
 
-    /// An action without a function at this loco does nothing.
+    /// Appends the event sound, as active as at the start.
+    pub(super) fn add_event_sound(
+        &mut self,
+        loco: u32,
+        sound: EventSound,
+    ) -> Result<(), CommandError> {
+        self.action(sound.action)?;
+        self.loco(loco)?.event_sounds_mut().push(sound.reset());
+        Ok(())
+    }
+
+    /// An action without a function at this loco does nothing; pressing it
+    /// switches its event sounds active or inactive.
     pub(crate) fn trigger_action(
         &mut self,
         loco: u32,
@@ -127,8 +139,20 @@ impl Session {
         for function in functions.iter_mut().filter(|f| f.action == action) {
             function.trigger(pressed);
         }
+        for sound in loco_entry.event_sounds_mut() {
+            sound.active ^= pressed && sound.action == action;
+        }
+        let nr = event_sound::channel_nr(loco_entry.event_sounds().len());
         let sounds = loco_entry.sound_functions_mut();
-        function_sound::trigger(sounds, loco, action, pressed, sink);
+        function_sound::trigger(sounds, ChannelId { loco, nr }, action, pressed, sink);
         Ok(())
     }
+}
+
+/// Converts each item of the list; those that give `None` are left out.
+fn convert<T>(list: &mut Vec<T>, convert: impl FnMut(T) -> Option<T>) {
+    *list = std::mem::take(list)
+        .into_iter()
+        .filter_map(convert)
+        .collect();
 }

@@ -31,6 +31,10 @@ impl AudioSink for Audio {
     fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
 
     fn stop(&mut self, _: ChannelId) {}
+
+    fn fade_in(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn fade_out(&mut self, _: ChannelId, _: Duration) {}
 }
 
 /// SDL, a connected host and its library.
