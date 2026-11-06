@@ -9,6 +9,7 @@ mod common;
 
 use common::diesel::{add_diesel, set_segment_sounds, toggle_sound};
 use common::{App, Client, set_axis};
+use serde_json::json;
 use std::time::Instant;
 
 /// Seconds since `start` until the sound of loco 1 is `sound`; the loco
@@ -45,9 +46,7 @@ fn the_speed_is_locked_while_the_engine_starts_and_quits() {
     drives_off(&mut client);
 
     set_axis(&mut client, -1.0);
-    while client.state["locos"][0]["speed"] != 0.0 {
-        client.expect_state();
-    }
+    client.wait_for_loco("speed", json!(0.0));
     let start = Instant::now();
     toggle_sound(&mut client);
     assert_eq!(client.state["locos"][0]["sound"], "stopping");
