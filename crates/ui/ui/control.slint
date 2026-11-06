@@ -1,0 +1,262 @@
+// The control view (B-22): one controller per loco side by side, the
+// emergency stop below. Like Electrip 1 (control_ui.py, control.css).
+
+import { ScrollView } from "std-widgets.slint";
+
+// What a button of a controller switches; the groups have their own colors
+// (B-19).
+export enum ButtonKind { driving-sound, sound-function, event-sound, function }
+
+export struct ControlButton {
+    kind: ButtonKind,
+    // Empty for the driving sound.
+    label: string,
+    on: bool,
+    // The logical action it triggers; unused for the driving sound.
+    action: int,
+}
+
+export struct Controller {
+    id: int,
+    name: string,
+    picture: image,
+    has-picture: bool,
+    speed: float,
+    max-speed: float,
+    forward: bool,
+    buttons: [ControlButton],
+    // The colors (1 to 12) of the devices that control the loco.
+    devices: [int],
+}
+
+// The colors of the input devices, after gamepads.css of Electrip 1.
+global DeviceColors {
+    out property <[color]> colors: [#6aa9d0, #f39d41, #f08070, #4a7a99, #a8a8a8, #8dcc8d,
+        #ffc226, #c98aca, #4fa6b2, #a0785a, #e07ab0, #7a8a3a];
+}
+
+component DeviceSymbol inherits Rectangle {
+    in property <int> device;
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    background: white;
+    Text {
+        text: device;
+        color: DeviceColors.colors[device - 1];
+        font-weight: 700;
+        font-size: 11px;
+    }
+}
+
+// The vertical speed scale; it shows the speed, the axis of the device sets
+// it.
+component SpeedScale inherits Rectangle {
+    in property <float> speed;
+    in property <float> max-speed;
+    in property <bool> highlighted;
+    width: 30px;
+    trough := Rectangle {
+        x: (parent.width - self.width) / 2;
+        width: 8px;
+        border-radius: 4px;
+        border-width: 1px;
+        border-color: highlighted ? #6c6c6c : #c3c3c3;
+        background: highlighted ? #919191 : #dcdcdc;
+    }
+    knob := Rectangle {
+        width: 22px;
+        height: 22px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) * (1 - (max-speed > 0 ? min(speed / max-speed, 1) : 0));
+        border-radius: 11px;
+        border-width: 1px;
+        border-color: highlighted ? #3f3f3f : #a5a5a5;
+        background: highlighted ? #636363 : #f0f0f0;
+    }
+}
+
+component ButtonView inherits Rectangle {
+    in property <ControlButton> button;
+    callback pressed(bool);
+    height: 28px;
+    border-radius: 3px;
+    border-width: 1px;
+    property <color> base: button.kind == ButtonKind.driving-sound ? #ffb048
+        : button.kind == ButtonKind.sound-function ? #b4b4fa
+        : button.kind == ButtonKind.event-sound ? #ff9a82 : #ececec;
+    background: button.on ? base.darker(15%) : base;
+    border-color: button.on ? #404040 : base.darker(30%);
+    Text {
+        text: button.kind == ButtonKind.driving-sound ? @tr("Driving sound") : button.label;
+        color: black;
+        font-weight: button.on ? 700 : 400;
+        overflow: elide;
+        width: parent.width - 8px;
+        horizontal-alignment: center;
+    }
+    TouchArea {
+        pointer-event(event) => {
+            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                root.pressed(true);
+            }
+            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.up) {
+                root.pressed(false);
+            }
+        }
+    }
+}
+
+component ControllerView inherits Rectangle {
+    in property <Controller> controller;
+    // Buttons of the loco with the most, so the speed scales line up.
+    in property <int> button-rows;
+    callback reverse();
+    callback toggle-sound();
+    callback trigger(int, bool);
+    property <bool> highlighted: controller.devices.length > 0;
+    property <color> text-color: highlighted ? white : #383436;
+    width: 130px;
+    border-radius: 5px;
+    background: highlighted ? DeviceColors.colors[controller.devices[0] - 1] : transparent;
+    VerticalLayout {
+        padding: 6px;
+        spacing: 4px;
+        HorizontalLayout {
+            alignment: center;
+            spacing: 2px;
+            height: 22px;
+            for device in controller.devices: DeviceSymbol {
+                device: device;
+            }
+        }
+        Text {
+            text: controller.name;
+            color: text-color;
+            font-size: 15px;
+            font-weight: highlighted ? 700 : 400;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+        Rectangle {
+            width: 110px;
+            height: 85px;
+            x: (parent.width - self.width) / 2;
+            background: #e0e0e0;
+            Image {
+                source: controller.picture;
+                visible: controller.has-picture;
+                width: parent.width;
+                height: parent.height;
+                image-fit: cover;
+            }
+        }
+        Text {
+            text: round(controller.speed);
+            color: text-color;
+            horizontal-alignment: center;
+        }
+        HorizontalLayout {
+            alignment: center;
+            SpeedScale {
+                speed: controller.speed;
+                max-speed: controller.max-speed;
+                highlighted: highlighted;
+                min-height: 120px;
+                vertical-stretch: 1;
+            }
+        }
+        Text {
+            text: "km/h";
+            color: text-color;
+            font-size: 11px;
+            horizontal-alignment: center;
+        }
+        Rectangle {
+            height: 30px;
+            Text {
+                text: controller.forward ? "◁ ▶" : "◀ ▷";
+                color: text-color;
+                font-size: 20px;
+            }
+            TouchArea {
+                clicked => {
+                    root.reverse();
+                }
+            }
+        }
+        VerticalLayout {
+            spacing: 4px;
+            alignment: start;
+            min-height: button-rows * 32px;
+            for button in controller.buttons: ButtonView {
+                button: button;
+                pressed(down) => {
+                    if (button.kind == ButtonKind.driving-sound) {
+                        if (down) {
+                            root.toggle-sound();
+                        }
+                    } else {
+                        root.trigger(button.action, down);
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component MainWindow inherits Window {
+    in property <[Controller]> controllers;
+    in property <bool> connected;
+    in property <bool> track-power;
+    in property <int> button-rows;
+    callback reverse(int);
+    callback toggle-sound(int);
+    callback trigger(int, int, bool);
+    callback toggle-power();
+    title: "Electrip";
+    preferred-width: 1024px;
+    preferred-height: 720px;
+    background: #fafafa;
+    VerticalLayout {
+        ScrollView {
+            vertical-stretch: 1;
+            HorizontalLayout {
+                padding: 6px;
+                spacing: 6px;
+                alignment: start;
+                for controller in controllers: ControllerView {
+                    controller: controller;
+                    button-rows: button-rows;
+                    reverse => {
+                        root.reverse(controller.id);
+                    }
+                    toggle-sound => {
+                        root.toggle-sound(controller.id);
+                    }
+                    trigger(action, pressed) => {
+                        root.trigger(controller.id, action, pressed);
+                    }
+                }
+            }
+        }
+        // Grey while the track power is on, red while it is off, like
+        // Electrip 1.
+        Rectangle {
+            height: 56px;
+            background: connected && !track-power ? #cd4444 : #e6e6e6;
+            Text {
+                text: connected ? @tr("Emergency stop") : @tr("Not connected");
+                color: !connected ? #aaaaaa : track-power ? #555555 : #690000;
+                font-size: 22px;
+                font-weight: 700;
+            }
+            TouchArea {
+                enabled: connected;
+                clicked => {
+                    root.toggle-power();
+                }
+            }
+        }
+    }
+}

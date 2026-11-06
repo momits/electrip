@@ -1,0 +1,22 @@
+[package]
+name = "electrip-ui"
+description = "User interface of Electrip 2"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "backend-winit", "renderer-software"] }
+
+[build-dependencies]
+slint-build = "1.18"
+
+[dev-dependencies]
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+tempfile = "3"
+electrip-core = { path = "../core" }
+
+[lints]
+workspace = true

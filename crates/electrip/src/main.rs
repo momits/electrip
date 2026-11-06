@@ -1,5 +1,5 @@
-//! Electrip 2. Without a user interface yet, the app runs headless and is
-//! operated through the control channel on localhost (N-08).
+//! Electrip 2. The window is a client of the control channel on localhost
+//! (N-08); without a display or with `--headless` the app runs without it.
 
 use electrip_audio::Speaker;
 use electrip_core::host::{Driver, Host};
@@ -12,11 +12,11 @@ use std::env;
 use std::net::{Ipv4Addr, TcpListener};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::thread;
 
 const DEFAULT_CONTROL_PORT: u16 = 4711;
 
-const USAGE: &str =
-    "usage: electrip [--control-port <port>] [--library <dir>] [-f|--file <configuration>]";
+const USAGE: &str = "usage: electrip [--headless] [--control-port <port>] [--library <dir>] [-f|--file <configuration>]";
 
 fn main() -> ExitCode {
     match run() {
@@ -33,6 +33,8 @@ struct Args {
     library: Option<PathBuf>,
     /// The configuration to open instead of the first one (B-24).
     file: Option<String>,
+    /// Without the window, e.g. in tests.
+    headless: bool,
 }
 
 fn run() -> Result<(), String> {
@@ -59,6 +61,7 @@ fn run() -> Result<(), String> {
             (Speaker::new(None), None)
         }
     };
+    let media = library.join("media");
     let mut host = Host::new(connect, Box::new(speaker), library).map_err(|e| e.to_string())?;
     if let Some(name) = args.file {
         let command = Command::OpenConfiguration { name };
@@ -71,12 +74,22 @@ fn run() -> Result<(), String> {
         "Electrip {} control channel on {address}",
         env!("CARGO_PKG_VERSION")
     );
-    // Without SDL the app still runs with the control channel.
-    let mut gamepads = Gamepads::open()
-        .inspect_err(|e| eprintln!("ERROR no gamepads: {e}"))
-        .ok();
-    let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
-    electrip_control::serve(listener, host, input).map_err(|e| e.to_string())
+    // The gamepads stay on the thread that opens them.
+    let server = thread::spawn(move || {
+        // Without SDL the app still runs with the control channel.
+        let mut gamepads = Gamepads::open()
+            .inspect_err(|e| eprintln!("ERROR no gamepads: {e}"))
+            .ok();
+        let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
+        electrip_control::serve(listener, host, input).map_err(|e| e.to_string())
+    });
+    if !args.headless {
+        match electrip_ui::run(address, media) {
+            Ok(()) => return Ok(()),
+            Err(e) => eprintln!("ERROR no window: {e}"),
+        }
+    }
+    server.join().map_err(|_| "the control channel failed")?
 }
 
 /// Reads the options; `--control-port 0` picks a free port.
@@ -85,8 +98,13 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
         control_port: DEFAULT_CONTROL_PORT,
         library: None,
         file: None,
+        headless: false,
     };
     while let Some(flag) = args.next() {
+        if flag == "--headless" {
+            parsed.headless = true;
+            continue;
+        }
         let value = args.next().ok_or(USAGE)?;
         match flag.as_str() {
             "--control-port" => {

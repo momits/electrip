@@ -23,6 +23,7 @@ const LAYERS: &[(&str, Option<&[&str]>)] = &[
     ("electrip-library", Some(&["electrip-core"])),
     ("electrip-sync", Some(&["electrip-core"])),
     ("electrip-control", None),
+    ("electrip-ui", None),
     ("electrip", None),
     ("electrip-sim-z21", Some(&[])),
     ("xtask", Some(&[])),
@@ -142,7 +143,7 @@ fn loc() -> Result {
     Ok(())
 }
 
-/// Counts non-blank, non-comment lines of `.rs` files, skipping test code
+/// Counts non-blank, non-comment lines of `.rs` and `.slint` files, skipping test code
 /// (`tests/` directories and `tests.rs` files, see AGENTS.md).
 fn count_lines(dir: &Path, total: &mut usize) -> Result {
     for entry in fs::read_dir(dir).map_err(|e| format!("{}: {e}", dir.display()))? {
@@ -152,7 +153,7 @@ fn count_lines(dir: &Path, total: &mut usize) -> Result {
             if name != "tests" {
                 count_lines(&path, total)?;
             }
-        } else if name.ends_with(".rs") && name != "tests.rs" {
+        } else if (name.ends_with(".rs") || name.ends_with(".slint")) && name != "tests.rs" {
             let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
             *total += text
                 .lines()

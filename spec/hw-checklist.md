@@ -101,3 +101,16 @@ Vorbereitung: wie B-10 verbunden, eine Dampflok mit Geräuschen (z. B. BR 81 aus
 - [ ] Anhalten: die Takte hören auf, das Leerlaufgeräusch läuft weiter; Fahrgeräusch aus: alles verstummt sofort.
 
 Ergebnis: _offen_
+
+## B-22 – Steuerungsansicht im Fenster (erstes Inkrement)
+
+Vorbereitung: `cargo run --release -- -f <konfiguration>` auf dem Mac, Gamepad angeschlossen.
+Im Container gibt es keine Anzeige; geprüft ist nur das ohne Anzeige gezeichnete Bild (`target/test-logs/screenshots/control_view.png`).
+Neu ist, dass die Gamepads nicht mehr im Haupt-Thread abgefragt werden (dort läuft jetzt das Fenster); ob SDL das auf macOS mitmacht, ist ungeprüft.
+
+- [ ] Das Fenster öffnet sich und zeigt alle Loks nebeneinander mit Name, Bild, Geschwindigkeit und Knöpfen.
+- [ ] Das Gamepad fährt eine Lok; ihr Regler ist in der Farbe des Gamepads hinterlegt, und die Geschwindigkeit läuft mit.
+- [ ] Richtungsknopf, Fahrgeräusch, Funktionsknöpfe (auch Taster: gedrückt halten) und Nothalt-Knopf wirken per Maus.
+- [ ] Fenster schließen beendet die App.
+
+Ergebnis: _offen_
