@@ -11,6 +11,14 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `tests/common/srcpd.rs` wiederholt `#![allow(clippy::unwrap_used)]`, das schon `common/mod.rs` setzt (Review B-13).
 - `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
 
+## 2026-11-06 – B-23: Zeit ab dem Befehl zählen (Claude)
+
+- CI des Aufräum-Branchs rot auf macOS: `input_devices.rs` (`holding_next_loco_scrolls_after_500_ms`) wechselte die Lok vor 560 ms.
+- Ursache: Der Steuerkanal führt einen Befehl zwischen zwei Abfragen aus, die nächste Abfrage zählt aber die ganze Zeit seit der vorigen, also auch die vor dem Befehl. Gehaltene Lokwechsel, Rampen und Sperren beim Anlassen begannen so bis zu einer Abfrage (auf langsamen Rechnern mehr) zu früh.
+- `crates/control`: Vor jedem Befehl über den Steuerkanal fährt der Host bis jetzt (`Shared::poll`), danach zählt die Zeit ab dem Befehl. Befehle der Gamepads kommen ohnehin mit der Abfrage.
+- Prüffall ist der bestehende Test, der jetzt nicht mehr vom Takt abhängt. `cargo xtask test` (zehnmal `input_devices`, `engine_start`, `driving`), `cargo xtask sim up` und `cargo xtask loc` grün.
+- Einfachheits-Review: ok (selbst, Diff von 20 Zeilen komplett neu gelesen).
+
 ## 2026-11-06 – B-01: srcpd-Loopback in der CI stabil (Claude)
 
 - CI auf `main` rot: Job „srcpd simulator“ (`station_scenarios`, `connection to the SRCP server failed: Resource temporarily unavailable`); derselbe Stand war auf dem Branch grün, lokal schlugen 2 von 15 Läufen fehl.
