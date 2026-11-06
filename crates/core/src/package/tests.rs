@@ -53,7 +53,16 @@ fn the_functions_of_electrip_1_get_actions() {
     let media = TempDir::new().unwrap();
     let package = read(&corpus("VT 98"), media.path()).unwrap();
     let names: Vec<_> = package.actions.iter().map(|a| a.name.as_str()).collect();
-    assert_eq!(names, ["Knopf 6", "Knopf 7", "ABV Aus"]);
+    let buttons = (0..=5).map(|nr| format!("Knopf {nr}"));
+    let expected: Vec<String> = ["Knopf 6", "Knopf 7", "ABV Aus"]
+        .map(String::from)
+        .into_iter()
+        .chain(buttons)
+        .collect();
+    assert_eq!(names, expected);
+    let sounds = package.loco.sound_functions();
+    let ids: Vec<_> = sounds.iter().map(|f| f.action).collect();
+    assert_eq!(ids, [4, 5, 6, 7, 8, 9]);
     let functions = package.loco.functions();
     let ids: Vec<_> = functions.iter().map(|f| f.action).collect();
     assert_eq!(ids, [1, 2, 3]);

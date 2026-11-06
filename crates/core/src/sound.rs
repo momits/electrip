@@ -73,7 +73,7 @@ pub struct Steam {
 }
 
 /// Allowed values of [`Steam`], as in Electrip 1 where it does not crash.
-const STROKES_RANGE: RangeInclusive<usize> = 1..=9999;
+pub(crate) const STROKES_RANGE: RangeInclusive<usize> = 1..=9999;
 const WHEEL_DIAMETER_RANGE: RangeInclusive<f64> = 0.1..=99.0;
 const START_DELAY_RANGE: RangeInclusive<f64> = 0.0..=9999.0;
 const MIN_FREQUENCY_RANGE: RangeInclusive<f64> = 0.1..=9999.0;

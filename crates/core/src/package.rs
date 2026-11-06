@@ -1,7 +1,7 @@
 //! Loco packages (B-20): a loco with its picture as a ZIP archive. Electrip 2
-//! writes `loco.json` with the loco and the actions its functions use, and
-//! the picture as `media/<name>.png`. A package of Electrip 1 holds
-//! `<name>.loco` and the files it names.
+//! writes `loco.json` with the loco and the actions its functions and sound
+//! functions use, and the picture as `media/<name>.png`. A package of
+//! Electrip 1 holds `<name>.loco` and the files it names.
 
 use crate::electrip1::{self, ImportError};
 use crate::function::Action;
@@ -33,10 +33,14 @@ struct Content {
     actions: Vec<Action>,
 }
 
-/// Writes the loco, the `actions` its functions use and its picture from
-/// the media directory `media` to a package at `path`.
+/// Writes the loco, the `actions` its functions and sound functions use
+/// and its picture from the media directory `media` to a package at `path`.
 pub fn write(path: &Path, loco: &Loco, actions: &[Action], media: &Path) -> io::Result<()> {
-    let used = |a: &&Action| loco.functions().iter().any(|f| f.action == a.id);
+    let used = |a: &&Action| {
+        let sounds = loco.sound_functions().iter().map(|f| f.action);
+        let mut ids = loco.functions().iter().map(|f| f.action).chain(sounds);
+        ids.any(|id| id == a.id)
+    };
     let content = Content {
         loco: loco.clone(),
         actions: actions.iter().filter(used).cloned().collect(),

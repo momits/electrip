@@ -30,11 +30,20 @@ fn protocol_name(protocol: Protocol) -> &'static str {
 fn the_corpus_is_imported_without_loss() {
     let reports: [(&str, &[&str]); 3] = [
         ("empty", &[]),
-        ("packages", &[]),
+        (
+            "packages",
+            &[
+                "button 0: functions left out, it is TogglePower",
+                "button 1: functions left out, it is Reverse",
+                "button 3: functions left out, it is Focus",
+                "button 4: functions left out, it is ToggleSound",
+            ],
+        ),
         (
             "settings",
             &[
                 "button 8: functions left out, it is Reverse",
+                "button 5: functions left out, it is Focus",
                 "button 6: functions left out, it is ToggleSound",
             ],
         ),
@@ -69,6 +78,7 @@ fn the_corpus_is_imported_without_loss() {
                 serde_json::from_value(old["speed_control_points"].clone()).unwrap();
             assert_eq!(loco.speed_curve().points(), points);
             assert_functions(loco, &import.actions, &old["functions"]);
+            assert_sound_functions(loco, &import.actions, &old["function_sounds"]);
             assert_sounds(loco, &old["engine"]);
         }
         assert_mapping(&import, &file["joystick"]);
@@ -176,15 +186,47 @@ fn assert_functions(loco: &Loco, actions: &[Action], old: &Value) {
             Mode::Switch
         };
         assert_eq!(function.mode, mode);
-        let action = actions.iter().find(|a| a.id == function.action).unwrap();
-        let button = old["button"].as_i64().unwrap();
-        let name = if button < 0 {
-            old["name"].as_str().unwrap().to_string()
-        } else {
-            format!("Knopf {button}")
-        };
-        assert_eq!(action.name, name);
+        assert_action(function.action, actions, old);
     }
+}
+
+/// Each sound function keeps name, file and mode, and its action names the
+/// button or, without one, the sound function.
+fn assert_sound_functions(loco: &Loco, actions: &[Action], old: &Value) {
+    let old = old.as_array().unwrap();
+    assert_eq!(loco.sound_functions().len(), old.len());
+    for (function, old) in loco.sound_functions().iter().zip(old) {
+        assert_eq!(function.name, old["name"]);
+        assert_eq!(
+            function.path.as_deref().and_then(Path::to_str),
+            old["file_path"].as_str()
+        );
+        let modes = [
+            SoundMode::Switch,
+            SoundMode::Push,
+            SoundMode::PushOnce,
+            SoundMode::Tap,
+        ];
+        assert_eq!(
+            function.mode,
+            modes[old["toggle_mode"].as_u64().unwrap() as usize]
+        );
+        assert!(!function.on);
+        assert_action(function.action, actions, old);
+    }
+}
+
+/// The action names the button of the old function or, without one, the
+/// function.
+fn assert_action(id: u32, actions: &[Action], old: &Value) {
+    let action = actions.iter().find(|a| a.id == id).unwrap();
+    let button = old["button"].as_i64().unwrap();
+    let name = if button < 0 {
+        old["name"].as_str().unwrap().to_string()
+    } else {
+        format!("Knopf {button}")
+    };
+    assert_eq!(action.name, name);
 }
 
 #[test]

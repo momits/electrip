@@ -11,11 +11,14 @@
 //! before, as Electrip 1 takes the speed at the stroke before.
 
 use crate::audio::{AudioSink, Channel, ChannelId};
-use crate::sound::{EngineSound, SoundModel};
+use crate::sound::{EngineSound, STROKES_RANGE, SoundModel};
 use std::time::Duration;
 
 /// The channels of a loco: 0 idle, 1 steam, then one per stroke.
 const FIRST_STROKE_CHANNEL: usize = 2;
+
+/// The number of channels a loco may need for its driving sound.
+pub(crate) const CHANNELS: usize = FIRST_STROKE_CHANNEL + *STROKES_RANGE.end();
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct SteamSound {

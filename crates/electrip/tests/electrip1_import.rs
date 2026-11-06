@@ -35,12 +35,12 @@ fn a_file_of_electrip_1_is_imported() {
         json!({"kind": "srcp", "host": "192.168.0.111", "port": 4304, "bus": 2, "power_on_start": false, "connected": false, "track_power": false})
     );
     assert_eq!(state["mappings"][0]["kind"], "Electrip 1");
-    // Two buttons are functions and built-in actions (Q-015). The pictures
-    // lie in the loco packages, not on this machine.
+    // Three buttons are functions and built-in actions (Q-015). The
+    // pictures lie in the loco packages, not on this machine.
     let report = state["import_report"].as_array().unwrap();
-    assert_eq!(report.len(), 4);
+    assert_eq!(report.len(), 5);
     assert_eq!(report[0], "button 8: functions left out, it is Reverse");
-    for line in &report[2..] {
+    for line in &report[3..] {
         assert!(line.as_str().unwrap().contains("cannot read the picture"));
     }
     assert_eq!(app.connect().state, client.state);

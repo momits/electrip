@@ -5,14 +5,16 @@
 //! Electrip 1 allowed DCC short addresses up to 10239. Such locos become DCC
 //! long and are named in the report (B-06).
 //!
-//! Each button number that a function uses becomes a logical action
-//! "Knopf <n>" (ADR 0009); a function without a button gets an action with
-//! its own name. The buttons and the drive axis of `joystick` become the
-//! mapping of the device type "Electrip 1" (Q-014); a button that is both a
-//! built-in action and a function stays the built-in action.
+//! Each button number that a function or sound function (B-16) uses
+//! becomes a logical action "Knopf <n>" (ADR 0009); a function without a
+//! button gets an action with its own name. The buttons and the drive axis
+//! of `joystick` become the mapping of the device type "Electrip 1"
+//! (Q-014); a button that is both a built-in action and a function stays
+//! the built-in action.
 
 use crate::decoder::{Decoder, Protocol};
 use crate::function::{Action, Function, Mode};
+use crate::function_sound::{SoundFunction, SoundMode};
 use crate::input::{Mapping, Target};
 use crate::loco::{DEFAULT_NAME, Loco, LocoError};
 use crate::session::Station;
@@ -111,6 +113,7 @@ struct OldLoco {
     speed_control_points: Vec<Point>,
     img_path: Option<PathBuf>,
     functions: Vec<OldFunction>,
+    function_sounds: Vec<OldFunctionSound>,
     engine: Option<OldEngine>,
 }
 
@@ -157,6 +160,16 @@ struct OldFunction {
     toggle_mode: u8,
 }
 
+/// A sound function; `button` is -1 without a button.
+#[derive(Default, Deserialize)]
+#[serde(default)]
+struct OldFunctionSound {
+    name: String,
+    file_path: Option<PathBuf>,
+    button: i32,
+    toggle_mode: u8,
+}
+
 /// Defaults of Electrip 1 (`legacy/src/electrip/config/json_model.py`).
 impl Default for OldLoco {
     fn default() -> Self {
@@ -172,6 +185,7 @@ impl Default for OldLoco {
             speed_control_points: Vec::new(),
             img_path: None,
             functions: Vec::new(),
+            function_sounds: Vec::new(),
             engine: None,
         }
     }
@@ -192,8 +206,10 @@ fn import(json: &str) -> Result<Import, ImportError> {
     let buttons: Vec<i32> = file
         .locos
         .iter()
-        .flat_map(|old| &old.functions)
-        .map(|f| f.button)
+        .flat_map(|old| {
+            let sounds = old.function_sounds.iter().map(|f| f.button);
+            old.functions.iter().map(|f| f.button).chain(sounds)
+        })
         .collect();
     let locos = file
         .locos
@@ -260,6 +276,11 @@ fn convert(
         .into_iter()
         .filter_map(|f| function(f, &old.name, actions, report))
         .collect();
+    *loco.sound_functions_mut() = old
+        .function_sounds
+        .into_iter()
+        .map(|f| sound_function(f, actions))
+        .collect();
     let model = old.engine.map(sound_model).transpose();
     loco.set_sound_model(model.map_err(loco_error)?);
     loco.set_name(old.name);
@@ -315,12 +336,8 @@ fn function(
         report.push(format!("{loco}: function F{} left out", old.nr));
         return None;
     }
-    let name = match old.button {
-        ..0 => old.name.clone(),
-        button => button_action(button),
-    };
     Some(Function {
-        action: action_id(actions, name),
+        action: action_id(actions, old.button, &old.name),
         number: old.nr,
         name: old.name,
         mode: if matches!(old.toggle_mode, 1 | 2) {
@@ -331,6 +348,23 @@ fn function(
         default_on: old.state,
         on: old.state,
     })
+}
+
+/// The modes are numbered as in `ToggleMode` of Electrip 1; unknown ones
+/// play like its default.
+fn sound_function(old: OldFunctionSound, actions: &mut Vec<Action>) -> SoundFunction {
+    SoundFunction {
+        action: action_id(actions, old.button, &old.name),
+        mode: match old.toggle_mode {
+            0 => SoundMode::Switch,
+            1 => SoundMode::Push,
+            2 => SoundMode::PushOnce,
+            _ => SoundMode::Tap,
+        },
+        path: old.file_path,
+        name: old.name,
+        ..SoundFunction::default()
+    }
 }
 
 /// Binds each button that has an action to it, then the built-in actions;
@@ -382,8 +416,13 @@ fn button_action(button: i32) -> String {
     format!("Knopf {button}")
 }
 
-/// The id of the action `name`; adds it if missing.
-fn action_id(actions: &mut Vec<Action>, name: String) -> u32 {
+/// The id of the action of the button, or without one of the function
+/// `function`; adds it if missing.
+fn action_id(actions: &mut Vec<Action>, button: i32, function: &str) -> u32 {
+    let name = match button {
+        ..0 => function.to_string(),
+        button => button_action(button),
+    };
     if let Some(action) = actions.iter().find(|a| a.name == name) {
         return action.id;
     }

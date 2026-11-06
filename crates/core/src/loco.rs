@@ -5,6 +5,7 @@
 
 use crate::decoder::{Decoder, DecoderError, Protocol};
 use crate::function::Function;
+use crate::function_sound::SoundFunction;
 use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel, Steam};
 use crate::speed_curve::SpeedCurve;
 use serde::{Deserialize, Serialize};
@@ -102,6 +103,9 @@ pub struct Loco {
     volume: f64,
     /// In the order the user sorted them (B-07).
     functions: Vec<Function>,
+    /// In the order the user sorted them (B-16).
+    #[serde(default)]
+    sound_functions: Vec<SoundFunction>,
     /// Name of the picture in the media directory (B-05).
     picture: Option<String>,
     /// `None` is “no sound”.
@@ -123,6 +127,7 @@ impl Loco {
             brake_duration: 8.5,
             volume: 0.8,
             functions: Vec::new(),
+            sound_functions: Vec::new(),
             picture: None,
             sound_model: None,
         })
@@ -186,6 +191,14 @@ impl Loco {
 
     pub fn functions_mut(&mut self) -> &mut Vec<Function> {
         &mut self.functions
+    }
+
+    pub fn sound_functions(&self) -> &[SoundFunction] {
+        &self.sound_functions
+    }
+
+    pub fn sound_functions_mut(&mut self) -> &mut Vec<SoundFunction> {
+        &mut self.sound_functions
     }
 
     pub fn picture(&self) -> Option<&str> {

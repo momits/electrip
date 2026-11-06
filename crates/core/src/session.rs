@@ -9,6 +9,7 @@ use crate::drive::{self, DEAD_ZONE, Motion};
 use crate::driving_sound::DrivingSound;
 use crate::electrip1::ImportError;
 use crate::function::{Action, Function};
+use crate::function_sound::SoundFunction;
 use crate::input::{Device, MAX_DEVICES, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
@@ -190,8 +191,24 @@ pub enum Command {
         index: usize,
         position: usize,
     },
+    /// Appends a sound function (B-16).
+    AddSoundFunction {
+        loco: u32,
+        function: SoundFunction,
+    },
+    RemoveSoundFunction {
+        loco: u32,
+        index: usize,
+    },
+    /// Moves a sound function to `position` (from 0) in the list of the
+    /// loco.
+    MoveSoundFunction {
+        loco: u32,
+        index: usize,
+        position: usize,
+    },
     /// Presses (`pressed`) or releases an action for a loco; it switches
-    /// the functions of the loco mapped to it.
+    /// the functions and sound functions of the loco mapped to it.
     TriggerAction {
         loco: u32,
         action: u32,
@@ -461,8 +478,13 @@ impl Session {
     /// state, the station disconnected.
     pub fn config(&self) -> Config {
         let mut locos: Vec<Loco> = self.locos.iter().map(|e| e.loco.clone()).collect();
-        for function in locos.iter_mut().flat_map(|l| l.functions_mut()) {
-            function.on = function.default_on;
+        for loco in &mut locos {
+            for function in loco.functions_mut() {
+                function.on = function.default_on;
+            }
+            for function in loco.sound_functions_mut() {
+                *function = function.off();
+            }
         }
         let station = Station {
             connected: false,
@@ -605,17 +627,25 @@ impl Session {
             Command::RenameAction { action, name } => self.action(action)?.name = name,
             Command::RemoveAction { action } => self.remove_action(action)?,
             Command::AddFunction { loco, function } => self.add_function(loco, function)?,
-            Command::RemoveFunction { loco, index } => self.remove_function(loco, index)?,
+            Command::RemoveFunction { loco, index } => {
+                remove(self.loco(loco)?.functions_mut(), index)?
+            }
             Command::MoveFunction {
                 loco,
                 index,
                 position,
-            } => self.move_function(loco, index, position)?,
-            Command::TriggerAction {
+            } => move_item(self.loco(loco)?.functions_mut(), index, position)?,
+            Command::AddSoundFunction { loco, function } => {
+                self.add_sound_function(loco, function)?
+            }
+            Command::RemoveSoundFunction { loco, index } => {
+                remove(self.loco(loco)?.sound_functions_mut(), index)?
+            }
+            Command::MoveSoundFunction {
                 loco,
-                action,
-                pressed,
-            } => self.trigger_action(loco, action, pressed)?,
+                index,
+                position,
+            } => move_item(self.loco(loco)?.sound_functions_mut(), index, position)?,
             Command::SetServer {
                 kind,
                 host,
@@ -635,6 +665,7 @@ impl Session {
             | Command::TogglePower
             | Command::EmergencyStop { .. }
             | Command::ToggleSound { .. }
+            | Command::TriggerAction { .. }
             | Command::SetPicture { .. }
             | Command::Input { .. }
             | Command::NewConfiguration { .. }
@@ -688,6 +719,9 @@ impl Session {
             let (model, speed) = (entry.loco.sound_model(), entry.motion.speed());
             entry.sound.play(model, speed, sink, elapsed);
             changed |= (entry.motion, entry.sound.state()) != before;
+            for function in entry.loco.sound_functions_mut() {
+                changed |= function.play(sink, elapsed);
+            }
         }
         changed
     }
@@ -721,10 +755,8 @@ impl Session {
     }
 
     fn move_loco(&mut self, id: u32, position: usize) -> Result<(), CommandError> {
-        check_index(&self.locos, position)?;
-        let entry = self.locos.remove(self.index(id)?);
-        self.locos.insert(position, entry);
-        Ok(())
+        let index = self.index(id)?;
+        move_item(&mut self.locos, index, position)
     }
 
     fn index(&self, id: u32) -> Result<usize, CommandError> {
@@ -742,6 +774,21 @@ impl Session {
     pub(crate) fn loco(&mut self, id: u32) -> Result<&mut Loco, CommandError> {
         Ok(&mut self.entry(id)?.loco)
     }
+}
+
+fn remove<T>(list: &mut Vec<T>, index: usize) -> Result<(), CommandError> {
+    check_index(list, index)?;
+    list.remove(index);
+    Ok(())
+}
+
+/// Moves the item at `index` to `position`.
+fn move_item<T>(list: &mut Vec<T>, index: usize, position: usize) -> Result<(), CommandError> {
+    check_index(list, index)?;
+    check_index(list, position)?;
+    let item = list.remove(index);
+    list.insert(position, item);
+    Ok(())
 }
 
 /// An error unless `index` points into `list`.
