@@ -7,7 +7,20 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
 - `spec/steuerkanal.md` beschreibt die Befehle des Sound-Modells noch nicht: `set_engine`, `insert_segment`, `remove_segment`, `move_segment_border`, `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `set_steam` und das Feld `sound_model` im Zustand (gefunden bei B-12).
+- Die Schleife „warten, bis ein Feld der Lok einen Wert hat“ steht noch in `driving.rs` (`time_to`), `engine_start.rs`, `track_power.rs` und `input_devices.rs`; dafür gibt es jetzt `Client::wait_for_loco` (Review B-13).
+- `tests/common/srcpd.rs` wiederholt `#![allow(clippy::unwrap_used)]`, das schon `common/mod.rs` setzt (Review B-13).
 - `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
+
+## 2026-11-06 – B-13: Anfahren synchron zum Sound verifiziert (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Neuer Prüffall `crates/electrip/tests/sound_sync.rs` (`srcpd-loopback`, läuft mit `cargo xtask sim up`, auch in der CI): Die App ohne Soundkarte fährt einen Diesel mit WAV-Dateien bekannter Länge an srcpd. Nach dem Anlassen kommt die erste Fahrstufe > 0 erst nach zwei Leerlaufgeräuschen (dem spielenden und dem wartenden, 0,6 s) bei srcpd an, Fahrstufe 0 erst 0,5 bis 1 s nach dem Stillstand in der App (Lastgeräusch spielt, das nächste wartet). Ohne `synchronize` kommt die Fahrstufe nach 0,05 s; der Test schlägt dann fehl.
+- Den Teil `audio-log` decken `driving_sound/tests.rs` und `golden_diesel_drive.rs` ab (B-13 aus 2026-11-05).
+- Die WAV- und Diesel-Helfer aus `engine_start.rs` liegen jetzt in `tests/common/diesel.rs`.
+- `cargo xtask test`, `cargo xtask sim up`, `cargo xtask loc` (4579 Zeilen, unverändert) und `cargo xtask parity` grün.
+- **B-13** `verified`. Phase 2 ist damit ganz verifiziert. `hw: true` – Prüfpunkt für Mo in `spec/hw-checklist.md`.
+- Einfachheits-Review: refactored (Sub-Agent). `seconds_until` nutzt `expect_event`, das Warten auf ein Feld der Lok ist `Client::wait_for_loco`, ein doppeltes `allow` entfernt. Ältere Kopien unter „Aufräumkandidaten“.
+- **Nächster Schritt:** Phase 3 beginnt erst, wenn Mo Tor C abhakt.
 
 ## 2026-11-06 – B-12: Anlassen und Abstellen verifiziert (Claude)
 
