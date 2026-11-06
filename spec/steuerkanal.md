@@ -44,6 +44,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "functions": [{"action": 1, "number": 0, "name": "Licht", "mode": "switch", "default_on": false, "on": false}],
     "sound_functions": [],
     "event_sounds": [],
+    "sound_model": null,
     "picture": null,
     "speed": 0.0,
     "forward": true
@@ -67,6 +68,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `sound_functions`: Geräusch-Funktionen der Lok in der vom Nutzer sortierten Reihenfolge (B-16): logische Aktion `action`, `name`, Sounddatei `path` auf dem Host (oder `null`), `mode` (`switch` Umschalter: Loop bis zur zweiten Auslösung; `push_once` Taster einmal: höchstens einmal, Abbruch beim Loslassen; `push` Taster wiederholt: Loop, solange gehalten; `tap` Anschalter: bis Dateiende, Auslösungen dazwischen tun nichts) und `on` (ob sie gerade an ist; zu Beginn aus, ein Anschalter geht am Dateiende aus).
 - `event_sounds`: Geräusch-Ereignisse der Lok (B-17): logische Aktion `action` (jedes Drücken schaltet aktiv/inaktiv), `name`, Sounddatei `path` auf dem Host (oder `null`), `default_active` (aktiv zu Beginn, Standard `true`; wird gespeichert), `active` (ob es gerade aktiv ist), `forward` (`true` nur vorwärts, `false` nur rückwärts, `null` beliebig), `min_speed`/`max_speed` in km/h, `min_accel`/`max_accel` in km/h pro Sekunde (`null` = keine Grenze), `fade_in`/`fade_out` in Sekunden und `play_to_end` (einmal gestartet bis zum Ende, ohne Ausblenden).
   Es spielt nur, wenn die Lok ein Sound-Modell hat, und läuft im Loop, solange alle Bedingungen gelten; gelten sie nicht mehr, blendet es aus. Der Host prüft bei jeder Abfrage (50 ms); die Beschleunigung ist die Änderung der Geschwindigkeit seit der letzten Abfrage.
+- `sound_model`: Sound-Modell der Lok (B-11, B-14, B-15) oder `null` („Kein Geräusch“). `engine`: `diesel` (Verbrennungsmotor, auch für E-Loks) oder `steam`; `sounds`: Sounddateien auf dem Host je Motorgeräusch `start`, `idle`, `quit` (Diesel) bzw. `idle`, `cylinder` (Dampf); `segments`: Geräuschsegmente nach Geschwindigkeit sortiert, je mit `start` (km/h, ab hier gilt das Segment bis zum nächsten, das letzte bis Vmax; das erste beginnt bei 0), `sounds` je `load`, `idle`, `accel`, `decel` (Diesel) und `strokes` (Dampf: Sounddatei je Taktnummer ab 0); `steam`: `strokes` (Takte je Radumdrehung, 1–9999, Standard 4), `wheel_diameter` (m, 0,1–99, Standard 1,2), `start_delay` (s vom Zylinderdampf bis zum ersten Takt, 0–9999, Standard 2), `min_frequency` (Takte je Sekunde mindestens, 0,1–9999, Standard 0,2). Ändert sich Vmax, wandern die Grenzen der Segmente mit.
 - `picture`: Name des Lokbilds (B-05) oder `null`. Die Datei `media/<picture>.png` in der Bibliothek ist der gespeicherte Ausschnitt in 440×340 px; der Name ist ihr SHA-256, so liegt jedes Bild nur einmal dort.
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
@@ -110,6 +112,14 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
 | `set_axis` | `loco`, `deflection` (Auslenkung der Fahrachse von -1 voll zurück bis 1 voll vor; bis 0,06 wird sie ignoriert wie in Electrip 1) | B-10 |
 | `reverse` | `loco` (Richtungswender: Geschwindigkeit 0, dann andere Richtung) | B-10 |
+| `set_engine` | `loco`, `engine` (`diesel`, `steam` oder `null`), `confirmed`; setzt ein neues Sound-Modell mit einem Segment bzw. entfernt es. Ein vorhandenes Sound-Modell wird nur mit `confirmed: true` ersetzt, sonst Fehler; dieselbe Motorart tut nichts | B-15 |
+| `insert_segment` | `loco`, `segment` (Nummer ab 0); teilt das Segment in der Mitte wie Electrip 1, das neue ist die rechte Hälfte | B-15 |
+| `remove_segment` | `loco`, `segment`, `confirmed`; der linke Nachbar (beim ersten der rechte) übernimmt seine Geschwindigkeiten. Das einzige Segment entfernt das ganze Sound-Modell und braucht `confirmed: true` | B-15 |
+| `move_segment_border` | `loco`, `segment`, `speed` (km/h, wo das Segment beginnt); nur zwischen den Nachbargrenzen, sonst und beim ersten Segment ignoriert wie bei der Kennlinie | B-15 |
+| `set_engine_sound` | `loco`, `sound` (`start`, `idle`, `quit`, `cylinder`), `path` (Sounddatei auf dem Host oder `null` zum Entfernen) | B-11, B-12, B-14 |
+| `set_segment_sound` | `loco`, `segment`, `sound` (`load`, `idle`, `accel`, `decel`), `path` (oder `null`) | B-11, B-15 |
+| `set_stroke_sound` | `loco`, `segment`, `stroke` (Taktnummer ab 0, kleiner als `steam.strokes`), `path` (oder `null`) | B-14 |
+| `set_steam` | `loco`, `steam` (Objekt wie im Zustand, alle vier Felder); ein Wert außerhalb seines Bereichs ist ein Fehler und ändert nichts | B-14 |
 | `toggle_sound` | `loco` (schaltet das Fahrgeräusch ein oder aus; ohne Sound-Modell tut es nichts) | B-02, B-11, B-12 |
 | `add_action` | `name` | N-07 |
 | `rename_action` | `action`, `name` | N-07 |
