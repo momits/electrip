@@ -11,6 +11,15 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `tests/common/srcpd.rs` wiederholt `#![allow(clippy::unwrap_used)]`, das schon `common/mod.rs` setzt (Review B-13).
 - `package.rs` (`write`) und `session/actions.rs` (`remove_action`) zählen die Aktionen von Funktionen, Geräusch-Funktionen und Geräusch-Ereignissen je einzeln auf; eine Methode `Loco::action_ids()` könnte das bündeln (Review B-17).
 
+## 2026-11-06 – B-01: srcpd-Loopback in der CI stabil (Claude)
+
+- CI auf `main` rot: Job „srcpd simulator“ (`station_scenarios`, `connection to the SRCP server failed: Resource temporarily unavailable`); derselbe Stand war auf dem Branch grün, lokal schlugen 2 von 15 Läufen fehl.
+- Ursache: srcpd lauscht mit Backlog 1 (`ss -ltn`). Verbinden sich mehrere Tests gleichzeitig, verwirft Linux das letzte ACK; der Client hält sich für verbunden, srcpd nimmt die Verbindung aber erst nach Wiederholungen des SYN-ACK an, und die Begrüßung kommt nach dem Timeout von 3 s. Electrip selbst öffnet seine zwei Sitzungen nacheinander; betroffen ist nur der Testlauf.
+- `cargo xtask sim up` lässt die srcpd-Loopback-Tests jetzt nacheinander laufen (`--test-threads=1`, etwa 2 s länger).
+- Dabei aufgefallen: `actions.rs` (`srcpd_gets_the_functions`) schlug nacheinander immer fehl. `expect_event` verwirft die übrigen Ereignisse; kamen die Funktionen beider Loks in derselben Abfrage an, fehlte die zweite. Jetzt erst Lok 1 auslösen und prüfen, dann Lok 2.
+- `cargo xtask sim up` zehnmal hintereinander grün, `cargo xtask test` grün.
+- Einfachheits-Review: ok (selbst, Diff von 15 Zeilen komplett neu gelesen).
+
 ## 2026-11-06 – B-13: Anfahren synchron zum Sound verifiziert (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).

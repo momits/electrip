@@ -96,8 +96,18 @@ fn wait_for_srcpd() -> Result {
 }
 
 /// The scenario tests of the srcpd driver and of the app over the control
-/// channel (srcpd-loopback): all integration tests marked `#[ignore]`.
+/// channel (srcpd-loopback): all integration tests marked `#[ignore]`. They
+/// run one at a time: srcpd listens with a backlog of 1, so with parallel
+/// connects some greetings come only after the 3 s timeout of the driver.
 fn loopback_tests() -> Result {
-    let args = ["test", "-p", "electrip", "--tests", "--", "--ignored"];
+    let args = [
+        "test",
+        "-p",
+        "electrip",
+        "--tests",
+        "--",
+        "--ignored",
+        "--test-threads=1",
+    ];
     crate::run_logged("srcpd-loopback", &args)
 }

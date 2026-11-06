@@ -84,9 +84,10 @@ fn srcpd_gets_the_functions() {
     let mut observer = observer();
     // The host sends a loco only after a change it sees in a poll (50 ms).
     std::thread::sleep(Duration::from_millis(200));
-    trigger(&mut client, 1, true);
-    trigger(&mut client, 2, true);
     let has_function = |e: &StationEvent, address, number| matches!(e, StationEvent::Loco { address: a, state } if *a == address && state.function(number));
+    // One loco after the other: `expect_event` drops the other events.
+    trigger(&mut client, 1, true);
     expect_event(&mut observer, |e| has_function(e, 43, 0));
+    trigger(&mut client, 2, true);
     expect_event(&mut observer, |e| has_function(e, 44, 4));
 }
