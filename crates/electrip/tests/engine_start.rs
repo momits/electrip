@@ -7,7 +7,7 @@
 
 mod common;
 
-use common::diesel::{add_diesel, toggle_sound};
+use common::diesel::{add_diesel, set_segment_sounds, toggle_sound};
 use common::{App, Client, set_axis};
 use std::time::Instant;
 
@@ -33,6 +33,8 @@ fn the_speed_is_locked_while_the_engine_starts_and_quits() {
     let dir = tempfile::TempDir::new().unwrap();
     let mut client = app.connect();
     add_diesel(&mut client, dir.path());
+    // Without segment sounds the engine falls silent while driving.
+    set_segment_sounds(&mut client, dir.path(), 0.1);
 
     let start = Instant::now();
     toggle_sound(&mut client);
