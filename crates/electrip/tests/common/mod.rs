@@ -126,6 +126,13 @@ impl Client {
         self.state = message["state"].clone();
     }
 
+    /// Waits until `field` of loco 1 is `value`.
+    pub fn wait_for_loco(&mut self, field: &str, value: Value) {
+        while self.state["locos"][0][field] != value {
+            self.expect_state();
+        }
+    }
+
     pub fn next(&mut self) -> Value {
         let mut line = String::new();
         self.reader.read_line(&mut line).unwrap();

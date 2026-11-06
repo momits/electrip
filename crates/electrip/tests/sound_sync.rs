@@ -10,11 +10,11 @@ mod common;
 
 use common::diesel::{add_diesel, set_segment_sounds, toggle_sound};
 use common::srcpd::{connect_to_srcpd, observer};
-use common::{Client, set_axis};
+use common::{expect_event, set_axis};
 use electrip_core::station::{CommandStation, StationEvent};
 use electrip_station_srcp::SrcpStation;
 use serde_json::json;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 const ADDRESS: u16 = 43;
 
@@ -31,17 +31,11 @@ fn steps(observer: &mut SrcpStation) -> Vec<u8> {
 
 /// Seconds since `start` until srcpd reports a step that `matches`.
 fn seconds_until(observer: &mut SrcpStation, start: Instant, matches: fn(u8) -> bool) -> f64 {
-    while !steps(observer).into_iter().any(matches) {
-        assert!(start.elapsed() < Duration::from_secs(5), "no such step");
-        std::thread::sleep(Duration::from_millis(5));
-    }
+    expect_event(observer, |event| {
+        matches!(event, StationEvent::Loco { address, state }
+            if *address == ADDRESS && matches(state.step))
+    });
     start.elapsed().as_secs_f64()
-}
-
-fn wait_for(client: &mut Client, field: &str, value: serde_json::Value) {
-    while client.state["locos"][0][field] != value {
-        client.expect_state();
-    }
 }
 
 #[test]
@@ -57,7 +51,7 @@ fn srcpd_follows_the_driving_sound() {
         .unwrap();
     let mut observer = observer();
     toggle_sound(&mut client);
-    wait_for(&mut client, "sound", json!("on"));
+    client.wait_for_loco("sound", json!("on"));
 
     // The idle sound plays and the next one waits: 2 · 0.3 s.
     let start = Instant::now();
@@ -68,7 +62,7 @@ fn srcpd_follows_the_driving_sound() {
 
     // A load sound plays and the next one waits: 0.5 to 1 s.
     set_axis(&mut client, -1.0);
-    wait_for(&mut client, "speed", json!(0.0));
+    client.wait_for_loco("speed", json!(0.0));
     let start = Instant::now();
     assert!(!steps(&mut observer).contains(&0), "stopped too early");
     let seconds = seconds_until(&mut observer, start, |step| step == 0);
