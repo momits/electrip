@@ -43,11 +43,22 @@ fn a_written_config_reads_back_equal() {
             power_on_start: false,
             ..Station::default()
         },
+        view: View {
+            auto_focus: false,
+            only_active: true,
+        },
     };
     let dir = TempDir::new().unwrap();
     let path = path(dir.path(), "Anlage");
     write(&path, &config).unwrap();
     assert_eq!(read(&path).unwrap(), config);
+}
+
+#[test]
+fn auto_focus_is_on_by_default() {
+    let config: Config = serde_json::from_str("{}").unwrap();
+    assert!(config.view.auto_focus);
+    assert!(!config.view.only_active);
 }
 
 #[test]

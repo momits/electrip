@@ -13,6 +13,7 @@
 //! (Q-014); a button that is both a built-in action and a function stays
 //! the built-in action.
 
+use crate::config::View;
 use crate::decoder::{Decoder, Protocol};
 use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function, Mode};
@@ -39,6 +40,7 @@ pub struct Import {
     pub actions: Vec<Action>,
     pub station: Station,
     pub mapping: Mapping,
+    pub view: View,
     /// The image file of each loco, if it has one (B-05).
     pub pictures: Vec<Option<PathBuf>>,
     /// Changes made to fit the file to Electrip 2, one line each.
@@ -86,6 +88,7 @@ struct Joystick {
     axis_threshold: f64,
     focus_button: i32,
     sound_button: i32,
+    use_auto_focus: bool,
 }
 
 impl Default for Joystick {
@@ -97,6 +100,7 @@ impl Default for Joystick {
             axis_threshold: 0.06,
             focus_button: 3,
             sound_button: 4,
+            use_auto_focus: true,
         }
     }
 }
@@ -266,6 +270,10 @@ fn import(json: &str) -> Result<Import, ImportError> {
         actions,
         station: file.server,
         mapping,
+        view: View {
+            auto_focus: file.joystick.use_auto_focus,
+            ..View::default()
+        },
         pictures,
         report,
     })

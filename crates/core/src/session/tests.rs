@@ -142,6 +142,7 @@ fn the_state_is_written_as_json() {
             ]}],
             "devices": [{"id": 7, "kind": "Xbox", "loco": 1, "color": 1, "focus": false}],
             "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
+            "view": {"auto_focus": true, "only_active": false},
             "import_report": [],
             "configuration": "",
             "configurations": []

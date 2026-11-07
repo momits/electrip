@@ -86,6 +86,7 @@ impl Host {
             actions: import.actions,
             mappings: vec![import.mapping],
             station: import.station,
+            view: import.view,
         };
         config::write(&new_path, &config)?;
         self.load(name.into(), config, import.report)
