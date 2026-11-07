@@ -97,7 +97,8 @@ fn only_active_shows_controlled_or_moving_locos() {
     assert_eq!(ids, [2, 3]);
 }
 
-/// The focus with the loco of the device of color 1 shown on loco 1.
+/// The loco to bring into view for `devices`, when the window shows the
+/// device of color 1 on loco 1.
 fn focus_after(devices: Value, auto_focus: bool) -> Option<i32> {
     let locos = vec![loco(1, "A"), loco(2, "B"), loco(3, "C")];
     let shown = state(locos.clone(), json!([device(1, 1)]));
