@@ -53,8 +53,9 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   }],
   "actions": [{"id": 1, "name": "Licht"}],
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
-  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "color": 1}],
+  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "color": 1, "focus": false}],
   "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
+  "view": {"auto_focus": true, "only_active": false},
   "import_report": [],
   "configuration": "Electrip",
   "configurations": ["Electrip"]
@@ -75,10 +76,11 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
   `control` heißt wie in SDL, z. B. `a`, `lefty`, `dpleft`; Joysticks ohne Gamepad-Belegung z. B. `button0`, `axis1`, `hat0_left`.
-  `target` ist ein Objekt mit `type`: `drive` (Fahrachse, `dead_zone` Totzone, Standard 0,06), `reverse`, `toggle_power` (Nothalt der Anlage), `emergency_stop` (Lok-Nothalt), `previous_loco`, `next_loco` (Lokwechsel zur nächsten Lok in der Liste, die kein anderes Gerät steuert, wie Electrip 1) oder `action` mit `action` (logische Aktion).
+  `target` ist ein Objekt mit `type`: `drive` (Fahrachse, `dead_zone` Totzone, Standard 0,06), `reverse`, `toggle_power` (Nothalt der Anlage), `emergency_stop` (Lok-Nothalt), `previous_loco`, `next_loco` (Lokwechsel zur nächsten Lok in der Liste, die kein anderes Gerät steuert, wie Electrip 1), `focus` (Lok des Geräts zeigen, solange gehalten), `toggle_sound` (Fahrgeräusch an/aus) oder `action` mit `action` (logische Aktion).
   Ein neuer Gerätetyp bekommt das Standard-Mapping nach Electrip 1: `lefty` fährt, `a` Nothalt der Anlage, `b` Richtungswender, `dpleft`/`dpright` Lokwechsel.
 - `devices`: angeschlossene Eingabegeräte, auch virtuelle über den Steuerkanal; `loco` ist die Lok, die das Gerät steuert (`null`, wenn keine frei ist).
   Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
+  `focus`: ob das Gerät gerade „Fokus“ hält (B-22).
   `color` ist die Farbe des Geräts (1 bis 12, wie die zwölf Gamepad-Symbole von Electrip 1); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
@@ -87,6 +89,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
 - `power_on_start`: ob `connect` den Gleisstrom einschaltet (Vorgabe an, B-23); `track_power`: Gleisstrom, wie ihn die Zentrale zuletzt gemeldet hat, ohne Verbindung `false`.
   Schaltet eine andere Instanz an derselben Zentrale den Gleisstrom, folgt `track_power` (B-23).
+- `view`: Optionen der Steuerungsansicht (B-22), gespeichert mit der Konfiguration. `auto_focus` (Standard an; beim Import aus Electrip 1 `use_auto_focus`): Wechselt ein Gerät die Lok, holt das Fenster die neue Lok in den sichtbaren Bereich. `only_active`: Das Fenster zeigt nur Loks, die ein Gerät steuert oder die fahren.
+  Hält ein Gerät „Fokus“ (`focus` in `devices`), zeigt das Fenster dessen Lok.
 - `configuration`: Name der geöffneten Konfiguration; `configurations`: alle Konfigurationen der Bibliothek, sortiert (B-21).
   Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
@@ -144,6 +148,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `connect` | – (verbindet mit dem eingestellten Server; ein Fehler nennt die Ursache) | B-01 |
 | `disconnect` | – | B-01 |
 | `set_power_on_start` | `on` | B-23 |
+| `set_view` | `view` (Objekt wie im Zustand, beide Felder) | B-22 |
 | `toggle_power` | – (Nothalt der Anlage: Gleisstrom aus, beim nächsten Mal wieder an; nur mit Verbindung) | B-23 |
 | `emergency_stop` | `loco` (Lok-Nothalt: nur diese Lok hält sofort, die Achse wird losgelassen; der Gleisstrom bleibt an) | B-23 |
 | `new_configuration` | `name` (legt eine leere Konfiguration an und öffnet sie; nur ohne Verbindung) | B-21 |

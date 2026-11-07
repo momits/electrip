@@ -102,7 +102,7 @@ Vorbereitung: wie B-10 verbunden, eine Dampflok mit Geräuschen (z. B. BR 81 aus
 
 Ergebnis: _offen_
 
-## B-22 – Steuerungsansicht im Fenster (erstes Inkrement)
+## B-22 – Steuerungsansicht im Fenster
 
 Vorbereitung: `cargo run --release -- -f <konfiguration>` auf dem Mac, Gamepad angeschlossen.
 Im Container gibt es keine Anzeige; geprüft ist nur das ohne Anzeige gezeichnete Bild (`target/test-logs/screenshots/control_view.png`).
@@ -112,5 +112,7 @@ Neu ist, dass die Gamepads nicht mehr im Haupt-Thread abgefragt werden (dort lä
 - [ ] Das Gamepad fährt eine Lok; ihr Regler ist in der Farbe des Gamepads hinterlegt, und die Geschwindigkeit läuft mit.
 - [ ] Richtungsknopf, Fahrgeräusch, Funktionsknöpfe (auch Taster: gedrückt halten) und Nothalt-Knopf wirken per Maus.
 - [ ] Fenster schließen beendet die App.
-
-Ergebnis: _offen_
+- [ ] Bei mehr Loks, als nebeneinander passen, werden die Regler schmaler; erst wenn auch das nicht reicht, erscheint die Bildlaufleiste.
+- [ ] Mit „Auto focus“ (Standard an) scrollt das Fenster beim Lokwechsel per Steuerkreuz zur neuen Lok; ohne bleibt es stehen.
+- [ ] Der Fokus-Knopf (in Konfigurationen aus Electrip 1 der `focus_button`) holt die Lok des Gamepads in den sichtbaren Bereich.
+- [ ] „Only active locos“ zeigt nur gesteuerte und fahrende Loks; beide Häkchen sind nach einem Neustart noch gesetzt.

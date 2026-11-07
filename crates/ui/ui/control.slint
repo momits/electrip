@@ -1,7 +1,7 @@
 // The control view (B-22): one controller per loco side by side, the
 // emergency stop below. Like Electrip 1 (control_ui.py, control.css).
 
-import { ScrollView } from "std-widgets.slint";
+import { CheckBox, ScrollView } from "std-widgets.slint";
 
 // What a button of a controller switches; the groups have their own colors
 // (B-19).
@@ -106,12 +106,13 @@ component ControllerView inherits Rectangle {
     in property <Controller> controller;
     // Buttons of the loco with the most, so the speed scales line up.
     in property <int> button-rows;
+    // Narrower, with a smaller picture, when not all fit side by side.
+    in property <bool> compact;
     callback reverse();
     callback toggle-sound();
     callback trigger(int, bool);
     property <bool> highlighted: controller.devices.length > 0;
     property <color> text-color: highlighted ? white : #383436;
-    width: 130px;
     border-radius: 5px;
     background: highlighted ? DeviceColors.colors[controller.devices[0] - 1] : transparent;
     VerticalLayout {
@@ -128,14 +129,14 @@ component ControllerView inherits Rectangle {
         Text {
             text: controller.name;
             color: text-color;
-            font-size: 15px;
+            font-size: compact ? 13px : 15px;
             font-weight: highlighted ? 700 : 400;
             horizontal-alignment: center;
             overflow: elide;
         }
         Rectangle {
-            width: 110px;
-            height: 85px;
+            width: compact ? 66px : 110px;
+            height: compact ? 51px : 85px;
             x: (parent.width - self.width) / 2;
             background: #e0e0e0;
             Image {
@@ -204,24 +205,45 @@ export component MainWindow inherits Window {
     in property <bool> connected;
     in property <bool> track-power;
     in property <int> button-rows;
+    // The options of the view.
+    in-out property <bool> auto-focus;
+    in-out property <bool> only-active;
     callback reverse(int);
     callback toggle-sound(int);
     callback trigger(int, int, bool);
     callback toggle-power();
+    callback set-view(bool, bool);
+    property <length> spacing: 6px;
+    // Compact before the view has to scroll.
+    property <bool> compact: controllers.length * (130px + spacing) + spacing > root.width;
+    property <length> controller-width: compact ? 86px : 130px;
+
+    // Scrolls as little as needed to show the controller at `index` with
+    // the spacing on both sides, like Electrip 1.
+    public function bring-into-view(index: int) {
+        if (index * (controller-width + spacing) < -scroll.content-x) {
+            scroll.content-x = -index * (controller-width + spacing);
+        } else if ((index + 1) * (controller-width + spacing) + spacing > scroll.visible-width - scroll.content-x) {
+            scroll.content-x = scroll.visible-width - (index + 1) * (controller-width + spacing) - spacing;
+        }
+    }
+
     title: "Electrip";
     preferred-width: 1024px;
     preferred-height: 720px;
     background: #fafafa;
     VerticalLayout {
-        ScrollView {
+        scroll := ScrollView {
             vertical-stretch: 1;
             HorizontalLayout {
-                padding: 6px;
-                spacing: 6px;
+                padding: spacing;
+                spacing: spacing;
                 alignment: start;
                 for controller in controllers: ControllerView {
                     controller: controller;
                     button-rows: button-rows;
+                    width: controller-width;
+                    compact: compact;
                     reverse => {
                         root.reverse(controller.id);
                     }
@@ -234,21 +256,43 @@ export component MainWindow inherits Window {
                 }
             }
         }
-        // Grey while the track power is on, red while it is off, like
-        // Electrip 1.
-        Rectangle {
+        HorizontalLayout {
             height: 56px;
-            background: connected && !track-power ? #cd4444 : #e6e6e6;
-            Text {
-                text: connected ? @tr("Emergency stop") : @tr("Not connected");
-                color: !connected ? #aaaaaa : track-power ? #555555 : #690000;
-                font-size: 22px;
-                font-weight: 700;
+            // Grey while the track power is on, red while it is off, like
+            // Electrip 1.
+            Rectangle {
+                horizontal-stretch: 1;
+                background: connected && !track-power ? #cd4444 : #e6e6e6;
+                Text {
+                    text: connected ? @tr("Emergency stop") : @tr("Not connected");
+                    color: !connected ? #aaaaaa : track-power ? #555555 : #690000;
+                    font-size: 22px;
+                    font-weight: 700;
+                }
+                TouchArea {
+                    enabled: connected;
+                    clicked => {
+                        root.toggle-power();
+                    }
+                }
             }
-            TouchArea {
-                enabled: connected;
-                clicked => {
-                    root.toggle-power();
+            VerticalLayout {
+                horizontal-stretch: 0;
+                padding-left: 12px;
+                padding-right: 12px;
+                CheckBox {
+                    text: @tr("Auto focus");
+                    checked <=> root.auto-focus;
+                    toggled => {
+                        root.set-view(root.auto-focus, root.only-active);
+                    }
+                }
+                CheckBox {
+                    text: @tr("Only active locos");
+                    checked <=> root.only-active;
+                    toggled => {
+                        root.set-view(root.auto-focus, root.only-active);
+                    }
                 }
             }
         }
