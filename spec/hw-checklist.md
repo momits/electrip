@@ -116,3 +116,5 @@ Neu ist, dass die Gamepads nicht mehr im Haupt-Thread abgefragt werden (dort lä
 - [ ] Mit „Auto focus“ (Standard an) scrollt das Fenster beim Lokwechsel per Steuerkreuz zur neuen Lok; ohne bleibt es stehen.
 - [ ] Der Fokus-Knopf (in Konfigurationen aus Electrip 1 der `focus_button`) holt die Lok des Gamepads in den sichtbaren Bereich.
 - [ ] „Only active locos“ zeigt nur gesteuerte und fahrende Loks; beide Häkchen sind nach einem Neustart noch gesetzt.
+
+Ergebnis: _offen_

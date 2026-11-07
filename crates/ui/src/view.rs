@@ -70,8 +70,8 @@ pub fn show(window: &MainWindow, state: &State, media: &Path) {
     let buttons = rows.iter().map(|c| c.buttons.row_count()).max();
     window.set_button_rows(buttons.unwrap_or(0) as i32);
     let model = window.get_controllers();
-    let focus = focus(state, &model);
-    let index = focus.and_then(|loco| rows.iter().position(|c| c.id == loco));
+    let focused = focus(state, &model);
+    let index = focused.and_then(|loco| rows.iter().position(|c| c.id == loco));
     update_controllers(&model, rows);
     if let Some(index) = index {
         window.invoke_bring_into_view(index as i32);
@@ -88,10 +88,13 @@ pub(crate) fn focus(state: &State, shown: &ModelRc<Controller>) -> Option<i32> {
             .iter()
             .any(|c| Some(c.id) == d.loco && c.devices.iter().any(|color| color == d.color))
     };
-    let device = devices()
-        .find(|d| d.focus)
-        .or_else(|| devices().find(changed).filter(|_| state.view.auto_focus));
-    device.and_then(|d| d.loco)
+    if let Some(device) = devices().find(|d| d.focus) {
+        return device.loco;
+    }
+    if !state.view.auto_focus {
+        return None;
+    }
+    devices().find(changed).and_then(|d| d.loco)
 }
 
 /// Keeps the models of the buttons and devices, see [`update`].

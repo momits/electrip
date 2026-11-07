@@ -214,17 +214,19 @@ export component MainWindow inherits Window {
     callback toggle-power();
     callback set-view(bool, bool);
     property <length> spacing: 6px;
+    property <length> normal-width: 130px;
     // Compact before the view has to scroll.
-    property <bool> compact: controllers.length * (130px + spacing) + spacing > root.width;
-    property <length> controller-width: compact ? 86px : 130px;
+    property <bool> compact: controllers.length * (normal-width + spacing) + spacing > root.width;
+    property <length> controller-width: compact ? 86px : normal-width;
+    property <length> step: controller-width + spacing;
 
     // Scrolls as little as needed to show the controller at `index` with
     // the spacing on both sides, like Electrip 1.
     public function bring-into-view(index: int) {
-        if (index * (controller-width + spacing) < -scroll.content-x) {
-            scroll.content-x = -index * (controller-width + spacing);
-        } else if ((index + 1) * (controller-width + spacing) + spacing > scroll.visible-width - scroll.content-x) {
-            scroll.content-x = scroll.visible-width - (index + 1) * (controller-width + spacing) - spacing;
+        if (index * step < -scroll.content-x) {
+            scroll.content-x = -index * step;
+        } else if ((index + 1) * step + spacing > scroll.visible-width - scroll.content-x) {
+            scroll.content-x = scroll.visible-width - (index + 1) * step - spacing;
         }
     }
 
