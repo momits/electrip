@@ -51,6 +51,11 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<TcpStream>) {
         let command = json!({"command": "trigger_action", "loco": loco, "action": action, "pressed": pressed});
         send(&s, command)
     });
+    let s = Rc::clone(&stream);
+    window.on_set_view(move |auto_focus, only_active| {
+        let view = json!({"auto_focus": auto_focus, "only_active": only_active});
+        send(&s, json!({"command": "set_view", "view": view}))
+    });
     window.on_toggle_power(move || send(&stream, json!({"command": "toggle_power"})));
 }
 

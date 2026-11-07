@@ -1,6 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use super::*;
+use electrip_core::config::View;
 use electrip_core::session::Command;
 use image::{Rgb, RgbImage};
 use serde_json::{Value, json};
@@ -23,8 +24,13 @@ fn loco(id: i32, name: &str) -> Value {
 
 fn state(locos: Vec<Value>, devices: Value) -> State {
     let station = json!({"connected": true, "track_power": false});
-    let state = json!({"locos": locos, "devices": devices, "station": station});
+    let view = json!({"auto_focus": true, "only_active": false});
+    let state = json!({"locos": locos, "devices": devices, "station": station, "view": view});
     serde_json::from_value(state).unwrap()
+}
+
+fn device(loco: impl Into<Option<i32>>, color: i32) -> Value {
+    json!({"loco": loco.into(), "color": color, "focus": false})
 }
 
 /// A loco with one button of each group, each defined in reverse order.
@@ -70,12 +76,56 @@ fn without_sound_model_no_driving_sound_button() {
 
 #[test]
 fn devices_mark_their_locos() {
-    let devices =
-        json!([{"loco": 2, "color": 3}, {"loco": null, "color": 1}, {"loco": 2, "color": 5}]);
+    let devices = json!([device(2, 3), device(None, 1), device(2, 5)]);
     let state = state(vec![loco(1, "A"), loco(2, "B")], devices);
     let controllers = controllers(&state, Path::new(""));
     assert_eq!(controllers[0].devices.row_count(), 0);
     assert_eq!(controllers[1].devices.iter().collect::<Vec<_>>(), [3, 5]);
+}
+
+#[test]
+fn only_active_shows_controlled_or_moving_locos() {
+    let mut moving = loco(2, "B");
+    moving["speed"] = json!(0.5);
+    let locos = vec![loco(1, "A"), moving, loco(3, "C"), loco(4, "D")];
+    let mut state = state(locos, json!([device(3, 1)]));
+    state.view.only_active = true;
+    let ids: Vec<_> = controllers(&state, Path::new(""))
+        .iter()
+        .map(|c| c.id)
+        .collect();
+    assert_eq!(ids, [2, 3]);
+}
+
+/// The focus with the loco of the device of color 1 shown on loco 1.
+fn focus_after(devices: Value, auto_focus: bool) -> Option<i32> {
+    let locos = vec![loco(1, "A"), loco(2, "B"), loco(3, "C")];
+    let shown = state(locos.clone(), json!([device(1, 1)]));
+    let shown = ModelRc::new(VecModel::from(controllers(&shown, Path::new(""))));
+    let mut state = state(locos, devices);
+    state.view.auto_focus = auto_focus;
+    focus(&state, &shown)
+}
+
+#[test]
+fn auto_focus_shows_the_new_loco_of_a_device() {
+    assert_eq!(focus_after(json!([device(1, 1)]), true), None);
+    assert_eq!(
+        focus_after(json!([device(1, 1), device(3, 2)]), true),
+        Some(3)
+    );
+    assert_eq!(focus_after(json!([device(2, 1)]), true), Some(2));
+    assert_eq!(focus_after(json!([device(2, 1)]), false), None);
+    assert_eq!(focus_after(json!([device(None, 2)]), true), None);
+}
+
+#[test]
+fn holding_focus_shows_the_loco_of_the_device() {
+    let mut held = device(3, 2);
+    held["focus"] = json!(true);
+    let devices = json!([device(2, 1), held]);
+    assert_eq!(focus_after(devices.clone(), true), Some(3));
+    assert_eq!(focus_after(devices, false), Some(3));
 }
 
 #[test]
@@ -151,15 +201,12 @@ fn window_shows_the_state_and_sends_commands() {
     let mut driven = loco_with_buttons();
     driven["speed"] = json!(60.0);
     driven["picture"] = json!("picture.png");
-    let state = state(
-        vec![driven, loco(2, "Köf II")],
-        json!([{"loco": 1, "color": 1}]),
-    );
+    let state = state(vec![driven, loco(2, "Köf II")], json!([device(1, 1)]));
 
     let main = MainWindow::new().unwrap();
     main.set_controllers(ModelRc::new(VecModel::<Controller>::default()));
-    show(&main, &state, media.path());
     main.show().unwrap();
+    show(&main, &state, media.path());
     let image = screenshot(&window);
     save(&image, "control_view.png");
 
@@ -169,6 +216,19 @@ fn window_shows_the_state_and_sends_commands() {
     // The emergency stop is red while the track power is off.
     assert_eq!(*image.get_pixel(5, HEIGHT - 5), Rgb([0xcd, 0x44, 0x44]));
 
+    // Twelve locos: compact controllers, and auto-focus scrolls to the
+    // last one, which the device changed to.
+    let locos = (1..=12).map(|id| loco(id, &format!("Lok {id}"))).collect();
+    show(
+        &main,
+        &self::state(locos, json!([device(12, 1)])),
+        media.path(),
+    );
+    let image = screenshot(&window);
+    save(&image, "control_view_compact.png");
+    assert_eq!(*image.get_pixel(WIDTH - 30, 200), Rgb([0x6a, 0xa9, 0xd0]));
+    assert_eq!(*image.get_pixel(WIDTH - 100, 200), Rgb([0xfa, 0xfa, 0xfa]));
+
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
     crate::connect_callbacks(&main, Rc::new(client));
@@ -176,10 +236,11 @@ fn window_shows_the_state_and_sends_commands() {
     main.invoke_toggle_sound(1);
     main.invoke_trigger(1, 4, true);
     main.invoke_toggle_power();
+    main.invoke_set_view(false, true);
     let (host, _) = listener.accept().unwrap();
     let commands: Vec<Command> = BufReader::new(host)
         .lines()
-        .take(4)
+        .take(5)
         .map(|l| serde_json::from_str(&l.unwrap()).unwrap())
         .collect();
     assert_eq!(
@@ -193,6 +254,12 @@ fn window_shows_the_state_and_sends_commands() {
                 pressed: true
             },
             Command::TogglePower,
+            Command::SetView {
+                view: View {
+                    auto_focus: false,
+                    only_active: true
+                }
+            },
         ]
     );
 }

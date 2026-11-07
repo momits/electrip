@@ -12,6 +12,7 @@ pub struct State {
     locos: Vec<Loco>,
     devices: Vec<Device>,
     station: Station,
+    view: View,
 }
 
 #[derive(Debug, Deserialize)]
@@ -45,6 +46,13 @@ struct Switch {
 struct Device {
     loco: Option<i32>,
     color: i32,
+    focus: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct View {
+    auto_focus: bool,
+    only_active: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,10 +64,34 @@ struct Station {
 pub fn show(window: &MainWindow, state: &State, media: &Path) {
     window.set_connected(state.station.connected);
     window.set_track_power(state.station.track_power);
+    window.set_auto_focus(state.view.auto_focus);
+    window.set_only_active(state.view.only_active);
     let rows = controllers(state, media);
     let buttons = rows.iter().map(|c| c.buttons.row_count()).max();
     window.set_button_rows(buttons.unwrap_or(0) as i32);
-    update_controllers(&window.get_controllers(), rows);
+    let model = window.get_controllers();
+    let focus = focus(state, &model);
+    let index = focus.and_then(|loco| rows.iter().position(|c| c.id == loco));
+    update_controllers(&model, rows);
+    if let Some(index) = index {
+        window.invoke_bring_into_view(index as i32);
+    }
+}
+
+/// The loco to bring into view (B-22): the one of a device that holds
+/// "focus", else with auto-focus the one a device has changed to, which
+/// is not `shown` with that device yet.
+pub(crate) fn focus(state: &State, shown: &ModelRc<Controller>) -> Option<i32> {
+    let devices = || state.devices.iter().filter(|d| d.loco.is_some());
+    let changed = |d: &&Device| {
+        !shown
+            .iter()
+            .any(|c| Some(c.id) == d.loco && c.devices.iter().any(|color| color == d.color))
+    };
+    let device = devices()
+        .find(|d| d.focus)
+        .or_else(|| devices().find(changed).filter(|_| state.view.auto_focus));
+    device.and_then(|d| d.loco)
 }
 
 /// Keeps the models of the buttons and devices, see [`update`].
@@ -90,10 +122,14 @@ fn update<T: Clone + PartialEq + 'static>(model: &ModelRc<T>, rows: Vec<T>) {
     }
 }
 
+/// With the filter "only active" just the locos that are controlled or
+/// moving.
 pub(crate) fn controllers(state: &State, media: &Path) -> Vec<Controller> {
+    let active = |l: &&Loco| l.speed > 0.0 || state.devices.iter().any(|d| d.loco == Some(l.id));
     state
         .locos
         .iter()
+        .filter(|l| !state.view.only_active || active(l))
         .map(|l| controller(state, l, media))
         .collect()
 }
