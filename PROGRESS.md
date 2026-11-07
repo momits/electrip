@@ -24,6 +24,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-07 – B-22: Fokus, Auto-Fokus, Filter, kompakte Regler (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Kern: Optionen der Ansicht `view` mit `auto_focus` (Standard an) und `only_active`, gespeichert mit der Konfiguration, Befehl `set_view`. Der Import aus Electrip 1 übernimmt `use_auto_focus`. „Fokus“ gab es schon (`focus` in `devices`, solange gehalten).
+- Fenster: Hält ein Gerät „Fokus“, scrollt es dessen Lok in den sichtbaren Bereich (so wenig wie nötig, wie Electrip 1). Mit Auto-Fokus auch die neue Lok eines Geräts nach dem Lokwechsel; erkannt am Vergleich mit dem, was das Fenster zuletzt zeigte. Mit `only_active` nur gesteuerte oder fahrende Loks. Passen nicht alle Regler nebeneinander, werden sie schmaler (86 statt 130 px, kleineres Bild), erst danach wird gescrollt. Zwei Häkchen neben dem Nothalt senden `set_view`.
+- Bewusst im `ui`: Der Filter wählt nur aus, was der Zustand schon zeigt (Geschwindigkeit, Lok der Geräte); das ist Darstellung, keine Fachlogik.
+- Tests: `crates/electrip/tests/control_view.rs` (Steuerkanal: Optionen bleiben nach Neustart, Fokus halten, Lokwechsel), `crates/ui/src/view/tests.rs` (Filter, Fokus und Auto-Fokus, Screenshot `control_view_compact.png` mit zwölf Loks: kompakt und zur gesteuerten letzten Lok gescrollt, `set_view` als `Command`), Import aus dem Korpus (`use_auto_focus` an und aus).
+- `spec/steuerkanal.md`: `view`, `set_view`, `focus` in `devices`, Ziele `focus` und `toggle_sound` ergänzt. Prüfpunkte für Mo in `spec/hw-checklist.md`.
+- `cargo xtask test`, `cargo xtask loc` (5147 Zeilen) und `cargo xtask parity` grün.
+- Der Container hatte keinen Platz mehr auf der Platte (`target/` 16 GB); `cargo clean` hat ihn freigemacht.
+- **B-22** `wired` und `verified`.
+- Einfachheits-Review: refactored (Sub-Agent). Breite der Regler und Schrittweite je an einer Stelle, `focus()` geradliniger, verlorene Zeile „Ergebnis“ in der Checkliste.
+- **Offen:**
+  - Optionaler Geräuschpegel-Balken (B-22) nicht gebaut.
+  - Maussteuerung der Geschwindigkeit (B-24), Screenshot-Prüffall B-19, Übersetzungen B-25 wie im vorigen Eintrag.
+
 ## 2026-11-06 – B-22: Steuerungsansicht, erstes Inkrement (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Phase 3 beginnt mit der Oberfläche.
