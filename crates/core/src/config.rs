@@ -20,6 +20,27 @@ pub struct Config {
     pub actions: Vec<Action>,
     pub mappings: Vec<Mapping>,
     pub station: Station,
+    pub view: View,
+}
+
+/// Options of the control view (B-22).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct View {
+    /// Brings the new loco of a device into view when it changes locos.
+    pub auto_focus: bool,
+    /// Shows only the locos a device controls or that are moving.
+    pub only_active: bool,
+}
+
+/// Auto-focus is on, like in Electrip 1.
+impl Default for View {
+    fn default() -> Self {
+        View {
+            auto_focus: true,
+            only_active: false,
+        }
+    }
 }
 
 /// Characters that are not allowed in file names on some platform.

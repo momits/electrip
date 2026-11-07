@@ -3,7 +3,7 @@
 //! [`Host::apply`](crate::host::Host::apply).
 
 use crate::audio::AudioSink;
-use crate::config::Config;
+use crate::config::{Config, View};
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
 use crate::driving_sound::DrivingSound;
@@ -237,6 +237,10 @@ pub enum Command {
     SetPowerOnStart {
         on: bool,
     },
+    /// The options of the control view (B-22).
+    SetView {
+        view: View,
+    },
     /// Connects to the server; the host also replaces an open connection.
     Connect,
     Disconnect,
@@ -458,6 +462,7 @@ pub struct Session {
     mappings: Vec<Mapping>,
     devices: Vec<Device>,
     station: Station,
+    view: View,
     /// Ids are never reused, so a command for a removed loco cannot hit a
     /// new one.
     #[serde(skip)]
@@ -510,6 +515,7 @@ impl Session {
             actions: self.actions.clone(),
             mappings: self.mappings.clone(),
             station,
+            view: self.view,
         }
     }
 
@@ -529,6 +535,7 @@ impl Session {
             self.mapping(kind);
         }
         self.station = config.station;
+        self.view = config.view;
         self.import_report = report;
         self.assign_locos();
     }
@@ -677,6 +684,7 @@ impl Session {
                 ..self.station.clone()
             })?,
             Command::SetPowerOnStart { on } => self.station.power_on_start = on,
+            Command::SetView { view } => self.view = view,
             // Handled by Host::apply, which holds the driver and the library.
             Command::Connect
             | Command::Disconnect

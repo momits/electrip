@@ -83,6 +83,7 @@ fn the_corpus_is_imported_without_loss() {
             assert_sounds(loco, &old["engine"]);
         }
         assert_mapping(&import, &file["joystick"]);
+        assert_eq!(import.view.auto_focus, file["joystick"]["use_auto_focus"]);
     }
 }
 
