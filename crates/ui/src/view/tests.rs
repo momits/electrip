@@ -296,6 +296,18 @@ fn window_shows_the_state_and_sends_commands() {
         assert!((36..50).any(|x| (16..28).any(|y| symbol(x, y) == color)));
     }
 
+    // B-25: the texts follow the language, German or English.
+    let bottom_bar = |language, name| {
+        slint::select_bundled_translation(language).unwrap();
+        window.request_redraw();
+        let image = screenshot(&window);
+        save(&image, name);
+        image::imageops::crop_imm(&image, 0, HEIGHT - 40, 1300, 40).to_image()
+    };
+    let german = bottom_bar("de", "control_view_de.png");
+    let english = bottom_bar("en", "control_view_en.png");
+    assert_ne!(german, english);
+
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
     crate::connect_callbacks(&main, Rc::new(client));
