@@ -1,0 +1,20 @@
+# German texts of the window (B-25), wording as in Electrip 1.
+msgid ""
+msgstr ""
+"Language: de\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Driving sound"
+msgstr "Fahrgeräusch"
+
+msgid "Emergency stop"
+msgstr "Nothalt"
+
+msgid "Not connected"
+msgstr "Nicht verbunden"
+
+msgid "Auto focus"
+msgstr "Autofokus"
+
+msgid "Only active locos"
+msgstr "Nur aktive Loks"
