@@ -189,6 +189,22 @@ fn save(image: &RgbImage, name: &str) {
     image.save(dir.join(name)).unwrap();
 }
 
+/// Colors of the input devices 1 to 12.
+const DEVICE_COLORS: [[u8; 3]; 12] = [
+    [0x6a, 0xa9, 0xd0],
+    [0xf3, 0x9d, 0x41],
+    [0xf0, 0x80, 0x70],
+    [0x4a, 0x7a, 0x99],
+    [0xa8, 0xa8, 0xa8],
+    [0x8d, 0xcc, 0x8d],
+    [0xff, 0xc2, 0x26],
+    [0xc9, 0x8a, 0xca],
+    [0x4f, 0xa6, 0xb2],
+    [0xa0, 0x78, 0x5a],
+    [0xe0, 0x7a, 0xb0],
+    [0x7a, 0x8a, 0x3a],
+];
+
 /// Colors of switched-off buttons: driving sound, sound functions, event
 /// sounds, functions.
 const BUTTON_COLORS: [[u8; 3]; 4] = [
@@ -230,7 +246,7 @@ fn window_shows_the_state_and_sends_commands() {
     save(&image, "control_view.png");
 
     // The controlled loco has the color of its device, the other none.
-    assert_eq!(*image.get_pixel(10, 200), Rgb([0x6a, 0xa9, 0xd0]));
+    assert_eq!(*image.get_pixel(10, 200), Rgb(DEVICE_COLORS[0]));
     assert_eq!(*image.get_pixel(146, 200), Rgb([0xfa, 0xfa, 0xfa]));
     // The emergency stop is red while the track power is off.
     assert_eq!(*image.get_pixel(5, HEIGHT - 5), Rgb([0xcd, 0x44, 0x44]));
@@ -245,7 +261,7 @@ fn window_shows_the_state_and_sends_commands() {
     );
     let image = screenshot(&window);
     save(&image, "control_view_compact.png");
-    assert_eq!(*image.get_pixel(WIDTH - 30, 200), Rgb([0x6a, 0xa9, 0xd0]));
+    assert_eq!(*image.get_pixel(WIDTH - 30, 200), Rgb(DEVICE_COLORS[0]));
     assert_eq!(*image.get_pixel(WIDTH - 100, 200), Rgb([0xfa, 0xfa, 0xfa]));
 
     // B-19: driving sound, sound functions, event sounds, functions, each
@@ -270,6 +286,15 @@ fn window_shows_the_state_and_sends_commands() {
     show(&main, &self::state(locos, devices), media.path());
     let image = screenshot(&window);
     save(&image, "control_view_devices.png");
+    for (i, color) in DEVICE_COLORS.into_iter().enumerate() {
+        let left = 6 + 92 * i as u32;
+        // The loco has the color of its device, and the symbol above the
+        // name is a white circle with the number in that color.
+        assert_eq!(*image.get_pixel(left + 10, 200), Rgb(color));
+        let symbol = |x, y| image.get_pixel(left + x, y).0;
+        assert_eq!(symbol(43, 15), [0xff; 3]);
+        assert!((36..50).any(|x| (16..28).any(|y| symbol(x, y) == color)));
+    }
 
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
