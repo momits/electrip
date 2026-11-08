@@ -24,6 +24,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-08 – B-03: Mehrere Gamepads gleichzeitig (Claude)
+
+- Vorige Sitzung brach ab (API-Fehler); Zwischenstand auf dem Branch übernommen. CI auf `main` grün.
+- Zwölf virtuelle Geräte und Hotplug waren schon getestet (`crates/input/tests/hotplug.rs`). Neu ist der Screenshot-Prüffall in `crates/ui/src/view/tests.rs`: `control_view_devices.png` mit zwölf Geräten auf zwölf Loks; jede Lok ist in der Farbe ihres Geräts hinterlegt, darüber ein weißer Kreis mit der Nummer in dieser Farbe. Die zwölf Farben stehen im Test in einer Konstante.
+- Prüfpunkte für Mo in `spec/hw-checklist.md`.
+- `cargo xtask test` und `cargo xtask parity` grün.
+- **B-03** `wired` und `verified`.
+- Einfachheits-Review: ok (selbst, Diff klein, nur Test und Checkliste).
+- **Offen:** Geräuschpegel-Balken (B-22), B-24, B-25 wie zuvor.
+
 ## 2026-11-08 – B-19: Reihenfolge der Bedienknöpfe (Claude)
 
 - Vorige Sitzung brach ab (API-Fehler); Zwischenstand auf dem Branch übernommen. CI auf `main` grün.
