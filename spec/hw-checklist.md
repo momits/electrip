@@ -129,3 +129,13 @@ Geprüft sind zwölf virtuelle Geräte (`crates/input/tests/hotplug.rs`) und das
 - [ ] Ein Gamepad abstecken und wieder anstecken, während die App läuft: es wird ohne Neustart wieder erkannt und steuert weiter.
 
 Ergebnis: _offen_
+
+## B-25 – Deutsch und Englisch
+
+Vorbereitung: `cargo run --release -- -f <konfiguration>` auf dem Mac.
+Geprüft sind die ohne Anzeige gezeichneten Bilder (`target/test-logs/screenshots/control_view_de.png` und `control_view_en.png`); die Sprache ist dort fest gewählt.
+
+- [ ] Mit Systemsprache Deutsch zeigt das Fenster „Nothalt“ (bzw. „Nicht verbunden“), „Autofokus“, „Nur aktive Loks“ und „Fahrgeräusch“.
+- [ ] Mit Systemsprache Englisch oder einer anderen Sprache (z. B. Französisch) zeigt es die englischen Texte.
+
+Ergebnis: _offen_

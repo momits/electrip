@@ -24,6 +24,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-08 – B-25: Deutsch und Englisch (Claude)
+
+- Vorige Sitzung brach ab; Zwischenstand auf dem Branch übernommen.
+- Texte im Fenster sind englisch und mit `@tr` markiert. Die deutschen Texte stehen in `crates/ui/translations/de/LC_MESSAGES/electrip-ui.po`, Wortlaut wie in Electrip 1, wo es ihn gab („Nothalt“, „Fahrgeräusch“, „Autofokus“). `build.rs` bündelt sie ins Programm; Slint wählt beim Start die Systemsprache, sonst Englisch.
+- Tests: `crates/ui/tests/translations.rs` (jeder `@tr`-Text hat eine deutsche Übersetzung), Screenshots `control_view_de.png` und `control_view_en.png` in `crates/ui/src/view/tests.rs` (die Leiste unten unterscheidet sich je Sprache).
+- Prüfpunkte für Mo in `spec/hw-checklist.md` (Systemsprache).
+- `cargo xtask test`, `cargo xtask loc` (5150 Zeilen) und `cargo xtask parity` grün.
+- **B-25** `wired` und `verified`.
+- Einfachheits-Review: ok (selbst, Diff klein).
+- **Offen:** Geräuschpegel-Balken (B-22), B-24.
+
 ## 2026-11-08 – B-03: Mehrere Gamepads gleichzeitig (Claude)
 
 - Vorige Sitzung brach ab (API-Fehler); Zwischenstand auf dem Branch übernommen. CI auf `main` grün.
