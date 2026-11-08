@@ -188,6 +188,23 @@ fn save(image: &RgbImage, name: &str) {
     image.save(dir.join(name)).unwrap();
 }
 
+/// Colors of switched-off buttons: driving sound, sound functions, event
+/// sounds, functions.
+const BUTTON_COLORS: [[u8; 3]; 4] = [
+    [0xff, 0xb0, 0x48],
+    [0xb4, 0xb4, 0xfa],
+    [0xff, 0x9a, 0x82],
+    [0xec; 3],
+];
+
+/// The button colors from top to bottom in column `x`.
+fn button_colors(image: &RgbImage, x: u32) -> Vec<Rgb<u8>> {
+    let mut column: Vec<_> = (0..HEIGHT).map(|y| *image.get_pixel(x, y)).collect();
+    column.dedup();
+    column.retain(|p| BUTTON_COLORS.contains(&p.0));
+    column
+}
+
 /// Slint has one platform per process, so one test covers the window: it
 /// shows the state and sends commands the host understands.
 #[test]
@@ -229,6 +246,21 @@ fn window_shows_the_state_and_sends_commands() {
     save(&image, "control_view_compact.png");
     assert_eq!(*image.get_pixel(WIDTH - 30, 200), Rgb([0x6a, 0xa9, 0xd0]));
     assert_eq!(*image.get_pixel(WIDTH - 100, 200), Rgb([0xfa, 0xfa, 0xfa]));
+
+    // B-19: driving sound, sound functions, event sounds, functions, each
+    // group in its own color.
+    let mut off = loco_with_buttons();
+    off["sound"] = json!("off");
+    off["functions"][0]["on"] = json!(false);
+    off["event_sounds"][0]["active"] = json!(false);
+    show(&main, &self::state(vec![off], json!([])), media.path());
+    let image = screenshot(&window);
+    save(&image, "control_view_buttons.png");
+    let [driving, sound, event, function] = BUTTON_COLORS.map(Rgb);
+    assert_eq!(
+        button_colors(&image, 20),
+        [driving, sound, event, function, function]
+    );
 
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
