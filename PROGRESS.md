@@ -24,6 +24,15 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-08 – B-19: Reihenfolge der Bedienknöpfe (Claude)
+
+- Vorige Sitzung brach ab (API-Fehler); Zwischenstand auf dem Branch übernommen. CI auf `main` grün.
+- Reihenfolge und Farben gab es schon seit B-22. Neu ist der Screenshot-Prüffall in `crates/ui/src/view/tests.rs`: `control_view_buttons.png` mit allen Knöpfen ausgeschaltet; die Farben einer Pixelspalte von oben nach unten müssen Fahrgeräusch (orange), Geräusch-Funktion (blau), Geräusch-Ereignis (lachs), Lokfunktionen (grau) ergeben.
+- `cargo xtask test` und `cargo xtask parity` grün.
+- **B-19** `wired` und `verified`.
+- Einfachheits-Review: refactored (selbst, Diff klein). Die Knopffarben stehen im Test nur noch in einer Konstante.
+- **Offen:** Geräuschpegel-Balken (B-22), B-24, B-25 wie zuvor.
+
 ## 2026-11-07 – B-22: Fokus, Auto-Fokus, Filter, kompakte Regler (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
