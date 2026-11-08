@@ -173,12 +173,13 @@ const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
 
 fn screenshot(window: &MinimalSoftwareWindow) -> RgbImage {
-    let mut pixels = vec![Rgb8Pixel::default(); (WIDTH * HEIGHT) as usize];
+    let size = window.size();
+    let mut pixels = vec![Rgb8Pixel::default(); (size.width * size.height) as usize];
     window.draw_if_needed(|renderer| {
-        renderer.render(&mut pixels, WIDTH as usize);
+        renderer.render(&mut pixels, size.width as usize);
     });
     let bytes = pixels.iter().flat_map(|p| [p.r, p.g, p.b]).collect();
-    RgbImage::from_raw(WIDTH, HEIGHT, bytes).unwrap()
+    RgbImage::from_raw(size.width, size.height, bytes).unwrap()
 }
 
 /// Saved for the agent and Mo to look at.
@@ -261,6 +262,14 @@ fn window_shows_the_state_and_sends_commands() {
         button_colors(&image, 20),
         [driving, sound, event, function, function]
     );
+
+    // B-03: twelve devices, each on its own loco, in a wide window.
+    window.set_size(slint::PhysicalSize::new(1300, HEIGHT));
+    let locos = (1..=12).map(|id| loco(id, &format!("Lok {id}"))).collect();
+    let devices = (1..=12).map(|id| device(id, id)).collect();
+    show(&main, &self::state(locos, devices), media.path());
+    let image = screenshot(&window);
+    save(&image, "control_view_devices.png");
 
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
