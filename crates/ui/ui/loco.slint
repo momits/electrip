@@ -96,6 +96,8 @@ export component LocoDialog inherits Rectangle {
                                 start-x = crop-x + crop-width / 2;
                                 start-y = crop-y + crop-height / 2;
                             }
+                            // The middle stays where the crop can go, so it
+                            // follows at once when dragged back.
                             moved => {
                                 center-x = clamp(start-x - (self.mouse-x - self.pressed-x) / 1px / scale, crop-width / 2, source.width - crop-width / 2);
                                 center-y = clamp(start-y - (self.mouse-y - self.pressed-y) / 1px / scale, crop-height / 2, source.height - crop-height / 2);

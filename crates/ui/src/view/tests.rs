@@ -225,7 +225,7 @@ fn button_colors(image: &RgbImage, x: u32) -> Vec<Rgb<u8>> {
 
 /// An image of `width`×`height` whose red is the column, green the row.
 fn gradient(width: u32, height: u32) -> RgbImage {
-    RgbImage::from_fn(width, height, |x, y| Rgb([(x / 4) as u8, (y / 2) as u8, 0]))
+    RgbImage::from_fn(width, height, |x, y| Rgb(gradient_at(x as f32, y as f32)))
 }
 
 /// The top left corner of the picture in the dialog.
