@@ -24,6 +24,26 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – N-03: Client mit eingetragener Host-Adresse, erstes Inkrement (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Offen sind in Phase 3 nur noch N-03, N-04 und N-05.
+- **Frage Q-016** in `spec/questions.md`: Wie arbeitet der Host mit Clients, deren Konfiguration eine andere ist, aber dieselbe Lok-Adresse enthält (Kennlinie, Funktionen, Sound-Modell, Audio-Ziel)? Davon hängen große Teile von N-03 und N-05 ab. Bis zur Antwort nutzt ein Client die Konfiguration des Hosts.
+- `electrip --host <adresse:port>`: Die Instanz ist Client des Sitzungs-Hosts. Ihr Steuerkanal (nur `127.0.0.1`) reicht jede Verbindung an den Host weiter, so laufen Fenster, Tests und Skripte unverändert; ihre Gamepads schicken ihre Befehle an den Host, die Geräte-`id` mit zufälligem Versatz (`crates/control/src/relay.rs`). Ist der Host beim Start nach 2 s nicht erreichbar, ist die Instanz selbst Host.
+- Der Host lauscht jetzt auf allen Netzwerkschnittstellen (ADR 0010: dem lokalen Netz wird vertraut). Trennt sich ein Client, entfernt der Host dessen Eingabegeräte, damit ihre Loks nicht mit ausgelenkter Achse weiterfahren.
+- `Command` ist jetzt auch `Serialize`, damit der Client die Befehle der Gamepads weiterreichen kann.
+- Tests: `crates/electrip/tests/session_host.rs` (drei Instanzen über ein Netz mit 20 ms Roundtrip, Änderung in jeder Instanz in allen anderen unter 300 ms; Geräte eines Clients gehen mit ihm; unerreichbarer Host), `crates/control/src/tests.rs` (Gamepads des Clients kommen mit Versatz beim Host an).
+- `spec/steuerkanal.md`: `--host`, Lauschen auf allen Schnittstellen, Geräte beim Trennen.
+- `cargo xtask test`, `cargo xtask loc` (5491 Zeilen) und `cargo xtask parity` grün. `target/` war wieder voll (18 GB); `cargo clean`.
+- Einfachheits-Review: refactored (Sub-Agent). `offset_device` mit Oder-Muster, ein `broadcast` nach dem Entfernen der Geräte, Zeitlimit von 2 s beim Prüfen des Hosts, der Client endet, wenn der Host weg ist.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Discovery per mDNS (`_electrip._tcp`, ADR 0010), Instanz-ID, Doppel-Host, Lebenszeichen und Host-Ausfall, Zentralen-ID, Hinweis in der UI ohne Netzwerkzugriff, Eingabe der Host-Adresse in der UI.
+  - Endet der Host, endet heute auch der Client (kein Wechsel zum neuen Host).
+  - Lokbilder: Der Client sucht sie in seiner eigenen Bibliothek (Übertragung mit N-04).
+  - Der Versatz der Geräte-`id` hält nur, solange SDL-`id`s unter 65536 bleiben; Geräte, die ein Skript über einen weitergereichten Steuerkanal anschließt, bekommen keinen Versatz.
+  - Ein langsamer Client hält heute den Host auf, weil der Host an alle Clients blockierend schreibt (gilt schon für den lokalen Steuerkanal).
+
 ## 2026-11-09 – B-03: beliebig viele Gamepads (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
