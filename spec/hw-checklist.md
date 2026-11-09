@@ -153,3 +153,15 @@ Geprüft sind die ohne Anzeige gezeichneten Bilder (`target/test-logs/screenshot
 - [ ] Der Lautstärke-Regler ändert die Lautstärke des Fahrgeräuschs hörbar.
 
 Ergebnis: _offen_
+
+## N-03 – Client mit eingetragener Host-Adresse (erstes Inkrement)
+
+Vorbereitung: zwei Rechner im selben LAN oder WLAN, auf beiden `cargo run --release`. Rechner A startet normal (Host), Rechner B mit `cargo run --release -- --host <IP von A>:4711`. Ein Gamepad an jedem Rechner.
+
+- [ ] macOS fragt auf A, ob eingehende Verbindungen erlaubt sind; nach „Erlauben“ verbindet sich B (kein `ERROR cannot reach the host` auf B).
+- [ ] B zeigt die Loks der Konfiguration von A; ein Gamepad an B fährt eine Lok, A zeigt Geschwindigkeit und Gerätesymbol ohne spürbare Verzögerung.
+- [ ] Beide Gamepads bekommen verschiedene Nummern und steuern verschiedene Loks.
+- [ ] B beenden, während sein Gamepad die Achse ausgelenkt hält: Sein Gerätesymbol verschwindet auf A, die Lok behält ihre Geschwindigkeit und beschleunigt nicht weiter.
+- [ ] B mit `--host` auf eine Adresse ohne Electrip starten: Nach etwa 2 s meldet B `ERROR cannot reach the host …` und läuft selbst als Host.
+
+Ergebnis: _offen_
