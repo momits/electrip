@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-pub use rodio::{Decoder, Source};
+pub use rodio::{Decoder, MixerDeviceSink, Source};
 pub use speaker::{Speaker, sound_card};
 
 mod speaker;
