@@ -18,3 +18,24 @@ msgstr "Autofokus"
 
 msgid "Only active locos"
 msgstr "Nur aktive Loks"
+
+msgid "Image file (PNG or JPEG)"
+msgstr "Bilddatei (PNG oder JPEG)"
+
+msgid "Load"
+msgstr "Laden"
+
+msgid "Cannot read the image"
+msgstr "Das Bild kann nicht gelesen werden"
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Volume"
+msgstr "Lautstärke"
+
+msgid "Save picture"
+msgstr "Bild speichern"
+
+msgid "Close"
+msgstr "Schließen"

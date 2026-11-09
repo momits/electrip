@@ -14,7 +14,9 @@ fn quoted_after<'a>(text: &'a str, marker: &str) -> Vec<&'a str> {
 
 #[test]
 fn every_text_has_a_german_translation() {
-    let slint = fs::read_to_string("ui/control.slint").unwrap();
+    let slint: String = ["ui/control.slint", "ui/loco.slint"]
+        .map(|file| fs::read_to_string(file).unwrap())
+        .concat();
     let po = fs::read_to_string("translations/de/LC_MESSAGES/electrip-ui.po").unwrap();
     let texts = quoted_after(&slint, "@tr(\"");
     let translated = quoted_after(&po, "msgid \"");

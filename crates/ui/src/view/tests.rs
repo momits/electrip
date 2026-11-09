@@ -2,13 +2,14 @@
 
 use super::*;
 use electrip_core::config::View;
+use electrip_core::picture::Crop;
 use electrip_core::session::Command;
 use image::{Rgb, RgbImage};
 use serde_json::{Value, json};
 use slint::ComponentHandle;
 use slint::Rgb8Pixel;
 use slint::platform::software_renderer::{MinimalSoftwareWindow, RepaintBufferType};
-use slint::platform::{Platform, WindowAdapter};
+use slint::platform::{Key, Platform, PointerEventButton, WindowAdapter, WindowEvent};
 use std::io::{BufRead, BufReader};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -16,7 +17,7 @@ use std::rc::Rc;
 
 fn loco(id: i32, name: &str) -> Value {
     json!({
-        "id": id, "name": name, "max_speed": 100.0, "speed": 0.0, "forward": true,
+        "id": id, "name": name, "max_speed": 100.0, "volume": 0.8, "speed": 0.0, "forward": true,
         "picture": null, "sound_model": null, "sound": "off",
         "sound_functions": [], "event_sounds": [], "functions": []
     })
@@ -222,6 +223,59 @@ fn button_colors(image: &RgbImage, x: u32) -> Vec<Rgb<u8>> {
     column
 }
 
+/// An image of `width`×`height` whose red is the column, green the row.
+fn gradient(width: u32, height: u32) -> RgbImage {
+    RgbImage::from_fn(width, height, |x, y| Rgb([(x / 4) as u8, (y / 2) as u8, 0]))
+}
+
+/// The top left corner of the picture in the dialog.
+const FRAME: (u32, u32) = (180, 117);
+
+fn gradient_at(x: f32, y: f32) -> [u8; 3] {
+    [(x / 4.0) as u8, (y / 2.0) as u8, 0]
+}
+
+fn assert_near(pixel: &Rgb<u8>, expected: [u8; 3]) {
+    let near = pixel
+        .0
+        .iter()
+        .zip(expected)
+        .all(|(a, b)| a.abs_diff(b) <= 3);
+    assert!(near, "{pixel:?} is not near {expected:?}");
+}
+
+fn press(window: &MinimalSoftwareWindow, x: u32, y: u32) {
+    let position = slint::LogicalPosition::new(x as f32, y as f32);
+    let button = PointerEventButton::Left;
+    window.dispatch_event(WindowEvent::PointerPressed { position, button });
+}
+
+fn release(window: &MinimalSoftwareWindow, x: u32, y: u32) {
+    let position = slint::LogicalPosition::new(x as f32, y as f32);
+    let button = PointerEventButton::Left;
+    window.dispatch_event(WindowEvent::PointerReleased { position, button });
+}
+
+fn click(window: &MinimalSoftwareWindow, x: u32, y: u32) {
+    press(window, x, y);
+    release(window, x, y);
+}
+
+fn drag(window: &MinimalSoftwareWindow, from: (u32, u32), to: (u32, u32)) {
+    press(window, from.0, from.1);
+    let position = slint::LogicalPosition::new(to.0 as f32, to.1 as f32);
+    window.dispatch_event(WindowEvent::PointerMoved { position });
+    release(window, to.0, to.1);
+}
+
+fn type_text(window: &MinimalSoftwareWindow, text: &str) {
+    for c in text.chars() {
+        let text = SharedString::from(c.to_string());
+        window.dispatch_event(WindowEvent::KeyPressed { text: text.clone() });
+        window.dispatch_event(WindowEvent::KeyReleased { text });
+    }
+}
+
 /// Slint has one platform per process, so one test covers the window: it
 /// shows the state and sends commands the host understands.
 #[test]
@@ -235,7 +289,7 @@ fn window_shows_the_state_and_sends_commands() {
         .unwrap();
     let mut driven = loco_with_buttons();
     driven["speed"] = json!(60.0);
-    driven["picture"] = json!("picture.png");
+    driven["picture"] = json!("picture");
     let state = state(vec![driven, loco(2, "Köf II")], json!([device(1, 1)]));
 
     let main = MainWindow::new().unwrap();
@@ -248,6 +302,8 @@ fn window_shows_the_state_and_sends_commands() {
     // The controlled loco has the color of its device, the other none.
     assert_eq!(*image.get_pixel(10, 200), Rgb(DEVICE_COLORS[0]));
     assert_eq!(*image.get_pixel(146, 200), Rgb([0xfa, 0xfa, 0xfa]));
+    // The picture from the media directory, about its middle.
+    assert_near(image.get_pixel(67, 102), [110, 84, 120]);
     // The emergency stop is red while the track power is off.
     assert_eq!(*image.get_pixel(5, HEIGHT - 5), Rgb([0xcd, 0x44, 0x44]));
 
@@ -316,10 +372,38 @@ fn window_shows_the_state_and_sends_commands() {
     main.invoke_trigger(1, 4, true);
     main.invoke_toggle_power();
     main.invoke_set_view(false, true);
+
+    // B-05: click the picture, load an image, drag and zoom the crop.
+    window.set_size(slint::PhysicalSize::new(WIDTH, HEIGHT));
+    show(&main, &state, media.path());
+    let source = media.path().join("source.png");
+    gradient(880, 340).save(&source).unwrap();
+    click(&window, 60, 80);
+    save(&screenshot(&window), "loco_dialog.png");
+    click(&window, 300, 80);
+    type_text(&window, source.to_str().unwrap());
+    click(&window, 593, 92);
+    // The largest crop in the middle at first, then dragged 100 px to the
+    // right, so it shows 100 px more on the left.
+    drag(&window, (400, 287), (500, 287));
+    let image = screenshot(&window);
+    save(&image, "loco_dialog_dragged.png");
+    assert_near(image.get_pixel(FRAME.0, FRAME.1), gradient_at(120.0, 0.0));
+    // Zoomed in 4 times around the middle of the crop.
+    click(&window, 600, 475);
+    type_text(&window, &SharedString::from(Key::End));
+    let image = screenshot(&window);
+    save(&image, "loco_dialog_zoomed.png");
+    assert_near(
+        image.get_pixel(FRAME.0 + 2, FRAME.1 + 2),
+        gradient_at(285.5, 128.0),
+    );
+    click(&window, 443, 503);
+    click(&window, 507, 537);
     let (host, _) = listener.accept().unwrap();
     let commands: Vec<Command> = BufReader::new(host)
         .lines()
-        .take(5)
+        .take(7)
         .map(|l| serde_json::from_str(&l.unwrap()).unwrap())
         .collect();
     assert_eq!(
@@ -338,6 +422,19 @@ fn window_shows_the_state_and_sends_commands() {
                     auto_focus: false,
                     only_active: true
                 }
+            },
+            Command::SetVolume {
+                loco: 1,
+                volume: 0.5
+            },
+            Command::SetPicture {
+                loco: 1,
+                path: source,
+                crop: Some(Crop {
+                    x: 285,
+                    y: 127,
+                    width: 110
+                })
             },
         ]
     );

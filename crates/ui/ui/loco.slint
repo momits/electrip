@@ -1,0 +1,157 @@
+// The general properties of a loco (B-05): its volume and its picture,
+// a crop of any image chosen like a profile picture by dragging and
+// zooming.
+
+import { Button, LineEdit, Slider } from "std-widgets.slint";
+
+export component LocoDialog inherits Rectangle {
+    in property <string> name;
+    in property <image> picture;
+    in property <float> volume;
+    callback load(string) -> image;
+    // The crop in pixels of the image: left, top, width.
+    callback save-picture(string, float, float, float);
+    callback set-volume(float);
+    callback close();
+
+    property <image> source;
+    property <bool> loaded: source.width > 0;
+    property <string> path;
+    property <bool> failed;
+    // The largest crop; the zoom divides it.
+    property <float> largest-width: min(source.width, source.height * frame.width / frame.height);
+    property <float> zoom: 1;
+    property <float> crop-width: largest-width / zoom;
+    property <float> crop-height: crop-width * frame.height / frame.width;
+    // The middle of the crop in pixels of the image.
+    property <float> center-x;
+    property <float> center-y;
+    property <float> crop-x: clamp(center-x - crop-width / 2, 0, source.width - crop-width);
+    property <float> crop-y: clamp(center-y - crop-height / 2, 0, source.height - crop-height);
+    // Screen pixels per pixel of the image.
+    property <float> scale: frame.width / 1px / crop-width;
+
+    background: #00000080;
+    // Keeps clicks from the controllers below.
+    TouchArea { }
+
+    VerticalLayout {
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+            Rectangle {
+                background: #fafafa;
+                border-radius: 5px;
+                VerticalLayout {
+                    padding: 12px;
+                    spacing: 8px;
+                    Text {
+                        text: name;
+                        font-size: 18px;
+                        font-weight: 700;
+                    }
+                    HorizontalLayout {
+                        spacing: 6px;
+                        LineEdit {
+                            placeholder-text: @tr("Image file (PNG or JPEG)");
+                            text <=> path;
+                        }
+                        Button {
+                            text: @tr("Load");
+                            clicked => {
+                                source = root.load(path);
+                                failed = !loaded;
+                                zoom = 1;
+                                center-x = source.width / 2;
+                                center-y = source.height / 2;
+                            }
+                        }
+                    }
+                    frame := Rectangle {
+                        width: 440px;
+                        height: 340px;
+                        clip: true;
+                        background: #e0e0e0;
+                        if !loaded: Image {
+                            source: picture;
+                            width: parent.width;
+                            height: parent.height;
+                        }
+                        if loaded: Image {
+                            source: source;
+                            x: -crop-x * scale * 1px;
+                            y: -crop-y * scale * 1px;
+                            width: source.width * scale * 1px;
+                            height: source.height * scale * 1px;
+                        }
+                        if failed: Text {
+                            text: @tr("Cannot read the image");
+                            color: #690000;
+                        }
+                        drag := TouchArea {
+                            property <float> start-x;
+                            property <float> start-y;
+                            mouse-cursor: loaded ? MouseCursor.move : MouseCursor.default;
+                            changed pressed => {
+                                start-x = crop-x + crop-width / 2;
+                                start-y = crop-y + crop-height / 2;
+                            }
+                            moved => {
+                                center-x = clamp(start-x - (self.mouse-x - self.pressed-x) / 1px / scale, crop-width / 2, source.width - crop-width / 2);
+                                center-y = clamp(start-y - (self.mouse-y - self.pressed-y) / 1px / scale, crop-height / 2, source.height - crop-height / 2);
+                            }
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: @tr("Zoom");
+                            vertical-alignment: center;
+                            min-width: 80px;
+                        }
+                        Slider {
+                            enabled: loaded;
+                            minimum: 1;
+                            maximum: 4;
+                            value <=> zoom;
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: @tr("Volume");
+                            vertical-alignment: center;
+                            min-width: 80px;
+                        }
+                        Slider {
+                            minimum: 0;
+                            maximum: 1;
+                            value: volume;
+                            released(volume) => {
+                                root.set-volume(volume);
+                            }
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 6px;
+                        alignment: end;
+                        Button {
+                            text: @tr("Save picture");
+                            enabled: loaded;
+                            clicked => {
+                                root.save-picture(path, crop-x, crop-y, crop-width);
+                                root.close();
+                            }
+                        }
+                        Button {
+                            text: @tr("Close");
+                            clicked => {
+                                root.close();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

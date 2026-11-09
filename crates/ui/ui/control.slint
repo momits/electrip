@@ -2,6 +2,7 @@
 // emergency stop below. Like Electrip 1 (control_ui.py, control.css).
 
 import { CheckBox, ScrollView } from "std-widgets.slint";
+import { LocoDialog } from "loco.slint";
 
 // What a button of a controller switches; the groups have their own colors
 // (B-19).
@@ -21,6 +22,8 @@ export struct Controller {
     name: string,
     // Empty without a picture.
     picture: image,
+    // From 0 (silent) to 1 (full).
+    volume: float,
     speed: float,
     max-speed: float,
     forward: bool,
@@ -111,6 +114,8 @@ component ControllerView inherits Rectangle {
     callback reverse();
     callback toggle-sound();
     callback trigger(int, bool);
+    // Opens the general properties of the loco (B-05).
+    callback edit();
     property <bool> highlighted: controller.devices.length > 0;
     property <color> text-color: highlighted ? white : #383436;
     border-radius: 5px;
@@ -144,6 +149,11 @@ component ControllerView inherits Rectangle {
                 width: parent.width;
                 height: parent.height;
                 image-fit: cover;
+            }
+            TouchArea {
+                clicked => {
+                    root.edit();
+                }
             }
         }
         Text {
@@ -213,6 +223,13 @@ export component MainWindow inherits Window {
     callback trigger(int, int, bool);
     callback toggle-power();
     callback set-view(bool, bool);
+    callback load-picture(string) -> image;
+    callback set-picture(int, string, float, float, float);
+    callback set-volume(int, float);
+    // The loco whose properties are open, as it was on opening, so a
+    // filter changing the controllers keeps it.
+    property <Controller> editing;
+    property <bool> dialog-open;
     property <length> spacing: 6px;
     property <length> normal-width: 130px;
     // Compact before the view has to scroll.
@@ -254,6 +271,10 @@ export component MainWindow inherits Window {
                     }
                     trigger(action, pressed) => {
                         root.trigger(controller.id, action, pressed);
+                    }
+                    edit => {
+                        root.editing = controller;
+                        root.dialog-open = true;
                     }
                 }
             }
@@ -297,6 +318,25 @@ export component MainWindow inherits Window {
                     }
                 }
             }
+        }
+    }
+    if dialog-open: LocoDialog {
+        width: 100%;
+        height: 100%;
+        name: editing.name;
+        picture: editing.picture;
+        volume: editing.volume;
+        load(path) => {
+            root.load-picture(path)
+        }
+        save-picture(path, x, y, width) => {
+            root.set-picture(editing.id, path, x, y, width);
+        }
+        set-volume(volume) => {
+            root.set-volume(editing.id, volume);
+        }
+        close => {
+            root.dialog-open = false;
         }
     }
 }
