@@ -24,6 +24,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – N-03: Host-Ausfall, fünftes Inkrement (Claude)
+
+- CI auf `main` beim Start grün. Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- Lebenszeichen: Der Host schickt den Zustand mindestens jede Sekunde, auch ohne Änderung. Ein Client (Relay) hält den Host für weg, wenn er die Verbindung schließt oder 3 s lang nichts schickt; ebenso schließt er dann die weitergereichten Verbindungen.
+- Danach sucht der Client per mDNS den nächsten Host seiner Zentrale, ohne den weggefallenen, mit derselben Wahlregel wie beim Start. Findet er keinen (oder ohne Discovery), wird er selbst Host: `Host::take_over` verbindet sich mit der Zentrale, ohne den Gleisstrom zu schalten, und liest Gleisstrom und Loks zurück; die Gamepads der Instanz werden beim neuen Host wieder angemeldet (auch bei einem fremden neuen Host). Der Steuerkanal bleibt auf seinem Port und reicht an den eigenen Host weiter; deshalb lauscht er jetzt auch als Client auf allen Schnittstellen.
+- Das Fenster schloss sich bisher, wenn seine Verbindung abbrach, und beendete damit die App. Jetzt verbindet es sich bis zu 15 s lang neu.
+- Tests: `host/tests.rs` (Übernahme ohne Schalten des Stroms), `crates/control/src/tests.rs` (Lebenszeichen jede Sekunde, stiller Host gilt nach 3 s als weg, Gamepads beim nächsten Host), `session_host.rs` (Host am Z21-Simulator beendet, der Client wird Host und zeigt die Lok mit dem Zustand der Zentrale). Z21-Hilfen der Tests nach `tests/common/changes.rs` verschoben.
+- Nicht automatisch getestet: Wahl unter mehreren Clients per mDNS (Multicast im Container gesperrt) und das Neuverbinden des Fensters (keine Anzeige im Container). Prüfpunkte in `spec/hw-checklist.md` („N-03 – Host-Ausfall“).
+- `cargo xtask test`, `cargo xtask sim up` (srcpd-loopback), `cargo xtask loc` (5922 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Lesen des Relay-Ziels und Sperre der Fenster-Verbindung je in einer Funktion, `announce` ohne `Option`.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Mehrere Clients mit `--host` werden nach dem Ausfall alle Host (ohne mDNS gibt es keine Wahl).
+  - Doppel-Host während des Betriebs; Zentralen-ID der Z21 per Seriennummer; Hinweis in der UI ohne Netzwerkzugriff, Eingabe der Host-Adresse in der UI.
+  - Die Gamepads bekommen beim neuen Host neue Nummern (B-03), Rampen und Sound starten neu (erlaubt).
+  - Eine Lok, die bei bestehender Verbindung hinzukommt oder eine neue Adresse bekommt, wird nicht abgefragt.
+
 ## 2026-11-09 – N-03: Zustand der Loks beim Verbinden zurücklesen, viertes Inkrement (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab. Es bereitet den Host-Ausfall vor: Ein neuer Host muss den Zustand von der Zentrale zurücklesen.
