@@ -75,6 +75,31 @@ fn takes_over_a_change_on_the_z21() {
     takes_over_a_change_by_another_program(&mut client, &mut other, 3);
 }
 
+/// A new host reads back what the locos do at the Z21.
+#[test]
+fn reads_back_the_locos_on_connecting_to_the_z21() {
+    let port = z21_simulator();
+    let mut other = Z21Station::connect("127.0.0.1", port).unwrap();
+    let decoder = Decoder::new(Protocol::DccShort, 3, 128).unwrap();
+    let state = LocoState {
+        forward: false,
+        step: 64,
+        functions: 0,
+    };
+    other.set_loco(&decoder, &state).unwrap();
+    let app = App::start();
+    let mut client = app.connect();
+    client.command(json!({"command": "add_loco"})).unwrap();
+    let command = json!({"command": "set_address", "loco": 1, "address": 3});
+    client.command(command).unwrap();
+    let server = json!({"command": "set_server", "kind": "z21", "host": "127.0.0.1", "port": port, "bus": 0});
+    client.command(server).unwrap();
+    client.command(json!({"command": "connect"})).unwrap();
+    client.wait_for_loco("forward", json!(false));
+    let speed = client.state["locos"][0]["speed"].as_f64().unwrap();
+    assert!((speed - 50.4).abs() < 0.1, "{speed}");
+}
+
 #[test]
 fn accelerates_on_the_z21_without_taking_its_own_reports() {
     let (_app, mut client, _) = on_z21();

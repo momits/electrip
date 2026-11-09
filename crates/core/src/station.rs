@@ -73,6 +73,12 @@ pub trait CommandStation {
     /// Stops the loco at once; direction and functions stay as in `state`.
     fn emergency_stop(&mut self, decoder: &Decoder, state: &LocoState) -> Result<(), StationError>;
 
+    /// Asks for the state of a loco, which arrives as an event. Stations
+    /// that report every loco on connecting need nothing.
+    fn request_loco(&mut self, _decoder: &Decoder) -> Result<(), StationError> {
+        Ok(())
+    }
+
     /// The events since the last call, oldest first.
     fn events(&mut self) -> Vec<StationEvent>;
 }

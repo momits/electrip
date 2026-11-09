@@ -25,6 +25,8 @@ pub struct Z21Station {
     socket: UdpSocket,
     /// The decoder and state the Z21 last had, by address.
     known: HashMap<u16, (Decoder, LocoState)>,
+    /// The decoders of the locos the host asked for, by address.
+    requested: HashMap<u16, Decoder>,
     /// Events read while connecting.
     pending: Vec<StationEvent>,
     last_sent: Instant,
@@ -54,6 +56,7 @@ impl Z21Station {
         let mut station = Z21Station {
             socket,
             known: HashMap::new(),
+            requested: HashMap::new(),
             pending: Vec::new(),
             last_sent: Instant::now(),
             last_heard: Instant::now(),
@@ -85,9 +88,10 @@ impl Z21Station {
         self.last_heard = Instant::now();
         let mut events = telegram::parse(&buffer[..length]);
         for event in &mut events {
-            if let StationEvent::Loco { address, state } = event
-                && let Some((decoder, known)) = self.known.get_mut(address)
-            {
+            let StationEvent::Loco { address, state } = event else {
+                continue;
+            };
+            if let Some((decoder, known)) = self.known.get_mut(address) {
                 state.step = if telegram::z21_step(decoder, known.step) == state.step {
                     // The step the host sent, also where the Z21 has fewer.
                     known.step
@@ -95,6 +99,8 @@ impl Z21Station {
                     telegram::host_step(decoder, state.step)
                 };
                 *known = *state;
+            } else if let Some(decoder) = self.requested.get(address) {
+                state.step = telegram::host_step(decoder, state.step);
             }
         }
         Ok(events)
@@ -152,6 +158,11 @@ impl CommandStation for Z21Station {
 
     fn emergency_stop(&mut self, decoder: &Decoder, state: &LocoState) -> Result<(), StationError> {
         self.send_loco(decoder, state, true)
+    }
+
+    fn request_loco(&mut self, decoder: &Decoder) -> Result<(), StationError> {
+        self.requested.insert(decoder.address(), *decoder);
+        self.send(&telegram::get_loco_info(decoder.address()))
     }
 
     fn events(&mut self) -> Vec<StationEvent> {

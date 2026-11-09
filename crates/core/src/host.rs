@@ -137,6 +137,12 @@ impl Host {
         if power {
             driver.set_power(true).map_err(CommandError::Station)?;
         }
+        // A new host takes over what the locos do (ADR 0010).
+        for entry in self.session.locos() {
+            driver
+                .request_loco(entry.loco.decoder())
+                .map_err(CommandError::Station)?;
+        }
         self.driver = Some(driver);
         self.sent = self
             .session
