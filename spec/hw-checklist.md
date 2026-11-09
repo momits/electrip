@@ -139,3 +139,16 @@ Geprüft sind die ohne Anzeige gezeichneten Bilder (`target/test-logs/screenshot
 - [ ] Mit Systemsprache Englisch oder einer anderen Sprache (z. B. Französisch) zeigt es die englischen Texte.
 
 Ergebnis: _offen_
+
+## B-05 – Lokbild und Lautstärke im Fenster
+
+Vorbereitung: `cargo run --release -- -f <konfiguration>` auf dem Mac, ein Foto (PNG oder JPEG) bereitlegen.
+Geprüft sind die ohne Anzeige gezeichneten Bilder (`target/test-logs/screenshots/loco_dialog*.png`).
+
+- [ ] Klick auf das Bild einer Lok öffnet den Dialog mit Name, Bild, Zoom und Lautstärke.
+- [ ] Pfad zum Foto eintragen, „Laden“: der größte Ausschnitt in der Mitte erscheint.
+- [ ] Ziehen mit der Maus verschiebt den Ausschnitt, er bleibt im Bild; der Zoom-Regler vergrößert um die Mitte.
+- [ ] „Bild speichern“ schließt den Dialog; der Regler der Lok zeigt den Ausschnitt.
+- [ ] Der Lautstärke-Regler ändert die Lautstärke des Fahrgeräuschs hörbar.
+
+Ergebnis: _offen_

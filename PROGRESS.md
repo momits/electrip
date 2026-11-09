@@ -24,6 +24,18 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – B-05: Lokbild und Lautstärke im Fenster (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Klick auf das Bild einer Lok öffnet einen Dialog (`crates/ui/ui/loco.slint`): Pfad zu einem PNG oder JPEG eintragen und laden, Ausschnitt in 22:17 mit der Maus verschieben und mit dem Zoom-Regler (bis 4×) um die Mitte vergrößern, „Bild speichern“ sendet `set_picture` mit dem Ausschnitt. Der Lautstärke-Regler sendet `set_volume` beim Loslassen.
+- Fehler behoben: Das Fenster suchte Lokbilder unter `media/<name>` statt `media/<name>.png` und zeigte sie nie. `electrip-ui` nutzt dafür jetzt `electrip_core::picture::path` (Abhängigkeit auf `core`).
+- Tests in `crates/ui/src/view/tests.rs`: Bild im Regler sichtbar; Dialog per Maus und Tastatur bedient (Klick, Pfad tippen, Ziehen, Zoom), Screenshots `loco_dialog*.png` mit Pixelprüfung des Ausschnitts, gesendete `SetVolume` und `SetPicture` als `Command`. Deutsche Texte ergänzt, der Übersetzungstest liest beide `.slint`-Dateien.
+- Prüfpunkte für Mo in `spec/hw-checklist.md`.
+- `cargo xtask test`, `cargo xtask loc` (5351 Zeilen) und `cargo xtask parity` grün.
+- **B-05** `verified`.
+- Einfachheits-Review: refactored (Sub-Agent). Kommentar zur Begrenzung beim Ziehen, Farbformel des Testbilds nur noch an einer Stelle.
+- **Offen:** Kein Dateiauswahl-Dialog des Systems (Slint hat keinen); der Pfad wird eingetippt. Vmax, Beschleunigung und Bremsen stehen noch nicht im Dialog (über den Steuerkanal erreichbar; Vmax braucht die Bestätigung aus B-09). Geräuschpegel-Balken (B-22).
+
 ## 2026-11-09 – B-03 geändert: beliebig viele Gamepads (Mo, Claude)
 
 - Mo hat B-03 geändert: keine Obergrenze von 12 Gamepads mehr. Der Kern war schon größenunabhängig (Geräteliste ist ein Vektor); die Grenze steckt nur in `MAX_DEVICES` (`crates/core/src/input.rs`), in `add_device` (`TooManyDevices`) und in der Farbtabelle der Oberfläche.
