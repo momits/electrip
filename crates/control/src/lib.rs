@@ -65,9 +65,11 @@ fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) {
 fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     let mut devices = Vec::new();
     let result = serve_client(stream, shared, &mut devices);
-    let mut shared = lock(shared)?;
-    for device in devices {
-        let _ = shared.host.apply(Command::RemoveDevice { device });
+    if !devices.is_empty() {
+        let mut shared = lock(shared)?;
+        for device in devices {
+            let _ = shared.host.apply(Command::RemoveDevice { device });
+        }
         shared.broadcast();
     }
     result

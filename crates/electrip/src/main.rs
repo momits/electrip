@@ -15,8 +15,12 @@ use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::thread;
+use std::time::Duration;
 
 const DEFAULT_CONTROL_PORT: u16 = 4711;
+
+/// How long the instance waits for the host at `--host` (N-03).
+const HOST_TIMEOUT: Duration = Duration::from_secs(2);
 
 const USAGE: &str = "usage: electrip [--headless] [--control-port <port>] [--library <dir>] [-f|--file <configuration>] [--host <address:port>]";
 
@@ -106,7 +110,7 @@ fn reachable(address: &str) -> Option<SocketAddr> {
         .to_socket_addrs()
         .and_then(|mut addresses| {
             addresses
-                .find(|a| TcpStream::connect(a).is_ok())
+                .find(|a| TcpStream::connect_timeout(a, HOST_TIMEOUT).is_ok())
                 .ok_or_else(|| io::Error::other("no answer"))
         })
         .inspect_err(|e| eprintln!("ERROR cannot reach the host {address}: {e}"));

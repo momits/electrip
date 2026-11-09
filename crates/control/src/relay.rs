@@ -29,13 +29,17 @@ pub fn relay(
         }
     });
     let mut stream = TcpStream::connect(host)?;
-    // Only the host answers; its replies and states are not needed here.
+    // Drains the replies and states, so the host never waits to write
+    // them; it ends when the host is gone.
     let mut replies = stream.try_clone()?;
-    thread::spawn(move || io::copy(&mut replies, &mut io::sink()));
+    let host_alive = thread::spawn(move || io::copy(&mut replies, &mut io::sink()));
     // Gamepads of other instances have the same ids from SDL.
-    let offset = (RandomState::new().hash_one(host) as u32) & 0x7fff_0000 | 0x4000_0000;
+    let offset = (RandomState::new().hash_one(()) as u32) & 0x7fff_0000 | 0x4000_0000;
     loop {
         thread::sleep(POLL_INTERVAL);
+        if host_alive.is_finished() {
+            return Err(io::Error::other("the host is gone"));
+        }
         for command in input() {
             let command = serde_json::to_string(&offset_device(command, offset))?;
             writeln!(stream, "{command}")?;
@@ -57,24 +61,12 @@ fn forward(client: TcpStream, upstream: TcpStream) -> io::Result<()> {
     Ok(())
 }
 
-fn offset_device(command: Command, offset: u32) -> Command {
-    match command {
-        Command::AddDevice { device, kind } => Command::AddDevice {
-            device: device | offset,
-            kind,
-        },
-        Command::RemoveDevice { device } => Command::RemoveDevice {
-            device: device | offset,
-        },
-        Command::Input {
-            device,
-            control,
-            value,
-        } => Command::Input {
-            device: device | offset,
-            control,
-            value,
-        },
-        command => command,
+fn offset_device(mut command: Command, offset: u32) -> Command {
+    if let Command::AddDevice { device, .. }
+    | Command::RemoveDevice { device }
+    | Command::Input { device, .. } = &mut command
+    {
+        *device |= offset;
     }
+    command
 }
