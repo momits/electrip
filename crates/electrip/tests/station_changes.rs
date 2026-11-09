@@ -8,10 +8,10 @@
 
 mod common;
 
+use common::changes::{add_loco_at, connect_to_z21, drive_back_at_half, expect_back_at_half};
 use common::srcpd::{connect_to_srcpd, observer};
 use common::{App, Client, add_quick_loco, set_axis, z21_simulator};
-use electrip_core::decoder::{Decoder, Protocol};
-use electrip_core::station::{CommandStation, LocoState};
+use electrip_core::station::CommandStation;
 use electrip_station_z21::Z21Station;
 use serde_json::json;
 
@@ -23,37 +23,6 @@ fn on_z21() -> (App, Client, Z21Station) {
     let mut client = app.connect();
     connect_to_z21(&mut client, port);
     (app, client, other)
-}
-
-fn connect_to_z21(client: &mut Client, port: u16) {
-    let server = json!({"command": "set_server", "kind": "z21", "host": "127.0.0.1", "port": port, "bus": 0});
-    client.command(server).unwrap();
-    client.command(json!({"command": "connect"})).unwrap();
-}
-
-fn add_loco_at(client: &mut Client, address: u16) {
-    client.command(json!({"command": "add_loco"})).unwrap();
-    let command = json!({"command": "set_address", "loco": 1, "address": address});
-    client.command(command).unwrap();
-}
-
-/// Another program drives the loco back at step 64 of 128, i.e. about half
-/// of Vmax.
-fn drive_back_at_half(other: &mut dyn CommandStation, address: u16) {
-    let decoder = Decoder::new(Protocol::DccShort, address, 128).unwrap();
-    let state = LocoState {
-        forward: false,
-        step: 64,
-        functions: 0,
-    };
-    other.set_loco(&decoder, &state).unwrap();
-}
-
-/// Loco 1 of the app drives as [`drive_back_at_half`] set it.
-fn expect_back_at_half(client: &mut Client) {
-    client.wait_for_loco("forward", json!(false));
-    let speed = client.state["locos"][0]["speed"].as_f64().unwrap();
-    assert!((speed - 50.4).abs() < 0.1, "{speed}");
 }
 
 fn takes_over_a_change_by_another_program(

@@ -132,16 +132,19 @@ impl Discovery {
         self.daemon.register(info).map_err(io::Error::other)
     }
 
-    /// Searches for the host of the command station; `None` if this
+    /// Searches for the host of the command station, apart from the one
+    /// at `gone`, whose announcement can outlive it; `None` if this
     /// instance is to be host.
-    pub fn find_host(&self) -> io::Result<Option<SocketAddr>> {
+    pub fn find_host(&self, gone: Option<SocketAddr>) -> io::Result<Option<SocketAddr>> {
         let events = self.daemon.browse(SERVICE).map_err(io::Error::other)?;
         let start = Instant::now();
         let mut seen = HashMap::new();
         let found = loop {
             match events.recv_timeout(Duration::from_millis(100)) {
                 Ok(ServiceEvent::ServiceResolved(service)) => {
-                    if let Some(announcement) = announcement(&service) {
+                    if let Some(announcement) =
+                        announcement(&service).filter(|a| Some(a.address) != gone)
+                    {
                         seen.insert(service.fullname, announcement);
                     }
                 }

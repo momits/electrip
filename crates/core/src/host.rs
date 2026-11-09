@@ -54,7 +54,7 @@ impl Host {
     /// Executes a command; on an error the session stays unchanged.
     pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
         match command {
-            Command::Connect => self.connect()?,
+            Command::Connect => self.connect(self.session.station().power_on_start)?,
             Command::Disconnect => self.disconnect(),
             Command::TogglePower => {
                 let driver = self.driver.as_mut().ok_or(CommandError::Disconnected)?;
@@ -128,12 +128,16 @@ impl Host {
         Ok(())
     }
 
-    /// Opens the driver and switches the track power on if the session
-    /// says so.
-    fn connect(&mut self) -> Result<(), CommandError> {
-        let station = self.session.station();
-        let power = station.power_on_start;
-        let mut driver = (self.connect)(station).map_err(CommandError::Station)?;
+    /// Connects as a new host after the old one is gone (N-03, ADR 0010):
+    /// reads back the track power and the locos without switching the
+    /// power on.
+    pub fn take_over(&mut self) -> Result<(), CommandError> {
+        self.connect(false)
+    }
+
+    /// Opens the driver and switches the track power on if `power`.
+    fn connect(&mut self, power: bool) -> Result<(), CommandError> {
+        let mut driver = (self.connect)(self.session.station()).map_err(CommandError::Station)?;
         if power {
             driver.set_power(true).map_err(CommandError::Station)?;
         }

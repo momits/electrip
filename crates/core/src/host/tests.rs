@@ -773,6 +773,19 @@ fn connecting_asks_for_the_state_of_each_loco() {
 }
 
 #[test]
+fn a_new_host_reads_back_the_power_and_the_locos_without_switching() {
+    let (mut host, events, sent, _library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    set_server(&mut host, "srcp").unwrap();
+    host.take_over().unwrap();
+    assert!(host.session().station().connected);
+    assert_eq!(*sent.lock().unwrap(), [Call::Request(1)]);
+    events.lock().unwrap().push(StationEvent::Power(true));
+    host.poll(0.05);
+    assert!(host.session().station().track_power);
+}
+
+#[test]
 fn a_report_for_an_unknown_address_changes_nothing() {
     let (mut host, events, _, _library) = host_with_light();
     let state = LocoState::default();
