@@ -1,6 +1,7 @@
 //! What the window shows of the state of the host.
 
 use crate::generated::{ButtonKind, ControlButton, Controller, MainWindow};
+use electrip_core::picture;
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use slint::{Image, Model, ModelRc, SharedString, VecModel};
@@ -20,6 +21,7 @@ struct Loco {
     id: i32,
     name: String,
     max_speed: f32,
+    volume: f32,
     speed: f32,
     forward: bool,
     picture: Option<String>,
@@ -141,7 +143,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
     let picture = loco
         .picture
         .as_ref()
-        .and_then(|name| Image::load_from_path(&media.join(name)).ok())
+        .and_then(|name| Image::load_from_path(&picture::path(media, name)).ok())
         .unwrap_or_default();
     let devices: Vec<i32> = state
         .devices
@@ -153,6 +155,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         id: loco.id,
         name: loco.name.as_str().into(),
         picture,
+        volume: loco.volume,
         speed: loco.speed,
         max_speed: loco.max_speed,
         forward: loco.forward,

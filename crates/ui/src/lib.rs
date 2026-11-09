@@ -7,10 +7,10 @@ mod view;
 
 use serde::Deserialize;
 use serde_json::{Value, json};
-use slint::{ComponentHandle, ModelRc, VecModel, Weak};
+use slint::{ComponentHandle, Image, ModelRc, VecModel, Weak};
 use std::io::{BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::thread;
 
@@ -55,6 +55,25 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<TcpStream>) {
     window.on_set_view(move |auto_focus, only_active| {
         let view = json!({"auto_focus": auto_focus, "only_active": only_active});
         send(&s, json!({"command": "set_view", "view": view}))
+    });
+    window.on_load_picture(|path| {
+        Image::load_from_path(Path::new(path.as_str())).unwrap_or_default()
+    });
+    let s = Rc::clone(&stream);
+    window.on_set_picture(move |loco, path, x, y, width| {
+        // Rounded down, the crop stays inside the image.
+        let crop = json!({"x": x as u32, "y": y as u32, "width": width as u32});
+        send(
+            &s,
+            json!({"command": "set_picture", "loco": loco, "path": path.as_str(), "crop": crop}),
+        )
+    });
+    let s = Rc::clone(&stream);
+    window.on_set_volume(move |loco, volume| {
+        send(
+            &s,
+            json!({"command": "set_volume", "loco": loco, "volume": volume}),
+        )
     });
     window.on_toggle_power(move || send(&stream, json!({"command": "toggle_power"})));
 }
