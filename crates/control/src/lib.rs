@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub use discovery::{Discovery, Status, station_id};
 pub use relay::relay;
 
 /// Version of the message format; raised on incompatible changes.
@@ -179,6 +180,7 @@ fn lock(shared: &Mutex<Shared>) -> io::Result<std::sync::MutexGuard<'_, Shared>>
         .map_err(|_| io::Error::other("control channel state poisoned"))
 }
 
+mod discovery;
 mod relay;
 #[cfg(test)]
 mod tests;
