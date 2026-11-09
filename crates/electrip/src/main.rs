@@ -52,8 +52,8 @@ struct Args {
 }
 
 fn run() -> Result<(), String> {
-    let args = parse(env::args().skip(1))?;
-    let library = match args.library.clone() {
+    let mut args = parse(env::args().skip(1))?;
+    let library = match args.library.take() {
         Some(library) => library,
         None => default_library().ok_or("no data directory, use --library <dir>")?,
     };
@@ -128,7 +128,9 @@ fn choose_role(
     };
     let found = discovery
         .as_ref()
-        .and_then(|d| d.find_host().inspect_err(no_discovery).ok()?);
+        .and_then(|d| d.find_host().inspect_err(no_discovery).ok()?)
+        // An announcement can outlive a host that crashed.
+        .filter(answers);
     Ok(match found {
         Some(address) => (Role::Client(address), None, discovery),
         None => (Role::Host(Box::new(host)), sound_card, discovery),
@@ -142,11 +144,15 @@ fn reachable(address: &str) -> Option<SocketAddr> {
         .to_socket_addrs()
         .and_then(|mut addresses| {
             addresses
-                .find(|a| TcpStream::connect_timeout(a, HOST_TIMEOUT).is_ok())
+                .find(answers)
                 .ok_or_else(|| io::Error::other("no answer"))
         })
         .inspect_err(|e| eprintln!("ERROR cannot reach the host {address}: {e}"));
     reachable.ok()
+}
+
+fn answers(host: &SocketAddr) -> bool {
+    TcpStream::connect_timeout(host, HOST_TIMEOUT).is_ok()
 }
 
 /// The host on the library; it opens `file` instead of the first
