@@ -24,6 +24,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – B-03: beliebig viele Gamepads (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün).
+- Umgesetzt wie von Mo beschrieben (Eintrag „B-03 geändert“ unten): `MAX_DEVICES` und `TooManyDevices` entfernt; das Feld `color` heißt jetzt `number` (Zustand, Steuerkanal, `spec/steuerkanal.md`). Ein neues Gerät bekommt die kleinste freie Nummer ab 1. Ältere Einträge mit „Farbe 1 bis 12“ sind damit überholt.
+- Oberfläche: `DeviceColors` in `crates/ui/ui/control.slint` ist die Palette der acht Farben aus Mos Eintrag (Werte unverändert); `DeviceColors.of(number)` liefert `palette[(number - 1) mod 8]`. Die Kreise mit den Nummern brechen in Zeilen um, wenn viele Geräte an einer Lok hängen.
+- Tests: 30 virtuelle SDL-Gamepads mit Hotplug (`crates/input/tests/hotplug.rs`); Kern-Test, dass Nummern eindeutig bleiben und frei gewordene wieder vergeben werden; Screenshots `control_view_devices.png` (30 Loks) und `control_view_wrapped.png` (9 Geräte an einer Lok); Kontrast weißer Schrift auf jeder Palettenfarbe mindestens 3:1 (WCAG). Der Test liest die Palette aus der Oberfläche.
+- `cargo xtask test`, `cargo xtask loc` (5361 Zeilen) und `cargo xtask parity` grün.
+- **B-03** `wired` und `verified`. Prüfpunkte in `spec/hw-checklist.md` ergänzt (Umbruch).
+- Einfachheits-Review: ok (Sub-Agent). Nur ein Kommentar zur unbeschränkten Nummernsuche ergänzt.
+
 ## 2026-11-09 – B-05: Lokbild und Lautstärke im Fenster (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün).

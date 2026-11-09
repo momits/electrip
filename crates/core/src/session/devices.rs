@@ -18,6 +18,7 @@ impl Session {
         if self.devices.iter().any(|d| d.id == id) {
             return Err(CommandError::DeviceExists(id));
         }
+        // The range is unbounded, so there is always a free number.
         let number = (1..)
             .find(|number| self.devices.iter().all(|d| d.number != *number))
             .unwrap_or_default();
