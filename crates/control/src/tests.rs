@@ -1,8 +1,9 @@
 use super::*;
 use electrip_core::audio::{AudioSink, ChannelId};
 use electrip_core::station::StationError;
+use std::net::SocketAddr;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
 struct NoAudio;
@@ -73,14 +74,19 @@ fn replies_report_success_or_the_error() {
     );
 }
 
-#[test]
-fn a_client_instance_sends_its_devices_to_the_host() {
-    let (host, _library) = host();
+/// Serves a new host on a free port; returns its address.
+fn serve_host() -> (SocketAddr, TempDir) {
+    let (host, library) = host();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     thread::spawn(move || serve(listener, host, Vec::new));
+    (address, library)
+}
+
+/// Input that adds gamepad 1 once.
+fn one_gamepad() -> impl FnMut() -> Vec<Command> {
     let mut added = false;
-    let input = move || {
+    move || {
         let kind = "Gamepad".to_string();
         let commands = if added {
             vec![]
@@ -89,17 +95,75 @@ fn a_client_instance_sends_its_devices_to_the_host() {
         };
         added = true;
         commands
-    };
-    let relayed = TcpListener::bind("127.0.0.1:0").unwrap();
-    thread::spawn(move || relay(relayed, address, input));
+    }
+}
 
+/// The id of the first input device the host at `address` reports.
+fn first_device(address: SocketAddr) -> u64 {
     let stream = TcpStream::connect(address).unwrap();
-    let id = BufReader::new(stream)
+    BufReader::new(stream)
         .lines()
         .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
-        .find_map(|message| message["state"]["devices"][0]["id"].as_u64());
+        .find_map(|message| message["state"]["devices"][0]["id"].as_u64())
+        .unwrap()
+}
+
+#[test]
+fn a_client_instance_sends_its_devices_to_the_host() {
+    let (address, _library) = serve_host();
+    let mut relay = Relay::start(TcpListener::bind("127.0.0.1:0").unwrap(), address);
+    thread::spawn(move || relay.run(one_gamepad()));
+
+    let id = first_device(address);
     // Offset, so gamepads of different instances keep apart.
-    let id = id.unwrap();
     assert_ne!(id, 1);
     assert_eq!(id & 0xffff, 1);
+}
+
+#[test]
+fn the_host_sends_a_sign_of_life_each_second() {
+    let (address, _library) = serve_host();
+    let stream = TcpStream::connect(address).unwrap();
+    stream.set_read_timeout(Some(SILENCE)).unwrap();
+    let mut lines = BufReader::new(stream).lines();
+    lines.next(); // hello
+    lines.next(); // state
+    let start = Instant::now();
+    let state: Value = serde_json::from_str(&lines.next().unwrap().unwrap()).unwrap();
+    assert_eq!(state["type"], "state");
+    assert!(start.elapsed() < Duration::from_millis(1500));
+}
+
+#[test]
+fn a_silent_host_counts_as_gone() {
+    let silent = TcpListener::bind("127.0.0.1:0").unwrap();
+    let mut relay = Relay::start(
+        TcpListener::bind("127.0.0.1:0").unwrap(),
+        silent.local_addr().unwrap(),
+    );
+    let start = Instant::now();
+    assert!(relay.run(Vec::new).is_err());
+    let took = start.elapsed();
+    assert!(took >= SILENCE && took < SILENCE * 2, "{took:?}");
+}
+
+#[test]
+fn the_next_host_gets_the_devices_still_connected() {
+    let gone = TcpListener::bind("127.0.0.1:0").unwrap();
+    let mut relay = Relay::start(
+        TcpListener::bind("127.0.0.1:0").unwrap(),
+        gone.local_addr().unwrap(),
+    );
+    // The host closes the connection after the first command.
+    thread::spawn(move || {
+        let (stream, _) = gone.accept().unwrap();
+        BufReader::new(stream).lines().next();
+    });
+    let mut input = one_gamepad();
+    assert!(relay.run(&mut input).is_err());
+
+    let (address, _library) = serve_host();
+    relay.switch(address);
+    thread::spawn(move || relay.run(input));
+    assert_eq!(first_device(address) & 0xffff, 1);
 }

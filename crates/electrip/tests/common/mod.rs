@@ -6,6 +6,7 @@
 // every helper.
 #![allow(clippy::unwrap_used, clippy::panic, dead_code)]
 
+pub mod changes;
 pub mod diesel;
 pub mod srcpd;
 
@@ -65,7 +66,13 @@ impl App {
 
     /// A new client, after the greeting; `state` holds the initial state.
     pub fn connect(&self) -> Client {
-        let stream = TcpStream::connect(&self.address).unwrap();
+        self.try_connect().unwrap()
+    }
+
+    /// Like [`App::connect`]; `None` if the connection closes before the
+    /// greeting.
+    pub fn try_connect(&self) -> Option<Client> {
+        let stream = TcpStream::connect(&self.address).ok()?;
         // A missing message fails the test instead of blocking it.
         stream
             .set_read_timeout(Some(Duration::from_secs(5)))
@@ -75,9 +82,12 @@ impl App {
             writer: stream,
             state: Value::Null,
         };
-        assert_eq!(client.next()["type"], "hello");
+        let mut hello = String::new();
+        client.reader.read_line(&mut hello).ok()?;
+        let hello: Value = serde_json::from_str(&hello).ok()?;
+        assert_eq!(hello["type"], "hello");
         client.expect_state();
-        client
+        Some(client)
     }
 }
 

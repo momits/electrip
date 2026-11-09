@@ -12,7 +12,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 pub use discovery::{Discovery, Status, station_id};
-pub use relay::relay;
+pub use relay::Relay;
 
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
@@ -21,12 +21,18 @@ pub const VERSION: u32 = 1;
 /// drives the locos; Electrip 1 drove every 50 ms.
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
+/// The host sends the state at least this often as a sign of life
+/// (N-03); clients take it as gone after [`SILENCE`] without one.
+const HEARTBEAT: Duration = Duration::from_secs(1);
+const SILENCE: Duration = Duration::from_secs(3);
+
 /// The host and all connected clients. One lock for both keeps the
 /// messages to each client in order.
 struct Shared {
     host: Host,
     clients: Vec<TcpStream>,
     last_poll: Instant,
+    last_broadcast: Instant,
 }
 
 /// Serves clients, each in a thread, and polls the host and the input
@@ -41,6 +47,7 @@ pub fn serve(
         host,
         clients: Vec::new(),
         last_poll: Instant::now(),
+        last_broadcast: Instant::now(),
     }));
     let acceptor = Arc::clone(&shared);
     thread::spawn(move || accept(listener, &acceptor));
@@ -68,8 +75,10 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     let result = serve_client(stream, shared, &mut devices);
     if !devices.is_empty() {
         let mut shared = lock(shared)?;
-        for device in devices {
-            let _ = shared.host.apply(Command::RemoveDevice { device });
+        for added in devices {
+            if let Command::AddDevice { device, .. } = added {
+                let _ = shared.host.apply(Command::RemoveDevice { device });
+            }
         }
         shared.broadcast();
     }
@@ -81,7 +90,7 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
 fn serve_client(
     stream: TcpStream,
     shared: &Mutex<Shared>,
-    devices: &mut Vec<u32>,
+    devices: &mut Vec<Command>,
 ) -> io::Result<()> {
     let mut writer = stream.try_clone()?;
     {
@@ -107,10 +116,12 @@ fn serve_client(
     Ok(())
 }
 
-fn track(devices: &mut Vec<u32>, command: &Command) {
+/// Keeps the `add_device` commands of the devices still connected.
+fn track(devices: &mut Vec<Command>, command: &Command) {
     match command {
-        Command::AddDevice { device, .. } => devices.push(*device),
-        Command::RemoveDevice { device } => devices.retain(|d| d != device),
+        Command::AddDevice { .. } => devices.push(command.clone()),
+        Command::RemoveDevice { device } => devices
+            .retain(|added| !matches!(added, Command::AddDevice { device: d, .. } if d == device)),
         _ => {}
     }
 }
@@ -128,7 +139,7 @@ fn poll(shared: &Mutex<Shared>, mut input: impl FnMut() -> Vec<Command>) -> io::
         for command in commands {
             changed |= shared.host.apply(command).is_ok();
         }
-        if shared.poll() || changed {
+        if shared.poll() || changed || shared.last_broadcast.elapsed() >= HEARTBEAT {
             shared.broadcast();
         }
     }
@@ -148,6 +159,7 @@ impl Shared {
     fn broadcast(&mut self) {
         let state = state(self.host.session());
         self.clients.retain_mut(|c| send(c, &state).is_ok());
+        self.last_broadcast = Instant::now();
     }
 }
 

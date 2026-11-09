@@ -6,7 +6,9 @@
 
 mod common;
 
-use common::{App, Client};
+use common::changes::{add_loco_at, connect_to_z21, drive_back_at_half, expect_back_at_half};
+use common::{App, Client, z21_simulator};
+use electrip_station_z21::Z21Station;
 use serde_json::{Value, json};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -115,4 +117,41 @@ fn an_unreachable_host_leaves_the_instance_on_its_own() {
     let mut client = app.connect();
     client.command(json!({"command": "add_loco"})).unwrap();
     assert!(library.path().join("Electrip.json").exists());
+}
+
+/// Host-Ausfall: a client becomes host and reads back the locos from the
+/// command station.
+#[test]
+fn a_client_becomes_host_when_the_host_is_gone() {
+    let port = z21_simulator();
+    // Until Q-016 the client has the same configuration as the host.
+    let library = TempDir::new().unwrap();
+    let configure = |client: &mut Client| {
+        add_loco_at(client, 3);
+        connect_to_z21(client, port);
+    };
+    configure(&mut App::start_in(library.path(), &[]).connect());
+    let host = App::start();
+    configure(&mut host.connect());
+    let client = client_of(host.address(), &library);
+    drive_back_at_half(&mut Z21Station::connect("127.0.0.1", port).unwrap(), 3);
+    expect_back_at_half(&mut client.connect());
+
+    drop(host);
+    let mut at_client = connect_when_host(&client);
+    assert_eq!(at_client.state["station"]["connected"], true);
+    expect_back_at_half(&mut at_client);
+}
+
+/// Connects to `app` once it is host itself; before that its relay closes
+/// each connection to the host that is gone.
+fn connect_when_host(app: &App) -> Client {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match app.try_connect() {
+            Some(client) if client.state["station"]["connected"] == true => return client,
+            _ => assert!(Instant::now() < deadline, "ERROR no new host"),
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
 }
