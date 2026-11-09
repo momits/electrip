@@ -4,7 +4,7 @@
 //! instance searches for the host of its command station.
 
 use electrip_core::session::Station;
-use mdns_sd::{ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
+use mdns_sd::{RecvTimeoutError, ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
 use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
@@ -61,16 +61,13 @@ enum Election {
 /// smaller id. Without a host the searching instance with the smallest id
 /// becomes host, so instances that start together find one host.
 fn elect(me: u64, station: &str, seen: &[Announcement]) -> Election {
-    let mut same = seen
-        .iter()
-        .filter(|a| a.station == station && a.instance != me);
-    let host = same
-        .clone()
-        .filter(|a| a.status == Status::Host)
-        .min_by_key(|a| a.instance);
-    match host {
+    let same = |status| {
+        seen.iter()
+            .filter(move |a| a.station == station && a.status == status && a.instance != me)
+    };
+    match same(Status::Host).min_by_key(|a| a.instance) {
         Some(host) => Election::Connect(host.address),
-        None if same.any(|a| a.status == Status::Searching && a.instance < me) => Election::Wait,
+        None if same(Status::Searching).any(|a| a.instance < me) => Election::Wait,
         None => Election::Host,
     }
 }
@@ -150,6 +147,9 @@ impl Discovery {
                 }
                 Ok(ServiceEvent::ServiceRemoved(_, name)) => {
                     seen.remove(&name);
+                }
+                Err(RecvTimeoutError::Disconnected) => {
+                    return Err(io::Error::other("the mDNS daemon stopped"));
                 }
                 _ => {}
             }

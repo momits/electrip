@@ -24,6 +24,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – N-03: Host per mDNS finden, zweites Inkrement (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- Ohne `--host` sucht eine Instanz beim Start ca. 2 s per mDNS (`_electrip._tcp`, Bibliothek `mdns-sd` wie in ADR 0010) nach dem Host ihrer Zentrale und wird sein Client; sonst ist sie selbst Host (`crates/control/src/discovery.rs`).
+- Jede Instanz veröffentlicht zufällige Instanz-ID, Protokollversion, Zentralen-ID und Status (`searching`, `host`, `client`). Zentralen-ID: aufgelöste IP, Port und Bus; `localhost` wird durch die LAN-Adresse des Rechners ersetzt.
+- Gleichzeitiger Start: Von den suchenden Instanzen einer Zentrale wird die mit der kleinsten ID Host, die anderen warten bis zu 4 s auf sie. Von zwei Hosts wählt ein neuer Client den mit der kleineren ID. Ein gefundener Host, der nicht antwortet (abgestürzt, Eintrag noch im Cache), zählt nicht.
+- Ohne mDNS meldet die App `ERROR no discovery: …` und ist Host. `--no-discovery` schaltet die Suche ab; die Tests starten die App so, damit sie sich nicht gegenseitig finden und nicht 2 s warten.
+- **Im Container ist Multicast gesperrt** (`sendto` liefert `EPERM`, auch ohne Sandbox). Getestet sind deshalb nur Auswahlregel, Lesen der Ankündigung und Zentralen-ID (`crates/control/src/discovery/tests.rs`); die Suche selbst prüft Mo (`spec/hw-checklist.md`, „N-03 – Host per mDNS finden“).
+- `cargo xtask test`, `cargo xtask loc` (5677 Zeilen), `cargo xtask parity` und `cargo deny check licenses bans sources` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Gefundener Host wird wie bei `--host` auf Antwort geprüft (`answers`), kein Leerlauf bei geschlossenem Kanal des mDNS-Daemons, `elect` einfacher, kein `clone` der Argumente.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Zentralen-ID der Z21: ADR 0010 nennt die Seriennummer; heute IP, Port und Bus wie bei srcpd (braucht `LAN_GET_SERIAL_NUMBER` im Treiber).
+  - Doppel-Host während des Betriebs (z. B. nach getrenntem Netz): Ein Host gibt seine Rolle heute nicht ab. Lebenszeichen, Host-Ausfall und neuer Host fehlen ebenso.
+  - Eine Instanz, die Client wird, öffnet vorher trotzdem ihre Konfiguration und die Soundkarte (harmlos, nur unnötig).
+  - Hinweis in der UI ohne Netzwerkzugriff, Eingabe der Host-Adresse in der UI.
+
 ## 2026-11-09 – N-03: Client mit eingetragener Host-Adresse, erstes Inkrement (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Offen sind in Phase 3 nur noch N-03, N-04 und N-05.
