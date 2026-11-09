@@ -189,5 +189,6 @@ Vorbereitung: Electrip mit der Zentrale verbinden (srcpd mit echter Anlage oder 
 - [ ] Achse am Gamepad ausgelenkt halten, dann im fremden Programm die Geschwindigkeit ändern: Electrip beschleunigt vom neuen Wert aus weiter, ohne Sprung zurück.
 - [ ] Mit Electrip allein bis Vmax beschleunigen (Lok mit 128 Fahrstufen): Die Anzeige bleibt bei Vmax stehen und zittert nicht.
 - [ ] Nothalt der Lok in Electrip: Die Richtung in Electrip bleibt, wie sie war.
+- [ ] Das fremde Programm fährt die Lok, Electrip ist dabei nicht verbunden. Dann Electrip verbinden: Electrip zeigt sofort Geschwindigkeit, Richtung und Funktionen der Lok, die Lok fährt ruhig weiter (Z21 und srcpd).
 
 Ergebnis: _offen_
