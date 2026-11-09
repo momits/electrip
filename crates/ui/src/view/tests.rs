@@ -1,6 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use super::*;
+use crate::generated::DeviceColors;
 use electrip_core::config::View;
 use electrip_core::picture::Crop;
 use electrip_core::session::Command;
@@ -30,8 +31,8 @@ fn state(locos: Vec<Value>, devices: Value) -> State {
     serde_json::from_value(state).unwrap()
 }
 
-fn device(loco: impl Into<Option<i32>>, color: i32) -> Value {
-    json!({"loco": loco.into(), "color": color, "focus": false})
+fn device(loco: impl Into<Option<i32>>, number: i32) -> Value {
+    json!({"loco": loco.into(), "number": number, "focus": false})
 }
 
 /// A loco with one button of each group, each defined in reverse order.
@@ -99,7 +100,7 @@ fn only_active_shows_controlled_or_moving_locos() {
 }
 
 /// The loco to bring into view for `devices`, when the window shows the
-/// device of color 1 on loco 1.
+/// device number 1 on loco 1.
 fn focus_after(devices: Value, auto_focus: bool) -> Option<i32> {
     let locos = vec![loco(1, "A"), loco(2, "B"), loco(3, "C")];
     let shown = state(locos.clone(), json!([device(1, 1)]));
@@ -190,21 +191,28 @@ fn save(image: &RgbImage, name: &str) {
     image.save(dir.join(name)).unwrap();
 }
 
-/// Colors of the input devices 1 to 12.
-const DEVICE_COLORS: [[u8; 3]; 12] = [
-    [0x6a, 0xa9, 0xd0],
-    [0xf3, 0x9d, 0x41],
-    [0xf0, 0x80, 0x70],
-    [0x4a, 0x7a, 0x99],
-    [0xa8, 0xa8, 0xa8],
-    [0x8d, 0xcc, 0x8d],
-    [0xff, 0xc2, 0x26],
-    [0xc9, 0x8a, 0xca],
-    [0x4f, 0xa6, 0xb2],
-    [0xa0, 0x78, 0x5a],
-    [0xe0, 0x7a, 0xb0],
-    [0x7a, 0x8a, 0x3a],
-];
+/// The colors of the input devices from the palette of the window.
+fn device_colors(main: &MainWindow) -> Vec<[u8; 3]> {
+    let palette = main.global::<DeviceColors>().get_palette();
+    palette
+        .iter()
+        .map(|c| [c.red(), c.green(), c.blue()])
+        .collect()
+}
+
+/// The contrast of white text on `color` after WCAG 2.
+fn contrast_to_white(color: [u8; 3]) -> f64 {
+    let linear = |c: u8| {
+        let c = f64::from(c) / 255.0;
+        if c <= 0.04045 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    let [r, g, b] = color.map(linear);
+    1.05 / (0.2126 * r + 0.7152 * g + 0.0722 * b + 0.05)
+}
 
 /// Colors of switched-off buttons: driving sound, sound functions, event
 /// sounds, functions.
@@ -295,12 +303,13 @@ fn window_shows_the_state_and_sends_commands() {
     let main = MainWindow::new().unwrap();
     main.set_controllers(ModelRc::new(VecModel::<Controller>::default()));
     main.show().unwrap();
+    let colors = device_colors(&main);
     show(&main, &state, media.path());
     let image = screenshot(&window);
     save(&image, "control_view.png");
 
     // The controlled loco has the color of its device, the other none.
-    assert_eq!(*image.get_pixel(10, 200), Rgb(DEVICE_COLORS[0]));
+    assert_eq!(*image.get_pixel(10, 200), Rgb(colors[0]));
     assert_eq!(*image.get_pixel(146, 200), Rgb([0xfa, 0xfa, 0xfa]));
     // The picture from the media directory, its blue is the same
     // everywhere; where exactly depends on the font of the name.
@@ -318,7 +327,7 @@ fn window_shows_the_state_and_sends_commands() {
     );
     let image = screenshot(&window);
     save(&image, "control_view_compact.png");
-    assert_eq!(*image.get_pixel(WIDTH - 30, 200), Rgb(DEVICE_COLORS[0]));
+    assert_eq!(*image.get_pixel(WIDTH - 30, 200), Rgb(colors[0]));
     assert_eq!(*image.get_pixel(WIDTH - 100, 200), Rgb([0xfa, 0xfa, 0xfa]));
 
     // B-19: driving sound, sound functions, event sounds, functions, each
@@ -336,14 +345,20 @@ fn window_shows_the_state_and_sends_commands() {
         [driving, sound, event, function, function]
     );
 
-    // B-03: twelve devices, each on its own loco, in a wide window.
-    window.set_size(slint::PhysicalSize::new(1300, HEIGHT));
-    let locos = (1..=12).map(|id| loco(id, &format!("Lok {id}"))).collect();
-    let devices = (1..=12).map(|id| device(id, id)).collect();
+    // B-03: thirty devices, each on its own loco, in a wide window; the
+    // eight colors repeat, white numbers stay readable on each.
+    assert_eq!(colors.len(), 8);
+    for color in &colors {
+        assert!(contrast_to_white(*color) >= 3.0, "{color:?}");
+    }
+    window.set_size(slint::PhysicalSize::new(2780, HEIGHT));
+    let locos = (1..=30).map(|id| loco(id, &format!("Lok {id}"))).collect();
+    let devices = (1..=30).map(|id| device(id, id)).collect();
     show(&main, &self::state(locos, devices), media.path());
     let image = screenshot(&window);
     save(&image, "control_view_devices.png");
-    for (i, color) in DEVICE_COLORS.into_iter().enumerate() {
+    for i in 0..30 {
+        let color = colors[i % 8];
         let left = 6 + 92 * i as u32;
         // The loco has the color of its device, and the symbol above the
         // name is a white circle with the number in that color.
@@ -353,13 +368,28 @@ fn window_shows_the_state_and_sends_commands() {
         assert!((36..50).any(|x| (16..28).any(|y| symbol(x, y) == color)));
     }
 
+    // Nine devices on one loco: the symbols wrap into rows of five.
+    window.set_size(slint::PhysicalSize::new(WIDTH, HEIGHT));
+    let devices = (1..=9).map(|id| device(1, id)).collect();
+    show(
+        &main,
+        &self::state(vec![loco(1, "Lok 1")], devices),
+        media.path(),
+    );
+    let image = screenshot(&window);
+    save(&image, "control_view_wrapped.png");
+    let rows: Vec<_> = (0..3)
+        .map(|row| *image.get_pixel(16, 17 + 24 * row))
+        .collect();
+    assert_eq!(rows, [Rgb([0xff; 3]), Rgb([0xff; 3]), Rgb(colors[0])]);
+
     // B-25: the texts follow the language, German or English.
     let bottom_bar = |language, name| {
         slint::select_bundled_translation(language).unwrap();
         window.request_redraw();
         let image = screenshot(&window);
         save(&image, name);
-        image::imageops::crop_imm(&image, 0, HEIGHT - 40, 1300, 40).to_image()
+        image::imageops::crop_imm(&image, 0, HEIGHT - 40, WIDTH, 40).to_image()
     };
     let german = bottom_bar("de", "control_view_de.png");
     let english = bottom_bar("en", "control_view_en.png");

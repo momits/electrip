@@ -2,7 +2,7 @@
 
 use super::{Command, CommandError, LocoEntry, Session};
 use crate::electrip1;
-use crate::input::{Device, MAX_DEVICES, Mapping, Target};
+use crate::input::{Device, Mapping, Target};
 use std::mem;
 
 impl Session {
@@ -18,11 +18,11 @@ impl Session {
         if self.devices.iter().any(|d| d.id == id) {
             return Err(CommandError::DeviceExists(id));
         }
-        let color = (1..=MAX_DEVICES)
-            .find(|color| self.devices.iter().all(|d| d.color != *color))
-            .ok_or(CommandError::TooManyDevices)?;
+        let number = (1..)
+            .find(|number| self.devices.iter().all(|d| d.number != *number))
+            .unwrap_or_default();
         self.mapping(kind.clone());
-        self.devices.push(Device::new(id, kind, color));
+        self.devices.push(Device::new(id, kind, number));
         Ok(())
     }
 

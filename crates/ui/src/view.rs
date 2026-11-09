@@ -47,7 +47,7 @@ struct Switch {
 #[derive(Debug, Deserialize)]
 struct Device {
     loco: Option<i32>,
-    color: i32,
+    number: i32,
     focus: bool,
 }
 
@@ -88,7 +88,7 @@ pub(crate) fn focus(state: &State, shown: &ModelRc<Controller>) -> Option<i32> {
     let changed = |d: &&Device| {
         !shown
             .iter()
-            .any(|c| Some(c.id) == d.loco && c.devices.iter().any(|color| color == d.color))
+            .any(|c| Some(c.id) == d.loco && c.devices.iter().any(|number| number == d.number))
     };
     if let Some(device) = devices().find(|d| d.focus) {
         return device.loco;
@@ -149,7 +149,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         .devices
         .iter()
         .filter(|d| d.loco == Some(loco.id))
-        .map(|d| d.color)
+        .map(|d| d.number)
         .collect();
     Controller {
         id: loco.id,

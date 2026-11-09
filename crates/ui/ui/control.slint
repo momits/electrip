@@ -28,14 +28,19 @@ export struct Controller {
     max-speed: float,
     forward: bool,
     buttons: [ControlButton],
-    // The colors (1 to 12) of the devices that control the loco.
+    // The numbers (from 1) of the devices that control the loco.
     devices: [int],
 }
 
-// The colors of the input devices, after gamepads.css of Electrip 1.
-global DeviceColors {
-    out property <[color]> colors: [#6aa9d0, #f39d41, #f08070, #4a7a99, #a8a8a8, #8dcc8d,
-        #ffc226, #c98aca, #4fa6b2, #a0785a, #e07ab0, #7a8a3a];
+// The colors of the input devices, dark enough for white text; from the
+// ninth device on they repeat and only the number tells devices apart
+// (B-03).
+export global DeviceColors {
+    out property <[color]> palette: [#0072B2, #D55E00, #00855F, #B8318A, #8F6A00, #5B4FB5,
+        #00838F, #5F6B7A];
+    public pure function of(number: int) -> color {
+        return palette[Math.mod(number - 1, palette.length)];
+    }
 }
 
 component DeviceSymbol inherits Rectangle {
@@ -46,7 +51,7 @@ component DeviceSymbol inherits Rectangle {
     background: white;
     Text {
         text: device;
-        color: DeviceColors.colors[device - 1];
+        color: DeviceColors.of(device);
         font-weight: 700;
         font-size: 11px;
     }
@@ -119,15 +124,19 @@ component ControllerView inherits Rectangle {
     property <bool> highlighted: controller.devices.length > 0;
     property <color> text-color: highlighted ? white : #383436;
     border-radius: 5px;
-    background: highlighted ? DeviceColors.colors[controller.devices[0] - 1] : transparent;
+    background: highlighted ? DeviceColors.of(controller.devices[0]) : transparent;
     VerticalLayout {
         padding: 6px;
         spacing: 4px;
-        HorizontalLayout {
-            alignment: center;
-            spacing: 2px;
-            height: 22px;
-            for device in controller.devices: DeviceSymbol {
+        // The symbols wrap into rows when many devices control the loco.
+        Rectangle {
+            property <length> step: 24px;
+            property <int> per-row: max(1, floor((self.width + 2px) / step));
+            property <int> columns: min(controller.devices.length, per-row);
+            height: max(1, ceil(controller.devices.length / per-row)) * step - 2px;
+            for device[i] in controller.devices: DeviceSymbol {
+                x: (parent.width - columns * step + 2px) / 2 + Math.mod(i, per-row) * step;
+                y: floor(i / per-row) * step;
                 device: device;
             }
         }

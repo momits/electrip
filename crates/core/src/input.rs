@@ -96,19 +96,15 @@ impl Mapping {
     }
 }
 
-/// At most this many devices are connected at once, each with its own
-/// color, like the twelve gamepad icons of Electrip 1 (B-03).
-pub const MAX_DEVICES: u8 = 12;
-
 /// A connected input device and the loco it controls.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Device {
     pub id: u32,
     pub kind: String,
     pub loco: Option<u32>,
-    /// The color of the device, 1 to `MAX_DEVICES`, unique among the
-    /// connected devices.
-    pub color: u8,
+    /// The number of the device, from 1, unique among the connected
+    /// devices; the UI shows it with a color from its palette (B-03).
+    pub number: u32,
     /// Whether the device holds "focus" (B-02).
     pub focus: bool,
     /// The buttons held down now.
@@ -139,12 +135,12 @@ impl Scroll {
 }
 
 impl Device {
-    pub fn new(id: u32, kind: String, color: u8) -> Self {
+    pub fn new(id: u32, kind: String, number: u32) -> Self {
         Device {
             id,
             kind,
             loco: None,
-            color,
+            number,
             focus: false,
             held: Vec::new(),
             scroll: None,
