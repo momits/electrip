@@ -24,6 +24,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – N-03: Zustand der Loks beim Verbinden zurücklesen, viertes Inkrement (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab. Es bereitet den Host-Ausfall vor: Ein neuer Host muss den Zustand von der Zentrale zurücklesen.
+- `CommandStation::request_loco` fragt den Zustand einer Lok ab; die Antwort kommt als Ereignis und wird wie eine fremde Änderung übernommen. Der Host fragt beim Verbinden jede Lok der Konfiguration ab.
+- Z21: `LAN_X_GET_LOCO_INFO` (4.1). Der Treiber merkt sich den Decoder der abgefragten Lok und rechnet die gemeldete Fahrstufe in die Fahrstufen des Decoders um (Motorola: 28 statt 126). srcpd braucht nichts, die INFO-Sitzung beginnt mit dem aktuellen Stand (Standard-Implementierung ohne Wirkung).
+- Kennt die Z21 eine Lok noch nicht, meldet sie Stillstand; der Host übernimmt dann auch die gemeldete Richtung.
+- Tests: `host/tests.rs` (Abfrage jeder Lok beim Verbinden), `telegram/tests.rs` (Telegramm), Szenario `reads_back_a_loco` für beide Treiber (Motorola 28 Fahrstufen), `station_changes.rs` (App verbindet sich mit dem Z21-Simulator, während ein fremdes Programm die Lok fährt).
+- `cargo xtask test`, `cargo xtask sim up` (srcpd-loopback), `cargo xtask loc` (5793 Zeilen) und `cargo xtask parity` grün. Prüfpunkt in `spec/hw-checklist.md` ergänzt.
+- Einfachheits-Review: refactored (Sub-Agent). Kopierte Testschritte in `station_changes.rs` zu Hilfsfunktionen zusammengeführt, erwartete Abfragen im Host-Test als feste Liste.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Lebenszeichen, Host-Ausfall und neuer Host; Doppel-Host während des Betriebs.
+  - Eine Lok, die bei bestehender Verbindung hinzukommt oder eine neue Adresse bekommt, wird nicht abgefragt.
+  - Zentralen-ID der Z21 per Seriennummer.
+
 ## 2026-11-09 – N-03: Änderungen fremder Programme übernehmen, drittes Inkrement (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
