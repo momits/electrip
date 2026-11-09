@@ -363,9 +363,25 @@ fn window_shows_the_state_and_sends_commands() {
         // The loco has the color of its device, and the symbol above the
         // name is a white circle with the number in that color.
         assert_eq!(*image.get_pixel(left + 10, 200), Rgb(color));
+        // The fonts differ by system, so the darkest pixel of the number
+        // only has to be nearest to that color.
         let symbol = |x, y| image.get_pixel(left + x, y).0;
-        assert_eq!(symbol(43, 15), [0xff; 3]);
-        assert!((36..50).any(|x| (16..28).any(|y| symbol(x, y) == color)));
+        assert_eq!(symbol(43, 14), [0xff; 3]);
+        let pixels = (36..50).flat_map(|x| (16..30).map(move |y| (x, y)));
+        let darkest = pixels
+            .map(|(x, y)| symbol(x, y))
+            .min_by_key(|p| p.map(u32::from).iter().sum::<u32>());
+        let distance = |c: &[u8; 3]| {
+            (0..3)
+                .map(|k| darkest.unwrap()[k].abs_diff(c[k]) as u32)
+                .sum::<u32>()
+        };
+        assert_eq!(
+            colors.iter().min_by_key(|c| distance(c)),
+            Some(&color),
+            "device {}",
+            i + 1
+        );
     }
 
     // Nine devices on one loco: the symbols wrap into rows of five.
