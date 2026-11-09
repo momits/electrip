@@ -15,6 +15,7 @@ use std::io::{BufRead, BufReader};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 fn loco(id: i32, name: &str) -> Value {
     json!({
@@ -413,7 +414,7 @@ fn window_shows_the_state_and_sends_commands() {
 
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
-    crate::connect_callbacks(&main, Rc::new(client));
+    crate::connect_callbacks(&main, Rc::new(Arc::new(Mutex::new(client))));
     main.invoke_reverse(1);
     main.invoke_toggle_sound(1);
     main.invoke_trigger(1, 4, true);

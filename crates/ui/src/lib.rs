@@ -12,7 +12,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread;
+use std::time::{Duration, Instant};
 
 // The generated code is Slint's, not held to the rules of AGENTS.md.
 #[allow(clippy::unwrap_used, clippy::panic)]
@@ -28,20 +30,27 @@ struct Message {
     error: Option<String>,
 }
 
+/// How long the window tries to connect again when its connection breaks,
+/// e.g. while a client instance becomes the new host (N-03).
+const RECONNECT: Duration = Duration::from_secs(15);
+
+/// The connection to the control channel; replaced when it breaks.
+type Connection = Arc<Mutex<TcpStream>>;
+
 /// Opens the window on the control channel at `address` and returns when
-/// it is closed or the host is gone. Pictures are in `media`.
+/// it is closed or the control channel is gone. Pictures are in `media`.
 pub fn run(address: SocketAddr, media: PathBuf) -> Result<(), String> {
     let window = MainWindow::new().map_err(|e| e.to_string())?;
     let stream = TcpStream::connect(address).map_err(|e| e.to_string())?;
-    let reader = stream.try_clone().map_err(|e| e.to_string())?;
+    let connection = Arc::new(Mutex::new(stream));
     window.set_controllers(ModelRc::new(VecModel::<Controller>::default()));
-    connect_callbacks(&window, Rc::new(stream));
+    connect_callbacks(&window, Rc::new(Arc::clone(&connection)));
     let weak = window.as_weak();
-    thread::spawn(move || receive(reader, weak, media));
+    thread::spawn(move || receive(address, &connection, weak, media));
     window.run().map_err(|e| e.to_string())
 }
 
-fn connect_callbacks(window: &MainWindow, stream: Rc<TcpStream>) {
+fn connect_callbacks(window: &MainWindow, stream: Rc<Connection>) {
     let s = Rc::clone(&stream);
     window.on_reverse(move |loco| send(&s, json!({"command": "reverse", "loco": loco})));
     let s = Rc::clone(&stream);
@@ -79,14 +88,43 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<TcpStream>) {
 }
 
 /// A failed command is only reported, like one from a gamepad.
-fn send(mut stream: &TcpStream, command: Value) {
+fn send(connection: &Connection, command: Value) {
+    let mut stream = lock(connection);
     if let Err(e) = writeln!(stream, "{command}") {
         eprintln!("ERROR control channel: {e}");
     }
 }
 
-/// Shows each state in the window; closes it when the host is gone.
-fn receive(stream: TcpStream, window: Weak<MainWindow>, media: PathBuf) {
+fn lock(connection: &Connection) -> MutexGuard<'_, TcpStream> {
+    connection.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Shows each state in the window and connects again when the connection
+/// breaks; closes the window when nothing arrives for [`RECONNECT`].
+fn receive(address: SocketAddr, connection: &Connection, window: Weak<MainWindow>, media: PathBuf) {
+    let mut last_heard = Instant::now();
+    while last_heard.elapsed() < RECONNECT {
+        let stream = connection
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .try_clone();
+        match stream.map(|stream| show_states(stream, &window, &media)) {
+            Ok(Some(true)) => last_heard = Instant::now(),
+            Ok(None) => return,
+            _ => {}
+        }
+        thread::sleep(Duration::from_millis(500));
+        if let Ok(stream) = TcpStream::connect(address) {
+            *lock(connection) = stream;
+        }
+    }
+    let _ = slint::quit_event_loop();
+}
+
+/// Shows each state until the connection breaks; returns whether a state
+/// arrived, `None` if the window is closed.
+fn show_states(stream: TcpStream, window: &Weak<MainWindow>, media: &Path) -> Option<bool> {
+    let mut shown = false;
     for line in BufReader::new(stream).lines() {
         let message = line
             .map_err(|e| e.to_string())
@@ -102,12 +140,12 @@ fn receive(stream: TcpStream, window: Weak<MainWindow>, media: PathBuf) {
             eprintln!("ERROR {error}");
         }
         if let Some(state) = message.state {
-            let media = media.clone();
-            let shown = window.upgrade_in_event_loop(move |w| view::show(&w, &state, &media));
-            if shown.is_err() {
-                return;
-            }
+            let media = media.to_path_buf();
+            window
+                .upgrade_in_event_loop(move |w| view::show(&w, &state, &media))
+                .ok()?;
+            shown = true;
         }
     }
-    let _ = slint::quit_event_loop();
+    Some(shown)
 }
