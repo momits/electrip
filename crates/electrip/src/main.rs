@@ -70,7 +70,9 @@ fn run() -> Result<(), String> {
         Role::Host(..) => Status::Host,
         Role::Client(_) => Status::Client,
     };
-    announce(discovery.as_ref(), status, port);
+    if let Some(discovery) = &discovery {
+        announce(discovery, status, port);
+    }
     println!(
         "Electrip {} control channel on {address}",
         env!("CARGO_PKG_VERSION")
@@ -120,16 +122,16 @@ fn client(
     let (host, _sound_card) = take_over(&relay, library, file)?;
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     relay.switch(listener.local_addr()?);
-    announce(discovery.as_ref(), Status::Host, port);
+    if let Some(discovery) = &discovery {
+        announce(discovery, Status::Host, port);
+    }
     electrip_control::serve(listener, host, input)
 }
 
-fn announce(discovery: Option<&Discovery>, status: Status, port: u16) {
-    if let Some(discovery) = discovery {
-        let _ = discovery
-            .announce(status, port)
-            .inspect_err(|e| eprintln!("ERROR cannot announce the instance: {e}"));
-    }
+fn announce(discovery: &Discovery, status: Status, port: u16) {
+    let _ = discovery
+        .announce(status, port)
+        .inspect_err(|e| eprintln!("ERROR cannot announce the instance: {e}"));
 }
 
 /// Relays to the host and, when it is gone, to the next host the discovery
@@ -146,7 +148,7 @@ fn follow(
             eprintln!("ERROR the host {host} is gone: {e}");
         }
         let Some(discovery) = discovery else { return };
-        announce(Some(discovery), Status::Searching, port);
+        announce(discovery, Status::Searching, port);
         let next = discovery
             .find_host(Some(host))
             .inspect_err(|e| eprintln!("ERROR no discovery: {e}"));
@@ -155,7 +157,7 @@ fn follow(
             None => return,
         }
         relay.switch(host);
-        announce(Some(discovery), Status::Client, port);
+        announce(discovery, Status::Client, port);
     }
 }
 

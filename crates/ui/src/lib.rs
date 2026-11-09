@@ -104,10 +104,7 @@ fn lock(connection: &Connection) -> MutexGuard<'_, TcpStream> {
 fn receive(address: SocketAddr, connection: &Connection, window: Weak<MainWindow>, media: PathBuf) {
     let mut last_heard = Instant::now();
     while last_heard.elapsed() < RECONNECT {
-        let stream = connection
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .try_clone();
+        let stream = lock(connection).try_clone();
         match stream.map(|stream| show_states(stream, &window, &media)) {
             Ok(Some(true)) => last_heard = Instant::now(),
             Ok(None) => return,
