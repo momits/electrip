@@ -88,11 +88,12 @@ impl Z21Station {
             if let StationEvent::Loco { address, state } = event
                 && let Some((decoder, known)) = self.known.get_mut(address)
             {
-                // The step the host sent, unless the Z21 has another.
-                if telegram::z21_step(decoder, known.step) != state.step {
-                    known.step = telegram::host_step(decoder, state.step);
-                }
-                state.step = known.step;
+                state.step = if telegram::z21_step(decoder, known.step) == state.step {
+                    // The step the host sent, also where the Z21 has fewer.
+                    known.step
+                } else {
+                    telegram::host_step(decoder, state.step)
+                };
                 *known = *state;
             }
         }

@@ -177,15 +177,12 @@ impl Host {
     /// Takes over a loco state that the host did not send itself as the
     /// new starting point (ADR 0010) without sending it back.
     fn adopt(&mut self, address: u16, state: &LocoState) -> bool {
-        if self.echoes.contains(address, state) || !self.session.adopt(address, state) {
+        if self.echoes.contains(address, state) {
             return false;
         }
-        for entry in self.session.locos() {
-            if entry.loco.decoder().address() == address {
-                self.sent.insert(entry.id, entry.station_state());
-            }
-        }
-        true
+        let adopted = self.session.adopt(address, state);
+        self.sent.extend(adopted.iter().copied());
+        !adopted.is_empty()
     }
 
     /// Sends each loco whose state changed since the driver last got it.

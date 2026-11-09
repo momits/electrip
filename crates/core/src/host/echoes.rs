@@ -35,11 +35,15 @@ impl Echoes {
     /// recently. A Z21 switches each function on its own and reports the
     /// loco after each.
     pub(super) fn contains(&self, address: u16, state: &LocoState) -> bool {
-        let sent: Vec<_> = self.sent.iter().filter(|s| s.1 == address).collect();
-        let drive =
-            |s: &&(f64, u16, LocoState)| (s.2.forward, s.2.step) == (state.forward, state.step);
-        sent.iter().any(drive)
-            && (0..=MAX_FUNCTION).all(|n| sent.iter().any(|s| s.2.function(n) == state.function(n)))
+        let sent: Vec<&LocoState> = self
+            .sent
+            .iter()
+            .filter(|s| s.1 == address)
+            .map(|s| &s.2)
+            .collect();
+        sent.iter()
+            .any(|s| (s.forward, s.step) == (state.forward, state.step))
+            && (0..=MAX_FUNCTION).all(|n| sent.iter().any(|s| s.function(n) == state.function(n)))
     }
 }
 
