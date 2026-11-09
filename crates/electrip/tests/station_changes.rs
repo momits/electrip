@@ -21,22 +21,25 @@ fn on_z21() -> (App, Client, Z21Station) {
     let other = Z21Station::connect("127.0.0.1", port).unwrap();
     let app = App::start();
     let mut client = app.connect();
-    let server = json!({"command": "set_server", "kind": "z21", "host": "127.0.0.1", "port": port, "bus": 0});
-    client.command(server).unwrap();
-    client.command(json!({"command": "connect"})).unwrap();
+    connect_to_z21(&mut client, port);
     (app, client, other)
 }
 
-/// Loco 1 of the app gets `address`; another program drives it back at
-/// step 64 of 128, i.e. about half of Vmax.
-fn takes_over_a_change_by_another_program(
-    client: &mut Client,
-    other: &mut dyn CommandStation,
-    address: u16,
-) {
+fn connect_to_z21(client: &mut Client, port: u16) {
+    let server = json!({"command": "set_server", "kind": "z21", "host": "127.0.0.1", "port": port, "bus": 0});
+    client.command(server).unwrap();
+    client.command(json!({"command": "connect"})).unwrap();
+}
+
+fn add_loco_at(client: &mut Client, address: u16) {
     client.command(json!({"command": "add_loco"})).unwrap();
     let command = json!({"command": "set_address", "loco": 1, "address": address});
     client.command(command).unwrap();
+}
+
+/// Another program drives the loco back at step 64 of 128, i.e. about half
+/// of Vmax.
+fn drive_back_at_half(other: &mut dyn CommandStation, address: u16) {
     let decoder = Decoder::new(Protocol::DccShort, address, 128).unwrap();
     let state = LocoState {
         forward: false,
@@ -44,9 +47,23 @@ fn takes_over_a_change_by_another_program(
         functions: 0,
     };
     other.set_loco(&decoder, &state).unwrap();
+}
+
+/// Loco 1 of the app drives as [`drive_back_at_half`] set it.
+fn expect_back_at_half(client: &mut Client) {
     client.wait_for_loco("forward", json!(false));
     let speed = client.state["locos"][0]["speed"].as_f64().unwrap();
     assert!((speed - 50.4).abs() < 0.1, "{speed}");
+}
+
+fn takes_over_a_change_by_another_program(
+    client: &mut Client,
+    other: &mut dyn CommandStation,
+    address: u16,
+) {
+    add_loco_at(client, address);
+    drive_back_at_half(other, address);
+    expect_back_at_half(client);
 }
 
 /// The reports of what the app sends while it accelerates do not set the
@@ -79,25 +96,12 @@ fn takes_over_a_change_on_the_z21() {
 #[test]
 fn reads_back_the_locos_on_connecting_to_the_z21() {
     let port = z21_simulator();
-    let mut other = Z21Station::connect("127.0.0.1", port).unwrap();
-    let decoder = Decoder::new(Protocol::DccShort, 3, 128).unwrap();
-    let state = LocoState {
-        forward: false,
-        step: 64,
-        functions: 0,
-    };
-    other.set_loco(&decoder, &state).unwrap();
+    drive_back_at_half(&mut Z21Station::connect("127.0.0.1", port).unwrap(), 3);
     let app = App::start();
     let mut client = app.connect();
-    client.command(json!({"command": "add_loco"})).unwrap();
-    let command = json!({"command": "set_address", "loco": 1, "address": 3});
-    client.command(command).unwrap();
-    let server = json!({"command": "set_server", "kind": "z21", "host": "127.0.0.1", "port": port, "bus": 0});
-    client.command(server).unwrap();
-    client.command(json!({"command": "connect"})).unwrap();
-    client.wait_for_loco("forward", json!(false));
-    let speed = client.state["locos"][0]["speed"].as_f64().unwrap();
-    assert!((speed - 50.4).abs() < 0.1, "{speed}");
+    add_loco_at(&mut client, 3);
+    connect_to_z21(&mut client, port);
+    expect_back_at_half(&mut client);
 }
 
 #[test]

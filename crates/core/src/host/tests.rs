@@ -759,16 +759,17 @@ fn connecting_asks_for_the_state_of_each_loco() {
     let (mut host, _, sent, _library) = host();
     host.apply(Command::AddLoco).unwrap();
     host.apply(Command::AddLoco).unwrap();
+    let address = Command::SetAddress {
+        loco: 2,
+        address: 5,
+    };
+    host.apply(address).unwrap();
     set_server(&mut host, "srcp").unwrap();
     host.apply(Command::Connect).unwrap();
-    let addresses: Vec<u16> = host
-        .session()
-        .locos()
-        .iter()
-        .map(|e| e.loco.decoder().address())
-        .collect();
-    let requests: Vec<Call> = addresses.into_iter().map(Call::Request).collect();
-    assert_eq!(sent.lock().unwrap()[1..], requests);
+    assert_eq!(
+        sent.lock().unwrap()[1..],
+        [Call::Request(1), Call::Request(5)]
+    );
 }
 
 #[test]
