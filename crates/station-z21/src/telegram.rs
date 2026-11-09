@@ -69,6 +69,12 @@ pub fn set_loco_drive(decoder: &Decoder, forward: bool, step: u8, emergency: boo
     x_bus(&[0xE4, format, msb, lsb, u8::from(forward) << 7 | speed])
 }
 
+/// LAN_X_GET_LOCO_INFO (4.1); the Z21 answers with LAN_X_LOCO_INFO.
+pub fn get_loco_info(address: u16) -> Vec<u8> {
+    let [msb, lsb] = address_bytes(address);
+    x_bus(&[0xE3, 0xF0, msb, lsb])
+}
+
 /// LAN_X_SET_LOCO_FUNCTION (4.3): switches function `number` on or off.
 pub fn set_loco_function(address: u16, number: u8, on: bool) -> Vec<u8> {
     let [msb, lsb] = address_bytes(address);

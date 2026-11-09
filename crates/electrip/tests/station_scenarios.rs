@@ -131,6 +131,21 @@ fn reports_the_top_steps_as_sent(connect: Connect) {
     }
 }
 
+/// A new connection reads back what a loco does, in the steps of its
+/// decoder: Motorola has 28 steps where the Z21 counts 126.
+fn reads_back_a_loco(connect: Connect) {
+    let motorola = Decoder::new(Protocol::Motorola2, 27, 28).unwrap();
+    let state = LocoState {
+        forward: false,
+        step: 14,
+        functions: 1,
+    };
+    connect().set_loco(&motorola, &state).unwrap();
+    let mut station = connect();
+    station.request_loco(&motorola).unwrap();
+    expect(&mut *station, loco_event(27, state));
+}
+
 mod srcpd {
     use super::*;
     use electrip_station_srcp::{DEFAULT_PORT, SrcpStation};
@@ -207,6 +222,12 @@ mod srcpd {
     fn reports_the_top_steps_as_sent() {
         super::reports_the_top_steps_as_sent(&connect);
     }
+
+    #[test]
+    #[ignore = "needs srcpd: cargo xtask sim up"]
+    fn reads_back_a_loco() {
+        super::reads_back_a_loco(&connect);
+    }
 }
 
 /// Each test starts its own simulator, so the tests share no state.
@@ -258,5 +279,10 @@ mod z21 {
     #[test]
     fn reports_the_top_steps_as_sent() {
         on_simulator(super::reports_the_top_steps_as_sent);
+    }
+
+    #[test]
+    fn reads_back_a_loco() {
+        on_simulator(super::reads_back_a_loco);
     }
 }

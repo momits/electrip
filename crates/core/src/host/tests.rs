@@ -18,6 +18,7 @@ pub(super) enum Call {
     Power(bool),
     Loco(u16, LocoState),
     EmergencyStop(u16),
+    Request(u16),
 }
 
 type Sent = Arc<Mutex<Vec<Call>>>;
@@ -43,6 +44,14 @@ impl CommandStation for FakeDriver {
             .lock()
             .unwrap()
             .push(Call::EmergencyStop(decoder.address()));
+        Ok(())
+    }
+
+    fn request_loco(&mut self, decoder: &Decoder) -> Result<(), StationError> {
+        self.1
+            .lock()
+            .unwrap()
+            .push(Call::Request(decoder.address()));
         Ok(())
     }
 
@@ -743,6 +752,23 @@ fn the_echo_of_a_sent_state_is_ignored() {
     report(&events, true, 12, 0);
     host.poll(0.0);
     assert_eq!(host.session().locos()[0].station_state().step, 12);
+}
+
+#[test]
+fn connecting_asks_for_the_state_of_each_loco() {
+    let (mut host, _, sent, _library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    host.apply(Command::AddLoco).unwrap();
+    set_server(&mut host, "srcp").unwrap();
+    host.apply(Command::Connect).unwrap();
+    let addresses: Vec<u16> = host
+        .session()
+        .locos()
+        .iter()
+        .map(|e| e.loco.decoder().address())
+        .collect();
+    let requests: Vec<Call> = addresses.into_iter().map(Call::Request).collect();
+    assert_eq!(sent.lock().unwrap()[1..], requests);
 }
 
 #[test]
