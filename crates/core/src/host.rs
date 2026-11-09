@@ -6,6 +6,7 @@ use crate::config::Config;
 use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
+use echoes::Echoes;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -21,6 +22,7 @@ pub struct Host {
     audio: Audio,
     /// The last state of each loco the driver knows, by loco id.
     sent: HashMap<u32, LocoState>,
+    echoes: Echoes,
     /// The directory of the configuration files (B-21).
     library: PathBuf,
     /// The open configuration as it was last saved.
@@ -37,6 +39,7 @@ impl Host {
             connect,
             audio,
             sent: HashMap::new(),
+            echoes: Echoes::default(),
             library,
             saved: Config::default(),
         };
@@ -63,7 +66,9 @@ impl Host {
                 let entry = self.session.emergency_stop(loco)?;
                 let state = entry.station_state();
                 if let Some(driver) = self.driver.as_mut() {
-                    self.sent.insert(loco, state);
+                    let before = self.sent.insert(loco, state);
+                    let address = entry.loco.decoder().address();
+                    self.echoes.note(address, before, state);
                     driver
                         .emergency_stop(entry.loco.decoder(), &state)
                         .map_err(CommandError::Station)?;
@@ -148,20 +153,39 @@ impl Host {
     /// for the `seconds` since the last call; returns whether the session
     /// changed.
     pub fn poll(&mut self, seconds: f64) -> bool {
+        self.echoes.tick(seconds);
         let events = self.driver.as_mut().map(|d| d.events()).unwrap_or_default();
         let mut changed = false;
         for event in events {
-            match event {
-                StationEvent::Power(on) => self.session.set_track_power(on),
-                // Taken over with Q-010.
-                StationEvent::Loco { .. } => continue,
-                StationEvent::Disconnected => self.disconnect(),
-            }
-            changed = true;
+            changed |= match event {
+                StationEvent::Power(on) => {
+                    self.session.set_track_power(on);
+                    true
+                }
+                StationEvent::Loco { address, state } => self.adopt(address, &state),
+                StationEvent::Disconnected => {
+                    self.disconnect();
+                    true
+                }
+            };
         }
         let driven = self.session.drive(seconds, &mut *self.audio);
         self.send_locos();
         changed || driven
+    }
+
+    /// Takes over a loco state that the host did not send itself as the
+    /// new starting point (ADR 0010) without sending it back.
+    fn adopt(&mut self, address: u16, state: &LocoState) -> bool {
+        if self.echoes.contains(address, state) || !self.session.adopt(address, state) {
+            return false;
+        }
+        for entry in self.session.locos() {
+            if entry.loco.decoder().address() == address {
+                self.sent.insert(entry.id, entry.station_state());
+            }
+        }
+        true
     }
 
     /// Sends each loco whose state changed since the driver last got it.
@@ -178,6 +202,8 @@ impl Host {
             }
             let last = self.sent.insert(entry.id, state);
             if last.is_some_and(|last| last != state) {
+                let address = entry.loco.decoder().address();
+                self.echoes.note(address, last, state);
                 // A broken connection arrives as an event and disconnects.
                 let _ = driver.set_loco(entry.loco.decoder(), &state);
             }
@@ -190,6 +216,7 @@ impl Host {
     }
 }
 
+mod echoes;
 mod library;
 #[cfg(test)]
 mod tests;

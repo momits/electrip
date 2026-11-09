@@ -103,6 +103,23 @@ impl SpeedCurve {
         let b = y2 - x2 * a;
         Some(a * speed + b)
     }
+
+    /// The speed in the middle of `step`, so that [`SpeedCurve::step_at`]
+    /// cuts off to `step` again; 0 for step 0, Vmax above the curve.
+    pub fn speed_of_step(&self, step: u8) -> f64 {
+        if step == 0 {
+            return 0.0;
+        }
+        let step = f64::from(step) + 0.5;
+        let rising = |w: &&[Point]| w[0].1 < w[1].1 && step <= w[1].1;
+        match self.points.windows(2).find(rising) {
+            Some(w) => {
+                let ((x1, y1), (x2, y2)) = (w[0], w[1]);
+                x1 + (step - y1).max(0.0) * (x2 - x1) / (y2 - y1)
+            }
+            None => self.points.last().map_or(0.0, |p| p.0),
+        }
+    }
 }
 
 #[cfg(test)]

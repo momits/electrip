@@ -670,3 +670,86 @@ fn a_tapped_sound_function_switches_off_at_the_end() {
     assert!(!on(&host));
     assert_eq!(take(&played), ["1.10001 horn"]);
 }
+
+/// A connected host with loco 1 at address 1 with function F0, its events
+/// and what the driver got after connecting.
+fn host_with_light() -> (Host, Events, Sent, TempDir) {
+    let (mut host, events, sent, library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    let name = "Licht".into();
+    host.apply(Command::AddAction { name }).unwrap();
+    let function = Function {
+        action: 1,
+        number: 0,
+        name: String::new(),
+        mode: Mode::Switch,
+        default_on: false,
+        on: false,
+    };
+    host.apply(Command::AddFunction { loco: 1, function })
+        .unwrap();
+    set_server(&mut host, "srcp").unwrap();
+    host.apply(Command::Connect).unwrap();
+    sent.lock().unwrap().clear();
+    (host, events, sent, library)
+}
+
+fn report(events: &Events, forward: bool, step: u8, functions: u32) {
+    let state = LocoState {
+        forward,
+        step,
+        functions,
+    };
+    let event = StationEvent::Loco { address: 1, state };
+    events.lock().unwrap().push(event);
+}
+
+#[test]
+fn a_change_by_another_program_is_taken_over_and_not_sent_back() {
+    let (mut host, events, sent, _library) = host_with_light();
+    report(&events, false, 64, 1);
+    assert!(host.poll(0.05));
+    let entry = &host.session().locos()[0];
+    assert_eq!(entry.station_state().step, 64);
+    assert!(!entry.motion.forward());
+    assert!(entry.loco.functions()[0].on);
+    assert!(sent.lock().unwrap().is_empty());
+}
+
+#[test]
+fn a_deflected_axis_ramps_on_from_the_reported_speed() {
+    let (mut host, events, _, _library) = host_with_light();
+    set_axis(&mut host, 1.0);
+    host.poll(5.75);
+    report(&events, true, 32, 0);
+    host.poll(0.0);
+    let reported = speed(&host);
+    assert!((reported - 25.4).abs() < 0.5, "{reported}");
+    host.poll(1.15);
+    assert!((speed(&host) - reported - 10.0).abs() < 1e-9);
+}
+
+#[test]
+fn the_echo_of_a_sent_state_is_ignored() {
+    let (mut host, events, sent, _library) = host_with_light();
+    set_axis(&mut host, 1.0);
+    host.poll(1.15);
+    host.poll(0.1);
+    assert_eq!(*sent.lock().unwrap(), [state(true, 12), state(true, 13)]);
+    report(&events, true, 12, 0);
+    host.poll(0.0);
+    assert!((speed(&host) - 10.0 - 100.0 / 11.5 * 0.1).abs() < 1e-9);
+    host.poll(1.0);
+    report(&events, true, 12, 0);
+    host.poll(0.0);
+    assert_eq!(host.session().locos()[0].station_state().step, 12);
+}
+
+#[test]
+fn a_report_for_an_unknown_address_changes_nothing() {
+    let (mut host, events, _, _library) = host_with_light();
+    let state = LocoState::default();
+    let event = StationEvent::Loco { address: 9, state };
+    events.lock().unwrap().push(event);
+    assert!(!host.poll(0.05));
+}

@@ -63,7 +63,7 @@ pub fn set_loco_drive(decoder: &Decoder, forward: bool, step: u8, emergency: boo
     let speed = if emergency {
         1
     } else {
-        speed_value(z21_steps, scale(step, decoder.speed_steps(), z21_steps))
+        speed_value(z21_steps, z21_step(decoder, step))
     };
     let [msb, lsb] = address_bytes(decoder.address());
     x_bus(&[0xE4, format, msb, lsb, u8::from(forward) << 7 | speed])
@@ -103,6 +103,12 @@ fn scale(step: u8, from: u8, to: u8) -> u8 {
     ((step * to + from / 2) / from) as u8
 }
 
+/// The step the Z21 has and reports for a step of the host: of 128 steps
+/// the Z21 has 126 (4.2).
+pub fn z21_step(decoder: &Decoder, step: u8) -> u8 {
+    scale(step, decoder.speed_steps(), drive_format(decoder).1).min(126)
+}
+
 /// The step of the host for a step that the Z21 reports for this decoder.
 pub fn host_step(decoder: &Decoder, z21_step: u8) -> u8 {
     scale(z21_step, drive_format(decoder).1, decoder.speed_steps())
@@ -118,7 +124,7 @@ fn speed_value(steps: u8, step: u8) -> u8 {
             let value = step.min(28) + 3;
             (value & 1) << 4 | value >> 1
         }
-        _ => step.min(126) + 1,
+        _ => step + 1,
     }
 }
 

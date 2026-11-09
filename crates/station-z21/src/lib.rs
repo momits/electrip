@@ -88,7 +88,11 @@ impl Z21Station {
             if let StationEvent::Loco { address, state } = event
                 && let Some((decoder, known)) = self.known.get_mut(address)
             {
-                state.step = telegram::host_step(decoder, state.step);
+                // The step the host sent, unless the Z21 has another.
+                if telegram::z21_step(decoder, known.step) != state.step {
+                    known.step = telegram::host_step(decoder, state.step);
+                }
+                state.step = known.step;
                 *known = *state;
             }
         }
