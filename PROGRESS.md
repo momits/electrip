@@ -24,6 +24,29 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – B-03 geändert: beliebig viele Gamepads (Mo, Claude)
+
+- Mo hat B-03 geändert: keine Obergrenze von 12 Gamepads mehr. Der Kern war schon größenunabhängig (Geräteliste ist ein Vektor); die Grenze steckt nur in `MAX_DEVICES` (`crates/core/src/input.rs`), in `add_device` (`TooManyDevices`) und in der Farbtabelle der Oberfläche.
+- Neue Regel: Die Identität eines Geräts ist seine Nummer (kleinste freie, ab 1). Die Farbe ist `Palette[(Nummer - 1) mod 8]`; die Nummer steht als Ziffer im Kreis und trennt Geräte, deren Farbe sich wiederholt.
+- `status.verified` von B-03 steht deshalb wieder auf `false`; `wired` bleibt.
+- **Aufgabe für Phase 3 (B-03):**
+  - `MAX_DEVICES` und `TooManyDevices` entfernen, das Feld `color` im Zustand umbenennen in `number` und `spec/steuerkanal.md` nachziehen.
+  - `DeviceColors` in `crates/ui/ui/control.slint` durch die Palette unten ersetzen; die Farbe ergibt sich in der Oberfläche aus der Nummer.
+  - Die Gerätesymbole bei einer Lok brechen um, wenn viele Geräte an ihr hängen.
+  - Tests: Hotplug und Screenshot mit 30 virtuellen Geräten; Kern-Test, dass Nummern eindeutig bleiben und eine frei gewordene Nummer wieder vergeben wird; Test, dass jede Palettenfarbe gegen weiße Schrift mindestens 3:1 Kontrast hat.
+- **Palette (Startwerte, für Kontrast und Unterscheidbarkeit gewählt):**
+  Die Farben bauen auf der farbenblindheitssicheren Okabe-Ito-Palette auf, sind aber abgedunkelt, damit weiße Ziffern lesbar bleiben.
+  Die Reihenfolge wechselt Farbton und Helligkeit, damit aufeinanderfolgende Nummern sich stark unterscheiden.
+  1. `#0072B2` Blau
+  2. `#D55E00` Zinnober
+  3. `#00855F` Grün
+  4. `#B8318A` Magenta
+  5. `#8F6A00` Ocker
+  6. `#5B4FB5` Violett
+  7. `#00838F` Petrol
+  8. `#5F6B7A` Grau
+  Der Agent darf die Werte anpassen, wenn der Kontrasttest oder der Screenshot es verlangt; Reihenfolge und Zahl 8 bleiben.
+
 ## 2026-11-08 – B-25: Deutsch und Englisch (Claude)
 
 - Vorige Sitzung brach ab; Zwischenstand auf dem Branch übernommen.

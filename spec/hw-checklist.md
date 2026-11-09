@@ -121,11 +121,11 @@ Ergebnis: _offen_
 
 ## B-03 – Mehrere Gamepads gleichzeitig
 
-Vorbereitung: `cargo run --release -- -f <konfiguration>` auf dem Mac, so viele Gamepads wie vorhanden (bis 12), mindestens so viele Loks.
+Vorbereitung: `cargo run --release -- -f <konfiguration>` auf dem Mac, so viele Gamepads wie vorhanden, mindestens so viele Loks.
 Geprüft sind zwölf virtuelle Geräte (`crates/input/tests/hotplug.rs`) und das ohne Anzeige gezeichnete Bild (`target/test-logs/screenshots/control_view_devices.png`).
 
 - [ ] Jedes Gamepad steuert eine eigene Lok; die Loks fahren gleichzeitig.
-- [ ] Jedes Gamepad hat eine eigene Farbe; die gesteuerte Lok ist darin hinterlegt, und oben steht ein Kreis mit der Nummer des Gamepads.
+- [ ] Jedes Gamepad hat eine eigene Nummer und eine Farbe der Palette (ab dem 9. Gamepad wiederholen sich die Farben); die gesteuerte Lok ist darin hinterlegt, und oben steht ein Kreis mit der Nummer des Gamepads.
 - [ ] Ein Gamepad abstecken und wieder anstecken, während die App läuft: es wird ohne Neustart wieder erkannt und steuert weiter.
 
 Ergebnis: _offen_

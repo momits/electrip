@@ -79,10 +79,11 @@
         "ref": "Features 2, 3.1"
       },
       "title": "Mehrere Gamepads gleichzeitig",
-      "description": "Bis zu 12 Gamepads steuern gleichzeitig verschiedene Loks; jedes Gamepad hat ein eigenes Farbsymbol.",
+      "description": "Beliebig viele Gamepads steuern gleichzeitig verschiedene Loks; jedes Gamepad hat eine eigene Nummer und eine Farbe aus einer kleinen Palette.",
       "acceptance": [
-        "12 virtuelle Eingabegeräte gleichzeitig angeschlossen, jedes steuert eine eigene Lok",
-        "Jedes Eingabegerät hat eine eindeutige Farbe/ein Symbol, das unter der gesteuerten Lok angezeigt wird",
+        "Es gibt keine feste Obergrenze für die Zahl der Eingabegeräte; getestet mit 30 virtuellen Geräten gleichzeitig, jedes steuert eine eigene Lok",
+        "Jedes Eingabegerät hat eine eindeutige Nummer; die Farbe kommt aus einer Palette von 8 Farben und wiederholt sich ab dem 9. Gerät, die Nummer bleibt eindeutig",
+        "Nummer und Farbe werden bei der gesteuerten Lok angezeigt; die Nummer ist auch ohne Farbunterscheidung lesbar",
         "An- und Abstecken während des Betriebs wird ohne Neustart erkannt"
       ],
       "verification": [
@@ -93,7 +94,7 @@
       "hw": true,
       "status": {
         "wired": true,
-        "verified": true,
+        "verified": false,
         "accepted": false
       }
     },

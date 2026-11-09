@@ -81,7 +81,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `devices`: angeschlossene Eingabegeräte, auch virtuelle über den Steuerkanal; `loco` ist die Lok, die das Gerät steuert (`null`, wenn keine frei ist).
   Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
   `focus`: ob das Gerät gerade „Fokus“ hält (B-22).
-  `color` ist die Farbe des Geräts (1 bis 12, wie die zwölf Gamepad-Symbole von Electrip 1); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat (B-03).
+  `color` ist die Nummer des Geräts (ab 1, ohne Obergrenze); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat. Die Oberfläche macht daraus eine Farbe der Palette: Nummer n bekommt Farbe `(n - 1) mod 8` (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `sound`: Fahrgeräusch `off`, `starting`, `on` oder `stopping` (B-11, B-12). Beim Diesel spielt `starting` das Anlassgeräusch bis zum Leerlauf; `stopping` wartet auf das Ende des Leerlaufgeräuschs und spielt das Abstellgeräusch. Währenddessen bleibt die Geschwindigkeit stehen, auch bei ausgelenkter Fahrachse; die Dauer kommt aus der Länge der Dateien.
@@ -139,7 +139,7 @@ Ein Befehl ist ein Objekt mit dem Feld `command` und seinen Parametern; `loco` i
 | `add_event_sound` | `loco`, `sound` (Objekt wie in `event_sounds` mit `action` und `path`, alles andere optional); hängt das Geräusch-Ereignis an, `active` wie `default_active` | B-17 |
 | `remove_event_sound` | `loco`, `index` (Nummer ab 0 in `event_sounds`) | B-17 |
 | `trigger_action` | `loco`, `action`, `pressed` (`true` gedrückt, `false` losgelassen); schaltet die Funktionen, Geräusch-Funktionen und Geräusch-Ereignisse der Lok, die auf die Aktion zeigen, eine Aktion ohne Funktion bei dieser Lok tut nichts | N-07, B-07, B-16, B-17 |
-| `add_device` | `device` (frei gewählte `id`), `kind` (Gerätetyp); schließt ein (virtuelles) Eingabegerät an; höchstens 12 gleichzeitig | N-01, B-03 |
+| `add_device` | `device` (frei gewählte `id`), `kind` (Gerätetyp); schließt ein (virtuelles) Eingabegerät an; keine Obergrenze | N-01, B-03 |
 | `remove_device` | `device`; die Achse seiner Lok wird losgelassen, die Lok behält ihre Geschwindigkeit | N-01 |
 | `bind` | `kind`, `control`, `target` (siehe `mappings`); ersetzt die bisherige Belegung des Bedienelements | N-01, B-02 |
 | `unbind` | `kind`, `control` | N-01, B-02 |

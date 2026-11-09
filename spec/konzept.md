@@ -34,7 +34,7 @@ Das Handbuch beschreibt 24 prüfbare Verhaltensweisen; sie bilden den Pflichtumf
 | --- | --- | --- | --- |
 | B-01 | Verbindung zu SRCP-Server über Host, Port (Standard 4303) und Bus | 2.1 | srcpd-Loopback |
 | B-02 | Globale Gamepad-Belegung: Fahrachse, Richtungswender, Nothalt, Loks wechseln, Fahrgeräusch; Buttons ohne den „–1“-Versatz anzeigen | 2.2 | virtuelles Gamepad |
-| B-03 | Bis zu 12 Gamepads gleichzeitig, jedes mit eigener Farbe/Symbol | Feat. 2, 3.1 | virtuelles Gamepad |
+| B-03 | Beliebig viele Gamepads gleichzeitig, jedes mit eigener Nummer und Farbe | Feat. 2, 3.1 | virtuelles Gamepad |
 | B-04 | Lok anlegen, umbenennen, löschen; Lokliste | 2.4 | Steuerkanal |
 | B-05 | Lok-Eigenschaften: Höchstgeschwindigkeit (km/h), Beschleunigungs- und Bremsdauer, Lokbild (110×85 px) | 2.4.1 | Unit + Steuerkanal |
 | B-06 | Decoder: Protokoll, Adresse, Fahrstufen; ungültige Kombinationen verhindern; Protokollwechsel setzt Standard-Fahrstufen (z. B. 128 bei DCC) | 2.4.1 | Unit |
