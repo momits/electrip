@@ -30,10 +30,10 @@ impl Relay {
     /// Forwards each client of `listener` to the host at `host`.
     pub fn start(listener: TcpListener, host: SocketAddr) -> Relay {
         let target = Arc::new(Mutex::new(host));
-        let current = Arc::clone(&target);
+        let shared = Arc::clone(&target);
         thread::spawn(move || {
             for client in listener.incoming() {
-                let host = *current.lock().unwrap_or_else(PoisonError::into_inner);
+                let host = current(&shared);
                 let upstream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT);
                 match client.and_then(|client| Ok((upstream?, client))) {
                     Ok((upstream, client)) => {
@@ -64,7 +64,7 @@ impl Relay {
     /// that add the devices still connected, since a new host does not know
     /// them; returns when the host is gone.
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
-        let host = *self.target.lock().unwrap_or_else(PoisonError::into_inner);
+        let host = current(&self.target);
         let mut stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
         // Drains the replies and states, so the host never waits to write
         // them; it ends when the host is gone or falls silent.
@@ -85,6 +85,10 @@ impl Relay {
             }
         }
     }
+}
+
+fn current(target: &Mutex<SocketAddr>) -> SocketAddr {
+    *target.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 fn send(stream: &mut TcpStream, command: &Command, offset: u32) -> io::Result<()> {
