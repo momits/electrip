@@ -48,15 +48,19 @@ export component LocoDialog inherits Rectangle {
                     Text {
                         text: name;
                         font-size: 18px;
+                        height: 24px;
                         font-weight: 700;
                     }
+                    // Fixed sizes, so the layout is the same with any font.
                     HorizontalLayout {
+                        height: 32px;
                         spacing: 6px;
                         LineEdit {
                             placeholder-text: @tr("Image file (PNG or JPEG)");
                             text <=> path;
                         }
                         Button {
+                            width: 80px;
                             text: @tr("Load");
                             clicked => {
                                 source = root.load(path);
@@ -105,11 +109,12 @@ export component LocoDialog inherits Rectangle {
                         }
                     }
                     HorizontalLayout {
+                        height: 24px;
                         spacing: 6px;
                         Text {
                             text: @tr("Zoom");
                             vertical-alignment: center;
-                            min-width: 80px;
+                            width: 80px;
                         }
                         Slider {
                             enabled: loaded;
@@ -119,11 +124,12 @@ export component LocoDialog inherits Rectangle {
                         }
                     }
                     HorizontalLayout {
+                        height: 24px;
                         spacing: 6px;
                         Text {
                             text: @tr("Volume");
                             vertical-alignment: center;
-                            min-width: 80px;
+                            width: 80px;
                         }
                         Slider {
                             minimum: 0;
@@ -135,9 +141,11 @@ export component LocoDialog inherits Rectangle {
                         }
                     }
                     HorizontalLayout {
+                        height: 32px;
                         spacing: 6px;
                         alignment: end;
                         Button {
+                            width: 120px;
                             text: @tr("Save picture");
                             enabled: loaded;
                             clicked => {
@@ -146,6 +154,7 @@ export component LocoDialog inherits Rectangle {
                             }
                         }
                         Button {
+                            width: 120px;
                             text: @tr("Close");
                             clicked => {
                                 root.close();
