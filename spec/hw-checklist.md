@@ -192,3 +192,16 @@ Vorbereitung: Electrip mit der Zentrale verbinden (srcpd mit echter Anlage oder 
 - [ ] Das fremde Programm fährt die Lok, Electrip ist dabei nicht verbunden. Dann Electrip verbinden: Electrip zeigt sofort Geschwindigkeit, Richtung und Funktionen der Lok, die Lok fährt ruhig weiter (Z21 und srcpd).
 
 Ergebnis: _offen_
+
+## N-03 – Host-Ausfall
+
+Vorbereitung: zwei Rechner A und B im selben LAN oder WLAN, beide mit derselben Zentrale und derselben Lok in der Konfiguration (bis Q-016 beantwortet ist), auf beiden `cargo run --release` ohne `--host`, Gamepad an B. A ist Host, B Client.
+
+- [ ] B fährt die Lok mit dem Gamepad. A hart beenden (`kill -9`): Nach höchstens etwa 3 s plus Suche (2 s) wird B Host. Das Fenster von B bleibt offen und zeigt die Lok mit Geschwindigkeit, Richtung und Funktionen von der Zentrale; die Lok fährt ruhig weiter.
+- [ ] Das Gamepad an B fährt die Lok danach weiter, ohne es neu einzustecken.
+- [ ] Den Gleisstrom vorher an A ausschalten, dann A beenden: B schaltet ihn nicht ein und zeigt ihn als aus.
+- [ ] Bei A das Netzwerkkabel ziehen bzw. WLAN aus (A beendet sich nicht): B erkennt das ebenso nach wenigen Sekunden.
+- [ ] Mit drei Instanzen (A Host, B und C Clients) A beenden: Genau eine von B und C wird Host, die andere ihr Client; `dns-sd -L` zeigt das wie bei „Host per mDNS finden“.
+- [ ] B mit `--host <A>:4711` statt mDNS: B wird nach dem Ausfall von A ebenfalls Host.
+
+Ergebnis: _offen_

@@ -12,13 +12,16 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
   Vorgabe ist `electrip` im Datenverzeichnis des Nutzers (Linux `$XDG_DATA_HOME` bzw. `~/.local/share`, macOS `~/Library/Application Support`, Windows `%APPDATA%`).
   Ein leeres Verzeichnis bekommt die Konfiguration „Electrip“.
 - Beim Start ist die Konfiguration `-f`/`--file` geöffnet (B-24), sonst die erste nach Namen.
-- Der Steuerkanal ist TCP. Der Sitzungs-Host lauscht auf allen Netzwerkschnittstellen, damit andere Instanzen sich verbinden können (ADR 0010: dem lokalen Netz wird vertraut).
-- `--host`: Die Instanz ist Client des Sitzungs-Hosts an dieser Adresse (N-03). Sie hat dann keinen eigenen Host: Ihr Steuerkanal lauscht nur auf `127.0.0.1` und reicht jede Verbindung an den Host weiter; ihre Gamepads schicken ihre Befehle dorthin, mit einem zufälligen Versatz in der Geräte-`id`, damit sich die Geräte verschiedener Instanzen nicht überschneiden.
+- Der Steuerkanal ist TCP. Er lauscht auf allen Netzwerkschnittstellen, damit andere Instanzen sich mit dem Sitzungs-Host verbinden können (ADR 0010: dem lokalen Netz wird vertraut).
+- `--host`: Die Instanz ist Client des Sitzungs-Hosts an dieser Adresse (N-03). Sie hat dann keinen eigenen Host: Ihr Steuerkanal reicht jede Verbindung an den Host weiter; ihre Gamepads schicken ihre Befehle dorthin, mit einem zufälligen Versatz in der Geräte-`id`, damit sich die Geräte verschiedener Instanzen nicht überschneiden.
   Ist der Host beim Start nicht erreichbar, meldet die App `ERROR cannot reach the host …` und ist selbst Host. Bis Q-016 beantwortet ist, nutzt ein Client die Konfiguration des Hosts.
 - Ohne `--host` sucht die Instanz beim Start ca. 2 s per mDNS (`_electrip._tcp`) nach dem Host ihrer Zentrale und ist dann dessen Client; findet sie keinen, ist sie selbst Host (N-03, ADR 0010).
   Jede Instanz veröffentlicht als TXT-Einträge `id` (zufällige Instanz-ID, 16 Hex-Ziffern), `version` (wie in `hello`), `station` (Zentralen-ID: aufgelöste IP, Port und Bus der Zentrale; eine Zentrale auf `localhost` bekommt die LAN-Adresse des Rechners) und `status` (`searching`, `host` oder `client`); der Port ist der des Steuerkanals.
   Gibt es zwei Hosts derselben Zentrale, verbindet sie sich mit dem mit der kleineren `id`. Starten mehrere Instanzen gleichzeitig, wird von den suchenden die mit der kleinsten `id` Host; die anderen warten bis zu 4 s weiter auf sie.
   Ist mDNS nicht verfügbar, meldet die App `ERROR no discovery: …` und ist selbst Host. `--no-discovery` schaltet die Suche ab; die Tests starten die App so.
+- Host-Ausfall (N-03): Schließt der Host die Verbindung oder schickt er 3 s lang nichts, ist er weg; die Instanz meldet `ERROR the host … is gone: …` und schließt die weitergereichten Verbindungen.
+  Mit Discovery sucht sie wie beim Start nach dem nächsten Host ihrer Zentrale (ohne den weggefallenen) und reicht dann dorthin weiter. Ohne Discovery (`--host`, `--no-discovery`) oder wenn keiner da ist, wird sie selbst Host: Sie öffnet ihre Konfiguration, verbindet sich mit der Zentrale, ohne den Gleisstrom zu schalten, liest Gleisstrom und Zustand der Loks zurück und kennt ihre angeschlossenen Gamepads. Ihr Steuerkanal bleibt auf demselben Port und reicht neue Verbindungen an den eigenen Host weiter.
+  Das Fenster verbindet sich bis zu 15 s lang neu, statt sich zu schließen.
 - Trennt sich ein Client, entfernt der Host die Eingabegeräte, die dieser Client angeschlossen hat (`add_device`); ihre Loks behalten ihre Geschwindigkeit wie bei `remove_device`.
 - Die erste Zeile auf der Standardausgabe endet mit der Adresse: `… control channel on 127.0.0.1:4711`.
 - Jede Nachricht ist ein JSON-Objekt in einer Zeile (UTF-8, Zeilenende `\n`), in beide Richtungen.
@@ -30,7 +33,7 @@ Jede Nachricht hat ein Feld `type`.
 | `type` | Felder | Wann |
 |---|---|---|
 | `hello` | `version` (Zahl, derzeit `1`) | als erste Nachricht nach dem Verbinden |
-| `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl, außerdem alle 50 ms, solange sich der Zustand ändert (z. B. beim Beschleunigen) |
+| `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl, außerdem alle 50 ms, solange sich der Zustand ändert (z. B. beim Beschleunigen), und sonst mindestens jede Sekunde als Lebenszeichen (N-03) |
 | `reply` | `ok` (bool), bei Fehler `error` (Text) | an den Absender, auf jeden Befehl genau eine, vor der folgenden `state` |
 
 Ein fehlgeschlagener Befehl ändert nichts; dann folgt keine `state`-Nachricht.
