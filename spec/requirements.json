@@ -147,7 +147,7 @@
       "hw": false,
       "status": {
         "wired": true,
-        "verified": false,
+        "verified": true,
         "accepted": false
       }
     },
