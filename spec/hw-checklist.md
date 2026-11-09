@@ -179,3 +179,15 @@ Vorbereitung: zwei Rechner im selben LAN oder WLAN, beide mit derselben Zentrale
 - [ ] WLAN auf B aus: B startet allein als Host, ohne Absturz.
 
 Ergebnis: _offen_
+
+## N-03 – Änderungen fremder Programme übernehmen
+
+Vorbereitung: Electrip mit der Zentrale verbinden (srcpd mit echter Anlage oder Z21), eine Lok in der Konfiguration, ein Gamepad. Als fremdes Programm dient ein zweites Fahrpult: bei der Z21 die Z21-App oder ein Handregler, bei srcpd z. B. Electrip 1 oder `telnet <srcpd> 4303` mit `SET 1 GL <adresse> 0 40 128 0 …`.
+
+- [ ] Das fremde Programm fährt die Lok: Electrip zeigt Geschwindigkeit und Richtung des fremden Programms, die Lok fährt dabei ruhig weiter.
+- [ ] Das fremde Programm schaltet das Licht (F0): Electrip zeigt die Funktion an.
+- [ ] Achse am Gamepad ausgelenkt halten, dann im fremden Programm die Geschwindigkeit ändern: Electrip beschleunigt vom neuen Wert aus weiter, ohne Sprung zurück.
+- [ ] Mit Electrip allein bis Vmax beschleunigen (Lok mit 128 Fahrstufen): Die Anzeige bleibt bei Vmax stehen und zittert nicht.
+- [ ] Nothalt der Lok in Electrip: Die Richtung in Electrip bleibt, wie sie war.
+
+Ergebnis: _offen_

@@ -24,6 +24,24 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-09 – N-03: Änderungen fremder Programme übernehmen, drittes Inkrement (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- Der Host übernimmt jetzt, was die Zentrale für eine Lok-Adresse meldet, als neuen Ausgangswert (ADR 0010, Q-010): Fahrstufe (als Geschwindigkeit in der Mitte der Fahrstufe, `SpeedCurve::speed_of_step`), Richtung und Funktionen jeder Lok mit der Adresse. Eine ausgelenkte Achse rampt von dort weiter. Er schickt den übernommenen Zustand nicht zurück.
+- Was der Host selbst geschickt hat, meldet die Zentrale auch zurück. Solche Echos zählen eine Sekunde lang nicht als fremde Änderung (`crates/core/src/host/echoes.rs`). Die Z21 schaltet jede Funktion einzeln und meldet die Lok nach jedem Schritt; deshalb ist eine Meldung ein Echo, wenn Richtung mit Fahrstufe und jede Funktion zu einem kürzlich gesendeten Zustand passen.
+- Dabei gefunden und behoben: srcpd meldet einen Nothalt als Fahrmodus 2, der Treiber las das als „rückwärts“; jetzt bleibt die zuletzt gemeldete Richtung. Die Z21 hat bei 128 Fahrstufen nur 126; der Treiber meldet jetzt die gesendete Fahrstufe 127 oder 128 zurück statt 126, sonst wäre die Lok bei Vmax ständig zurückgesprungen.
+- Damit liest auch ein neuer Host bei srcpd den Zustand beim Verbinden zurück (die INFO-Sitzung beginnt mit dem aktuellen Stand). Bei der Z21 kommen nur Änderungen, kein Anfangsstand.
+- Tests: `crates/core/src/host/tests.rs` und `host/echoes/tests.rs` (Übernahme, Rampe vom neuen Wert, Echo, unbekannte Adresse), `speed_curve/tests.rs`, `station-srcp/src/tests.rs` (Nothalt behält Richtung), `crates/electrip/tests/station_changes.rs` (App am Z21-Simulator und an srcpd: fremde Änderung übernommen, Beschleunigen bis Vmax ohne Rücksprung), Szenario `reports_the_top_steps_as_sent` für beide Treiber.
+- `cargo xtask test`, `cargo xtask sim up` (srcpd-loopback), `cargo xtask loc` (5771 Zeilen) und `cargo xtask parity` grün. Prüfpunkte in `spec/hw-checklist.md` („N-03 – Änderungen fremder Programme übernehmen“).
+- Einfachheits-Review: refactored (Sub-Agent). `Session::adopt` gibt die neuen Zustände zurück (keine zweite Schleife im Host), `Echoes::contains` und das Lesen der Z21-Fahrstufe einfacher.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Lebenszeichen, Host-Ausfall und neuer Host; Doppel-Host während des Betriebs.
+  - Z21: Anfangszustand der Loks beim Verbinden abfragen (`LAN_X_GET_LOCO_INFO`), damit ein neuer Host ihn kennt.
+  - Funktionen, die die Konfiguration nicht kennt, schaltet der Host beim nächsten Senden der Lok aus, weil er den ganzen Zustand schickt (gilt schon vorher).
+  - Ändert ein fremdes Programm eine Lok binnen einer Sekunde auf einen Zustand, den der Host gerade geschickt hat, übersieht der Host das.
+
 ## 2026-11-09 – N-03: Host per mDNS finden, zweites Inkrement (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
