@@ -34,7 +34,10 @@ fn host() -> (Host, TempDir) {
 #[test]
 fn execute_applies_a_command() {
     let (mut host, _library) = host();
-    assert_eq!(execute(&mut host, r#"{"command": "add_loco"}"#), Ok(()));
+    assert_eq!(
+        execute(&mut host, r#"{"command": "add_loco"}"#),
+        Ok(Command::AddLoco)
+    );
     assert_eq!(host.session().locos().len(), 1);
 }
 
@@ -60,9 +63,43 @@ fn execute_explains_a_failed_command() {
 
 #[test]
 fn replies_report_success_or_the_error() {
-    assert_eq!(reply(&Ok(())), json!({"type": "reply", "ok": true}));
+    assert_eq!(
+        reply(&Ok(Command::AddLoco)),
+        json!({"type": "reply", "ok": true})
+    );
     assert_eq!(
         reply(&Err("oops".into())),
         json!({"type": "reply", "ok": false, "error": "oops"})
     );
+}
+
+#[test]
+fn a_client_instance_sends_its_devices_to_the_host() {
+    let (host, _library) = host();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    thread::spawn(move || serve(listener, host, Vec::new));
+    let mut added = false;
+    let input = move || {
+        let kind = "Gamepad".to_string();
+        let commands = if added {
+            vec![]
+        } else {
+            vec![Command::AddDevice { device: 1, kind }]
+        };
+        added = true;
+        commands
+    };
+    let relayed = TcpListener::bind("127.0.0.1:0").unwrap();
+    thread::spawn(move || relay(relayed, address, input));
+
+    let stream = TcpStream::connect(address).unwrap();
+    let id = BufReader::new(stream)
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
+        .find_map(|message| message["state"]["devices"][0]["id"].as_u64());
+    // Offset, so gamepads of different instances keep apart.
+    let id = id.unwrap();
+    assert_ne!(id, 1);
+    assert_eq!(id & 0xffff, 1);
 }

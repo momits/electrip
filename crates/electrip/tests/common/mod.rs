@@ -52,6 +52,11 @@ impl App {
         }
     }
 
+    /// The address of the control channel.
+    pub fn address(&self) -> &str {
+        &self.address
+    }
+
     /// A new client, after the greeting; `state` holds the initial state.
     pub fn connect(&self) -> Client {
         let stream = TcpStream::connect(&self.address).unwrap();

@@ -23,7 +23,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// A user action. Locos are addressed by their id in the session.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case")]
 pub enum Command {
     /// Adds a loco with the defaults of Electrip 1.

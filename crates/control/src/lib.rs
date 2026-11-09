@@ -11,6 +11,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub use relay::relay;
+
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
 
@@ -58,8 +60,26 @@ fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) {
 }
 
 /// Greets the client with the version and the state, then executes its
-/// commands. A disconnected client ends the thread.
+/// commands. A disconnected client ends the thread and removes its input
+/// devices, so their locos do not drive on.
 fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
+    let mut devices = Vec::new();
+    let result = serve_client(stream, shared, &mut devices);
+    let mut shared = lock(shared)?;
+    for device in devices {
+        let _ = shared.host.apply(Command::RemoveDevice { device });
+        shared.broadcast();
+    }
+    result
+}
+
+/// Executes the commands of the client and keeps `devices` up to date
+/// with the input devices it added.
+fn serve_client(
+    stream: TcpStream,
+    shared: &Mutex<Shared>,
+    devices: &mut Vec<u32>,
+) -> io::Result<()> {
     let mut writer = stream.try_clone()?;
     {
         let mut shared = lock(shared)?;
@@ -73,12 +93,23 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
         // Drives up to now first, so the command counts from its arrival.
         let polled = shared.poll();
         let result = execute(&mut shared.host, &line);
+        if let Ok(command) = &result {
+            track(devices, command);
+        }
         send(&mut writer, &reply(&result))?;
         if result.is_ok() || polled {
             shared.broadcast();
         }
     }
     Ok(())
+}
+
+fn track(devices: &mut Vec<u32>, command: &Command) {
+    match command {
+        Command::AddDevice { device, .. } => devices.push(*device),
+        Command::RemoveDevice { device } => devices.retain(|d| d != device),
+        _ => {}
+    }
 }
 
 /// Executes the commands of the input devices, lets the host handle
@@ -117,16 +148,17 @@ impl Shared {
     }
 }
 
-/// Reads a command from a JSON line and applies it.
-fn execute(host: &mut Host, line: &str) -> Result<(), String> {
+/// Reads a command from a JSON line and applies it; returns the command.
+fn execute(host: &mut Host, line: &str) -> Result<Command, String> {
     let command: Command =
         serde_json::from_str(line).map_err(|e| format!("invalid command: {e}"))?;
-    host.apply(command).map_err(|e| e.to_string())
+    host.apply(command.clone()).map_err(|e| e.to_string())?;
+    Ok(command)
 }
 
-fn reply(result: &Result<(), String>) -> Value {
+fn reply(result: &Result<Command, String>) -> Value {
     match result {
-        Ok(()) => json!({"type": "reply", "ok": true}),
+        Ok(_) => json!({"type": "reply", "ok": true}),
         Err(error) => json!({"type": "reply", "ok": false, "error": error}),
     }
 }
@@ -145,5 +177,6 @@ fn lock(shared: &Mutex<Shared>) -> io::Result<std::sync::MutexGuard<'_, Shared>>
         .map_err(|_| io::Error::other("control channel state poisoned"))
 }
 
+mod relay;
 #[cfg(test)]
 mod tests;

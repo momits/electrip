@@ -96,3 +96,18 @@ Damit ist der Import nicht ganz verlustfrei (B-21).
 **Stand jetzt:** Die eingebaute Aktion behält den Knopf; die Aktion „Knopf <n>“ bleibt an der Funktion, hat aber keinen Knopf. Der `import_report` nennt das je Knopf („button 8: functions left out, it is Reverse“).
 **Vorschlag:** So lassen; der Nutzer sieht es im Bericht und kann die Aktion in der UI auf einen freien Knopf legen. Alternative: Ein Bedienelement darf mehrere Ziele haben (größere Änderung an Mapping und Befehlen `bind`/`unbind`).
 **Antwort:** Ja, wie vorgeschlagen. (Mo, 2026-11-03)
+
+## Q-016 – 2026-11-09 – N-03, N-05, ADR 0010
+**Frage:** Wie arbeitet der Host mit Clients, die eine **andere Konfiguration** nutzen, in der dieselbe Lok-Adresse vorkommt?
+N-03 erlaubt verschiedene Mappings, Aktionen, Sounds und Ansichten je Konfiguration; der Host rechnet aber Rampen und Sound-Modelle.
+Offen ist, woher der Host die Daten der fremden Konfiguration nimmt und welche gilt, wenn sie sich unterscheiden:
+Kennlinie, Vmax, Beschleunigungs- und Bremsdauer, welche Funktionsnummer eine Aktion schaltet, Sound-Modell und Audio-Ziel.
+Heute sind Konfiguration und Fahrzustand in einer `Session` vereint, Loks werden über ihre `id` in der Konfiguration angesprochen.
+**Vorschlag:**
+1. Ein Client schickt dem Host beim Verbinden seine Konfiguration (später über N-04 abgeglichen); der Host hält je verbundener Konfiguration deren Loks.
+2. Der Fahrzustand (Geschwindigkeit, Richtung, Funktionen F0–F28, Rampe) gehört zur Lok-Adresse (Protokoll + Adresse), nicht zur Lok einer Konfiguration.
+3. Eingaben wertet der Host mit dem Mapping und den Aktionen der Konfiguration des Clients aus, von dem sie kommen.
+4. Kennlinie, Vmax und Dauern kommen aus der Konfiguration der zuletzt aktiven Eingabe (wie die Konfliktregel).
+5. Jede Konfiguration rechnet ihr eigenes Sound-Modell auf dem gemeinsamen Fahrzustand und spielt auf ihrem Audio-Ziel (Q-011).
+6. Jede Instanz zeigt die Loks ihrer eigenen Konfiguration; Geräte anderer Instanzen erscheinen bei der Lok mit derselben Adresse.
+**Stand bis zur Antwort:** Ein Client übernimmt die Konfiguration des Hosts (Inkrement 1 von N-03: Client mit manuell eingetragener Host-Adresse).

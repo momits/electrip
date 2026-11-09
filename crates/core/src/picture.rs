@@ -4,7 +4,7 @@
 
 use image::imageops::FilterType;
 use image::{GenericImageView, ImageFormat};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt;
 use std::fs;
@@ -19,7 +19,7 @@ pub const HEIGHT: u32 = 340;
 /// The crop of the loaded image in its pixels: top left corner and width;
 /// the height follows from the aspect ratio. Moving the corner pans,
 /// a smaller width zooms in.
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Crop {
     pub x: u32,
     pub y: u32,
