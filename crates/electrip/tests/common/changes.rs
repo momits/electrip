@@ -30,9 +30,13 @@ pub fn drive_back_at_half(other: &mut dyn CommandStation, address: u16) {
     other.set_loco(&decoder, &state).unwrap();
 }
 
-/// Loco 1 of the app drives as [`drive_back_at_half`] set it.
+/// Loco 1 of the app drives as [`drive_back_at_half`] set it. The
+/// command station may report the loco standing first.
 pub fn expect_back_at_half(client: &mut Client) {
-    client.wait_for_loco("forward", json!(false));
-    let speed = client.state["locos"][0]["speed"].as_f64().unwrap();
-    assert!((speed - 50.4).abs() < 0.1, "{speed}");
+    let speed = |client: &Client| client.state["locos"][0]["speed"].as_f64().unwrap();
+    while speed(client) == 0.0 {
+        client.expect_state();
+    }
+    assert_eq!(client.state["locos"][0]["forward"], false);
+    assert!((speed(client) - 50.4).abs() < 0.1, "{}", speed(client));
 }
