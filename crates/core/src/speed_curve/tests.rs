@@ -92,3 +92,16 @@ fn right_neighbour_wins_on_a_falling_curve_like_electrip_1() {
     c.move_point(1, 50.0, 200.0);
     assert_eq!(c.points()[1], (50.0, 0.0));
 }
+
+#[test]
+fn the_speed_of_a_step_gives_the_step_back() {
+    let curve = SpeedCurve::new(&[(0.0, 2.0), (30.0, 10.0), (60.0, 10.0), (100.0, 28.0)]).unwrap();
+    assert_eq!(curve.speed_of_step(0), 0.0);
+    for step in 2..=28 {
+        let speed = curve.speed_of_step(step);
+        let back = curve.step_at(speed).unwrap() as u8;
+        assert_eq!(back, step, "step {step} at {speed} km/h");
+    }
+    assert_eq!(curve.speed_of_step(28), 100.0);
+    assert_eq!(curve.speed_of_step(1), 0.0);
+}

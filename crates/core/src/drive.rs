@@ -36,6 +36,10 @@ impl Default for Motion {
 }
 
 impl Motion {
+    pub(crate) fn new(speed: f64, forward: bool) -> Self {
+        Motion { speed, forward }
+    }
+
     pub fn speed(&self) -> f64 {
         self.speed
     }

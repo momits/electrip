@@ -115,6 +115,22 @@ fn receives_changes_of_another_program(connect: Connect) {
     }
 }
 
+/// The host takes a report that differs from what it sent for a change by
+/// another program, so the top steps come back as sent.
+fn reports_the_top_steps_as_sent(connect: Connect) {
+    let mut station = connect();
+    let dcc128 = Decoder::new(Protocol::DccLong, 26, 128).unwrap();
+    for step in [128, 127, 126] {
+        let state = LocoState {
+            forward: true,
+            step,
+            functions: 0,
+        };
+        station.set_loco(&dcc128, &state).unwrap();
+        expect(&mut *station, loco_event(26, state));
+    }
+}
+
 mod srcpd {
     use super::*;
     use electrip_station_srcp::{DEFAULT_PORT, SrcpStation};
@@ -185,6 +201,12 @@ mod srcpd {
     fn receives_changes_of_another_program() {
         super::receives_changes_of_another_program(&connect);
     }
+
+    #[test]
+    #[ignore = "needs srcpd: cargo xtask sim up"]
+    fn reports_the_top_steps_as_sent() {
+        super::reports_the_top_steps_as_sent(&connect);
+    }
 }
 
 /// Each test starts its own simulator, so the tests share no state.
@@ -231,5 +253,10 @@ mod z21 {
     #[test]
     fn receives_changes_of_another_program() {
         on_simulator(super::receives_changes_of_another_program);
+    }
+
+    #[test]
+    fn reports_the_top_steps_as_sent() {
+        on_simulator(super::reports_the_top_steps_as_sent);
     }
 }

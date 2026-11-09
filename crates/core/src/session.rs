@@ -558,6 +558,26 @@ impl Session {
         Ok(entry)
     }
 
+    /// Takes over the speed step, direction and functions the command
+    /// station reports for `address`, e.g. after another program changed
+    /// them; a deflected axis ramps on from there (Q-010). Returns whether
+    /// a loco has the address.
+    pub(crate) fn adopt(&mut self, address: u16, state: &LocoState) -> bool {
+        let mut found = false;
+        for entry in &mut self.locos {
+            if entry.loco.decoder().address() != address {
+                continue;
+            }
+            let speed = entry.loco.speed_curve().speed_of_step(state.step);
+            entry.motion = Motion::new(speed, state.forward);
+            for function in entry.loco.functions_mut() {
+                function.on = state.function(function.number);
+            }
+            found = true;
+        }
+        found
+    }
+
     /// Executes a command; on an error the session stays unchanged.
     /// [`Host::apply`](crate::host::Host::apply) handles connecting.
     pub(crate) fn apply(&mut self, command: Command) -> Result<(), CommandError> {

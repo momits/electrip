@@ -156,8 +156,9 @@ fn read_line(session: &mut BufReader<TcpStream>) -> Result<String, StationError>
 
 /// Forwards the changes on `bus` until the connection ends.
 fn read_info(mut session: BufReader<TcpStream>, bus: u16, events: Sender<StationEvent>) {
+    let mut directions = HashMap::new();
     while let Ok(line) = read_line(&mut session) {
-        if let Some(event) = parse_info(&line, bus)
+        if let Some(event) = parse_info(&line, bus, &mut directions)
             && events.send(event).is_err()
         {
             return;
@@ -168,7 +169,9 @@ fn read_info(mut session: BufReader<TcpStream>, bus: u16, events: Sender<Station
 
 /// Parses `<time> 100 INFO <bus> POWER ON|OFF` and
 /// `<time> 100 INFO <bus> GL <address> <mode> <step> <steps> <f0> …`.
-fn parse_info(line: &str, bus: u16) -> Option<StationEvent> {
+/// Drive mode 2 is an emergency stop; the loco keeps the direction from
+/// `directions`, the last one reported per address.
+fn parse_info(line: &str, bus: u16, directions: &mut HashMap<u16, bool>) -> Option<StationEvent> {
     let words: Vec<&str> = line.split_whitespace().collect();
     let [_, "100", "INFO", line_bus, device, rest @ ..] = words.as_slice() else {
         return None;
@@ -185,15 +188,17 @@ fn parse_info(line: &str, bus: u16) -> Option<StationEvent> {
                 .enumerate()
                 .filter(|(_, f)| **f == "1")
                 .fold(0, |bits, (n, _)| bits | 1 << n);
+            let address = address.parse().ok()?;
+            let forward = directions.entry(address).or_insert(true);
+            if *mode != "2" {
+                *forward = *mode == "1";
+            }
             let state = LocoState {
-                forward: *mode == "1",
+                forward: *forward,
                 step: step.parse().ok()?,
                 functions,
             };
-            Some(StationEvent::Loco {
-                address: address.parse().ok()?,
-                state,
-            })
+            Some(StationEvent::Loco { address, state })
         }
         _ => None,
     }
