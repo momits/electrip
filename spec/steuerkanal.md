@@ -5,7 +5,7 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 
 ## Verbindung
 
-- `electrip [--headless] [--control-port <port>] [--library <verzeichnis>] [-f|--file <konfiguration>] [--host <adresse:port>]` startet die App; Standardport 4711, Port 0 wählt einen freien Port.
+- `electrip [--headless] [--control-port <port>] [--library <verzeichnis>] [-f|--file <konfiguration>] [--host <adresse:port>] [--no-discovery]` startet die App; Standardport 4711, Port 0 wählt einen freien Port.
 - Das Fenster ist selbst ein Client des Steuerkanals und sendet dieselben Befehle (B-22).
   Mit `--headless` läuft die App ohne Fenster; die Tests starten sie so. Ohne Anzeige meldet sie `ERROR no window` und läuft ebenfalls ohne Fenster weiter.
 - `--library`: Verzeichnis der Konfigurationen, eine Datei `<name>.json` je Konfiguration (B-21).
@@ -15,6 +15,10 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 - Der Steuerkanal ist TCP. Der Sitzungs-Host lauscht auf allen Netzwerkschnittstellen, damit andere Instanzen sich verbinden können (ADR 0010: dem lokalen Netz wird vertraut).
 - `--host`: Die Instanz ist Client des Sitzungs-Hosts an dieser Adresse (N-03). Sie hat dann keinen eigenen Host: Ihr Steuerkanal lauscht nur auf `127.0.0.1` und reicht jede Verbindung an den Host weiter; ihre Gamepads schicken ihre Befehle dorthin, mit einem zufälligen Versatz in der Geräte-`id`, damit sich die Geräte verschiedener Instanzen nicht überschneiden.
   Ist der Host beim Start nicht erreichbar, meldet die App `ERROR cannot reach the host …` und ist selbst Host. Bis Q-016 beantwortet ist, nutzt ein Client die Konfiguration des Hosts.
+- Ohne `--host` sucht die Instanz beim Start ca. 2 s per mDNS (`_electrip._tcp`) nach dem Host ihrer Zentrale und ist dann dessen Client; findet sie keinen, ist sie selbst Host (N-03, ADR 0010).
+  Jede Instanz veröffentlicht als TXT-Einträge `id` (zufällige Instanz-ID, 16 Hex-Ziffern), `version` (wie in `hello`), `station` (Zentralen-ID: aufgelöste IP, Port und Bus der Zentrale; eine Zentrale auf `localhost` bekommt die LAN-Adresse des Rechners) und `status` (`searching`, `host` oder `client`); der Port ist der des Steuerkanals.
+  Gibt es zwei Hosts derselben Zentrale, verbindet sie sich mit dem mit der kleineren `id`. Starten mehrere Instanzen gleichzeitig, wird von den suchenden die mit der kleinsten `id` Host; die anderen warten bis zu 4 s weiter auf sie.
+  Ist mDNS nicht verfügbar, meldet die App `ERROR no discovery: …` und ist selbst Host. `--no-discovery` schaltet die Suche ab; die Tests starten die App so.
 - Trennt sich ein Client, entfernt der Host die Eingabegeräte, die dieser Client angeschlossen hat (`add_device`); ihre Loks behalten ihre Geschwindigkeit wie bei `remove_device`.
 - Die erste Zeile auf der Standardausgabe endet mit der Adresse: `… control channel on 127.0.0.1:4711`.
 - Jede Nachricht ist ein JSON-Objekt in einer Zeile (UTF-8, Zeilenende `\n`), in beide Richtungen.

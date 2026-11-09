@@ -38,7 +38,13 @@ impl App {
     /// Starts the app with the library and further options.
     pub fn start_in(library: &Path, args: &[&str]) -> App {
         let mut child = Command::new(env!("CARGO_BIN_EXE_electrip"))
-            .args(["--headless", "--control-port", "0", "--library"])
+            .args([
+                "--headless",
+                "--no-discovery",
+                "--control-port",
+                "0",
+                "--library",
+            ])
             .arg(library)
             .args(args)
             .stdout(Stdio::piped())

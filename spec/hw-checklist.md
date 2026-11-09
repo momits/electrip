@@ -165,3 +165,17 @@ Vorbereitung: zwei Rechner im selben LAN oder WLAN, auf beiden `cargo run --rele
 - [ ] B mit `--host` auf eine Adresse ohne Electrip starten: Nach etwa 2 s meldet B `ERROR cannot reach the host …` und läuft selbst als Host.
 
 Ergebnis: _offen_
+
+## N-03 – Host per mDNS finden
+
+Im Container der Agenten ist Multicast gesperrt; die Suche per mDNS ist dort nur als Auswahlregel getestet (`crates/control/src/discovery/tests.rs`).
+Vorbereitung: zwei Rechner im selben LAN oder WLAN, beide mit derselben Zentrale in der Konfiguration (gleiche Adresse, Port und Bus), auf beiden `cargo run --release` ohne `--host`.
+
+- [ ] A starten: Nach etwa 2 s erscheint das Fenster, A ist Host (Gleisstrom schaltbar).
+- [ ] B starten: B zeigt die Loks von A; ein Gamepad an B fährt eine Lok, A zeigt das.
+- [ ] `dns-sd -B _electrip._tcp` (macOS) zeigt beide Instanzen; `dns-sd -L <name> _electrip._tcp` zeigt bei A `status=host`, bei B `status=client` und bei beiden dieselbe `station`.
+- [ ] Beide beenden und gleichzeitig starten: Genau eine ist Host, die andere ihr Client.
+- [ ] B mit einer anderen Zentrale in der Konfiguration starten: B wird selbst Host.
+- [ ] WLAN auf B aus: B startet allein als Host, ohne Absturz.
+
+Ergebnis: _offen_
