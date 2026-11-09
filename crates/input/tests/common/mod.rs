@@ -88,9 +88,9 @@ impl Rig {
         devices.iter().map(|d| (d.kind.clone(), d.loco)).collect()
     }
 
-    pub fn colors(&self) -> Vec<u8> {
+    pub fn numbers(&self) -> Vec<u32> {
         let devices = self.host.session().devices();
-        devices.iter().map(|d| d.color).collect()
+        devices.iter().map(|d| d.number).collect()
     }
 }
 

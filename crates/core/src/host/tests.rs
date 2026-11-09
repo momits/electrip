@@ -500,25 +500,22 @@ fn devices_get_free_locos_and_skip_taken_ones_when_changing() {
 }
 
 #[test]
-fn each_device_gets_the_lowest_free_color_up_to_twelve() {
+fn each_device_gets_the_lowest_free_number() {
     let (mut host, _, _library) = host_with_pad(1);
-    for device in 2..=12 {
+    for device in 2..=30 {
         add_device(&mut host, device);
     }
-    let colors = |host: &Host| -> Vec<u8> {
+    let numbers = |host: &Host| -> Vec<u32> {
         let devices = host.session().devices();
-        devices.iter().map(|d| d.color).collect()
+        devices.iter().map(|d| d.number).collect()
     };
-    assert_eq!(colors(&host), (1..=12).collect::<Vec<_>>());
-    let (device, kind) = (13, "pad".to_string());
-    let thirteenth = Command::AddDevice { device, kind };
-    assert_eq!(
-        host.apply(thirteenth.clone()),
-        Err(CommandError::TooManyDevices)
-    );
+    assert_eq!(numbers(&host), (1..=30).collect::<Vec<_>>());
     host.apply(Command::RemoveDevice { device: 5 }).unwrap();
-    host.apply(thirteenth).unwrap();
-    assert_eq!(colors(&host).last(), Some(&5));
+    host.apply(Command::RemoveDevice { device: 9 }).unwrap();
+    add_device(&mut host, 31);
+    add_device(&mut host, 32);
+    add_device(&mut host, 33);
+    assert_eq!(numbers(&host)[28..], [5, 9, 31]);
 }
 
 #[test]

@@ -53,7 +53,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   }],
   "actions": [{"id": 1, "name": "Licht"}],
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
-  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "color": 1, "focus": false}],
+  "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "number": 1, "focus": false}],
   "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "view": {"auto_focus": true, "only_active": false},
   "import_report": [],
@@ -81,7 +81,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `devices`: angeschlossene Eingabegeräte, auch virtuelle über den Steuerkanal; `loco` ist die Lok, die das Gerät steuert (`null`, wenn keine frei ist).
   Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
   `focus`: ob das Gerät gerade „Fokus“ hält (B-22).
-  `color` ist die Nummer des Geräts (ab 1, ohne Obergrenze); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat. Die Oberfläche macht daraus eine Farbe der Palette: Nummer n bekommt Farbe `(n - 1) mod 8` (B-03).
+  `number` ist die Nummer des Geräts (ab 1, ohne Obergrenze); ein neues Gerät bekommt die kleinste, die kein angeschlossenes Gerät hat. Die Oberfläche macht daraus eine Farbe der Palette: Nummer n bekommt Farbe `(n - 1) mod 8` (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `sound`: Fahrgeräusch `off`, `starting`, `on` oder `stopping` (B-11, B-12). Beim Diesel spielt `starting` das Anlassgeräusch bis zum Leerlauf; `stopping` wartet auf das Ende des Leerlaufgeräuschs und spielt das Abstellgeräusch. Währenddessen bleibt die Geschwindigkeit stehen, auch bei ausgelenkter Fahrachse; die Dauer kommt aus der Länge der Dateien.
