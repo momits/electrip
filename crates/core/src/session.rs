@@ -560,10 +560,10 @@ impl Session {
 
     /// Takes over the speed step, direction and functions the command
     /// station reports for `address`, e.g. after another program changed
-    /// them; a deflected axis ramps on from there (Q-010). Returns whether
-    /// a loco has the address.
-    pub(crate) fn adopt(&mut self, address: u16, state: &LocoState) -> bool {
-        let mut found = false;
+    /// them; a deflected axis ramps on from there (Q-010). Returns the id
+    /// and the new station state of each loco with the address.
+    pub(crate) fn adopt(&mut self, address: u16, state: &LocoState) -> Vec<(u32, LocoState)> {
+        let mut adopted = Vec::new();
         for entry in &mut self.locos {
             if entry.loco.decoder().address() != address {
                 continue;
@@ -573,9 +573,9 @@ impl Session {
             for function in entry.loco.functions_mut() {
                 function.on = state.function(function.number);
             }
-            found = true;
+            adopted.push((entry.id, entry.station_state()));
         }
-        found
+        adopted
     }
 
     /// Executes a command; on an error the session stays unchanged.
