@@ -29,7 +29,7 @@ fn speaker_with(channels: NonZero<u16>) -> (Speaker, MixerSource) {
             mixer,
             channels,
             rate,
-            device: None,
+            _device: None,
         })
     };
     (Speaker::new(Box::new(open)), output)
@@ -54,7 +54,7 @@ fn speaker_on(devices: &[Option<&str>]) -> (Speaker, Vec<MixerSource>) {
             mixer: mixer.clone(),
             channels: NonZero::<u16>::MIN,
             rate,
-            device: None,
+            _device: None,
         })
     };
     (Speaker::new(Box::new(open)), outputs)
