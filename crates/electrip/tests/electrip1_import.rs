@@ -36,12 +36,15 @@ fn a_file_of_electrip_1_is_imported() {
     );
     assert_eq!(state["mappings"][0]["kind"], "Electrip 1");
     // Three buttons are functions and built-in actions (Q-015). The
-    // pictures lie in the loco packages, not on this machine.
+    // pictures and sounds lie in the loco packages, not on this machine.
     let report = state["import_report"].as_array().unwrap();
-    assert_eq!(report.len(), 5);
     assert_eq!(report[0], "button 8: functions left out, it is Reverse");
-    for line in &report[3..] {
+    for line in &report[3..5] {
         assert!(line.as_str().unwrap().contains("cannot read the picture"));
+    }
+    assert!(report.len() > 5);
+    for line in &report[5..] {
+        assert!(line.as_str().unwrap().contains("cannot read the sound"));
     }
     assert_eq!(app.connect().state, client.state);
 }

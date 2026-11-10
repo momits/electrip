@@ -6,6 +6,7 @@ use crate::config::{self, Config, DEFAULT_NAME};
 use crate::electrip1;
 use crate::event_sound::EventSound;
 use crate::function_sound::SoundFunction;
+use crate::loco::Loco;
 use crate::media;
 use crate::package;
 use crate::picture;
@@ -98,6 +99,9 @@ impl Host {
                     )),
                 }
             }
+        }
+        for loco in &mut import.locos {
+            check_sounds(loco, &mut import.report);
         }
         let config = Config {
             id: config::new_id(),
@@ -204,6 +208,18 @@ impl Host {
         }
         Ok(config::path(&self.library, name))
     }
+}
+
+/// Names each sound of an imported loco that is missing in the report.
+fn check_sounds(loco: &mut Loco, report: &mut Vec<String>) {
+    let name = loco.name().to_owned();
+    loco.map_sounds(|path| {
+        let line = format!("{name}: cannot read the sound ({})", path.display());
+        if !path.is_file() && !report.contains(&line) {
+            report.push(line);
+        }
+        Some(path.into())
+    });
 }
 
 #[cfg(test)]

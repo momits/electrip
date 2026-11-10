@@ -4,6 +4,7 @@ use crate::function::Function;
 use crate::host::Connector;
 use crate::host::tests::{host, set_server};
 use crate::session::Command;
+use crate::sound::EngineSound;
 use crate::station::StationError;
 use std::sync::Arc;
 use tempfile::TempDir;
@@ -371,12 +372,48 @@ fn imported_pictures_are_cropped_in_the_middle() {
         (picture::WIDTH, picture::HEIGHT)
     );
     let report = serde_json::to_value(host.session()).unwrap()["import_report"].clone();
-    // The first three lines are the buttons of Q-015.
-    assert_eq!(report.as_array().unwrap().len(), 4);
+    // The first three lines are the buttons of Q-015, the sounds follow.
     let line = report[3].as_str().unwrap();
     assert!(
         line.starts_with("BR 216: cannot read the picture"),
         "{line}"
+    );
+    assert!(
+        report[4]
+            .as_str()
+            .unwrap()
+            .contains("cannot read the sound")
+    );
+}
+
+#[test]
+fn missing_imported_sounds_are_reported() {
+    let (mut host, _, _, library) = host();
+    let folder = library.path().join("alt");
+    fs::create_dir_all(&folder).unwrap();
+    let start = folder.join("start.ogg");
+    fs::write(&start, b"ogg").unwrap();
+    let path = folder.join("anlage.json");
+    let json = serde_json::json!({
+        "locos": [{"name": "V 60", "protocol": "N 1", "address": 3,
+                   "speed_control_points": [[0, 0], [100, 128]],
+                   "engine": {"type": "diesel", "start_sound": start,
+                              "idle_sound": "/fehlt/idle.ogg",
+                              "quit_sound": "/fehlt/idle.ogg"}}],
+        "server": {}
+    });
+    fs::write(&path, json.to_string()).unwrap();
+    host.apply(Command::ImportElectrip1 { path }).unwrap();
+    let model = host.session().locos()[0].loco.sound_model().unwrap();
+    assert_eq!(
+        model.sound(EngineSound::Idle),
+        Some(Path::new("/fehlt/idle.ogg"))
+    );
+    let report = serde_json::to_value(host.session()).unwrap()["import_report"].clone();
+    // A file used twice is named once.
+    assert_eq!(
+        report,
+        serde_json::json!(["V 60: cannot read the sound (/fehlt/idle.ogg)"])
     );
 }
 
