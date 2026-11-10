@@ -22,6 +22,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Änderungen in anderen Konfigurationen innerhalb 300 ms (Claude)
+
+- CI auf `main` lief beim Start noch. Akzeptanzkriterium 1 war nur mit einer gemeinsamen Konfiguration geprüft, nicht mit zwei verschiedenen Konfigurationen, die dieselbe Lok-Adresse enthalten.
+- Der neue Test fand einen Fehler: Übernahm eine Lok in einer anderen Sitzung den Zustand (z. B. Richtungswechsel durch einen Gast), meldete `Host::poll` das nicht als Änderung. Die Clients erfuhren es erst mit der nächsten anderen Änderung, etwa 1 s später. Jetzt gibt `send_locos` zurück, ob eine Lok einen Zustand übernommen hat, und `poll` meldet es.
+- Tests: `session_host.rs` (Host, Client mit eigener Konfiguration und Client mit der des Hosts, Lok an Adresse 3 in beiden Konfigurationen, 20 ms Roundtrip: Richtungswechsel im Gast und im Host-Client sind in den anderen beiden Instanzen innerhalb 300 ms sichtbar), `host/guests/tests.rs` (`poll` meldet die Übernahme).
+- `cargo xtask test`, `cargo xtask loc` (7862 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Der Zeitblock „Befehl senden, auf zwei Instanzen warten, unter 300 ms“ stand viermal in den Tests, jetzt in `shows_within_300_ms`.
+- **N-03** bleibt offen.
+- **Offen:** Q-018.
+
 ## 2026-11-10 – N-03: Funktionen, die eine Konfiguration nicht kennt (Claude)
 
 - CI auf `main` lief beim Start noch. Offener Punkt aus „Konfigurationen von Gästen im Host“ und „Änderungen fremder Programme übernehmen“.
