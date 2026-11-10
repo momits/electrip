@@ -33,21 +33,26 @@ struct Shared {
     clients: Vec<TcpStream>,
     last_poll: Instant,
     last_broadcast: Instant,
+    /// Why the instance runs alone, for the window (N-03).
+    alone: Option<String>,
 }
 
 /// Serves clients, each in a thread, and polls the host and the input
 /// devices on the calling thread; returns only when the host state is
-/// poisoned.
+/// poisoned. `alone` tells the clients why other instances cannot find
+/// this one.
 pub fn serve(
     listener: TcpListener,
     host: Host,
     input: impl FnMut() -> Vec<Command>,
+    alone: Option<String>,
 ) -> io::Result<()> {
     let shared = Arc::new(Mutex::new(Shared {
         host,
         clients: Vec::new(),
         last_poll: Instant::now(),
         last_broadcast: Instant::now(),
+        alone,
     }));
     let acceptor = Arc::clone(&shared);
     thread::spawn(move || accept(listener, &acceptor));
@@ -95,7 +100,7 @@ fn serve_client(
     let mut writer = stream.try_clone()?;
     {
         let mut shared = lock(shared)?;
-        send(&mut writer, &json!({"type": "hello", "version": VERSION}))?;
+        send(&mut writer, &hello(shared.alone.as_deref()))?;
         send(&mut writer, &state(shared.host.session()))?;
         shared.clients.push(stream.try_clone()?);
     }
@@ -169,6 +174,13 @@ fn execute(host: &mut Host, line: &str) -> Result<Command, String> {
         serde_json::from_str(line).map_err(|e| format!("invalid command: {e}"))?;
     host.apply(command.clone()).map_err(|e| e.to_string())?;
     Ok(command)
+}
+
+fn hello(alone: Option<&str>) -> Value {
+    match alone {
+        Some(reason) => json!({"type": "hello", "version": VERSION, "alone": reason}),
+        None => json!({"type": "hello", "version": VERSION}),
+    }
 }
 
 fn reply(result: &Result<Command, String>) -> Value {

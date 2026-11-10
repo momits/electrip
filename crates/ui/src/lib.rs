@@ -26,8 +26,12 @@ use generated::*;
 /// A message of the host; see `spec/steuerkanal.md`.
 #[derive(Deserialize)]
 struct Message {
+    #[serde(rename = "type")]
+    kind: String,
     state: Option<view::State>,
     error: Option<String>,
+    /// Only in `hello`.
+    alone: Option<String>,
 }
 
 /// How long the window tries to connect again when its connection breaks,
@@ -135,6 +139,13 @@ fn show_states(stream: TcpStream, window: &Weak<MainWindow>, media: &Path) -> Op
         };
         if let Some(error) = message.error {
             eprintln!("ERROR {error}");
+        }
+        if message.kind == "hello" {
+            // Each hello, since the window may connect to a new host.
+            let alone = message.alone.unwrap_or_default();
+            window
+                .upgrade_in_event_loop(move |w| w.set_alone(alone.into()))
+                .ok()?;
         }
         if let Some(state) = message.state {
             let media = media.to_path_buf();

@@ -85,7 +85,7 @@ fn run() -> Result<(), String> {
             .ok();
         let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
         match role {
-            Role::Host(host) => electrip_control::serve(listener, *host, input),
+            Role::Host(host, alone) => electrip_control::serve(listener, *host, input, alone),
             Role::Client(host) => client(listener, host, input, discovery, library, args.file),
         }
         .map_err(|e| e.to_string())
@@ -99,9 +99,10 @@ fn run() -> Result<(), String> {
     server.join().map_err(|_| "the control channel failed")?
 }
 
-/// The session host, or a client of the host at the address (N-03).
+/// The session host, or a client of the host at the address (N-03). A host
+/// knows why it runs alone if the discovery fails.
 enum Role {
-    Host(Box<Host>),
+    Host(Box<Host>, Option<String>),
     Client(SocketAddr),
 }
 
@@ -118,14 +119,14 @@ fn client(
 ) -> io::Result<()> {
     let port = listener.local_addr()?.port();
     let mut relay = Relay::start(listener, host);
-    follow(&mut relay, host, &mut input, discovery.as_ref(), port);
+    let alone = follow(&mut relay, host, &mut input, discovery.as_ref(), port);
     let (host, _sound_card) = take_over(&relay, library, file)?;
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     relay.switch(listener.local_addr()?);
     if let Some(discovery) = &discovery {
         announce(discovery, Status::Host, port);
     }
-    electrip_control::serve(listener, host, input)
+    electrip_control::serve(listener, host, input, alone)
 }
 
 fn announce(discovery: &Discovery, status: Status, port: u16) {
@@ -135,26 +136,24 @@ fn announce(discovery: &Discovery, status: Status, port: u16) {
 }
 
 /// Relays to the host and, when it is gone, to the next host the discovery
-/// finds; returns when there is none, so the instance becomes host (N-03).
+/// finds; returns when there is none, so the instance becomes host, with
+/// the error if the discovery failed (N-03).
 fn follow(
     relay: &mut Relay,
     mut host: SocketAddr,
     mut input: impl FnMut() -> Vec<Command>,
     discovery: Option<&Discovery>,
     port: u16,
-) {
+) -> Option<String> {
     loop {
         if let Err(e) = relay.run(&mut input) {
             eprintln!("ERROR the host {host} is gone: {e}");
         }
-        let Some(discovery) = discovery else { return };
+        let discovery = discovery?;
         announce(discovery, Status::Searching, port);
-        let next = discovery
-            .find_host(Some(host))
-            .inspect_err(|e| eprintln!("ERROR no discovery: {e}"));
-        match next.ok().flatten().filter(answers) {
-            Some(next) => host = next,
-            None => return,
+        match discovery.find_host(Some(host)) {
+            Ok(next) => host = next.filter(answers)?,
+            Err(e) => return Some(no_discovery(e)),
         }
         relay.switch(host);
         announce(discovery, Status::Client, port);
@@ -189,22 +188,36 @@ fn choose_role(
         return Ok((Role::Client(host), None, None));
     }
     let (host, sound_card) = open_host(library, args.file.clone())?;
-    let no_discovery = |e: &io::Error| eprintln!("ERROR no discovery: {e}");
-    let discovery = if args.host.is_none() && args.discovery {
-        let station = station_id(host.session().station());
-        Discovery::start(station).inspect_err(no_discovery).ok()
-    } else {
-        None
-    };
-    let found = discovery
-        .as_ref()
-        .and_then(|d| d.find_host(None).inspect_err(no_discovery).ok()?)
-        // An announcement can outlive a host that crashed.
-        .filter(answers);
-    Ok(match found {
-        Some(address) => (Role::Client(address), None, discovery),
-        None => (Role::Host(Box::new(host)), sound_card, discovery),
+    if args.host.is_some() || !args.discovery {
+        return Ok((Role::Host(Box::new(host), None), sound_card, None));
+    }
+    Ok(match search(host.session().station()) {
+        Ok((discovery, Some(address))) => (Role::Client(address), None, Some(discovery)),
+        Ok((discovery, None)) => (
+            Role::Host(Box::new(host), None),
+            sound_card,
+            Some(discovery),
+        ),
+        Err(e) => (
+            Role::Host(Box::new(host), Some(no_discovery(e))),
+            sound_card,
+            None,
+        ),
     })
+}
+
+/// Announces the instance and searches for the host of the station.
+fn search(station: &Station) -> io::Result<(Discovery, Option<SocketAddr>)> {
+    let discovery = Discovery::start(station_id(station))?;
+    // An announcement can outlive a host that crashed.
+    let found = discovery.find_host(None)?.filter(answers);
+    Ok((discovery, found))
+}
+
+/// Reports the error; the instance runs alone, and says why.
+fn no_discovery(e: io::Error) -> String {
+    eprintln!("ERROR no discovery: {e}");
+    e.to_string()
 }
 
 /// The address of the host; `None` if it cannot be reached, then the

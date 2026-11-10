@@ -36,16 +36,16 @@ impl App {
         app
     }
 
-    /// Starts the app with the library and further options.
+    /// Starts the app with the library and further options; without
+    /// discovery, so tests do not find each other.
     pub fn start_in(library: &Path, args: &[&str]) -> App {
+        App::start_with(library, &[&["--no-discovery"], args].concat())
+    }
+
+    /// Starts the app with the library and the options.
+    pub fn start_with(library: &Path, args: &[&str]) -> App {
         let mut child = Command::new(env!("CARGO_BIN_EXE_electrip"))
-            .args([
-                "--headless",
-                "--no-discovery",
-                "--control-port",
-                "0",
-                "--library",
-            ])
+            .args(["--headless", "--control-port", "0", "--library"])
             .arg(library)
             .args(args)
             .stdout(Stdio::piped())
@@ -80,12 +80,13 @@ impl App {
         let mut client = Client {
             reader: BufReader::new(stream.try_clone().unwrap()),
             writer: stream,
+            hello: Value::Null,
             state: Value::Null,
         };
         let mut hello = String::new();
         client.reader.read_line(&mut hello).ok()?;
-        let hello: Value = serde_json::from_str(&hello).ok()?;
-        assert_eq!(hello["type"], "hello");
+        client.hello = serde_json::from_str(&hello).ok()?;
+        assert_eq!(client.hello["type"], "hello");
         client.expect_state();
         Some(client)
     }
@@ -108,6 +109,7 @@ fn read_address(stdout: ChildStdout) -> String {
 pub struct Client {
     reader: BufReader<TcpStream>,
     writer: TcpStream,
+    pub hello: Value,
     /// The last state received.
     pub state: Value,
 }

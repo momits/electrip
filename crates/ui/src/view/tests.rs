@@ -412,6 +412,19 @@ fn window_shows_the_state_and_sends_commands() {
     let english = bottom_bar("en", "control_view_en.png");
     assert_ne!(german, english);
 
+    // N-03: without access to the local network the window says why the
+    // instance runs alone, above the emergency stop.
+    main.set_alone("no access to the local network: Operation not permitted".into());
+    slint::select_bundled_translation("de").unwrap();
+    let image = screenshot(&window);
+    save(&image, "control_view_alone.png");
+    assert_eq!(
+        *image.get_pixel(WIDTH - 5, HEIGHT - 62),
+        Rgb([0xff, 0xf3, 0xc4])
+    );
+    main.set_alone("".into());
+    slint::select_bundled_translation("en").unwrap();
+
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
     crate::connect_callbacks(&main, Rc::new(Arc::new(Mutex::new(client))));

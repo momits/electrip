@@ -18,7 +18,7 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 - Ohne `--host` sucht die Instanz beim Start ca. 2 s per mDNS (`_electrip._tcp`) nach dem Host ihrer Zentrale und ist dann dessen Client; findet sie keinen, ist sie selbst Host (N-03, ADR 0010).
   Jede Instanz veröffentlicht als TXT-Einträge `id` (zufällige Instanz-ID, 16 Hex-Ziffern), `version` (wie in `hello`), `station` (Zentralen-ID: aufgelöste IP, Port und Bus der Zentrale; eine Zentrale auf `localhost` bekommt die LAN-Adresse des Rechners) und `status` (`searching`, `host` oder `client`); der Port ist der des Steuerkanals.
   Gibt es zwei Hosts derselben Zentrale, verbindet sie sich mit dem mit der kleineren `id`. Starten mehrere Instanzen gleichzeitig, wird von den suchenden die mit der kleinsten `id` Host; die anderen warten bis zu 4 s weiter auf sie.
-  Ist mDNS nicht verfügbar, meldet die App `ERROR no discovery: …` und ist selbst Host. `--no-discovery` schaltet die Suche ab; die Tests starten die App so.
+  Ist mDNS nicht verfügbar, meldet die App `ERROR no discovery: …` und ist selbst Host. Vor der Suche schickt sie einen leeren mDNS-Kopf (12 Null-Bytes) an `224.0.0.251:5353`; scheitert das, fehlt der Zugriff auf das lokale Netzwerk (macOS ohne Berechtigung, Container) und der Grund steht in `hello` unter `alone`. `--no-discovery` schaltet die Suche ab; die Tests starten die App so.
 - Host-Ausfall (N-03): Schließt der Host die Verbindung oder schickt er 3 s lang nichts, ist er weg; die Instanz meldet `ERROR the host … is gone: …` und schließt die weitergereichten Verbindungen.
   Mit Discovery sucht sie wie beim Start nach dem nächsten Host ihrer Zentrale (ohne den weggefallenen) und reicht dann dorthin weiter. Ohne Discovery (`--host`, `--no-discovery`) oder wenn keiner da ist, wird sie selbst Host: Sie öffnet ihre Konfiguration, verbindet sich mit der Zentrale, ohne den Gleisstrom zu schalten, liest Gleisstrom und Zustand der Loks zurück und kennt ihre angeschlossenen Gamepads. Ihr Steuerkanal bleibt auf demselben Port und reicht neue Verbindungen an den eigenen Host weiter.
   Das Fenster verbindet sich bis zu 15 s lang neu, statt sich zu schließen.
@@ -32,7 +32,7 @@ Jede Nachricht hat ein Feld `type`.
 
 | `type` | Felder | Wann |
 |---|---|---|
-| `hello` | `version` (Zahl, derzeit `1`) | als erste Nachricht nach dem Verbinden |
+| `hello` | `version` (Zahl, derzeit `1`); `alone` (Text, nur wenn die Discovery gescheitert ist: warum andere Instanzen diese nicht finden, N-03) | als erste Nachricht nach dem Verbinden |
 | `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl, außerdem alle 50 ms, solange sich der Zustand ändert (z. B. beim Beschleunigen), und sonst mindestens jede Sekunde als Lebenszeichen (N-03) |
 | `reply` | `ok` (bool), bei Fehler `error` (Text) | an den Absender, auf jeden Befehl genau eine, vor der folgenden `state` |
 

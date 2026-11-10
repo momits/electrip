@@ -224,6 +224,8 @@ export component MainWindow inherits Window {
     in property <bool> connected;
     in property <bool> track-power;
     in property <int> button-rows;
+    // Why other instances cannot find this one; empty if they can (N-03).
+    in property <string> alone;
     // The options of the view.
     in-out property <bool> auto-focus;
     in-out property <bool> only-active;
@@ -285,6 +287,22 @@ export component MainWindow inherits Window {
                         root.editing = controller;
                         root.dialog-open = true;
                     }
+                }
+            }
+        }
+        if alone != "": Rectangle {
+            background: #fff3c4;
+            VerticalLayout {
+                padding: 8px;
+                Text {
+                    text: @tr("Electrip runs alone: other Electrip instances cannot find it. Allow access to the local network (macOS: System Settings › Privacy & Security › Local Network) and restart Electrip.");
+                    wrap: word-wrap;
+                    color: #5c4400;
+                }
+                Text {
+                    text: alone;
+                    color: #8a6d1c;
+                    font-size: 11px;
                 }
             }
         }
