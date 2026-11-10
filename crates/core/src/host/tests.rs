@@ -789,6 +789,44 @@ fn a_new_host_reads_back_the_power_and_the_locos_without_switching() {
 }
 
 #[test]
+fn a_loco_added_while_connected_is_asked_for_and_not_sent() {
+    let (mut host, _, sent, _library) = host_with_light();
+    host.apply(Command::AddLoco).unwrap();
+    let address = Command::SetAddress {
+        loco: 2,
+        address: 3,
+    };
+    host.apply(address).unwrap();
+    host.poll(0.05);
+    host.poll(0.05);
+    assert_eq!(*sent.lock().unwrap(), [Call::Request(3)]);
+}
+
+#[test]
+fn a_loco_with_a_new_address_is_asked_for_and_takes_over_the_report() {
+    let (mut host, events, sent, _library) = host_with_light();
+    let address = Command::SetAddress {
+        loco: 1,
+        address: 7,
+    };
+    host.apply(address).unwrap();
+    host.poll(0.05);
+    assert_eq!(*sent.lock().unwrap(), [Call::Request(7)]);
+    let state = LocoState {
+        forward: true,
+        step: 40,
+        functions: 0,
+    };
+    events
+        .lock()
+        .unwrap()
+        .push(StationEvent::Loco { address: 7, state });
+    assert!(host.poll(0.0));
+    assert_eq!(host.session().locos()[0].station_state().step, 40);
+    assert_eq!(sent.lock().unwrap().len(), 1);
+}
+
+#[test]
 fn a_report_for_an_unknown_address_changes_nothing() {
     let (mut host, events, _, _library) = host_with_light();
     let state = LocoState::default();

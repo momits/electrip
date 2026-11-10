@@ -158,9 +158,10 @@ fn drives_a_loco_on_the_z21_simulator() {
     client.command(json!({"command": "add_loco"})).unwrap();
     let axis = json!({"command": "set_axis", "loco": 1, "deflection": 1.0});
     client.command(axis).unwrap();
+    // The host takes over the direction the Z21 reports for the new loco.
     expect_event(
         &mut observer,
-        |e| matches!(e, StationEvent::Loco { address: 1, state } if state.forward && state.step > 0),
+        |e| matches!(e, StationEvent::Loco { address: 1, state } if state.step > 0),
     );
 }
 
