@@ -48,8 +48,7 @@ fn the_packages_of_electrip_1_are_imported() {
         assert_eq!(package.loco.name(), name);
         assert_eq!(package.report, Vec::<String>::new(), "{name}");
         let picture = package.loco.picture().unwrap();
-        let media = library.path().join(media::PICTURES);
-        assert!(picture::path(&media, picture).exists(), "{name}");
+        assert!(picture::path(library.path(), picture).exists(), "{name}");
     }
     let br_216 = read(&corpus("BR 216"), library.path()).unwrap().loco;
     assert_eq!(br_216.decoder().protocol(), Protocol::DccShort);
@@ -122,11 +121,10 @@ fn the_functions_of_electrip_1_get_actions() {
 fn an_exported_loco_is_imported_again() {
     let dir = TempDir::new().unwrap();
     let library = dir.path().join("library");
-    let media = library.join(media::PICTURES);
     let source = dir.path().join("loco.png");
     fs::write(&source, png()).unwrap();
     let mut loco = read(&corpus("V 60"), &library).unwrap().loco;
-    loco.set_picture(Some(picture::store(&media, &source, None).unwrap()));
+    loco.set_picture(Some(picture::store(&library, &source, None).unwrap()));
     *loco.functions_mut() = vec![Function {
         action: 2,
         number: 0,
@@ -156,10 +154,10 @@ fn an_exported_loco_is_imported_again() {
     assert_eq!(package.loco, loco);
     assert_eq!(package.actions, actions[1..]);
     assert_eq!(package.report, Vec::<String>::new());
-    let picture = picture::path(&other.join(media::PICTURES), loco.picture().unwrap());
+    let picture = picture::path(&other, loco.picture().unwrap());
     assert_eq!(
         fs::read(picture).unwrap(),
-        fs::read(picture::path(&media, loco.picture().unwrap())).unwrap()
+        fs::read(picture::path(&library, loco.picture().unwrap())).unwrap()
     );
 }
 

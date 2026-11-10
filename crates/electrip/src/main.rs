@@ -6,7 +6,7 @@
 use electrip_control::{Discovery, Relay, Status, station_id};
 use electrip_core::config::{self, Config};
 use electrip_core::host::{Driver, Host};
-use electrip_core::media::{self, LibrarySink};
+use electrip_core::media::LibrarySink;
 use electrip_core::session::{Command, Station};
 use electrip_core::station::StationKind;
 use electrip_input::Gamepads;
@@ -62,7 +62,6 @@ fn run() -> Result<(), String> {
         Some(library) => library,
         None => default_library().ok_or("no data directory, use --library <dir>")?,
     };
-    let media = library.join(media::PICTURES);
     let id = electrip_control::instance_id(&library).map_err(|e| e.to_string())?;
     let (role, discovery) = choose_role(&args, library.clone(), id)?;
     // A host serves the clients of other instances too (ADR 0010); a
@@ -79,6 +78,7 @@ fn run() -> Result<(), String> {
     if let Some(discovery) = discovery.clone() {
         thread::spawn(move || share(&discovery, address));
     }
+    let window_library = library.clone();
     // The gamepads stay on the thread that opens them.
     let server = thread::spawn(move || {
         // Without SDL the app still runs with the control channel.
@@ -89,7 +89,7 @@ fn run() -> Result<(), String> {
         session(listener, role, input, discovery, id, library, args.file).map_err(|e| e.to_string())
     });
     if !args.headless {
-        match electrip_ui::run(address, media) {
+        match electrip_ui::run(address, window_library) {
             Ok(()) => return Ok(()),
             Err(e) => eprintln!("ERROR no window: {e}"),
         }

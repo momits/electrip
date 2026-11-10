@@ -44,14 +44,13 @@ fn the_centered_crop_is_the_largest_in_the_middle() {
 fn the_crop_is_saved_in_the_fixed_size() {
     let dir = TempDir::new().unwrap();
     let source = image_file(dir.path(), "lok.png", 300, 100, 150);
-    let media = dir.path().join("media");
     let crop = Crop {
         x: 160,
         y: 10,
         width: 110,
     };
-    let name = store(&media, &source, Some(crop)).unwrap();
-    let picture = saved(&media, &name);
+    let name = store(dir.path(), &source, Some(crop)).unwrap();
+    let picture = saved(dir.path(), &name);
     assert_eq!(picture.dimensions(), (WIDTH, HEIGHT));
     assert!(picture.pixels().all(|p| *p == BLUE));
 }
@@ -72,11 +71,16 @@ fn by_default_the_middle_is_saved() {
 fn the_same_picture_is_saved_once() {
     let dir = TempDir::new().unwrap();
     let source = image_file(dir.path(), "lok.png", 440, 340, 100);
-    let first = store(&dir.path().join("media"), &source, None).unwrap();
-    let second = store(&dir.path().join("media"), &source, None).unwrap();
+    let first = store(dir.path(), &source, None).unwrap();
+    let second = store(dir.path(), &source, None).unwrap();
     assert_eq!(first, second);
     assert_eq!(first.len(), 64);
-    assert_eq!(fs::read_dir(dir.path().join("media")).unwrap().count(), 1);
+    assert_eq!(
+        fs::read_dir(dir.path().join(media::PICTURES))
+            .unwrap()
+            .count(),
+        1
+    );
 }
 
 #[test]

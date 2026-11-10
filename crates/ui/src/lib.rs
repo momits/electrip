@@ -42,15 +42,16 @@ const RECONNECT: Duration = Duration::from_secs(15);
 type Connection = Arc<Mutex<TcpStream>>;
 
 /// Opens the window on the control channel at `address` and returns when
-/// it is closed or the control channel is gone. Pictures are in `media`.
-pub fn run(address: SocketAddr, media: PathBuf) -> Result<(), String> {
+/// it is closed or the control channel is gone. Pictures are in the
+/// `library`.
+pub fn run(address: SocketAddr, library: PathBuf) -> Result<(), String> {
     let window = MainWindow::new().map_err(|e| e.to_string())?;
     let stream = TcpStream::connect(address).map_err(|e| e.to_string())?;
     let connection = Arc::new(Mutex::new(stream));
     window.set_controllers(ModelRc::new(VecModel::<Controller>::default()));
     connect_callbacks(&window, Rc::new(Arc::clone(&connection)));
     let weak = window.as_weak();
-    thread::spawn(move || receive(address, &connection, weak, media));
+    thread::spawn(move || receive(address, &connection, weak, library));
     window.run().map_err(|e| e.to_string())
 }
 
@@ -119,11 +120,16 @@ fn lock(connection: &Connection) -> MutexGuard<'_, TcpStream> {
 
 /// Shows each state in the window and connects again when the connection
 /// breaks; closes the window when nothing arrives for [`RECONNECT`].
-fn receive(address: SocketAddr, connection: &Connection, window: Weak<MainWindow>, media: PathBuf) {
+fn receive(
+    address: SocketAddr,
+    connection: &Connection,
+    window: Weak<MainWindow>,
+    library: PathBuf,
+) {
     let mut last_heard = Instant::now();
     while last_heard.elapsed() < RECONNECT {
         let stream = lock(connection).try_clone();
-        match stream.map(|stream| show_states(stream, &window, &media)) {
+        match stream.map(|stream| show_states(stream, &window, &library)) {
             Ok(Some(true)) => last_heard = Instant::now(),
             Ok(None) => return,
             _ => {}
@@ -138,7 +144,7 @@ fn receive(address: SocketAddr, connection: &Connection, window: Weak<MainWindow
 
 /// Shows each state until the connection breaks; returns whether a state
 /// arrived, `None` if the window is closed.
-fn show_states(stream: TcpStream, window: &Weak<MainWindow>, media: &Path) -> Option<bool> {
+fn show_states(stream: TcpStream, window: &Weak<MainWindow>, library: &Path) -> Option<bool> {
     let mut shown = false;
     for line in BufReader::new(stream).lines() {
         let message = line
@@ -168,9 +174,9 @@ fn show_states(stream: TcpStream, window: &Weak<MainWindow>, media: &Path) -> Op
                 .ok()?;
         }
         if let Some(state) = message.state {
-            let media = media.to_path_buf();
+            let library = library.to_path_buf();
             window
-                .upgrade_in_event_loop(move |w| view::show(&w, &state, &media))
+                .upgrade_in_event_loop(move |w| view::show(&w, &state, &library))
                 .ok()?;
             shown = true;
         }

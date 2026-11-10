@@ -1,6 +1,6 @@
 //! Loco pictures (B-05): a crop of any PNG or JPEG in the aspect ratio of
 //! Electrip 1 (110×85 px), saved in a fixed resolution. The media
-//! directory holds each picture once, named by its SHA-256 (ADR 0003).
+//! library holds each picture once, named by its SHA-256 (ADR 0003).
 
 use crate::media;
 use image::imageops::FilterType;
@@ -68,20 +68,24 @@ impl fmt::Display for PictureError {
     }
 }
 
-/// The file of the picture `name` in the media directory `dir`.
-pub fn path(dir: &Path, name: &str) -> PathBuf {
-    dir.join(format!("{name}.png"))
+/// The file of the picture `name` in the library.
+pub fn path(library: &Path, name: &str) -> PathBuf {
+    library.join(media::picture_path(name))
 }
 
-/// Saves the crop of the image at `source` in the media directory `dir`,
-/// by default the largest one in the middle; returns the picture's name.
-pub fn store(dir: &Path, source: &Path, crop: Option<Crop>) -> Result<String, PictureError> {
+/// Saves the crop of the image at `source` in the library, by default the
+/// largest one in the middle; returns the picture's name.
+pub fn store(library: &Path, source: &Path, crop: Option<Crop>) -> Result<String, PictureError> {
     let bytes = fs::read(source).map_err(|e| PictureError::Read(e.to_string()))?;
-    store_bytes(dir, &bytes, crop)
+    store_bytes(library, &bytes, crop)
 }
 
 /// Like [`store`] with the content of the image file.
-pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<String, PictureError> {
+pub fn store_bytes(
+    library: &Path,
+    bytes: &[u8],
+    crop: Option<Crop>,
+) -> Result<String, PictureError> {
     let image = image::load_from_memory(bytes).map_err(|e| PictureError::Read(e.to_string()))?;
     let (width, height) = image.dimensions();
     let crop = crop.unwrap_or(Crop::centered(width, height));
@@ -98,8 +102,8 @@ pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<Strin
         .write_to(&mut Cursor::new(&mut png), ImageFormat::Png)
         .map_err(|e| PictureError::Write(e.to_string()))?;
     let name = media::content_name(&png);
-    fs::create_dir_all(dir)
-        .and_then(|()| fs::write(path(dir, &name), &png))
+    fs::create_dir_all(library.join(media::PICTURES))
+        .and_then(|()| fs::write(path(library, &name), &png))
         .map_err(|e| PictureError::Write(e.to_string()))?;
     Ok(name)
 }

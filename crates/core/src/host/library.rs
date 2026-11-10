@@ -89,7 +89,7 @@ impl Host {
         let folder = path.parent().unwrap_or(Path::new(""));
         for (loco, picture) in import.locos.iter_mut().zip(&import.pictures) {
             if let Some(picture) = picture {
-                match picture::store(&self.media(), &folder.join(picture), None) {
+                match picture::store(&self.library, &folder.join(picture), None) {
                     Ok(name) => loco.set_picture(Some(name)),
                     Err(error) => import.report.push(format!(
                         "{}: {error} ({})",
@@ -127,11 +127,6 @@ impl Host {
             session.import_loco(package.loco, &package.actions, package.report);
             Ok(())
         })
-    }
-
-    /// The directory of the pictures (B-05).
-    pub fn media(&self) -> PathBuf {
-        self.library.join(media::PICTURES)
     }
 
     /// Copies the sound file the command sets to the library, so other

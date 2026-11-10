@@ -313,7 +313,7 @@ fn a_picture_is_saved_and_opened_again() {
     })
     .unwrap();
     let name = picture(&host, 0).unwrap().to_string();
-    assert!(picture::path(&host.media(), &name).exists());
+    assert!(picture::path(library.path(), &name).exists());
     new_configuration(&mut host, "Keller").unwrap();
     open(&mut host, DEFAULT_NAME).unwrap();
     assert_eq!(picture(&host, 0), Some(name.as_str()));
@@ -346,7 +346,7 @@ fn a_failed_picture_changes_nothing() {
     ));
     assert_eq!(host.apply(outside), error);
     assert_eq!(picture(&host, 0), None);
-    assert!(!host.media().exists());
+    assert!(!library.path().join(media::PICTURES).exists());
 }
 
 #[test]
@@ -365,7 +365,7 @@ fn imported_pictures_are_cropped_in_the_middle() {
     host.apply(Command::ImportElectrip1 { path }).unwrap();
     assert_eq!(picture(&host, 0), None);
     let name = picture(&host, 1).unwrap();
-    let saved = image::open(picture::path(&host.media(), name)).unwrap();
+    let saved = image::open(picture::path(library.path(), name)).unwrap();
     assert_eq!(
         (saved.width(), saved.height()),
         (picture::WIDTH, picture::HEIGHT)

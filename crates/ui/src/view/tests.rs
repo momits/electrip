@@ -340,9 +340,11 @@ fn window_shows_the_state_and_sends_commands() {
     let window = MinimalSoftwareWindow::new(RepaintBufferType::NewBuffer);
     slint::platform::set_platform(Box::new(Headless(window.clone()))).unwrap();
     window.set_size(slint::PhysicalSize::new(WIDTH, HEIGHT));
-    let media = tempfile::tempdir().unwrap();
+    let library = tempfile::tempdir().unwrap();
+    let picture = picture::path(library.path(), "picture");
+    std::fs::create_dir_all(picture.parent().unwrap()).unwrap();
     RgbImage::from_fn(440, 340, |x, y| Rgb([(x / 2) as u8, (y / 2) as u8, 120]))
-        .save(media.path().join("picture.png"))
+        .save(picture)
         .unwrap();
     let mut driven = loco_with_buttons();
     driven["speed"] = json!(60.0);
@@ -353,14 +355,14 @@ fn window_shows_the_state_and_sends_commands() {
     main.set_controllers(ModelRc::new(VecModel::<Controller>::default()));
     main.show().unwrap();
     let colors = device_colors(&main);
-    show(&main, &state, media.path());
+    show(&main, &state, library.path());
     let image = screenshot(&window);
     save(&image, "control_view.png");
 
     // The controlled loco has the color of its device, the other none.
     assert_eq!(*image.get_pixel(10, 200), Rgb(colors[0]));
     assert_eq!(*image.get_pixel(146, 200), Rgb([0xfa, 0xfa, 0xfa]));
-    // The picture from the media directory, its blue is the same
+    // The picture from the library, its blue is the same
     // everywhere; where exactly depends on the font of the name.
     assert_eq!(image.get_pixel(67, 102).0[2], 120);
     // The emergency stop is red while the track power is off.
@@ -372,7 +374,7 @@ fn window_shows_the_state_and_sends_commands() {
     show(
         &main,
         &self::state(locos, json!([device(12, 1)])),
-        media.path(),
+        library.path(),
     );
     let image = screenshot(&window);
     save(&image, "control_view_compact.png");
@@ -385,7 +387,7 @@ fn window_shows_the_state_and_sends_commands() {
     off["sound"] = json!("off");
     off["functions"][0]["on"] = json!(false);
     off["event_sounds"][0]["active"] = json!(false);
-    show(&main, &self::state(vec![off], json!([])), media.path());
+    show(&main, &self::state(vec![off], json!([])), library.path());
     let image = screenshot(&window);
     save(&image, "control_view_buttons.png");
     let [driving, sound, event, function] = BUTTON_COLORS.map(Rgb);
@@ -403,7 +405,7 @@ fn window_shows_the_state_and_sends_commands() {
     window.set_size(slint::PhysicalSize::new(2780, HEIGHT));
     let locos = (1..=30).map(|id| loco(id, &format!("Lok {id}"))).collect();
     let devices = (1..=30).map(|id| device(id, id)).collect();
-    show(&main, &self::state(locos, devices), media.path());
+    show(&main, &self::state(locos, devices), library.path());
     let image = screenshot(&window);
     save(&image, "control_view_devices.png");
     for i in 0..30 {
@@ -439,7 +441,7 @@ fn window_shows_the_state_and_sends_commands() {
     show(
         &main,
         &self::state(vec![loco(1, "Lok 1")], devices),
-        media.path(),
+        library.path(),
     );
     let image = screenshot(&window);
     save(&image, "control_view_wrapped.png");
@@ -495,8 +497,8 @@ fn window_shows_the_state_and_sends_commands() {
 
     // B-05: click the picture, load an image, drag and zoom the crop.
     window.set_size(slint::PhysicalSize::new(WIDTH, HEIGHT));
-    show(&main, &state, media.path());
-    let source = media.path().join("source.png");
+    show(&main, &state, library.path());
+    let source = library.path().join("source.png");
     gradient(880, 340).save(&source).unwrap();
     click(&window, 60, 80);
     save(&screenshot(&window), "loco_dialog.png");
