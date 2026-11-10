@@ -8,8 +8,6 @@ use electrip_core::session::Station;
 use electrip_core::station::StationKind;
 use mdns_sd::{Receiver, ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
 use std::collections::HashMap;
-use std::collections::hash_map::RandomState;
-use std::hash::BuildHasher;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr, ToSocketAddrs, UdpSocket};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -151,8 +149,8 @@ pub struct Discovery {
 }
 
 impl Discovery {
-    /// Announces the instance with a random id as searching.
-    pub fn start(station: String) -> io::Result<Discovery> {
+    /// Announces the instance as searching.
+    pub fn start(station: String, instance: u64) -> io::Result<Discovery> {
         check_network()?;
         let daemon = ServiceDaemon::new().map_err(io::Error::other)?;
         let events = daemon.browse(SERVICE).map_err(io::Error::other)?;
@@ -161,7 +159,7 @@ impl Discovery {
         thread::spawn(move || browse(&events, &shared));
         let discovery = Discovery {
             daemon,
-            instance: RandomState::new().hash_one(()),
+            instance,
             station,
             seen,
         };

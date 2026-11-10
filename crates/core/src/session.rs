@@ -17,6 +17,7 @@ use crate::picture::{Crop, PictureError};
 use crate::sound::{Engine, EngineSound, SegmentSound, Steam};
 use crate::station::{LocoState, MAX_FUNCTION, StationError, StationKind};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fmt;
 use std::io;
 use std::path::PathBuf;
@@ -75,10 +76,13 @@ pub enum Command {
         loco: u32,
         volume: f64,
     },
-    /// Plays the sounds of the loco on the output device of the host named
-    /// in `audio_devices`; `null` is the default device (N-05).
+    /// Plays the sounds of the loco on the output device of the instance:
+    /// of the host named in `audio_devices`, of another one in
+    /// `audio_targets`; `null` is the host and its default device (N-05).
     SetAudioDevice {
         loco: u32,
+        #[serde(default)]
+        instance: Option<String>,
         device: Option<String>,
     },
     /// Loads the image at `path` on the host and saves the crop, by default
@@ -483,6 +487,9 @@ pub struct Session {
     configurations: Vec<String>,
     /// The output devices of the host (N-05).
     audio_devices: Vec<String>,
+    /// The output devices of the other instances that play sounds, by
+    /// instance id (N-05).
+    audio_targets: BTreeMap<String, Vec<String>>,
 }
 
 impl Session {
@@ -586,6 +593,10 @@ impl Session {
         self.audio_devices = devices;
     }
 
+    pub(crate) fn audio_targets_mut(&mut self) -> &mut BTreeMap<String, Vec<String>> {
+        &mut self.audio_targets
+    }
+
     pub(crate) fn set_connected(&mut self, connected: bool) {
         self.station.connected = connected;
         self.station.track_power &= connected;
@@ -656,7 +667,11 @@ impl Session {
                 self.loco(loco)?.set_brake_duration(seconds)?
             }
             Command::SetVolume { loco, volume } => self.loco(loco)?.set_volume(volume)?,
-            Command::SetAudioDevice { loco, device } => self.loco(loco)?.set_audio_device(device),
+            Command::SetAudioDevice {
+                loco,
+                instance,
+                device,
+            } => self.loco(loco)?.set_audio_target(instance, device),
             Command::AddCurvePoint { loco, speed, step } => {
                 self.loco(loco)?.speed_curve_mut().add_point(speed, step)
             }

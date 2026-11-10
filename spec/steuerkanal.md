@@ -16,7 +16,7 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 - `--host`: Die Instanz ist Client des Sitzungs-Hosts an dieser Adresse (N-03; ohne Port gilt 4711; erreichbar heißt: er schickt binnen 2 s `hello`). Sie hat dann keinen eigenen Host: Ihr Steuerkanal reicht jede Verbindung an den Host weiter; ihre Gamepads schicken ihre Befehle dorthin, mit einem zufälligen Versatz in der Geräte-`id`, damit sich die Geräte verschiedener Instanzen nicht überschneiden.
   Ist der Host beim Start nicht erreichbar, meldet die App `ERROR cannot reach the host …` und ist selbst Host. Bis Q-016 beantwortet ist, nutzt ein Client die Konfiguration des Hosts.
 - Ohne `--host` sucht die Instanz beim Start ca. 2 s per mDNS (`_electrip._tcp`) nach dem Host ihrer Zentrale und ist dann dessen Client; findet sie keinen, ist sie selbst Host (N-03, ADR 0010).
-  Jede Instanz veröffentlicht als TXT-Einträge `id` (zufällige Instanz-ID, 16 Hex-Ziffern), `version` (wie in `hello`), `station` (Zentralen-ID: aufgelöste IP, Port und Bus der Zentrale; eine Zentrale auf `localhost` bekommt die LAN-Adresse des Rechners) und `status` (`searching`, `host` oder `client`); der Port ist der des Steuerkanals.
+  Jede Instanz veröffentlicht als TXT-Einträge `id` (Instanz-ID, 16 Hex-Ziffern; beim ersten Start zufällig gewählt und in der Bibliothek unter `instance` gespeichert, N-05), `version` (wie in `hello`), `station` (Zentralen-ID: aufgelöste IP, Port und Bus der Zentrale; eine Zentrale auf `localhost` bekommt die LAN-Adresse des Rechners) und `status` (`searching`, `host` oder `client`); der Port ist der des Steuerkanals.
   Gibt es zwei Hosts derselben Zentrale, verbindet sie sich mit dem mit der kleineren `id`. Starten mehrere Instanzen gleichzeitig, wird von den suchenden die mit der kleinsten `id` Host; die anderen warten bis zu 4 s weiter auf sie.
   Ist mDNS nicht verfügbar, meldet die App `ERROR no discovery: …` und ist selbst Host. Vor der Suche schickt sie einen leeren mDNS-Kopf (12 Null-Bytes) an `224.0.0.251:5353`; scheitert das, fehlt der Zugriff auf das lokale Netzwerk (macOS ohne Berechtigung, Container) und der Grund steht in `hello` unter `alone`. `--no-discovery` schaltet die Suche ab; die Tests starten die App so.
 - Host-Ausfall (N-03): Schließt der Host die Verbindung oder schickt er 3 s lang nichts, ist er weg; die Instanz meldet `ERROR the host … is gone: …` und schließt die weitergereichten Verbindungen.
@@ -27,7 +27,8 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
   Ist die Instanz selbst Client, reicht ihr Steuerkanal `join_host` an ihren Host weiter; dann tritt dieser bei.
 - Gemeinsame Konfigurationen (N-04): Jede Instanz mit Discovery gleicht alle 5 s ihre Konfigurationen mit allen Instanzen ab, die mDNS zeigt, egal welche Zentrale sie haben. Sie fragt mit `configuration_ids` die IDs beider Hosts ab (über den eigenen Steuerkanal und den der anderen Instanz) und führt die Dokumente jeder gemeinsamen ID mit `sync_configuration` zusammen: erst das eigene holen, beim anderen einführen, das Ergebnis beim eigenen einführen. Danach haben beide Bibliotheken die Änderungen beider. Die Lokbilder und Sounds, die eine Seite danach unter `missing` nennt, holt sie mit `file` von der anderen und legt sie mit `add_file` ab. Gleich behandelt werden nur Konfigurationen mit derselben `id`, also Kopien derselben Datei; nach dem ersten Abgleich werden getrennte Änderungen feldweise zusammengeführt.
   Scheitert der Abgleich, meldet die App `ERROR cannot share configurations with …`.
-- Trennt sich ein Client, entfernt der Host die Eingabegeräte, die dieser Client angeschlossen hat (`add_device`); ihre Loks behalten ihre Geschwindigkeit wie bei `remove_device`.
+- Trennt sich ein Client, entfernt der Host die Eingabegeräte, die dieser Client angeschlossen hat (`add_device`); ihre Loks behalten ihre Geschwindigkeit wie bei `remove_device`. Hat der Client mit `offer_audio` Sounds angeboten, entfernt der Host auch dieses Audio-Ziel.
+- Audio-Ziel auf einer anderen Instanz (N-05): Eine Instanz, die Client ist, schickt ihrem Host nach dem Verbinden `offer_audio` mit ihrer Instanz-ID und ihren Ausgabegeräten. Der Host schickt ihr dann über dieselbe Verbindung die Audio-Ereignisse (`audio`) aller Loks, deren `audio_instance` diese ID ist; sie spielt sie mit den Sounds ihrer eigenen Bibliothek. Ist die Instanz nicht verbunden, spielt der Host die Sounds der Lok selbst auf seinem Standardgerät und meldet einmal `ERROR the instance … is not connected, the host plays the sounds of loco …`; bricht die Verbindung ab, meldet er `ERROR the instance … is gone, the host plays its sounds`. Wechselt eine Lok die Instanz, verstummen ihre Sounds auf der alten.
 - Die erste Zeile auf der Standardausgabe endet mit der Adresse: `… control channel on 127.0.0.1:4711`.
 - Jede Nachricht ist ein JSON-Objekt in einer Zeile (UTF-8, Zeilenende `\n`), in beide Richtungen.
 
@@ -37,9 +38,10 @@ Jede Nachricht hat ein Feld `type`.
 
 | `type` | Felder | Wann |
 |---|---|---|
-| `hello` | `version` (Zahl, derzeit `1`); `id` (zufällige ID des Hosts, 16 Hex-Ziffern, für `join_host`); `alone` (Text, nur wenn die Discovery gescheitert ist: warum andere Instanzen diese nicht finden, N-03) | als erste Nachricht nach dem Verbinden |
+| `hello` | `version` (Zahl, derzeit `1`); `id` (Instanz-ID des Hosts, 16 Hex-Ziffern, für `join_host`); `alone` (Text, nur wenn die Discovery gescheitert ist: warum andere Instanzen diese nicht finden, N-03) | als erste Nachricht nach dem Verbinden |
 | `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl, außerdem alle 50 ms, solange sich der Zustand ändert (z. B. beim Beschleunigen), und sonst mindestens jede Sekunde als Lebenszeichen (N-03) |
 | `reply` | `ok` (bool), bei Fehler `error` (Text) | an den Absender, auf jeden Befehl genau eine, vor der folgenden `state` |
+| `audio` | `audio`: ein Audio-Ereignis mit `event` und Feldern: `queue` (`channel`, `sound`), `play` (`channel`, `sound`, `delay`), `stop` (`channel`), `fade_in` (`channel`, `sound`, `fade`), `fade_out` (`channel`, `fade`), `route` (`loco`, `device`). `channel` ist `{"loco": …, "nr": …}`, `sound` ein Pfad wie in der Konfiguration (z. B. `sounds/<SHA-256>.ogg`), `delay` und `fade` sind `{"secs": …, "nanos": …}` | nur an Clients nach `offer_audio`, für die Loks, die ihre Instanz nennen (N-05) |
 
 Ein fehlgeschlagener Befehl ändert nichts; dann folgt keine `state`-Nachricht.
 Zwischen Befehl und `reply` kann eine `state`-Nachricht eintreffen, die sich nicht auf den Befehl bezieht.
@@ -63,6 +65,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "event_sounds": [],
     "sound_model": null,
     "picture": null,
+    "audio_instance": null,
     "audio_device": null,
     "speed": 0.0,
     "forward": true
@@ -75,7 +78,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   "import_report": [],
   "configuration": "Electrip",
   "configurations": ["Electrip"],
-  "audio_devices": ["MacBook Pro-Lautsprecher", "USB Audio"]
+  "audio_devices": ["MacBook Pro-Lautsprecher", "USB Audio"],
+  "audio_targets": {"3f2a9c0d1b4e5a67": ["Pi-Kopfhörer"]}
 }
 ```
 
@@ -90,7 +94,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Es spielt nur, wenn die Lok ein Sound-Modell hat, und läuft im Loop, solange alle Bedingungen gelten; gelten sie nicht mehr, blendet es aus. Der Host prüft bei jeder Abfrage (50 ms); die Beschleunigung ist die Änderung der Geschwindigkeit seit der letzten Abfrage.
 - `sound_model`: Sound-Modell der Lok (B-11, B-14, B-15) oder `null` („Kein Geräusch“). `engine`: `diesel` (Verbrennungsmotor, auch für E-Loks) oder `steam`; `sounds`: Sounddateien auf dem Host je Motorgeräusch `start`, `idle`, `quit` (Diesel) bzw. `idle`, `cylinder` (Dampf); `segments`: Geräuschsegmente nach Geschwindigkeit sortiert, je mit `start` (km/h, ab hier gilt das Segment bis zum nächsten, das letzte bis Vmax; das erste beginnt bei 0), `sounds` je `load`, `idle`, `accel`, `decel` (Diesel) und `strokes` (Dampf: Sounddatei je Taktnummer ab 0); `steam`: `strokes` (Takte je Radumdrehung, 1–9999, Standard 4), `wheel_diameter` (m, 0,1–99, Standard 1,2), `start_delay` (s vom Zylinderdampf bis zum ersten Takt, 0–9999, Standard 2), `min_frequency` (Takte je Sekunde mindestens, 0,1–9999, Standard 0,2). Ändert sich Vmax, wandern die Grenzen der Segmente mit.
 - `picture`: Name des Lokbilds (B-05) oder `null`. Die Datei `media/<picture>.png` in der Bibliothek ist der gespeicherte Ausschnitt in 440×340 px; der Name ist ihr SHA-256, so liegt jedes Bild nur einmal dort.
-- `audio_device`: Ausgabegerät des Hosts, auf dem die Sounds der Lok spielen (N-05), ein Name aus `audio_devices`, oder `null` für das Standardgerät; wird gespeichert. Kann der Host das Gerät nicht öffnen, meldet er `ERROR cannot open the output device …` (einmal) und spielt auf dem Standardgerät. Wechselt eine Lok das Gerät, verstummen ihre laufenden Sounds; die nächsten spielen auf dem neuen.
+- `audio_instance`: Instanz-ID der Instanz, die die Sounds der Lok spielt (N-05), eine aus `audio_targets`, oder `null` für den Host; wird gespeichert.
+- `audio_device`: Ausgabegerät dieser Instanz, auf dem die Sounds der Lok spielen (N-05), beim Host ein Name aus `audio_devices`, sonst aus `audio_targets`, oder `null` für das Standardgerät; wird gespeichert. Kann der Host das Gerät nicht öffnen, meldet er `ERROR cannot open the output device …` (einmal) und spielt auf dem Standardgerät. Wechselt eine Lok das Gerät, verstummen ihre laufenden Sounds; die nächsten spielen auf dem neuen.
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
   `control` heißt wie in SDL, z. B. `a`, `lefty`, `dpleft`; Joysticks ohne Gamepad-Belegung z. B. `button0`, `axis1`, `hat0_left`.
@@ -112,6 +117,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `configuration`: Name der geöffneten Konfiguration; `configurations`: alle Konfigurationen der Bibliothek, sortiert (B-21).
   Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.
 - `audio_devices`: Namen der Ausgabegeräte des Hosts, gelesen beim Start des Hosts (N-05).
+- `audio_targets`: die Instanzen, die mit `offer_audio` Sounds angeboten haben und verbunden sind, je Instanz-ID die Namen ihrer Ausgabegeräte (N-05).
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle
@@ -133,7 +139,7 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `set_accel_duration` | `loco`, `seconds` | B-05 |
 | `set_brake_duration` | `loco`, `seconds` | B-05 |
 | `set_volume` | `loco`, `volume` | B-05 |
-| `set_audio_device` | `loco`, `device` (Name aus `audio_devices` oder `null` für das Standardgerät) | N-05 |
+| `set_audio_device` | `loco`, optional `instance` (Instanz-ID aus `audio_targets`, ohne oder `null` der Host), `device` (Name eines Ausgabegeräts dieser Instanz oder `null` für das Standardgerät) | N-05 |
 | `set_picture` | `loco`, `path` (PNG oder JPEG auf dem Rechner der App), optional `crop` (Ausschnitt in Pixeln des Bildes: `x`, `y` linke obere Ecke, `width` Breite; die Höhe folgt aus dem Seitenverhältnis 22:17. Verschieben ändert `x`/`y`, Zoomen `width`. Standard: der größte Ausschnitt in der Mitte); speichert den Ausschnitt als Lokbild in 440×340 px | B-05 |
 | `add_curve_point` | `loco`, `speed`, `step` | B-08 |
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
@@ -180,6 +186,7 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `export_configuration` | `path` (schreibt die geöffnete Konfiguration in eine Datei auf dem Rechner der App) | B-21 |
 | `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Lokbild (mittig zugeschnitten; ein relativer Pfad gilt ab dem Ordner der Datei, ein fehlendes Bild steht im `import_report`), Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
 | `join_host` | `address` (`host:port` oder nur `host`, dann Port 4711); die Instanz wird Client des Hosts an der Adresse; nach `ok` schließt sie alle Verbindungen. Ein Fehler (nicht erreichbar, die Instanz selbst) ändert nichts | N-03 |
+| `offer_audio` | `instance` (Instanz-ID), `devices` (Namen der Ausgabegeräte); der Host schickt dem Absender ab jetzt die Audio-Ereignisse der Loks, die diese Instanz nennen, bis er sich trennt. Ein Client schickt das selbst | N-05 |
 | `configuration_ids` | – ; die Antwort trägt zusätzlich `ids`: die IDs aller Konfigurationen der Bibliothek des Hosts | N-04 |
 | `sync_configuration` | `id` (ID einer Konfiguration), optional `document` (Automerge-Dokument der Konfiguration als Hex); führt das Dokument in die Konfiguration mit der ID ein, ist es die geöffnete, übernimmt der Host sie, ohne dass die Loks anhalten. Die Antwort trägt zusätzlich `document`: das Dokument der Konfiguration nach dem Zusammenführen, und `missing`: die Pfade der Lokbilder und Sounds aus der Bibliothek, die die Konfiguration nutzt und die dort fehlen (z. B. `media/<SHA-256>.png`, `sounds/<SHA-256>.ogg`). Eine unbekannte ID ist ein Fehler | N-04 |
 | `file` | `path` (Pfad eines Lokbilds oder Sounds in der Bibliothek wie unter `missing`); die Antwort trägt zusätzlich `content`: die Datei als Hex. Eine fehlende Datei oder ein anderer Pfad ist ein Fehler | N-04 |

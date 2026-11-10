@@ -2,15 +2,19 @@
 //! models and sends their sounds to the target; it reckons with the length
 //! of the files, not with the playback (B-13).
 
-use std::path::Path;
+use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 use std::time::Duration;
+
+pub use targets::Remote;
+pub(crate) use targets::Targets;
 
 pub type Audio = Box<dyn AudioSink + Send>;
 
 /// A channel of the audio target: the loco and its `nr`-th channel. The
 /// driving sound plays on channel 0, a steam engine also on the following;
 /// sound functions play above them.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ChannelId {
     pub loco: u32,
     pub nr: usize,
@@ -49,6 +53,60 @@ pub trait AudioSink {
     /// Plays the channels of the loco on the output device, `None` on the
     /// default one (N-05). A target with one output ignores it.
     fn route(&mut self, _loco: u32, _device: Option<&str>) {}
+}
+
+/// A call of an audio target, as the host sends it to another instance
+/// (N-05).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "event", rename_all = "snake_case")]
+pub enum AudioEvent {
+    Queue {
+        channel: ChannelId,
+        sound: PathBuf,
+    },
+    Play {
+        channel: ChannelId,
+        sound: PathBuf,
+        delay: Duration,
+    },
+    Stop {
+        channel: ChannelId,
+    },
+    FadeIn {
+        channel: ChannelId,
+        sound: PathBuf,
+        fade: Duration,
+    },
+    FadeOut {
+        channel: ChannelId,
+        fade: Duration,
+    },
+    Route {
+        loco: u32,
+        device: Option<String>,
+    },
+}
+
+impl AudioEvent {
+    /// Makes the call on `sink`.
+    pub fn apply(&self, sink: &mut dyn AudioSink) {
+        match self {
+            AudioEvent::Queue { channel, sound } => sink.queue(*channel, sound),
+            AudioEvent::Play {
+                channel,
+                sound,
+                delay,
+            } => sink.play(*channel, sound, *delay),
+            AudioEvent::Stop { channel } => sink.stop(*channel),
+            AudioEvent::FadeIn {
+                channel,
+                sound,
+                fade,
+            } => sink.fade_in(*channel, sound, *fade),
+            AudioEvent::FadeOut { channel, fade } => sink.fade_out(*channel, *fade),
+            AudioEvent::Route { loco, device } => sink.route(*loco, device.as_deref()),
+        }
+    }
 }
 
 /// What the host knows of a channel of the audio target: how long its
@@ -151,5 +209,6 @@ fn playable<'a>(sink: &mut dyn AudioSink, sound: Option<&'a Path>) -> Option<(&'
     Some((sound, length))
 }
 
+mod targets;
 #[cfg(test)]
 pub(crate) mod tests;

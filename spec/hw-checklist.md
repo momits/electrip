@@ -258,3 +258,16 @@ Vorbereitung: ein Rechner mit zwei Ausgabegeräten (z. B. eingebaute Lautspreche
 - [ ] Zweites Gerät abziehen, App neu starten, Fahrgeräusch von Lok 2 einschalten: Konsole zeigt einmal `ERROR cannot open the output device …`, Lok 2 ist auf dem Standardgerät zu hören.
 
 Ergebnis: _offen_
+
+## N-05 – Audio-Ziel auf einer anderen Instanz
+
+Vorbereitung: zwei Rechner A und B im selben Netz, beide mit `cargo run --release` und derselben Konfiguration samt Sounds (Konfigurationsdatei von A in die Bibliothek von B kopieren, dann gleichen sie die Sounds ab, N-04). B ist Client von A (per mDNS oder `--host <A>`). Zwei Loks mit Fahrgeräusch.
+
+- [ ] Im Zustand bei A (`nc localhost 4711`) steht unter `audio_targets` die Instanz-ID von B (Datei `instance` in der Bibliothek von B) mit ihren Ausgabegeräten.
+- [ ] `{"command": "set_audio_device", "loco": 2, "instance": "<ID von B>", "device": null}` schicken, bei beiden Loks das Fahrgeräusch einschalten und fahren: Lok 1 ist an A zu hören, Lok 2 nur an B, beide gleichzeitig; Anfahren und Bremsen passen zur Fahrt.
+- [ ] Lok 2 von B aus fahren (Gamepad an B), dann von A: der Sound bleibt an B.
+- [ ] B beenden: A meldet `ERROR the instance … is gone …` und spielt Lok 2 selbst weiter, sobald sie den nächsten Sound braucht.
+- [ ] B neu starten: B hat dieselbe Instanz-ID, Lok 2 spielt wieder an B.
+- [ ] Verzögerung zwischen Fahrbefehl und hörbarem Sound an B grob schätzen (Ziel ≤ 150 ms) und hier notieren.
+
+Ergebnis: _offen_

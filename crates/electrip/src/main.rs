@@ -5,7 +5,7 @@
 
 use electrip_control::{Discovery, Relay, Status, station_id};
 use electrip_core::host::{Driver, Host};
-use electrip_core::media;
+use electrip_core::media::{self, LibrarySink};
 use electrip_core::session::{Command, Station};
 use electrip_core::station::StationKind;
 use electrip_input::Gamepads;
@@ -62,7 +62,8 @@ fn run() -> Result<(), String> {
         None => default_library().ok_or("no data directory, use --library <dir>")?,
     };
     let media = library.join(media::PICTURES);
-    let (role, discovery) = choose_role(&args, library.clone())?;
+    let id = electrip_control::instance_id(&library).map_err(|e| e.to_string())?;
+    let (role, discovery) = choose_role(&args, library.clone(), id)?;
     // A host serves the clients of other instances too (ADR 0010); a
     // client keeps the port if it becomes host.
     let listener =
@@ -84,7 +85,7 @@ fn run() -> Result<(), String> {
             .inspect_err(|e| eprintln!("ERROR no gamepads: {e}"))
             .ok();
         let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
-        session(listener, role, input, discovery, library, args.file).map_err(|e| e.to_string())
+        session(listener, role, input, discovery, id, library, args.file).map_err(|e| e.to_string())
     });
     if !args.headless {
         match electrip_ui::run(address, media) {
@@ -115,6 +116,7 @@ fn session(
     mut role: Role,
     mut input: impl FnMut() -> Vec<Command>,
     discovery: Option<Arc<Discovery>>,
+    id: u64,
     library: PathBuf,
     file: Option<String>,
 ) -> io::Result<()> {
@@ -126,7 +128,12 @@ fn session(
         Role::Host { .. } => private.insert(bind()?).local_addr()?,
         Role::Client(host) => *host,
     };
-    let mut relay = Relay::start(listener, first);
+    // The instance plays the sounds of the locos that name it (N-05).
+    let audio = Box::new(LibrarySink {
+        sink: Box::new(electrip_audio::sound_card()),
+        library: library.clone(),
+    });
+    let mut relay = Relay::start(listener, first, id, audio);
     loop {
         role = match role {
             Role::Host { host, alone } => {
@@ -140,7 +147,7 @@ fn session(
                 }
                 let handover = watch(discovery.clone());
                 let input = || relay.track(input());
-                let next = electrip_control::serve(serving, *host, input, alone, || {
+                let next = electrip_control::serve(serving, *host, id, input, alone, || {
                     handover.try_recv().ok()
                 })?;
                 eprintln!("ERROR this instance hands over to the host {next}");
@@ -242,7 +249,11 @@ fn hosting(host: Host, alone: Option<String>) -> Role {
 
 /// Without `--host` the instance searches for the host of its command
 /// station, unless `--no-discovery`; it is host if there is none (N-03).
-fn choose_role(args: &Args, library: PathBuf) -> Result<(Role, Option<Discovery>), String> {
+fn choose_role(
+    args: &Args,
+    library: PathBuf,
+    id: u64,
+) -> Result<(Role, Option<Discovery>), String> {
     if let Some(host) = args.host.as_deref().and_then(reachable) {
         return Ok((Role::Client(host), None));
     }
@@ -250,7 +261,7 @@ fn choose_role(args: &Args, library: PathBuf) -> Result<(Role, Option<Discovery>
     if args.host.is_some() || !args.discovery {
         return Ok((hosting(host, None), None));
     }
-    Ok(match search(host.session().station()) {
+    Ok(match search(host.session().station(), id) {
         Ok((discovery, Some(address))) => (Role::Client(address), Some(discovery)),
         Ok((discovery, None)) => (hosting(host, None), Some(discovery)),
         Err(e) => (hosting(host, Some(no_discovery(e))), None),
@@ -258,8 +269,8 @@ fn choose_role(args: &Args, library: PathBuf) -> Result<(Role, Option<Discovery>
 }
 
 /// Announces the instance and searches for the host of the station.
-fn search(station: &Station) -> io::Result<(Discovery, Option<SocketAddr>)> {
-    let discovery = Discovery::start(station_id(station))?;
+fn search(station: &Station, id: u64) -> io::Result<(Discovery, Option<SocketAddr>)> {
+    let discovery = Discovery::start(station_id(station), id)?;
     // An announcement can outlive a host that crashed.
     let found = discovery.find_host(None).filter(answers);
     Ok((discovery, found))
