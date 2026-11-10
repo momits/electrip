@@ -26,6 +26,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-03: neue Loks bei bestehender Verbindung abfragen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; dieses Inkrement hängt nicht davon ab (offener Punkt aus „Zustand der Loks beim Verbinden zurücklesen“).
+- Bisher fragte der Host den Zustand der Loks nur beim Verbinden ab. Jetzt fragt er jede Lok ab, die der Treiber noch nicht kennt oder deren Decoder (Adresse, Protokoll) sich geändert hat, auch bei bestehender Verbindung (`Host::send_locos`, Feld `requested`). Eine solche Lok schickt er nicht, sondern übernimmt die Antwort der Zentrale wie eine fremde Änderung. Das Verbinden nutzt denselben Weg.
+- Folge: Fehler beim Abfragen während des Verbindens melden `connect` und `take_over` nicht mehr direkt. Eine abgebrochene Verbindung kommt wie beim Senden als Ereignis an und trennt.
+- Test am Z21-Simulator angepasst: Eine neue Lok, die die Z21 nicht kennt, meldet sie als stehend und rückwärts; der Host übernimmt diese Richtung, die Achse fährt die Lok dann rückwärts.
+- Tests: `host/tests.rs` (neue Lok wird abgefragt und nicht geschickt; Lok mit neuer Adresse wird abgefragt und übernimmt die Meldung).
+- `cargo xtask test`, `cargo xtask loc` (ca. 7160 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). `decoder` in `send_locos` nur einmal geholt.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Ist die Instanz Client, reicht sie `join_host` an ihren Host weiter; dann tritt dieser bei, nicht nur sie.
+
 ## 2026-11-10 – N-05: Audio-Ziel auf einer anderen Instanz (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; dieses Inkrement von N-05 hängt nicht davon ab (Client nutzt die Konfiguration des Hosts).
