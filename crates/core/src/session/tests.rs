@@ -150,7 +150,8 @@ fn the_state_is_written_as_json() {
             "configurations": [],
             "audio_devices": [],
             "audio_targets": {},
-            "audio_latency": {}
+            "audio_latency": {},
+            "audio_conflicts": []
         })
     );
 }

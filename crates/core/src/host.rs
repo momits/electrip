@@ -9,7 +9,7 @@ use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
 use echoes::Echoes;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::iter;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -171,17 +171,27 @@ impl Host {
     }
 
     /// Tells the audio targets where each loco plays (N-05) and silences
-    /// the locos that are gone.
-    fn route_audio(&mut self) {
+    /// the locos that are gone; returns whether the addresses that play on
+    /// different targets changed.
+    fn route_audio(&mut self) -> bool {
         let sessions = iter::once(&self.session).chain(&self.guests);
         let mut locos = HashSet::new();
+        let mut targets: BTreeMap<u16, HashSet<_>> = BTreeMap::new();
         for entry in sessions.flat_map(Session::locos) {
             let loco = &entry.loco;
-            self.audio
-                .route(entry.id, loco.audio_instance(), loco.audio_device());
+            let target = (loco.audio_instance(), loco.audio_device());
+            self.audio.route(entry.id, target.0, target.1);
             locos.insert(entry.id);
+            let address = loco.decoder().address();
+            targets.entry(address).or_default().insert(target);
         }
         self.audio.retain(&locos);
+        let conflicts = targets
+            .into_iter()
+            .filter(|(_, targets)| targets.len() > 1)
+            .map(|(address, _)| address)
+            .collect();
+        self.session.set_audio_conflicts(conflicts)
     }
 
     /// Changes the session and saves it; on an error both stay unchanged.
@@ -239,7 +249,7 @@ impl Host {
                 }
             };
         }
-        self.route_audio();
+        changed |= self.route_audio();
         let mut driven = self.session.drive(seconds, &mut self.audio);
         for guest in &mut self.guests {
             driven |= guest.drive(seconds, &mut self.audio);
