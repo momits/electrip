@@ -6,6 +6,7 @@
 use electrip_audio::{MixerDeviceSink, Speaker};
 use electrip_control::{Discovery, Relay, Status, station_id};
 use electrip_core::host::{Driver, Host};
+use electrip_core::media;
 use electrip_core::session::{Command, Station};
 use electrip_core::station::StationKind;
 use electrip_input::Gamepads;
@@ -61,7 +62,7 @@ fn run() -> Result<(), String> {
         Some(library) => library,
         None => default_library().ok_or("no data directory, use --library <dir>")?,
     };
-    let media = library.join("media");
+    let media = library.join(media::PICTURES);
     let (role, discovery) = choose_role(&args, library.clone())?;
     // A host serves the clients of other instances too (ADR 0010); a
     // client keeps the port if it becomes host.

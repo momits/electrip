@@ -5,6 +5,8 @@ use crate::host::Connector;
 use crate::host::tests::{host, set_server};
 use crate::session::Command;
 use crate::station::StationError;
+use std::sync::Arc;
+use tempfile::TempDir;
 
 fn corpus(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../tests/corpus/configs/{name}.json"))
@@ -466,4 +468,44 @@ fn a_merged_configuration_is_taken_over_while_the_locos_drive() {
     assert_eq!(ids, [1, 2, 3]);
     assert_eq!(host.session().locos()[0].motion.speed(), speed);
     assert_eq!(host.session().config(), config);
+}
+
+#[test]
+fn a_sound_goes_to_the_library_and_plays_from_there() {
+    let library = TempDir::new().unwrap();
+    let path = media::add_sound(library.path(), b"tuut", Path::new("horn.ogg")).unwrap();
+    let file = library.path().join(&path);
+    let audio = LogSink::new(&[(file.to_str().unwrap(), 1.0)]);
+    let played = Arc::clone(&audio.played);
+    let connect: Connector = Box::new(|_| Err(StationError("offline".into())));
+    let mut host = Host::new(connect, Box::new(audio), library.path().into()).unwrap();
+    host.apply(Command::AddLoco).unwrap();
+    host.apply(Command::AddAction {
+        name: "Hupe".into(),
+    })
+    .unwrap();
+    let source = TempDir::new().unwrap();
+    fs::write(source.path().join("horn.ogg"), "tuut").unwrap();
+    let missing = source.path().join("missing.ogg");
+    for sound in [source.path().join("horn.ogg"), missing.clone()] {
+        let function = SoundFunction {
+            action: 1,
+            path: Some(sound),
+            ..SoundFunction::default()
+        };
+        host.apply(Command::AddSoundFunction { loco: 1, function })
+            .unwrap();
+    }
+
+    let functions = host.session().locos()[0].loco.sound_functions();
+    assert_eq!(functions[0].path.as_ref(), Some(&path));
+    assert_eq!(functions[1].path.as_ref(), Some(&missing));
+    host.apply(Command::TriggerAction {
+        loco: 1,
+        action: 1,
+        pressed: true,
+    })
+    .unwrap();
+    let played = played.lock().unwrap().join("\n");
+    assert!(played.contains(file.to_str().unwrap()), "{played}");
 }

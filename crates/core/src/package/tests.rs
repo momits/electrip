@@ -41,59 +41,58 @@ fn png() -> Vec<u8> {
 
 #[test]
 fn the_packages_of_electrip_1_are_imported() {
-    let media = TempDir::new().unwrap();
+    let library = TempDir::new().unwrap();
     let names = ["BR 216", "BR 81", "Koef II", "V 200", "V 60", "VT 98"];
     for name in names {
-        let package = read(&corpus(name), media.path(), media.path()).unwrap();
+        let package = read(&corpus(name), library.path()).unwrap();
         assert_eq!(package.loco.name(), name);
         assert_eq!(package.report, Vec::<String>::new(), "{name}");
         let picture = package.loco.picture().unwrap();
-        assert!(picture::path(media.path(), picture).exists(), "{name}");
+        let media = library.path().join(media::PICTURES);
+        assert!(picture::path(&media, picture).exists(), "{name}");
     }
-    let br_216 = read(&corpus("BR 216"), media.path(), media.path())
-        .unwrap()
-        .loco;
+    let br_216 = read(&corpus("BR 216"), library.path()).unwrap().loco;
     assert_eq!(br_216.decoder().protocol(), Protocol::DccShort);
     assert_eq!(br_216.decoder().address(), 2);
     assert_eq!(br_216.max_speed(), 120.00000000000003);
     assert_eq!(br_216.accel_duration(), 20.0);
     assert_eq!(br_216.brake_duration(), 17.0);
-    let koef = read(&corpus("Koef II"), media.path(), media.path())
-        .unwrap()
-        .loco;
+    let koef = read(&corpus("Koef II"), library.path()).unwrap().loco;
     assert_eq!(koef.decoder().protocol(), Protocol::Motorola2);
 }
 
 #[test]
 fn the_sounds_of_electrip_1_are_saved_in_the_library() {
-    let dir = TempDir::new().unwrap();
-    let library = dir.path().join("sounds");
+    let library = TempDir::new().unwrap();
     let names = ["BR 216", "BR 81", "Koef II", "V 200", "V 60", "VT 98"];
     for name in names {
-        let loco = read(&corpus(name), dir.path(), &library).unwrap().loco;
+        let loco = read(&corpus(name), library.path()).unwrap().loco;
         assert!(!sounds(&loco).is_empty(), "{name}");
         for path in sounds(&loco) {
-            assert_eq!(path.parent(), Some(library.as_path()), "{name}");
-            assert!(path.exists(), "{name}: {path:?}");
+            assert_eq!(path.parent(), Some(Path::new(media::SOUNDS)), "{name}");
+            assert!(library.path().join(&path).exists(), "{name}: {path:?}");
         }
     }
-    let loco = read(&corpus("V 60"), dir.path(), &library).unwrap().loco;
+    let loco = read(&corpus("V 60"), library.path()).unwrap().loco;
     let path = loco
         .sound_model()
         .unwrap()
         .segment_sound(0, SegmentSound::Accel);
     let mut zip = ZipArchive::new(File::open(corpus("V 60")).unwrap()).unwrap();
     let original = entry(&mut zip, "sound/FS0-FS1.ogg").unwrap();
-    assert_eq!(fs::read(path.unwrap()).unwrap(), original);
+    assert_eq!(
+        fs::read(library.path().join(path.unwrap())).unwrap(),
+        original
+    );
     let brake = loco.event_sounds()[0].path.as_ref().unwrap();
     let original = entry(&mut zip, "sound/Bremse1.ogg").unwrap();
-    assert_eq!(fs::read(brake).unwrap(), original);
+    assert_eq!(fs::read(library.path().join(brake)).unwrap(), original);
 }
 
 #[test]
 fn the_functions_of_electrip_1_get_actions() {
-    let media = TempDir::new().unwrap();
-    let package = read(&corpus("VT 98"), media.path(), media.path()).unwrap();
+    let library = TempDir::new().unwrap();
+    let package = read(&corpus("VT 98"), library.path()).unwrap();
     let names: Vec<_> = package.actions.iter().map(|a| a.name.as_str()).collect();
     let buttons = (0..=5).map(|nr| format!("Knopf {nr}"));
     let expected: Vec<String> = ["Knopf 6", "Knopf 7", "ABV Aus"]
@@ -122,12 +121,11 @@ fn the_functions_of_electrip_1_get_actions() {
 #[test]
 fn an_exported_loco_is_imported_again() {
     let dir = TempDir::new().unwrap();
-    let media = dir.path().join("media");
+    let library = dir.path().join("library");
+    let media = library.join(media::PICTURES);
     let source = dir.path().join("loco.png");
     fs::write(&source, png()).unwrap();
-    let mut loco = read(&corpus("V 60"), &media, &dir.path().join("sounds"))
-        .unwrap()
-        .loco;
+    let mut loco = read(&corpus("V 60"), &library).unwrap().loco;
     loco.set_picture(Some(picture::store(&media, &source, None).unwrap()));
     *loco.functions_mut() = vec![Function {
         action: 2,
@@ -148,22 +146,17 @@ fn an_exported_loco_is_imported_again() {
         name: format!("Aktion {id}"),
     });
     let path = dir.path().join("V 60.zip");
-    write(&path, &loco, &actions, &media).unwrap();
+    write(&path, &loco, &actions, &library).unwrap();
 
-    let other_media = dir.path().join("other");
-    let other_sounds = dir.path().join("other sounds");
-    let mut package = read(&path, &other_media, &other_sounds).unwrap();
-    for (sound, other) in sounds(&loco).iter().zip(sounds(&package.loco)) {
-        assert_eq!(other.parent(), Some(other_sounds.as_path()));
-        assert_eq!(fs::read(sound).unwrap(), fs::read(other).unwrap());
+    let other = dir.path().join("other");
+    let package = read(&path, &other).unwrap();
+    for sound in sounds(&package.loco) {
+        assert!(other.join(sound).exists());
     }
-    let file_name = |path: &Path| path.file_name().map(PathBuf::from);
-    package.loco.map_sounds(file_name);
-    loco.map_sounds(file_name);
     assert_eq!(package.loco, loco);
     assert_eq!(package.actions, actions[1..]);
     assert_eq!(package.report, Vec::<String>::new());
-    let picture = picture::path(&other_media, loco.picture().unwrap());
+    let picture = picture::path(&other.join(media::PICTURES), loco.picture().unwrap());
     assert_eq!(
         fs::read(picture).unwrap(),
         fs::read(picture::path(&media, loco.picture().unwrap())).unwrap()
@@ -176,7 +169,7 @@ fn a_missing_picture_is_reported() {
     let path = dir.path().join("Lok.zip");
     let loco = br#"{"name": "Lok", "img_path": "image/lok.png", "speed_control_points": [[0, 0], [100, 128]]}"#;
     archive(&path, &[("Lok.loco", loco)]);
-    let package = read(&path, dir.path(), dir.path()).unwrap();
+    let package = read(&path, dir.path()).unwrap();
     assert_eq!(package.loco.picture(), None);
     assert_eq!(package.report.len(), 1);
     assert!(
@@ -192,7 +185,7 @@ fn a_broken_picture_is_reported() {
     let path = dir.path().join("Lok.zip");
     let loco = br#"{"name": "Lok", "img_path": "image/lok.png", "speed_control_points": [[0, 0], [100, 128]]}"#;
     archive(&path, &[("Lok.loco", loco), ("image/lok.png", b"no image")]);
-    let package = read(&path, dir.path(), dir.path()).unwrap();
+    let package = read(&path, dir.path()).unwrap();
     assert_eq!(package.loco.picture(), None);
     assert!(
         package.report[0].starts_with("Lok: cannot read the picture"),
@@ -208,7 +201,7 @@ fn a_missing_sound_is_reported_and_left_out() {
     let loco = br#"{"name": "Lok", "speed_control_points": [[0, 0], [100, 128]],
         "function_sounds": [{"name": "Horn", "button": 1, "file_path": "sound/horn.ogg"}]}"#;
     archive(&path, &[("Lok.loco", loco)]);
-    let package = read(&path, dir.path(), dir.path()).unwrap();
+    let package = read(&path, dir.path()).unwrap();
     assert_eq!(package.loco.sound_functions()[0].path, None);
     assert_eq!(package.report.len(), 1);
     assert!(
@@ -222,7 +215,7 @@ fn a_missing_sound_is_reported_and_left_out() {
 #[test]
 fn a_loco_with_a_missing_sound_is_not_exported() {
     let dir = TempDir::new().unwrap();
-    let mut loco = read(&corpus("VT 98"), dir.path(), dir.path()).unwrap().loco;
+    let mut loco = read(&corpus("VT 98"), dir.path()).unwrap().loco;
     loco.sound_functions_mut()[0].path = Some(dir.path().join("missing.ogg"));
     let path = dir.path().join("VT 98.zip");
     assert!(write(&path, &loco, &[], dir.path()).is_err());
@@ -233,16 +226,13 @@ fn other_files_are_no_packages() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("Lok.zip");
     archive(&path, &[("sound/horn.ogg", b"")]);
-    let error = read(&path, dir.path(), dir.path()).unwrap_err();
+    let error = read(&path, dir.path()).unwrap_err();
     assert_eq!(error, ImportError::Invalid("no loco file".into()));
     fs::write(&path, b"no zip").unwrap();
-    assert!(matches!(
-        read(&path, dir.path(), dir.path()),
-        Err(ImportError::Read(_))
-    ));
+    assert!(matches!(read(&path, dir.path()), Err(ImportError::Read(_))));
     archive(&path, &[("loco.json", b"{}")]);
     assert!(matches!(
-        read(&path, dir.path(), dir.path()),
+        read(&path, dir.path()),
         Err(ImportError::Invalid(_))
     ));
 }

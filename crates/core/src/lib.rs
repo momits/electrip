@@ -15,6 +15,7 @@ pub mod function_sound;
 pub mod host;
 pub mod input;
 pub mod loco;
+pub mod media;
 pub mod package;
 pub mod picture;
 pub mod session;

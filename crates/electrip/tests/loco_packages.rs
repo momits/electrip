@@ -28,8 +28,8 @@ fn a_package_is_imported_and_exported() {
     assert!(library.path().join(format!("media/{picture}.png")).exists());
     assert_eq!(client.state["import_report"], json!([]));
     let horn = loco["sound_functions"][0]["path"].as_str().unwrap();
-    assert!(Path::new(horn).starts_with(library.path().join("sounds")));
-    assert!(Path::new(horn).exists());
+    assert!(horn.starts_with("sounds/"), "{horn}");
+    assert!(library.path().join(horn).exists());
 
     let path = library.path().join("export.zip");
     client
