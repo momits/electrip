@@ -41,6 +41,7 @@ fn slow_network(target: &str) -> String {
 }
 
 fn delay(mut from: TcpStream, mut to: TcpStream) {
+    to.set_nodelay(true).unwrap();
     thread::spawn(move || {
         let mut buffer = [0; 65536];
         while let Ok(n @ 1..) = from.read(&mut buffer) {

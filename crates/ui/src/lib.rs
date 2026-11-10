@@ -94,7 +94,7 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<Connection>) {
 /// A failed command is only reported, like one from a gamepad.
 fn send(connection: &Connection, command: Value) {
     let mut stream = lock(connection);
-    if let Err(e) = writeln!(stream, "{command}") {
+    if let Err(e) = stream.write_all(format!("{command}\n").as_bytes()) {
         eprintln!("ERROR control channel: {e}");
     }
 }

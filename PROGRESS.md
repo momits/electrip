@@ -24,6 +24,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-10 – N-03: CI auf macOS rot, Steuerkanal ohne Nagle (Claude)
+
+- CI auf `main` beim Start rot: Auf macOS dauerte `a_change_in_one_instance_shows_in_all_others_within_300_ms` 349 ms. Der Commit änderte nur `PROGRESS.md`, der Test war vorher grün, also wacklig.
+- Ursache: Nagle-Algorithmus und verzögerte ACKs. `writeln!` auf einem ungepufferten `TcpStream` schreibt eine JSON-Zeile in vielen kleinen Stücken, und der Host schickt Antwort und Zustand direkt hintereinander; auf macOS warten die Pakete dann deutlich länger auf das ACK als unter Linux.
+- Der Steuerkanal (Host, Weiterleitung des Clients, Gamepads des Clients) setzt jetzt `TCP_NODELAY`, und jede Zeile geht mit einem `write_all` raus, ebenso im Fenster und im Test-Client; der Netz-Proxy des Tests setzt ebenfalls `TCP_NODELAY`.
+- Gemessen im Container (je 5 Läufe): Umbenennen vom Host zu beiden Clients vorher ca. 33 ms, jetzt ca. 11 ms (10 ms Netz simuliert); Lok anlegen an einem Client vorher ca. 45 ms, jetzt ca. 35 ms.
+- `cargo xtask test`, `cargo xtask loc` (5981 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent).
+- **N-03** bleibt offen; offene Punkte wie im Eintrag davor.
+
 ## 2026-11-10 – N-03: Hinweis ohne Netzwerkzugriff, sechstes Inkrement (Claude)
 
 - CI auf `main` beim Start grün. Q-016 ist offen; dieses Inkrement hängt nicht davon ab.

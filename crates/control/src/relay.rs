@@ -66,6 +66,7 @@ impl Relay {
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
         let host = current(&self.target);
         let mut stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
+        stream.set_nodelay(true)?;
         // Drains the replies and states, so the host never waits to write
         // them; it ends when the host is gone or falls silent.
         let mut replies = stream.try_clone()?;
@@ -93,12 +94,14 @@ fn current(target: &Mutex<SocketAddr>) -> SocketAddr {
 
 fn send(stream: &mut TcpStream, command: &Command, offset: u32) -> io::Result<()> {
     let command = serde_json::to_string(&offset_device(command.clone(), offset))?;
-    writeln!(stream, "{command}")
+    stream.write_all(format!("{command}\n").as_bytes())
 }
 
 /// Copies both directions until one side closes or the host falls silent,
 /// then closes the other.
 fn forward(client: TcpStream, upstream: TcpStream) -> io::Result<()> {
+    client.set_nodelay(true)?;
+    upstream.set_nodelay(true)?;
     let (mut from_host, mut to_client) = (upstream.try_clone()?, client.try_clone()?);
     from_host.set_read_timeout(Some(SILENCE))?;
     let replies = thread::spawn(move || {
