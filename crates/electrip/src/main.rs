@@ -124,16 +124,16 @@ fn session(
     let bind = || TcpListener::bind((Ipv4Addr::LOCALHOST, 0));
     // The host listens on a port of its own behind the relay.
     let mut private = None;
-    let first = match &role {
-        Role::Host { .. } => private.insert(bind()?).local_addr()?,
-        Role::Client(host) => *host,
+    let (first, client) = match &role {
+        Role::Host { .. } => (private.insert(bind()?).local_addr()?, false),
+        Role::Client(host) => (*host, true),
     };
     // The instance plays the sounds of the locos that name it (N-05).
     let audio = Box::new(LibrarySink {
         sink: Box::new(electrip_audio::sound_card()),
         library: library.clone(),
     });
-    let mut relay = Relay::new(listener, first, id, audio);
+    let mut relay = Relay::new(listener, first, client, id, audio);
     loop {
         role = match role {
             Role::Host { host, alone } => {

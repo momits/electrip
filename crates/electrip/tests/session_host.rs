@@ -153,7 +153,6 @@ fn an_unreachable_host_leaves_the_instance_on_its_own() {
 #[test]
 fn a_client_becomes_host_when_the_host_is_gone() {
     let port = z21_simulator();
-    // Until Q-016 the client has the same configuration as the host.
     let library = TempDir::new().unwrap();
     let configure = |client: &mut Client| {
         add_loco_at(client, 3);

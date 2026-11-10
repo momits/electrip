@@ -17,6 +17,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-03: Gäste und Warnung bei verschiedenen Audio-Zielen entfernt (Claude)
+
+- CI auf `main` war beim Start grün. Aufgabe „Abbau“ aus dem Eintrag „N-03 vereinfacht“.
+- Entfernt: die Sitzungen der Gäste im Host (`host/guests.rs`), `use_configuration` im Steuerkanal und im Relay (die Instanz schickt keine eigene Konfiguration mehr), die Fehlermeldung `change this configuration on the instance that opened it`, `other_devices` (Geräte anderer Sitzungen) und `audio_conflicts` samt rotem „!“ und Hinweis im Lok-Dialog. Der Host hat wieder genau eine Sitzung; das Übernehmen gemeldeter Zustände für jede Lok mit der Adresse bleibt (ADR 0003, Q-010).
+- Ein Client fährt und ändert jetzt immer die Konfiguration des Hosts, auch wenn seine Bibliothek eine andere hat. Wird er Host (Host-Ausfall), öffnet er wie bisher seine eigene.
+- Tests: Gast-Tests entfernt; neu `session_host.rs` (`a_client_drives_with_the_configuration_of_the_host`). `spec/steuerkanal.md` und `spec/hw-checklist.md` nachgezogen.
+- `cargo xtask test`, `cargo xtask loc` (7596 Zeilen, vorher 7954) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Das Relay leitet ab `Relay::new` weiter (mit der Rolle der Instanz) statt erst ab dem ersten `switch`; das war nur für die Konfiguration des Gasts nötig. Veraltete Hinweise auf Q-016 entfernt, Test-Helfer in `host/tests.rs` wieder privat.
+- **N-03** bleibt offen. Nächste Aufgabe: Ein Client ohne die Konfiguration des Hosts holt sie (`take_configuration`, Q-017).
+- **Offen:** Zwei Loks derselben Adresse in einer Konfiguration geben ihre Achsen nicht gegenseitig frei (die Konfliktregel galt nur zwischen Sitzungen); ein Nothalt gibt weiter alle Achsen der Adresse frei.
+
 ## 2026-11-10 – Aufräumen: Sounds auf anderen Instanzen vorab dekodieren (Claude)
 
 - CI auf `main` lief beim Start noch. **N-03** ist die einzige offene Anforderung und hängt an Q-018; deshalb der Aufräumkandidat „Sounds auf anderen Instanzen vorab laden“.

@@ -442,7 +442,7 @@ pub struct LocoEntry {
     #[serde(skip)]
     axis: f64,
     /// The functions the command station last reported on that the loco
-    /// does not map, as bits; sent along so they stay on (Q-016).
+    /// does not map, as bits; sent along so they stay on (ADR 0010).
     #[serde(skip)]
     other_functions: u32,
 }
@@ -816,7 +816,8 @@ impl Session {
         Ok(())
     }
 
-    /// Releases the axis of each loco with the address.
+    /// Releases the axis of each loco with the address, so the locos with
+    /// the same address stop ramping too.
     pub(crate) fn release_axis(&mut self, address: u16) {
         for entry in &mut self.locos {
             if entry.loco.decoder().address() == address {
