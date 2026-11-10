@@ -6,10 +6,7 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Fehlende Sounddateien melden:** `import_electrip1` übernimmt die alten Pfade der Sounddateien (z. B. `/home/electrip/Lokomotiven/V 60/sound/FS1.ogg`) und prüft sie nicht.
-  Fehlen die Dateien, antwortet `toggle_sound` mit `ok`, aber das Fahrgeräusch bleibt `off`, und der `import_report` bleibt leer.
-  Bei Bildern steht dagegen „cannot read the picture“ im Bericht.
-  Gewünscht: `import_electrip1` nennt jede fehlende Sounddatei im `import_report`, und `toggle_sound` meldet, wenn nichts gespielt werden kann.
+- **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Sounds vor dem Spielen laden:** `Speaker::decode` dekodiert jede Datei beim ersten Einreihen ganz und im Host-Thread (`length()` und `samples()` in `crates/audio/src/speaker.rs`).
   Gemessen für Dateien von V 60: 25 bis 46 ms je Segmentdatei, 163 ms für `stop2.ogg` im Debug-Build, 2,5 bis 11 ms im Release-Build.
@@ -20,6 +17,15 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
+
+## 2026-11-10 – Aufräumen: fehlende Sounddateien im Importbericht (Claude)
+
+- CI auf `main` lief beim Start noch (danach grün). **N-03** ist die einzige offene Anforderung und hängt an Q-018; deshalb der Aufräumkandidat „Fehlende Sounddateien melden“, erster Teil.
+- `import_electrip1` prüft alle Sounds jeder Lok (Fahrgeräusch, Sound-Funktionen, Ereignis-Sounds) und schreibt jede fehlende Datei einmal je Lok als „<Lok>: cannot read the sound (<Pfad>)“ in den `import_report`. Der Pfad bleibt unverändert, denn auch beim Abspielen wird er so geöffnet, wie er gespeichert ist (relative Pfade gelten weiter ab dem Arbeitsverzeichnis; die Golden-Tests hängen daran).
+- Tests: `host/library/tests.rs` (eine vorhandene und eine zweimal genutzte fehlende Datei, nur die fehlende steht einmal im Bericht), angepasst in `electrip1_import.rs` und im Bild-Test (das Korpus `settings` nennt Sounds, die auf diesem Rechner fehlen). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7891 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). `check_sounds` nimmt die Lok jetzt nur lesend wie `media::missing` und baut die Zeile nur, wenn die Datei fehlt.
+- **Offen:** Q-018; `toggle_sound` meldet nicht, wenn nichts gespielt werden kann (Aufräumkandidat).
 
 ## 2026-11-10 – Aufräumen: Pfad der Bilder an einer Stelle (Claude)
 
