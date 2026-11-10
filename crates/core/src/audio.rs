@@ -89,6 +89,9 @@ pub enum AudioEvent {
         loco: u32,
         device: Option<String>,
     },
+    Prepare {
+        sound: PathBuf,
+    },
 }
 
 impl AudioEvent {
@@ -109,6 +112,7 @@ impl AudioEvent {
             } => sink.fade_in(*channel, sound, *fade),
             AudioEvent::FadeOut { channel, fade } => sink.fade_out(*channel, *fade),
             AudioEvent::Route { loco, device } => sink.route(*loco, device.as_deref()),
+            AudioEvent::Prepare { sound } => sink.prepare(sound),
         }
     }
 }

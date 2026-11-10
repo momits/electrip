@@ -3,7 +3,7 @@
 
 use super::{Audio, AudioEvent, AudioSink, ChannelId};
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// Sends an audio event to another instance; `false` when it is gone.
@@ -20,6 +20,8 @@ pub(crate) struct Targets {
     /// The channels the locos used, to silence them when a loco moves or
     /// is gone.
     channels: HashSet<ChannelId>,
+    /// The sounds each instance was sent to read ahead.
+    prepared: HashSet<(String, PathBuf)>,
 }
 
 impl Targets {
@@ -29,10 +31,13 @@ impl Targets {
             remote: HashMap::new(),
             placed: HashMap::new(),
             channels: HashSet::new(),
+            prepared: HashSet::new(),
         }
     }
 
+    /// An instance that connects again reads its sounds ahead again.
     pub(crate) fn add(&mut self, instance: String, remote: Remote) {
+        self.prepared.retain(|(i, _)| *i != instance);
         self.remote.insert(instance, remote);
     }
 
@@ -64,6 +69,19 @@ impl Targets {
         }
         let (instance, device) = place;
         self.send(&instance, &AudioEvent::Route { loco, device });
+    }
+
+    /// Reads the sound of the loco ahead ([`AudioSink::prepare`]) on the
+    /// host, for its length, and on the instance the loco plays on, once.
+    pub(crate) fn read_ahead(&mut self, loco: u32, sound: &Path) {
+        self.local.prepare(sound);
+        let Some(instance) = self.placed.get(&loco).and_then(|p| p.0.clone()) else {
+            return;
+        };
+        if self.prepared.insert((instance.clone(), sound.into())) {
+            let sound = sound.into();
+            self.send(&Some(instance), &AudioEvent::Prepare { sound });
+        }
     }
 
     /// Silences the locos that are not among `locos`: removed ones and
@@ -124,12 +142,6 @@ impl AudioSink for Targets {
     /// The host knows the sounds of all instances.
     fn length(&mut self, sound: &Path) -> Result<Duration, String> {
         self.local.length(sound)
-    }
-
-    /// The host reads the sounds ahead for their lengths; the other
-    /// instances read them when they play.
-    fn prepare(&mut self, sound: &Path) {
-        self.local.prepare(sound);
     }
 
     fn queue(&mut self, channel: ChannelId, sound: &Path) {
