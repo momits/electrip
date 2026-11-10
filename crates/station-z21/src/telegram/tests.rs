@@ -158,3 +158,13 @@ fn reads_back_the_steps_it_scaled() {
         }
     }
 }
+
+#[test]
+fn reads_the_serial_number() {
+    assert_eq!(get_serial_number(), [0x04, 0x00, 0x10, 0x00]);
+    assert_eq!(
+        parse_serial_number(&[0x08, 0x00, 0x10, 0x00, 0x44, 0x36, 0x03, 0x00]),
+        Some(210_500)
+    );
+    assert_eq!(parse_serial_number(&get_status()), None);
+}

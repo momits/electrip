@@ -4,6 +4,7 @@
 //! instance searches for the host of its command station.
 
 use electrip_core::session::Station;
+use electrip_core::station::StationKind;
 use mdns_sd::{RecvTimeoutError, ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
 use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
@@ -72,10 +73,17 @@ fn elect(me: u64, station: &str, seen: &[Announcement]) -> Election {
     }
 }
 
-/// The id of the command station (ADR 0010): its address, port and bus.
-/// A command station on this computer has the LAN address of the computer,
-/// so it differs from the one on another computer.
+/// The id of the command station (ADR 0010): the serial number of a Z21,
+/// else its address, port and bus. A command station on this computer has
+/// the LAN address of the computer, so it differs from the one on another
+/// computer.
 pub fn station_id(station: &Station) -> String {
+    if station.kind == StationKind::Z21 {
+        match electrip_station_z21::serial_number(&station.host, station.port) {
+            Ok(serial) => return format!("z21:{serial}"),
+            Err(e) => eprintln!("ERROR the Z21 has no id, its address stands in: {e}"),
+        }
+    }
     let ip = (station.host.as_str(), station.port)
         .to_socket_addrs()
         .ok()
