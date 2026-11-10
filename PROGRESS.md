@@ -25,6 +25,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-04: Konfigurationen zwischen Instanzen abgleichen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
+- Zwei neue Anfragen am Steuerkanal, die der Host selbst beantwortet (wie `join_host`): `configuration_ids` nennt die IDs der Bibliothek, `sync_configuration` führt ein Automerge-Dokument (Hex) in die Konfiguration mit der ID ein und antwortet mit dem Dokument nach dem Zusammenführen.
+- `electrip_control::sync(local, peer)` gleicht die gemeinsamen Konfigurationen zweier Hosts ab: eigenes Dokument holen, beim anderen einführen, Ergebnis beim eigenen einführen. Die Instanz macht das alle 5 s mit allen Instanzen, die mDNS zeigt, über den eigenen Steuerkanal (als Client also über ihren Host), auch mit Instanzen anderer Zentralen.
+- Ändert der Abgleich die geöffnete Konfiguration, übernimmt der Host sie (`Host::reload`, `Session::merge`): Loks behalten nach Position ihre ID und ihren Fahrzustand, nur geänderte Loks werden ersetzt; die Zentrale bleibt, solange sie verbunden ist.
+- Tests: `crates/control/src/sync/tests.rs` (zwei Hosts mit einer Kopie derselben Konfiguration führen getrennte Änderungen zusammen und zeigen sie im Zustand; unbekannte ID; Hex), `host/library/tests.rs` (Übernahme, während eine Lok fährt), `sync/library/tests.rs` (IDs). Der Abgleich per mDNS ist im Container nicht testbar (Multicast gesperrt). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (6610 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Antwort mit Feldern nur noch über `reply`, Fehler in `sync.rs` per `?` statt sechsmal `map_err`.
+- **N-04** bleibt offen.
+- **Offen:**
+  - Medien (Bilder, Sounds) per SHA-256 nachladen; heute kommen nur die Konfigurationen an.
+  - Prüfpunkt für Mo in `spec/hw-checklist.md` (zwei Rechner, Lok anlegen, erscheint auf dem anderen) kommt mit den Medien.
+  - Haben zwei Instanzen noch kein Dokument, gewinnt beim ersten Abgleich bei Listen die Seite, deren Dokument zuerst angelegt wird; erst danach werden Änderungen feldweise zusammengeführt.
+  - Ändert der Abgleich die Zentrale der geöffneten Konfiguration, während sie verbunden ist, schreibt der Host beim nächsten Speichern die alte zurück.
+  - Loks werden beim Übernehmen nach Position zugeordnet (wie in `update`); Abhilfe später: Loks mit fester ID.
+
 ## 2026-11-10 – N-04: Automerge-Dokument je Konfiguration in der Bibliothek (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
