@@ -26,9 +26,14 @@ fn loco(id: i32, name: &str) -> Value {
 }
 
 fn state(locos: Vec<Value>, devices: Value) -> State {
+    state_with_others(locos, devices, json!([]))
+}
+
+fn state_with_others(locos: Vec<Value>, devices: Value, others: Value) -> State {
     let station = json!({"connected": true, "track_power": false});
     let view = json!({"auto_focus": true, "only_active": false});
-    let state = json!({"locos": locos, "devices": devices, "station": station, "view": view,
+    let state = json!({"locos": locos, "devices": devices, "other_devices": others,
+        "station": station, "view": view,
         "audio_devices": ["USB Audio"], "audio_targets": {"3f2a9c0d": ["Pi"]},
         "audio_latency": {"3f2a9c0d": 340}, "audio_conflicts": [2]});
     serde_json::from_value(state).unwrap()
@@ -86,6 +91,17 @@ fn devices_mark_their_locos() {
     let controllers = controllers(&state, Path::new(""));
     assert_eq!(controllers[0].devices.row_count(), 0);
     assert_eq!(controllers[1].devices.iter().collect::<Vec<_>>(), [3, 5]);
+}
+
+#[test]
+fn devices_of_other_instances_mark_their_locos_too() {
+    let others = json!([{"loco": 1, "number": 2}, {"loco": null, "number": 4}]);
+    let locos = vec![loco(1, "A"), loco(2, "B")];
+    let mut state = state_with_others(locos, json!([device(1, 1)]), others);
+    state.view.only_active = true;
+    let controllers = controllers(&state, Path::new(""));
+    assert_eq!(controllers.len(), 1);
+    assert_eq!(controllers[0].devices.iter().collect::<Vec<_>>(), [1, 2]);
 }
 
 #[test]

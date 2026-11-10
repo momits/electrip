@@ -13,6 +13,8 @@ use std::path::Path;
 pub struct State {
     locos: Vec<Loco>,
     devices: Vec<Device>,
+    /// The devices of the other instances (Q-016), never with focus here.
+    other_devices: Vec<Device>,
     station: Station,
     view: View,
     audio_devices: Vec<String>,
@@ -61,6 +63,7 @@ struct Switch {
 struct Device {
     loco: Option<i32>,
     number: i32,
+    #[serde(default)]
     focus: bool,
 }
 
@@ -145,12 +148,22 @@ fn update<T: Clone + PartialEq + 'static>(model: &ModelRc<T>, rows: Vec<T>) {
 /// With the filter "only active" just the locos that are controlled or
 /// moving.
 pub(crate) fn controllers(state: &State, media: &Path) -> Vec<Controller> {
-    let active = |l: &&Loco| l.speed > 0.0 || state.devices.iter().any(|d| d.loco == Some(l.id));
+    let active = |l: &&Loco| l.speed > 0.0 || !devices(state, l.id).is_empty();
     state
         .locos
         .iter()
         .filter(|l| !state.view.only_active || active(l))
         .map(|l| controller(state, l, media))
+        .collect()
+}
+
+/// The numbers of the devices of this and of the other instances that
+/// control the loco.
+fn devices(state: &State, loco: i32) -> Vec<i32> {
+    let devices = state.devices.iter().chain(&state.other_devices);
+    devices
+        .filter(|d| d.loco == Some(loco))
+        .map(|d| d.number)
         .collect()
 }
 
@@ -160,12 +173,6 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         .as_ref()
         .and_then(|name| Image::load_from_path(&picture::path(media, name)).ok())
         .unwrap_or_default();
-    let devices: Vec<i32> = state
-        .devices
-        .iter()
-        .filter(|d| d.loco == Some(loco.id))
-        .map(|d| d.number)
-        .collect();
     Controller {
         id: loco.id,
         name: loco.name.as_str().into(),
@@ -175,7 +182,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         max_speed: loco.max_speed,
         forward: loco.forward,
         buttons: ModelRc::new(VecModel::from(buttons(loco))),
-        devices: ModelRc::new(VecModel::from(devices)),
+        devices: ModelRc::new(VecModel::from(devices(state, loco.id))),
         audio_target: audio_target(state, loco),
         audio_conflict: state.audio_conflicts.contains(&loco.decoder.address),
     }

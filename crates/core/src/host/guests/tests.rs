@@ -195,3 +195,34 @@ fn the_host_and_the_guest_learn_of_an_address_with_two_audio_targets() {
     assert!(host.poll(0.05));
     assert_eq!(conflicts(host.session()), serde_json::json!([]));
 }
+
+#[test]
+fn devices_show_with_the_loco_of_the_same_address_in_the_other_sessions() {
+    let (mut host, _, _library) = driving_host();
+    host.add_guest(guest_config());
+    let kind = || "pad".to_string();
+    host.apply(Command::AddDevice {
+        device: 1,
+        kind: kind(),
+    })
+    .unwrap();
+    let command = Command::AddDevice {
+        device: 2,
+        kind: kind(),
+    };
+    host.apply_guest("guest", command).unwrap();
+
+    let devices =
+        |session: &Session| serde_json::to_value(session).unwrap()["other_devices"].clone();
+    let guest = host.guest("guest").unwrap();
+    assert_eq!(guest.devices()[0].number, 2);
+    assert_eq!(
+        devices(host.session()),
+        serde_json::json!([{"number": 2, "loco": 1}])
+    );
+    let loco = guest_loco(&host).id;
+    assert_eq!(
+        devices(&host.guest_view("guest").unwrap()),
+        serde_json::json!([{"number": 1, "loco": loco}])
+    );
+}
