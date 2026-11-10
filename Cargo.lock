@@ -1160,6 +1160,7 @@ dependencies = [
  "automerge",
  "electrip-core",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
