@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt;
 use std::fs;
-use std::io::Cursor;
+use std::io::{self, Cursor};
 use std::path::{Path, PathBuf};
 
 /// Size of a saved picture, 4 times that of Electrip 1 for high resolution
@@ -97,11 +97,28 @@ pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<Strin
         .resize_exact(WIDTH, HEIGHT, FilterType::Lanczos3)
         .write_to(&mut Cursor::new(&mut png), ImageFormat::Png)
         .map_err(|e| PictureError::Write(e.to_string()))?;
-    let name = content_name(&png);
-    fs::create_dir_all(dir)
-        .and_then(|()| fs::write(path(dir, &name), &png))
-        .map_err(|e| PictureError::Write(e.to_string()))?;
+    add(dir, &png).map_err(|e| PictureError::Write(e.to_string()))
+}
+
+/// Saves a saved picture, e.g. from another instance (N-04), in the media
+/// directory `dir`; returns its name.
+pub fn add(dir: &Path, png: &[u8]) -> io::Result<String> {
+    let name = content_name(png);
+    fs::create_dir_all(dir)?;
+    fs::write(path(dir, &name), png)?;
     Ok(name)
+}
+
+/// The content of the picture `name`, for another instance (N-04); a name
+/// that is not a content name cannot reach a file outside `dir`.
+pub fn content(dir: &Path, name: &str) -> io::Result<Vec<u8>> {
+    if name.len() != 64 || !name.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("there is no picture {name}"),
+        ));
+    }
+    fs::read(path(dir, name))
 }
 
 /// A file name from the content, the same for the same content.
