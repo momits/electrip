@@ -35,7 +35,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `package::read`/`write` nehmen die Bibliothek statt einzelner Ordner.
 - Tests: `media/tests.rs` (Name, Übertragung, nur Bild- und Sound-Pfade, Inhalt muss passen, fehlende Dateien, Abspielen aus der Bibliothek), `host/library/tests.rs` (Sound kommt in die Bibliothek und wird von dort gespielt), `control/src/sync/tests.rs` (Lok kommt mit Bild und Sound beim anderen Host an), Pakettests angepasst. Prüfpunkte in `spec/hw-checklist.md` („N-04 – Gemeinsame Konfiguration mit Bild und Sounds“), `spec/steuerkanal.md` ergänzt.
 - `cargo xtask test`, `cargo xtask loc` (6767 Zeilen) und `cargo xtask parity` grün.
-- Einfachheits-Review: refactored (Sub-Agent). Sound- und Bildpfad nur noch in `media` gebaut (vorher mit `Path::join`, unter Windows mit `\\` und damit nicht erkannt), Hilfsfunktion in `LibrarySink` und `picture::add` eingespart.
+- Einfachheits-Review: refactored (Sub-Agent). Sound- und Bildpfad nur noch in `media` gebaut (vorher mit `Path::join`, unter Windows mit `\` und damit nicht erkannt), Hilfsfunktion in `LibrarySink` und `picture::add` eingespart.
 - **N-04** bleibt offen.
 - **Offen:**
   - `import_electrip1` übernimmt die alten absoluten Soundpfade; diese Sounds werden nicht übertragen (siehe Aufräumkandidat „Fehlende Sounddateien melden“). Ebenso Sounds aus Paketen, die vor diesem Inkrement mit absolutem Pfad gespeichert wurden.
