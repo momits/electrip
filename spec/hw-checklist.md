@@ -281,3 +281,13 @@ Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client),
 - [ ] B beenden, Dialog öffnen: die Ausgabe von B steht weiter in der Liste und ist markiert.
 
 Ergebnis: _offen_
+
+## N-05 – Latenz je Audio-Ziel
+
+Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client), B im WLAN, Fenster an A.
+
+- [ ] Auf das Bild einer Lok klicken: bei den Geräten von B steht hinter der Instanz-ID die gemessene Zeit, z. B. „· 12 ms“; bei Geräten von A steht keine.
+- [ ] Verzögerung künstlich erhöhen, z. B. an B `sudo tc qdisc add dev wlan0 root netem delay 200ms` (Linux; danach `sudo tc qdisc del dev wlan0 root`): nach wenigen Sekunden steht dort rot „… ms, zu langsam“.
+- [ ] Hörbare Latenz messen: Lok mit Fahrgeräusch auf ein Gerät von B legen, am Gamepad von B anfahren; Handy-Video mit Gamepad und Lautsprecher im Bild, Zeit zwischen Drücken und Ton ablesen (Bildrate 60/s). Zielwert ≤ 150 ms. Dasselbe auf einem Gerät von A. Werte hier notieren.
+
+Ergebnis: _offen_

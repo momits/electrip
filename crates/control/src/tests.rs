@@ -360,6 +360,10 @@ fn a_client_instance_offers_its_audio_target_and_plays_the_audio_events() {
         thread::sleep(Duration::from_millis(10));
     }
     assert_eq!(*routes.0.lock().unwrap(), [r#"3 Some("USB")"#]);
+
+    send(&mut stream, &json!({"type": "ping"})).unwrap();
+    let pong: Value = serde_json::from_str(&lines.next().unwrap().unwrap()).unwrap();
+    assert_eq!(pong, json!({"command": "pong"}));
 }
 
 #[test]
@@ -380,4 +384,27 @@ fn an_instance_that_reconnects_keeps_its_audio_target() {
     at_host.next(); // hello
     let state: Value = serde_json::from_str(&at_host.next().unwrap().unwrap()).unwrap();
     assert_eq!(state["state"]["audio_targets"], json!({"b": []}));
+}
+
+#[test]
+fn the_host_measures_the_round_trip_to_an_audio_target() {
+    let (address, _library) = serve_host();
+    let mut client = TcpStream::connect(address).unwrap();
+    client.set_read_timeout(Some(SILENCE)).unwrap();
+    let mut lines = BufReader::new(client.try_clone().unwrap()).lines();
+    let offer = json!({"command": "offer_audio", "instance": "b", "devices": []});
+    send(&mut client, &offer).unwrap();
+    wait_for(&mut lines, |m| m["type"] == "ping");
+    thread::sleep(Duration::from_millis(120));
+    send(&mut client, &json!({"command": "pong"})).unwrap();
+    let latency = |m: &Value| m["state"]["audio_latency"]["b"].as_u64();
+    wait_for(&mut lines, |m| {
+        latency(m).is_some_and(|l| (120..300).contains(&l))
+    });
+    // The next ping a heartbeat later.
+    wait_for(&mut lines, |m| m["type"] == "ping");
+
+    drop((lines, client));
+    let mut lines = BufReader::new(TcpStream::connect(address).unwrap()).lines();
+    wait_for(&mut lines, |m| m["state"]["audio_latency"] == json!({}));
 }

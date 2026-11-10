@@ -490,6 +490,9 @@ pub struct Session {
     /// The output devices of the other instances that play sounds, by
     /// instance id (N-05).
     audio_targets: BTreeMap<String, Vec<String>>,
+    /// The round trip in milliseconds to each of these instances, once
+    /// measured (N-05).
+    audio_latency: BTreeMap<String, u64>,
 }
 
 impl Session {
@@ -595,6 +598,10 @@ impl Session {
 
     pub(crate) fn audio_targets_mut(&mut self) -> &mut BTreeMap<String, Vec<String>> {
         &mut self.audio_targets
+    }
+
+    pub(crate) fn audio_latency_mut(&mut self) -> &mut BTreeMap<String, u64> {
+        &mut self.audio_latency
     }
 
     pub(crate) fn set_connected(&mut self, connected: bool) {

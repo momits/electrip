@@ -57,3 +57,9 @@ msgstr "Standardgerät"
 
 msgid "Session host"
 msgstr "Sitzungs-Host"
+
+msgid " · {} ms"
+msgstr " · {} ms"
+
+msgid " · {} ms, too slow"
+msgstr " · {} ms, zu langsam"

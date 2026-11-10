@@ -11,6 +11,7 @@ use crate::station::{CommandStation, LocoState, StationError, StationEvent};
 use echoes::Echoes;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Duration;
 
 pub type Driver = Box<dyn CommandStation + Send>;
 
@@ -137,7 +138,16 @@ impl Host {
     /// The host plays the sounds of the locos that name `instance` itself.
     pub fn remove_audio_target(&mut self, instance: &str) {
         self.session.audio_targets_mut().remove(instance);
+        self.session.audio_latency_mut().remove(instance);
         self.audio.remove(instance);
+    }
+
+    /// The round trip to `instance`, an audio target (N-05).
+    pub fn set_audio_latency(&mut self, instance: &str, latency: Duration) {
+        let millis = latency.as_millis() as u64;
+        self.session
+            .audio_latency_mut()
+            .insert(instance.into(), millis);
     }
 
     /// Tells the audio targets where each loco plays (N-05).

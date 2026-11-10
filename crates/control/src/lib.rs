@@ -56,7 +56,18 @@ struct Shared {
     stopped: bool,
     /// The connection of each instance that plays sounds (N-05); one that
     /// reconnects may offer before its old connection is closed.
-    offers: HashMap<String, SocketAddr>,
+    offers: HashMap<String, Offer>,
+}
+
+/// An instance that plays sounds and the ping that measures the round
+/// trip to it (N-05).
+struct Offer {
+    address: SocketAddr,
+    client: TcpStream,
+    /// When the next ping goes out.
+    next: Instant,
+    /// When the ping whose pong is still missing went out.
+    pending: Option<Instant>,
 }
 
 /// The id of the instance with the library, the same after a restart; a
@@ -149,7 +160,7 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
             }
         }
         if let Some((instance, address)) = added.audio
-            && shared.offers.get(&instance) == Some(&address)
+            && shared.offers.get(&instance).map(|o| o.address) == Some(address)
         {
             shared.offers.remove(&instance);
             shared.host.remove_audio_target(&instance);
@@ -187,10 +198,22 @@ fn serve_client(stream: TcpStream, shared: &Mutex<Shared>, added: &mut Added) ->
             let address = writer.peer_addr()?;
             added.audio = Some((instance.clone(), address));
             let mut shared = lock(shared)?;
-            shared.offers.insert(instance.clone(), address);
+            let offer = Offer {
+                address,
+                client: writer.try_clone()?,
+                next: Instant::now(),
+                pending: None,
+            };
+            shared.offers.insert(instance.clone(), offer);
             offer_audio(&mut shared.host, instance, devices, writer.try_clone()?);
             send(&mut writer, &reply(&Ok::<(), String>(())))?;
             shared.broadcast();
+            continue;
+        }
+        if is_pong(&line) {
+            if let Some((instance, address)) = &added.audio {
+                lock(shared)?.pong(instance, *address);
+            }
             continue;
         }
         let mut shared = lock(shared)?;
@@ -247,6 +270,7 @@ fn poll(
         if shared.poll() || changed || shared.last_broadcast.elapsed() >= HEARTBEAT {
             shared.broadcast();
         }
+        shared.ping();
     }
 }
 
@@ -265,6 +289,34 @@ impl Shared {
         let state = state(self.host.session());
         self.clients.retain_mut(|c| send(c, &state).is_ok());
         self.last_broadcast = Instant::now();
+    }
+
+    /// Pings each instance that plays sounds once a heartbeat, unless its
+    /// pong is still missing (N-05).
+    fn ping(&mut self) {
+        let now = Instant::now();
+        for offer in self.offers.values_mut() {
+            if offer.pending.is_none() && offer.next <= now {
+                offer.pending = Some(now);
+                let _ = send(&mut offer.client, &json!({"type": "ping"}));
+            }
+        }
+    }
+
+    /// Takes the round trip of the ping to `instance` on the connection
+    /// from `address`.
+    fn pong(&mut self, instance: &str, address: SocketAddr) {
+        let Some(offer) = self
+            .offers
+            .get_mut(instance)
+            .filter(|o| o.address == address)
+        else {
+            return;
+        };
+        if let Some(sent) = offer.pending.take() {
+            offer.next = Instant::now() + HEARTBEAT;
+            self.host.set_audio_latency(instance, sent.elapsed());
+        }
     }
 
     /// Closes the connections of all clients, so they find the next host.
@@ -297,6 +349,11 @@ fn offer_request(line: &str) -> Option<(String, Vec<String>)> {
     let instance = request["instance"].as_str()?.to_string();
     let devices = serde_json::from_value(request["devices"].clone()).ok()?;
     Some((instance, devices))
+}
+
+/// Whether the line is the answer of an instance to a ping (N-05).
+fn is_pong(line: &str) -> bool {
+    serde_json::from_str::<Value>(line).is_ok_and(|request| request["command"] == "pong")
 }
 
 /// Sends the audio events of the locos that name the instance to the

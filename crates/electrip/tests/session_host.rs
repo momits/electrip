@@ -109,7 +109,8 @@ fn the_devices_of_a_client_leave_with_it() {
 }
 
 /// N-05: a client instance offers its output devices to the host, which
-/// sends it the sounds of the locos that name it.
+/// sends it the sounds of the locos that name it and measures the round
+/// trip.
 #[test]
 fn a_client_is_an_audio_target_while_connected() {
     let host = App::start();
@@ -119,6 +120,10 @@ fn a_client_is_an_audio_target_while_connected() {
     let mut at_host = host.connect();
     wait_for(&mut at_host, |state| {
         state["audio_targets"][&instance].is_array()
+    });
+    // The host measures the round trip to it.
+    wait_for(&mut at_host, |state| {
+        state["audio_latency"][&instance].is_u64()
     });
 
     drop(client);
