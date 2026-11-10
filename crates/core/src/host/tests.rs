@@ -952,3 +952,14 @@ fn a_new_address_forgets_the_functions_reported_for_the_old() {
     host.poll(1.15);
     assert_eq!(functions_sent(&sent), [0]);
 }
+
+#[test]
+fn the_axis_does_not_save() {
+    let (mut host, _, _library) = driving_host();
+    host.saved = Config::default();
+    set_axis(&mut host, 1.0);
+    host.apply(Command::Reverse { loco: 1 }).unwrap();
+    assert_eq!(host.saved, Config::default());
+    host.apply(Command::AddLoco).unwrap();
+    assert_eq!(host.saved, host.session().config());
+}

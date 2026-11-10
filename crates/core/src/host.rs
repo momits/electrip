@@ -140,6 +140,10 @@ impl Host {
                     Ok(())
                 })?;
             }
+            // Guests and the axis change no configuration to save.
+            command @ (Command::SetAxis { .. } | Command::Reverse { .. }) => {
+                session.apply(command)?
+            }
             command if index > 0 => session.apply(command)?,
             command => self.change(|session| session.apply(command))?,
         }

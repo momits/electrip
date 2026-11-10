@@ -16,7 +16,14 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
-- **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
+
+## 2026-11-10 – Aufräumen: Achse ohne Speichern (Claude)
+
+- CI auf `main` lief beim Start noch. **N-03** ist die einzige offene Anforderung und hängt an Q-018; deshalb der Aufräumkandidat „Achse ohne Speichern“.
+- `SetAxis` und `Reverse` des Hosts gehen direkt an die Sitzung statt über `Host::change`; sie ändern nichts an der gespeicherten Konfiguration, die Sitzung wird also nicht mehr bei jedem Fahrbefehl geklont und verglichen.
+- Test: `host/tests.rs` (`the_axis_does_not_save`). `cargo xtask test`, `cargo xtask loc` (7894 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent).
+- **Offen:** Q-018.
 
 ## 2026-11-10 – Aufräumen: fehlende Sounddateien im Importbericht (Claude)
 
