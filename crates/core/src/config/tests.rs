@@ -32,6 +32,7 @@ fn a_written_config_reads_back_equal() {
     let mut mapping = Mapping::new("Xbox".into());
     mapping.bind("x".into(), Target::Action { action: 3 });
     let config = Config {
+        id: "k".into(),
         locos: vec![loco],
         actions: vec![Action {
             id: 3,
@@ -85,4 +86,15 @@ fn names_leaves_out_invalid_names() {
         fs::write(dir.path().join(file), "{}").unwrap();
     }
     assert_eq!(names(dir.path()).unwrap(), ["a"]);
+}
+
+#[test]
+fn a_configuration_without_an_id_gets_one_for_good() {
+    let dir = TempDir::new().unwrap();
+    let file = path(dir.path(), "Alt");
+    fs::write(&file, "{}").unwrap();
+    let id = read(&file).unwrap().id;
+    assert_eq!(id.len(), 16);
+    assert_eq!(read(&file).unwrap().id, id);
+    assert_ne!(new_id(), new_id());
 }

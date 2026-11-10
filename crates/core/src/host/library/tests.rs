@@ -105,7 +105,9 @@ fn functions_are_saved_in_their_default_state() {
 fn new_configurations_start_empty_and_can_be_switched() {
     let (mut host, _, _, _library) = host();
     host.apply(Command::AddLoco).unwrap();
+    let id = host.session().config().id;
     new_configuration(&mut host, "Keller").unwrap();
+    assert_ne!(host.session().config().id, id);
     assert_eq!(host.session().configuration(), "Keller");
     assert!(host.session().locos().is_empty());
     assert_eq!(names(&host), [DEFAULT_NAME, "Keller"]);
@@ -152,7 +154,9 @@ fn rename_renames_the_open_configuration() {
     };
     let exists = Err(CommandError::ConfigurationExists(DEFAULT_NAME.into()));
     assert_eq!(rename(&mut host, DEFAULT_NAME), exists);
+    let id = host.session().config().id;
     rename(&mut host, "Dachboden").unwrap();
+    assert_eq!(host.session().config().id, id);
     assert_eq!(host.session().configuration(), "Dachboden");
     assert_eq!(names(&host), ["Dachboden", DEFAULT_NAME]);
     // Changes go to the renamed file.
@@ -172,7 +176,7 @@ fn only_other_configurations_can_be_removed() {
     assert_eq!(remove(&mut host, "Keller"), open);
     remove(&mut host, DEFAULT_NAME).unwrap();
     assert_eq!(names(&host), ["Keller"]);
-    assert_eq!(host.session().config(), Config::default());
+    assert_eq!(host.session().config().locos, []);
 }
 
 #[test]

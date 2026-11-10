@@ -469,6 +469,8 @@ pub struct Session {
     import_report: Vec<String>,
     /// The name of the open configuration (B-21).
     configuration: String,
+    #[serde(skip)]
+    configuration_id: String,
     /// The names of all configurations in the library, sorted.
     configurations: Vec<String>,
 }
@@ -507,6 +509,7 @@ impl Session {
             ..self.station.clone()
         };
         Config {
+            id: self.configuration_id.clone(),
             locos,
             actions: self.actions.clone(),
             mappings: self.mappings.clone(),
@@ -519,6 +522,7 @@ impl Session {
     /// devices keep their locos if they can and get a mapping if their type
     /// has none.
     pub(crate) fn load(&mut self, config: Config, report: Vec<String>) {
+        self.configuration_id = config.id;
         self.locos.clear();
         for loco in config.locos {
             self.push(loco);

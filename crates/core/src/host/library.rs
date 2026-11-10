@@ -30,8 +30,9 @@ impl Host {
         Ok(())
     }
 
-    pub(super) fn create(&mut self, name: String, config: Config) -> Result<(), CommandError> {
+    pub(super) fn create(&mut self, name: String, mut config: Config) -> Result<(), CommandError> {
         self.check_disconnected()?;
+        config.id = config::new_id();
         config::write(&self.new_path(&name)?, &config)?;
         self.load(name, config, Vec::new())
     }
@@ -82,6 +83,7 @@ impl Host {
             }
         }
         let config = Config {
+            id: config::new_id(),
             locos: import.locos,
             actions: import.actions,
             mappings: vec![import.mapping],

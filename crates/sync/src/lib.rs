@@ -7,6 +7,8 @@ use automerge::{ScalarValue, transaction::Transactable};
 use electrip_core::config::Config;
 use serde_json::{Map, Value};
 
+pub mod library;
+
 /// A configuration as an Automerge document.
 pub struct Document(AutoCommit);
 
@@ -14,6 +16,15 @@ pub struct Document(AutoCommit);
 pub enum Error {
     Automerge(AutomergeError),
     Json(serde_json::Error),
+    Io(std::io::Error),
+    /// A configuration id that cannot name a file.
+    InvalidId(String),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Self {
+        Error::Io(error)
+    }
 }
 
 impl From<AutomergeError> for Error {
