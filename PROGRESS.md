@@ -22,6 +22,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Geräte anderer Instanzen bei der Lok (Claude)
+
+- CI auf `main` lief beim Start noch. Punkt 6 von Q-016 aus „Konfigurationen von Gästen im Host“.
+- Jede Sitzung am Host (Host und Gäste) bekommt im Zustand `other_devices`: die Eingabegeräte der anderen Sitzungen mit ihrer Nummer und der ersten eigenen Lok mit der Adresse der Lok, die das Gerät dort steuert (sonst `null`). Der Host gleicht das vor und nach jedem Befehl und bei jedem Takt ab (`Host::share_devices`). Das Fenster zeigt diese Geräte bei der Lok wie die eigenen, auch im Filter „nur aktive“.
+- Gerätenummern sind jetzt am ganzen Host eindeutig: Ein neues Gerät bekommt die kleinste Nummer, die kein Gerät des Hosts oder eines Gasts hat. So hat ein Gamepad überall dieselbe Farbe.
+- Tests: `host/guests/tests.rs` (Gerät von Host und Gast bei der Lok derselben Adresse, Nummern eindeutig, auch bei einem neuen Gast), `control/src/tests.rs` (Host-Client sieht das Gerät des Gasts), `ui/src/view/tests.rs` (fremde Geräte markieren die Lok). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7850 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Ein neuer Gast konnte vor dem nächsten Takt eine Nummer bekommen, die der Host schon nutzt (Test ergänzt); Nummernsuche und Lok-Suche vereinfacht.
+- **N-03** bleibt offen.
+- **Offen:** Q-018; Funktionen, die eine Konfiguration nicht kennt, gehen verloren.
+
 ## 2026-11-10 – N-05: Warnung bei verschiedenen Audio-Zielen (Claude)
 
 - CI auf `main` lief beim Start noch (danach grün). Offener Punkt „Warnung bei derselben Lok-Adresse mit verschiedenen Zielen“ aus N-05, seit Q-016 umsetzbar.
