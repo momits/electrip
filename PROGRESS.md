@@ -22,6 +22,18 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Station und Audio im Zustand des Gasts (Claude)
+
+- CI auf `main` lief beim Start noch (danach grün). Offener Punkt aus „Konfigurationen von Gästen im Host“.
+- Ein Gast bekam bisher den Zustand seiner eigenen Sitzung: Station nie verbunden, Gleisspannung aus, keine Ausgabegeräte und keine Audio-Ziele. Jetzt schickt der Host ihm `station`, `audio_devices`, `audio_targets` und `audio_latency` des Hosts mit (`Host::guest_view`, `Session::share`); Loks und Geräte bleiben die des Gasts.
+- Tests: `host/guests/tests.rs` (Gast sieht Station, Audio-Ziele und Latenz des Hosts), `control/src/tests.rs` (Gast bekommt ein neues Audio-Ziel im Zustand). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7722 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent); nur ein Doc-Kommentar umformuliert.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-018 (eigene Konfiguration auf einer Client-Instanz ändern); `configurations` ist im Zustand eines Gasts weiter leer.
+  - Funktionen, die eine Konfiguration nicht kennt, gehen verloren; Sounds entfernter Loks oder Gäste laufen weiter; Punkte 5 und 6 von Q-016; Warnung aus N-05.
+
 ## 2026-11-10 – N-03: Client fährt mit seiner Konfiguration (Claude)
 
 - CI auf `main` lief beim Start noch (danach grün). Offener Punkt „Relay“ aus „Gast über den Steuerkanal“.
