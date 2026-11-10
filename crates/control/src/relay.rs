@@ -85,23 +85,25 @@ impl Relay {
     /// host is gone.
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
         let host = *lock(&self.target);
-        let mut stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
+        let stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
         stream.set_nodelay(true)?;
         // Reads all messages, so the host never waits to write them; it
         // ends when the host is gone or falls silent.
         let replies = stream.try_clone()?;
         replies.set_read_timeout(Some(SILENCE))?;
-        let audio = Arc::clone(&self.audio);
-        let host_alive = thread::spawn(move || play(replies, &audio));
+        // Both threads write to the host.
+        let stream = Arc::new(Mutex::new(stream));
+        let (audio, pongs) = (Arc::clone(&self.audio), Arc::clone(&stream));
+        let host_alive = thread::spawn(move || play(replies, &pongs, &audio));
         let devices = lock(&self.audio).devices();
         let offer = json!({
             "command": "offer_audio",
             "instance": format!("{:016x}", self.instance),
             "devices": devices,
         });
-        stream.write_all(format!("{offer}\n").as_bytes())?;
+        write(&stream, &offer)?;
         for command in &self.devices {
-            send(&mut stream, command, self.offset)?;
+            send(&stream, command, self.offset)?;
         }
         loop {
             thread::sleep(POLL_INTERVAL);
@@ -109,7 +111,7 @@ impl Relay {
                 return Err(io::Error::other("no sign of life"));
             }
             for command in self.track(input()) {
-                send(&mut stream, &command, self.offset)?;
+                send(&stream, &command, self.offset)?;
             }
         }
     }
@@ -119,11 +121,15 @@ fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-/// Plays the audio events among the messages of the host until it is gone
-/// or falls silent; an event it does not know is left out.
-fn play(replies: TcpStream, audio: &Mutex<Audio>) -> io::Result<()> {
+/// Plays the audio events among the messages of the host and answers its
+/// pings until it is gone or falls silent; an event it does not know is
+/// left out.
+fn play(replies: TcpStream, host: &Mutex<TcpStream>, audio: &Mutex<Audio>) -> io::Result<()> {
     for line in BufReader::new(replies).lines() {
         let message: Value = serde_json::from_str(&line?)?;
+        if message["type"] == "ping" {
+            write(host, &json!({"command": "pong"}))?;
+        }
         if message["type"] != "audio" {
             continue;
         }
@@ -135,9 +141,15 @@ fn play(replies: TcpStream, audio: &Mutex<Audio>) -> io::Result<()> {
     Ok(())
 }
 
-fn send(stream: &mut TcpStream, command: &Command, offset: u32) -> io::Result<()> {
-    let command = serde_json::to_string(&offset_device(command.clone(), offset))?;
-    stream.write_all(format!("{command}\n").as_bytes())
+fn send(stream: &Mutex<TcpStream>, command: &Command, offset: u32) -> io::Result<()> {
+    write(
+        stream,
+        &serde_json::to_value(offset_device(command.clone(), offset))?,
+    )
+}
+
+fn write(stream: &Mutex<TcpStream>, message: &Value) -> io::Result<()> {
+    lock(stream).write_all(format!("{message}\n").as_bytes())
 }
 
 /// Copies both directions until one side closes or the host falls silent,

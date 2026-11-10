@@ -29,7 +29,8 @@ fn state(locos: Vec<Value>, devices: Value) -> State {
     let station = json!({"connected": true, "track_power": false});
     let view = json!({"auto_focus": true, "only_active": false});
     let state = json!({"locos": locos, "devices": devices, "station": station, "view": view,
-        "audio_devices": ["USB Audio"], "audio_targets": {"3f2a9c0d": ["Pi"]}});
+        "audio_devices": ["USB Audio"], "audio_targets": {"3f2a9c0d": ["Pi"]},
+        "audio_latency": {"3f2a9c0d": 340}});
     serde_json::from_value(state).unwrap()
 }
 
@@ -153,6 +154,8 @@ fn audio_targets_of_the_host_then_of_the_instances() {
             ("77aa", "")
         ]
     );
+    let latencies: Vec<_> = targets.iter().map(|t| t.latency).collect();
+    assert_eq!(latencies, [-1, -1, 340, 340, -1]);
     let rows = controllers(&state, Path::new(""));
     assert_eq!(rows[0].audio_target, targets[0]);
     assert_eq!(rows[1].audio_target, targets[4]);

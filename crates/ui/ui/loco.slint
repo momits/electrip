@@ -9,6 +9,9 @@ import { Button, LineEdit, ListView, Slider } from "std-widgets.slint";
 export struct AudioTarget {
     instance: string,
     device: string,
+    // The round trip to the instance in milliseconds, -1 if not measured
+    // (N-05).
+    latency: int,
 }
 
 export component LocoDialog inherits Rectangle {
@@ -132,7 +135,7 @@ export component LocoDialog inherits Rectangle {
                             ListView {
                                 for target in audio-targets: Rectangle {
                                     height: 36px;
-                                    background: target == audio-target ? #cfe0f5 : transparent;
+                                    background: target.instance == audio-target.instance && target.device == audio-target.device ? #cfe0f5 : transparent;
                                     VerticalLayout {
                                         padding-left: 6px;
                                         Text {
@@ -141,8 +144,8 @@ export component LocoDialog inherits Rectangle {
                                             overflow: elide;
                                         }
                                         Text {
-                                            text: target.instance != "" ? target.instance : @tr("Session host");
-                                            color: #6c6c6c;
+                                            text: (target.instance != "" ? target.instance : @tr("Session host")) + (target.latency > 300 ? @tr(" · {} ms, too slow", target.latency) : target.latency >= 0 ? @tr(" · {} ms", target.latency) : "");
+                                            color: target.latency > 300 ? #c62828 : #6c6c6c;
                                             font-size: 11px;
                                             vertical-alignment: center;
                                         }

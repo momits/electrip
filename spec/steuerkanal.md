@@ -42,6 +42,7 @@ Jede Nachricht hat ein Feld `type`.
 | `state` | `state` (Zustand, siehe unten) | nach `hello` und an **alle** Clients nach jedem erfolgreichen Befehl, außerdem alle 50 ms, solange sich der Zustand ändert (z. B. beim Beschleunigen), und sonst mindestens jede Sekunde als Lebenszeichen (N-03) |
 | `reply` | `ok` (bool), bei Fehler `error` (Text) | an den Absender, auf jeden Befehl genau eine, vor der folgenden `state` |
 | `audio` | `audio`: ein Audio-Ereignis mit `event` und Feldern: `queue` (`channel`, `sound`), `play` (`channel`, `sound`, `delay`), `stop` (`channel`), `fade_in` (`channel`, `sound`, `fade`), `fade_out` (`channel`, `fade`), `route` (`loco`, `device`). `channel` ist `{"loco": …, "nr": …}`, `sound` ein Pfad wie in der Konfiguration (z. B. `sounds/<SHA-256>.ogg`), `delay` und `fade` sind `{"secs": …, "nanos": …}` | nur an Clients nach `offer_audio`, für die Loks, die ihre Instanz nennen (N-05) |
+| `ping` | – | nur an Clients nach `offer_audio`: gleich nach dem Angebot, dann frühestens eine Sekunde nach jedem `pong`; der Client antwortet mit `pong` (N-05) |
 
 Ein fehlgeschlagener Befehl ändert nichts; dann folgt keine `state`-Nachricht.
 Zwischen Befehl und `reply` kann eine `state`-Nachricht eintreffen, die sich nicht auf den Befehl bezieht.
@@ -118,6 +119,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.
 - `audio_devices`: Namen der Ausgabegeräte des Hosts, gelesen beim Start des Hosts (N-05).
 - `audio_targets`: die Instanzen, die mit `offer_audio` Sounds angeboten haben und verbunden sind, je Instanz-ID die Namen ihrer Ausgabegeräte (N-05).
+- `audio_latency`: je Instanz aus `audio_targets` die zuletzt gemessene Zeit in Millisekunden von `ping` bis `pong`, sobald gemessen (N-05). Das ist der Weg eines Fahrbefehls vom Gamepad dieser Instanz zum Host und des Audio-Ereignisses zurück; nicht enthalten sind bis zu 50 ms bis zum nächsten Takt des Hosts und der Puffer des Ausgabegeräts. Das Fenster zeigt den Wert bei der Tonausgabe und ab 300 ms rot mit „zu langsam“.
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle
@@ -187,6 +189,7 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Lokbild (mittig zugeschnitten; ein relativer Pfad gilt ab dem Ordner der Datei, ein fehlendes Bild steht im `import_report`), Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
 | `join_host` | `address` (`host:port` oder nur `host`, dann Port 4711); die Instanz wird Client des Hosts an der Adresse; nach `ok` schließt sie alle Verbindungen. Ein Fehler (nicht erreichbar, die Instanz selbst) ändert nichts | N-03 |
 | `offer_audio` | `instance` (Instanz-ID), `devices` (Namen der Ausgabegeräte); der Host schickt dem Absender ab jetzt die Audio-Ereignisse der Loks, die diese Instanz nennen, bis er sich trennt. Ein Client schickt das selbst | N-05 |
+| `pong` | – ; Antwort auf `ping`, ohne `reply`. Ein Client schickt das selbst | N-05 |
 | `configuration_ids` | – ; die Antwort trägt zusätzlich `ids`: die IDs aller Konfigurationen der Bibliothek des Hosts | N-04 |
 | `sync_configuration` | `id` (ID einer Konfiguration), optional `document` (Automerge-Dokument der Konfiguration als Hex); führt das Dokument in die Konfiguration mit der ID ein, ist es die geöffnete, übernimmt der Host sie, ohne dass die Loks anhalten. Die Antwort trägt zusätzlich `document`: das Dokument der Konfiguration nach dem Zusammenführen, und `missing`: die Pfade der Lokbilder und Sounds aus der Bibliothek, die die Konfiguration nutzt und die dort fehlen (z. B. `media/<SHA-256>.png`, `sounds/<SHA-256>.ogg`). Eine unbekannte ID ist ein Fehler | N-04 |
 | `file` | `path` (Pfad eines Lokbilds oder Sounds in der Bibliothek wie unter `missing`); die Antwort trägt zusätzlich `content`: die Datei als Hex. Eine fehlende Datei oder ein anderer Pfad ist ein Fehler | N-04 |

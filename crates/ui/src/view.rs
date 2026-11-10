@@ -17,6 +17,7 @@ pub struct State {
     view: View,
     audio_devices: Vec<String>,
     audio_targets: BTreeMap<String, Vec<String>>,
+    audio_latency: BTreeMap<String, i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -173,19 +174,26 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
 }
 
 /// The output devices of the host, then those of the other instances, each
-/// with its default device first (N-05). A target a loco names that is not
-/// connected comes last, so the window still shows it.
+/// with its default device first and the round trip to it (N-05). A target
+/// a loco names that is not connected comes last, so the window still
+/// shows it.
 pub(crate) fn audio_targets(state: &State) -> Vec<AudioTarget> {
     let others = state.audio_targets.iter().map(|(i, d)| (i.as_str(), d));
     let mut targets = Vec::new();
     for (instance, devices) in std::iter::once(("", &state.audio_devices)).chain(others) {
+        let latency = state.audio_latency.get(instance).copied().unwrap_or(-1);
         for device in std::iter::once("").chain(devices.iter().map(String::as_str)) {
             let (instance, device) = (instance.into(), device.into());
-            targets.push(AudioTarget { instance, device });
+            targets.push(AudioTarget {
+                instance,
+                device,
+                latency,
+            });
         }
     }
     for target in state.locos.iter().map(audio_target) {
-        if !targets.contains(&target) {
+        let same = |t: &AudioTarget| t.instance == target.instance && t.device == target.device;
+        if !targets.iter().any(same) {
             targets.push(target);
         }
     }
@@ -198,6 +206,7 @@ fn audio_target(loco: &Loco) -> AudioTarget {
     AudioTarget {
         instance: text(&loco.audio_instance),
         device: text(&loco.audio_device),
+        latency: -1,
     }
 }
 
