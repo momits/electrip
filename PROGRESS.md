@@ -26,6 +26,18 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-04: Status gesetzt, Frage zur ersten Übertragung (Claude)
+
+- CI auf `main` beim Start grün. N-03 und N-05 warten in großen Teilen auf Q-016.
+- Alle Akzeptanzkriterien von N-04 sind mit Tests belegt (`crates/sync/src/tests.rs`, `crates/sync/src/library/tests.rs`, `crates/control/src/sync/tests.rs`, `crates/core/src/media/tests.rs`): Lok samt Bild und Sounds kommt beim anderen Host an, getrennte Änderungen werden zusammengeführt, Abgleich gemeinsamer IDs alle 5 s mit allen per mDNS gefundenen Instanzen (auch ohne Host und Zentrale), Medien per SHA-256.
+- **N-04** `wired` und `verified`.
+- Neue Frage Q-017 in `spec/questions.md`: Wie kommt eine Konfiguration zum ersten Mal auf ein zweites Gerät? Heute nur als Kopie der JSON-Datei, ohne gemeinsame Geschichte beim ersten Abgleich.
+- Kein Produktcode geändert; `cargo xtask parity` grün.
+- Einfachheits-Review: ok (kein Code im Diff).
+- **Offen:**
+  - Q-017 (erste Übertragung einer Konfiguration).
+  - Weiter offen aus den Einträgen davor: Zentrale beim Übernehmen der geöffneten Konfiguration, Loks nach Position statt fester ID, alte absolute Soundpfade aus `import_electrip1`.
+
 ## 2026-11-10 – N-04: Sounds in der Bibliothek und zwischen Instanzen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
