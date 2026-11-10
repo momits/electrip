@@ -8,8 +8,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
-- **Sounds auf anderen Instanzen vorab laden:** Der Host dekodiert die Sounds aller Loks jetzt vorab (siehe Eintrag „Sounds vorab dekodieren“). Eine andere Instanz, die als Audio-Ziel spielt (N-05), dekodiert eine Datei weiter erst beim ersten Spielen im Thread ihrer Verbindung. Dafür bräuchte das Protokoll ein Ereignis zum Vorab-Laden.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
+
+## 2026-11-10 – Aufräumen: Sounds auf anderen Instanzen vorab dekodieren (Claude)
+
+- CI auf `main` lief beim Start noch. **N-03** ist die einzige offene Anforderung und hängt an Q-018; deshalb der Aufräumkandidat „Sounds auf anderen Instanzen vorab laden“.
+- Neues Audio-Ereignis `prepare` (`sound`): Der Host schickt jeder Instanz, auf der eine Lok spielt (N-05), jeden Sound dieser Lok einmal je Verbindung (`Targets::read_ahead`); die Instanz gibt ihn ihrem `Speaker`, der ihn im eigenen Thread dekodiert. Verbindet sie sich neu, bekommt sie die Sounds wieder. Der Host dekodiert weiter alle Sounds selbst (für die Längen).
+- Test: `audio/targets/tests.rs` (`the_instance_of_a_loco_reads_its_sounds_ahead_once`). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7954 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent).
+- Während der Sitzung hat Mo N-03 vereinfacht (Eintrag darunter); Q-018 entfällt. Branch auf den neuen Stand rebased.
+- **Offen:** ob die Pausen auf einer anderen Instanz damit weg sind, ist ungeprüft (Hardware). Nächste Aufgabe: Abbau der Gäste (Eintrag darunter).
 
 ## 2026-11-10 – N-03 vereinfacht: eine geteilte Konfiguration (Mo, Claude)
 
