@@ -75,22 +75,12 @@ fn a_change_in_one_instance_shows_in_all_others_within_300_ms() {
     let mut at_c = c.connect();
     let has_loco = |state: &Value| state["locos"].as_array().unwrap().len() == 1;
 
-    let start = Instant::now();
-    at_b.command(json!({"command": "add_loco"})).unwrap();
-    wait_for(&mut at_host, has_loco);
-    wait_for(&mut at_c, has_loco);
-    let took = start.elapsed();
-    assert!(took < Duration::from_millis(300), "{took:?}");
+    let add = json!({"command": "add_loco"});
+    shows_within_300_ms(&mut at_b, add, [&mut at_host, &mut at_c], has_loco);
 
     let renamed = |state: &Value| state["locos"][0]["name"] == "V 60";
-    let start = Instant::now();
-    at_host
-        .command(json!({"command": "rename_loco", "loco": 1, "name": "V 60"}))
-        .unwrap();
-    wait_for(&mut at_b, renamed);
-    wait_for(&mut at_c, renamed);
-    let took = start.elapsed();
-    assert!(took < Duration::from_millis(300), "{took:?}");
+    let rename = json!({"command": "rename_loco", "loco": 1, "name": "V 60"});
+    shows_within_300_ms(&mut at_host, rename, [&mut at_b, &mut at_c], renamed);
 }
 
 /// The same with two configurations that both have a loco at address 3:
@@ -121,20 +111,28 @@ fn a_change_shows_in_other_configurations_within_300_ms() {
     let forward = |is: bool| move |state: &Value| state["locos"][0]["forward"] == is;
 
     // The locos of a guest get ids after those of the host.
-    let loco_b = at_b.state["locos"][0]["id"].clone();
-    let start = Instant::now();
-    at_b.command(json!({"command": "reverse", "loco": loco_b}))
-        .unwrap();
-    wait_for(&mut at_host, forward(false));
-    wait_for(&mut at_c, forward(false));
-    let took = start.elapsed();
-    assert!(took < Duration::from_millis(300), "{took:?}");
+    let reverse = json!({"command": "reverse", "loco": at_b.state["locos"][0]["id"]});
+    let others = [&mut at_host, &mut at_c];
+    shows_within_300_ms(&mut at_b, reverse, others, forward(false));
 
+    let reverse = json!({"command": "reverse", "loco": 1});
+    let others = [&mut at_host, &mut at_b];
+    shows_within_300_ms(&mut at_c, reverse, others, forward(true));
+}
+
+/// Sends `command` at `from`; within 300 ms the states of the `others`
+/// satisfy `done`.
+fn shows_within_300_ms(
+    from: &mut Client,
+    command: Value,
+    others: [&mut Client; 2],
+    done: impl Fn(&Value) -> bool + Copy,
+) {
     let start = Instant::now();
-    at_c.command(json!({"command": "reverse", "loco": 1}))
-        .unwrap();
-    wait_for(&mut at_host, forward(true));
-    wait_for(&mut at_b, forward(true));
+    from.command(command).unwrap();
+    for other in others {
+        wait_for(other, done);
+    }
     let took = start.elapsed();
     assert!(took < Duration::from_millis(300), "{took:?}");
 }
