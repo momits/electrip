@@ -26,6 +26,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-05: Audio-Ziel auf einer anderen Instanz (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; dieses Inkrement von N-05 hängt nicht davon ab (Client nutzt die Konfiguration des Hosts).
+- Jede Instanz hat eine feste Instanz-ID: beim ersten Start zufällig, gespeichert in der Bibliothek unter `instance`. Sie steht in `hello` und in der mDNS-Ankündigung (vorher je Start zufällig).
+- Eine Lok nennt in der Konfiguration Instanz (`audio_instance`, `null` = Host) und Ausgabegerät (`audio_device`); `set_audio_device` hat dafür das optionale Feld `instance`.
+- Ein Client schickt seinem Host nach dem Verbinden `offer_audio` mit Instanz-ID und Ausgabegeräten; der Zustand nennt sie unter `audio_targets`. Der Host leitet die Audio-Ereignisse jeder Lok, die diese Instanz nennt, als Nachricht `audio` über dieselbe Verbindung an sie (`Targets` in `crates/core/src/audio/targets.rs`); der Client spielt sie mit den Sounds seiner Bibliothek. Längen der Sounds rechnet weiter der Host.
+- Nicht verbunden oder Verbindung weg: der Host spielt selbst auf seinem Standardgerät und meldet das einmal (`ERROR the instance … is not connected …` bzw. `… is gone …`). Wechselt eine Lok die Instanz, verstummen ihre Sounds auf der alten.
+- Tests: `audio/targets/tests.rs` (Lok auf ihrer Instanz, nicht verbunden, weg, Wechsel, JSON), `host/tests.rs` (Befehl, gespeichert, `audio_targets`), `control/src/tests.rs` (Instanz-ID bleibt, Host schickt Ereignisse an den Client, Relay bietet an und spielt, Neuverbinden behält das Ziel), `session_host.rs` (Client-App ist Audio-Ziel, solange verbunden). Prüfpunkte in `spec/hw-checklist.md` („N-05 – Audio-Ziel auf einer anderen Instanz“), `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (ca. 7160 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Ein neu verbundener Client behält sein Audio-Ziel, auch wenn die alte Verbindung erst danach endet; Antwort auf `join_host` unter der Sperre, damit sie sich nicht mit Audio-Ereignissen mischt; unbekannte Audio-Ereignisse werden ausgelassen statt die Verbindung zu beenden; kleinere Vereinfachungen. Der Befehl heißt weiter `set_audio_device`, obwohl er jetzt auch die Instanz setzt (Umbenennen änderte das Protokoll).
+- **N-05** bleibt offen.
+- **Offen:**
+  - Audio-Ziel im Fenster wählen (Phase 3, UI); Warnung, wenn zwei Konfigurationen dieselbe Lok-Adresse mit verschiedenen Zielen haben (hängt an Q-016).
+  - Latenz je Ziel messen und in der UI melden (> 300 ms).
+  - Ziel ist nur eine Instanz, die Client des Hosts ist; eine Instanz ohne Verbindung zum Host (z. B. Host einer anderen Zentrale) kann kein Ziel sein.
+  - Die Ziel-Instanz braucht die Sounds in ihrer Bibliothek (Abgleich per N-04, setzt die Konfiguration dort voraus, Q-017); fehlt eine Datei, bleibt der Sound dort stumm.
+
 ## 2026-11-10 – N-05: Ausgabegerät pro Lok, erstes Inkrement (Claude)
 
 - CI auf `main` beim Start grün. N-03 wartet in großen Teilen auf Q-016, N-04 ist verifiziert; N-05 war noch nicht begonnen. Dieses Inkrement hängt nicht von Q-016 ab (eine Konfiguration, Host spielt selbst).
