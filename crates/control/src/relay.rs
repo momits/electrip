@@ -2,12 +2,15 @@
 //! control channel forwards each client to the host, and its input devices
 //! send their commands there. When the host is gone, the relay switches to
 //! the next host, which may be the instance itself. A host instance runs
-//! behind the relay too, so it can hand over to another host.
+//! behind the relay too, so it can hand over to another host. The relay
+//! plays the sounds of the locos that name the instance (N-05).
 
+use electrip_core::audio::{Audio, AudioEvent};
 use electrip_core::session::Command;
+use serde_json::{Value, json};
 use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
-use std::io::{self, Write};
+use std::io::{self, BufRead, BufReader, Write};
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
@@ -25,11 +28,15 @@ pub struct Relay {
     devices: Vec<Command>,
     /// Gamepads of other instances have the same ids from SDL.
     offset: u32,
+    /// The id of the instance and its audio target.
+    instance: u64,
+    audio: Arc<Mutex<Audio>>,
 }
 
 impl Relay {
-    /// Forwards each client of `listener` to the host at `host`.
-    pub fn start(listener: TcpListener, host: SocketAddr) -> Relay {
+    /// Forwards each client of `listener` to the host at `host`; the
+    /// instance `instance` plays sounds on `audio`.
+    pub fn start(listener: TcpListener, host: SocketAddr, instance: u64, audio: Audio) -> Relay {
         let target = Arc::new(Mutex::new(host));
         let shared = Arc::clone(&target);
         thread::spawn(move || {
@@ -48,12 +55,14 @@ impl Relay {
             target,
             devices: Vec::new(),
             offset: (RandomState::new().hash_one(()) as u32) & 0x7fff_0000 | 0x4000_0000,
+            instance,
+            audio: Arc::new(Mutex::new(audio)),
         }
     }
 
     /// Sends the clients that connect from now on to `host`.
     pub fn switch(&self, host: SocketAddr) {
-        *self.target.lock().unwrap_or_else(PoisonError::into_inner) = host;
+        *lock(&self.target) = host;
     }
 
     /// The `add_device` commands of the devices still connected.
@@ -70,18 +79,27 @@ impl Relay {
         commands
     }
 
-    /// Sends the commands of the input devices to the host, first those
-    /// that add the devices still connected, since a new host does not know
-    /// them; returns when the host is gone.
+    /// Offers the audio target to the host and sends it the commands of
+    /// the input devices, first those that add the devices still
+    /// connected, since a new host does not know them; returns when the
+    /// host is gone.
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
         let host = current(&self.target);
         let mut stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
         stream.set_nodelay(true)?;
-        // Drains the replies and states, so the host never waits to write
-        // them; it ends when the host is gone or falls silent.
-        let mut replies = stream.try_clone()?;
+        // Reads all messages, so the host never waits to write them; it
+        // ends when the host is gone or falls silent.
+        let replies = stream.try_clone()?;
         replies.set_read_timeout(Some(SILENCE))?;
-        let host_alive = thread::spawn(move || io::copy(&mut replies, &mut io::sink()));
+        let audio = Arc::clone(&self.audio);
+        let host_alive = thread::spawn(move || play(replies, &audio));
+        let devices = lock(&self.audio).devices();
+        let offer = json!({
+            "command": "offer_audio",
+            "instance": format!("{:016x}", self.instance),
+            "devices": devices,
+        });
+        stream.write_all(format!("{offer}\n").as_bytes())?;
         for command in &self.devices {
             send(&mut stream, command, self.offset)?;
         }
@@ -98,7 +116,24 @@ impl Relay {
 }
 
 fn current(target: &Mutex<SocketAddr>) -> SocketAddr {
-    *target.lock().unwrap_or_else(PoisonError::into_inner)
+    *lock(target)
+}
+
+fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Plays the audio events among the messages of the host until it is gone
+/// or falls silent.
+fn play(replies: TcpStream, audio: &Mutex<Audio>) -> io::Result<()> {
+    for line in BufReader::new(replies).lines() {
+        let message: Value = serde_json::from_str(&line?)?;
+        if message["type"] == "audio" {
+            let event: AudioEvent = serde_json::from_value(message["audio"].clone())?;
+            event.apply(&mut **lock(audio));
+        }
+    }
+    Ok(())
 }
 
 fn send(stream: &mut TcpStream, command: &Command, offset: u32) -> io::Result<()> {

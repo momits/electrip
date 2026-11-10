@@ -129,6 +129,7 @@ fn the_state_is_written_as_json() {
                 "event_sounds": [],
                 "picture": null,
                 "sound_model": null,
+                "audio_instance": null,
                 "audio_device": null,
                 "speed": 0.0,
                 "forward": true,
@@ -147,7 +148,8 @@ fn the_state_is_written_as_json() {
             "import_report": [],
             "configuration": "",
             "configurations": [],
-            "audio_devices": []
+            "audio_devices": [],
+            "audio_targets": {}
         })
     );
 }

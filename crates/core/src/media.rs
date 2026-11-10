@@ -104,11 +104,11 @@ pub(crate) fn content_name(bytes: &[u8]) -> String {
         .collect()
 }
 
-/// The audio target of the host: it plays the sounds of the library from
-/// there and any other sound file as it is.
-pub(crate) struct LibrarySink {
-    pub(crate) sink: crate::audio::Audio,
-    pub(crate) library: PathBuf,
+/// The audio target of an instance: it plays the sounds of the library
+/// from there and any other sound file as it is.
+pub struct LibrarySink {
+    pub sink: crate::audio::Audio,
+    pub library: PathBuf,
 }
 
 impl AudioSink for LibrarySink {

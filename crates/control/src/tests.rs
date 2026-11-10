@@ -3,6 +3,7 @@ use electrip_core::audio::{AudioSink, ChannelId};
 use electrip_core::station::StationError;
 use std::net::SocketAddr;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
@@ -22,6 +23,12 @@ impl AudioSink for NoAudio {
     fn fade_in(&mut self, _: ChannelId, _: &Path, _: Duration) {}
 
     fn fade_out(&mut self, _: ChannelId, _: Duration) {}
+}
+
+/// A relay to `host` for an instance without sound.
+fn relay(host: SocketAddr) -> Relay {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    Relay::start(listener, host, 2, Box::new(NoAudio))
 }
 
 /// A host without sound and its library, deleted when dropped.
@@ -99,7 +106,7 @@ pub(crate) fn serve_library(library: TempDir) -> (SocketAddr, TempDir) {
     let (host, library) = host_in(library);
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
-    thread::spawn(move || serve(listener, host, Vec::new, None, || None));
+    thread::spawn(move || serve(listener, host, 1, Vec::new, None, || None));
     (address, library)
 }
 
@@ -131,7 +138,7 @@ fn first_device(address: SocketAddr) -> u64 {
 #[test]
 fn a_client_instance_sends_its_devices_to_the_host() {
     let (address, _library) = serve_host();
-    let mut relay = Relay::start(TcpListener::bind("127.0.0.1:0").unwrap(), address);
+    let mut relay = relay(address);
     thread::spawn(move || relay.run(one_gamepad()));
 
     let id = first_device(address);
@@ -157,10 +164,7 @@ fn the_host_sends_a_sign_of_life_each_second() {
 #[test]
 fn a_silent_host_counts_as_gone() {
     let silent = TcpListener::bind("127.0.0.1:0").unwrap();
-    let mut relay = Relay::start(
-        TcpListener::bind("127.0.0.1:0").unwrap(),
-        silent.local_addr().unwrap(),
-    );
+    let mut relay = relay(silent.local_addr().unwrap());
     let start = Instant::now();
     assert!(relay.run(Vec::new).is_err());
     let took = start.elapsed();
@@ -170,14 +174,12 @@ fn a_silent_host_counts_as_gone() {
 #[test]
 fn the_next_host_gets_the_devices_still_connected() {
     let gone = TcpListener::bind("127.0.0.1:0").unwrap();
-    let mut relay = Relay::start(
-        TcpListener::bind("127.0.0.1:0").unwrap(),
-        gone.local_addr().unwrap(),
-    );
-    // The host closes the connection after the first command.
+    let mut relay = relay(gone.local_addr().unwrap());
+    // The host closes the connection after the offer and the first
+    // command.
     thread::spawn(move || {
         let (stream, _) = gone.accept().unwrap();
-        BufReader::new(stream).lines().next();
+        BufReader::new(stream).lines().nth(1);
     });
     let mut input = one_gamepad();
     assert!(relay.run(&mut input).is_err());
@@ -195,8 +197,11 @@ fn a_host_that_hands_over_closes_all_connections() {
     let address = listener.local_addr().unwrap();
     let next: SocketAddr = "192.168.1.7:4711".parse().unwrap();
     let (sender, receiver) = std::sync::mpsc::channel();
-    let server =
-        thread::spawn(move || serve(listener, host, Vec::new, None, || receiver.try_recv().ok()));
+    let server = thread::spawn(move || {
+        serve(listener, host, 1, Vec::new, None, || {
+            receiver.try_recv().ok()
+        })
+    });
     let stream = TcpStream::connect(address).unwrap();
     stream.set_read_timeout(Some(SILENCE)).unwrap();
     let mut lines = BufReader::new(stream).lines();
@@ -233,7 +238,7 @@ fn a_host_joins_the_host_a_client_names() {
     let (host, _library) = host();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
-    let server = thread::spawn(move || serve(listener, host, Vec::new, None, || None));
+    let server = thread::spawn(move || serve(listener, host, 2, Vec::new, None, || None));
 
     let reply = ask_to_join(address, &next.to_string());
     assert_eq!(reply, json!({"type": "reply", "ok": true}));
@@ -263,4 +268,96 @@ fn a_join_request_names_the_host() {
         Some("pc:4711".into())
     );
     assert_eq!(join_request(r#"{"command": "add_loco"}"#), None);
+}
+
+#[test]
+fn an_instance_keeps_its_id_in_the_library() {
+    let (a, b) = (TempDir::new().unwrap(), TempDir::new().unwrap());
+    let id = instance_id(a.path()).unwrap();
+    assert_eq!(instance_id(a.path()).unwrap(), id);
+    assert_ne!(instance_id(b.path()).unwrap(), id);
+}
+
+/// Reads messages until the first one `found` accepts.
+fn wait_for(lines: &mut impl Iterator<Item = io::Result<String>>, found: impl Fn(&Value) -> bool) {
+    lines
+        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
+        .find(found)
+        .unwrap();
+}
+
+#[test]
+fn the_host_sends_the_sounds_of_a_loco_to_its_instance_while_connected() {
+    let (address, _library) = serve_host();
+    let mut client = TcpStream::connect(address).unwrap();
+    client.set_read_timeout(Some(SILENCE)).unwrap();
+    let mut lines = BufReader::new(client.try_clone().unwrap()).lines();
+    let offer = json!({"command": "offer_audio", "instance": "b", "devices": ["USB"]});
+    send(&mut client, &offer).unwrap();
+    wait_for(&mut lines, |m| {
+        m["state"]["audio_targets"] == json!({"b": ["USB"]})
+    });
+
+    send(&mut client, &json!({"command": "add_loco"})).unwrap();
+    let target =
+        json!({"command": "set_audio_device", "loco": 1, "instance": "b", "device": "USB"});
+    send(&mut client, &target).unwrap();
+    let route = json!({"event": "route", "loco": 1, "device": "USB"});
+    wait_for(&mut lines, |m| m["type"] == "audio" && m["audio"] == route);
+
+    drop((lines, client));
+    let mut lines = BufReader::new(TcpStream::connect(address).unwrap()).lines();
+    wait_for(&mut lines, |m| m["state"]["audio_targets"] == json!({}));
+}
+
+/// An audio target that logs the devices of the locos.
+#[derive(Default, Clone)]
+struct Routes(Arc<Mutex<Vec<String>>>);
+
+impl AudioSink for Routes {
+    fn length(&mut self, _: &Path) -> Result<Duration, String> {
+        Err("no audio".into())
+    }
+
+    fn queue(&mut self, _: ChannelId, _: &Path) {}
+
+    fn play(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn stop(&mut self, _: ChannelId) {}
+
+    fn fade_in(&mut self, _: ChannelId, _: &Path, _: Duration) {}
+
+    fn fade_out(&mut self, _: ChannelId, _: Duration) {}
+
+    fn devices(&mut self) -> Vec<String> {
+        vec!["USB".into()]
+    }
+
+    fn route(&mut self, loco: u32, device: Option<&str>) {
+        self.0.lock().unwrap().push(format!("{loco} {device:?}"));
+    }
+}
+
+#[test]
+fn a_client_instance_offers_its_audio_target_and_plays_the_audio_events() {
+    let host = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = host.local_addr().unwrap();
+    let routes = Routes::default();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let mut relay = Relay::start(listener, address, 0xb, Box::new(routes.clone()));
+    thread::spawn(move || relay.run(Vec::new));
+
+    let (mut stream, _) = host.accept().unwrap();
+    let mut lines = BufReader::new(stream.try_clone().unwrap()).lines();
+    let offer: Value = serde_json::from_str(&lines.next().unwrap().unwrap()).unwrap();
+    let expected =
+        json!({"command": "offer_audio", "instance": "000000000000000b", "devices": ["USB"]});
+    assert_eq!(offer, expected);
+    let route = json!({"event": "route", "loco": 3, "device": "USB"});
+    send(&mut stream, &json!({"type": "audio", "audio": route})).unwrap();
+    let start = Instant::now();
+    while routes.0.lock().unwrap().is_empty() && start.elapsed() < SILENCE {
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(*routes.0.lock().unwrap(), [r#"3 Some("USB")"#]);
 }

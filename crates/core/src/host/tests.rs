@@ -1,4 +1,5 @@
 use super::*;
+use crate::audio::AudioEvent;
 use crate::audio::tests::{LogSink, Played};
 use crate::config;
 use crate::decoder::Decoder;
@@ -811,8 +812,12 @@ fn each_loco_plays_on_the_output_device_of_its_configuration() {
     host.apply(Command::AddLoco).unwrap();
     host.apply(Command::AddLoco).unwrap();
     let device = Some("USB".to_string());
-    host.apply(Command::SetAudioDevice { loco: 2, device })
-        .unwrap();
+    let command = Command::SetAudioDevice {
+        loco: 2,
+        instance: None,
+        device,
+    };
+    host.apply(command).unwrap();
     host.poll(0.05);
     let expected = HashMap::from([(1, None), (2, Some("USB".to_string()))]);
     assert_eq!(*routes.lock().unwrap(), expected);
@@ -821,4 +826,41 @@ fn each_loco_plays_on_the_output_device_of_its_configuration() {
         host.session().configuration(),
     ));
     assert_eq!(saved.unwrap().locos[1].audio_device(), Some("USB"));
+}
+
+#[test]
+fn a_loco_plays_on_the_instance_of_its_configuration() {
+    let (mut host, _, _, library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    let sent = Arc::new(Mutex::new(Vec::new()));
+    let remote = Arc::clone(&sent);
+    let send = Box::new(move |event: &AudioEvent| {
+        remote.lock().unwrap().push(event.clone());
+        true
+    });
+    host.add_audio_target("b".into(), vec!["USB".into()], send);
+    let state = serde_json::to_value(host.session()).unwrap();
+    assert_eq!(state["audio_targets"], serde_json::json!({"b": ["USB"]}));
+
+    let command = Command::SetAudioDevice {
+        loco: 1,
+        instance: Some("b".into()),
+        device: Some("USB".into()),
+    };
+    host.apply(command).unwrap();
+    host.poll(0.05);
+    let route = AudioEvent::Route {
+        loco: 1,
+        device: Some("USB".into()),
+    };
+    assert_eq!(*sent.lock().unwrap(), [route]);
+    let saved = config::read(&config::path(
+        library.path(),
+        host.session().configuration(),
+    ));
+    assert_eq!(saved.unwrap().locos[0].audio_instance(), Some("b"));
+
+    host.remove_audio_target("b");
+    let state = serde_json::to_value(host.session()).unwrap();
+    assert_eq!(state["audio_targets"], serde_json::json!({}));
 }

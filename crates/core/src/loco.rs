@@ -115,8 +115,10 @@ pub struct Loco {
     /// `None` is “no sound”.
     #[serde(default)]
     sound_model: Option<SoundModel>,
-    /// The output device of the host that plays the sounds; `None` is the
-    /// default device (N-05).
+    /// The instance that plays the sounds; `None` is the host (N-05).
+    #[serde(default)]
+    audio_instance: Option<String>,
+    /// The output device of that instance; `None` is the default device.
     #[serde(default)]
     audio_device: Option<String>,
 }
@@ -139,6 +141,7 @@ impl Loco {
             event_sounds: Vec::new(),
             picture: None,
             sound_model: None,
+            audio_instance: None,
             audio_device: None,
         })
     }
@@ -231,7 +234,12 @@ impl Loco {
         self.audio_device.as_deref()
     }
 
-    pub fn set_audio_device(&mut self, device: Option<String>) {
+    pub fn audio_instance(&self) -> Option<&str> {
+        self.audio_instance.as_deref()
+    }
+
+    pub fn set_audio_target(&mut self, instance: Option<String>, device: Option<String>) {
+        self.audio_instance = instance;
         self.audio_device = device;
     }
 

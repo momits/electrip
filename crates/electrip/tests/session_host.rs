@@ -108,6 +108,23 @@ fn the_devices_of_a_client_leave_with_it() {
     wait_for(&mut at_host, |state| state["devices"] == json!([]));
 }
 
+/// N-05: a client instance offers its output devices to the host, which
+/// sends it the sounds of the locos that name it.
+#[test]
+fn a_client_is_an_audio_target_while_connected() {
+    let host = App::start();
+    let library = TempDir::new().unwrap();
+    let client = client_of(host.address(), &library);
+    let instance = std::fs::read_to_string(library.path().join("instance")).unwrap();
+    let mut at_host = host.connect();
+    wait_for(&mut at_host, |state| {
+        state["audio_targets"][&instance].is_array()
+    });
+
+    drop(client);
+    wait_for(&mut at_host, |state| state["audio_targets"] == json!({}));
+}
+
 #[test]
 fn an_unreachable_host_leaves_the_instance_on_its_own() {
     // A freed port could go to an app of another test; nothing listens on

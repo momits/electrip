@@ -1,7 +1,7 @@
 //! The session host (ADR 0010): it holds the session, the only
 //! connection to the command station and the library of configurations.
 
-use crate::audio::Audio;
+use crate::audio::{Audio, AudioSink, Remote, Targets};
 use crate::config::Config;
 use crate::media::LibrarySink;
 use crate::picture;
@@ -20,7 +20,7 @@ pub struct Host {
     session: Session,
     driver: Option<Driver>,
     connect: Connector,
-    audio: Audio,
+    audio: Targets,
     /// The last state of each loco the driver knows, by loco id.
     sent: HashMap<u32, LocoState>,
     echoes: Echoes,
@@ -38,10 +38,10 @@ impl Host {
             session: Session::default(),
             driver: None,
             connect,
-            audio: Box::new(LibrarySink {
+            audio: Targets::new(Box::new(LibrarySink {
                 sink: audio,
                 library: library.clone(),
-            }),
+            })),
             sent: HashMap::new(),
             echoes: Echoes::default(),
             library,
@@ -81,13 +81,13 @@ impl Host {
                         .map_err(CommandError::Station)?;
                 }
             }
-            Command::ToggleSound { loco } => self.session.toggle_sound(loco, &mut *self.audio)?,
+            Command::ToggleSound { loco } => self.session.toggle_sound(loco, &mut self.audio)?,
             Command::TriggerAction {
                 loco,
                 action,
                 pressed,
             } => {
-                let audio = &mut *self.audio;
+                let audio = &mut self.audio;
                 self.session.trigger_action(loco, action, pressed, audio)?
             }
             Command::Input {
@@ -121,10 +121,26 @@ impl Host {
         Ok(())
     }
 
-    /// Tells the audio target on which device each loco plays (N-05).
+    /// Plays the sounds of the locos that name `instance` there while it
+    /// is connected; it offers `devices` (N-05).
+    pub fn add_audio_target(&mut self, instance: String, devices: Vec<String>, remote: Remote) {
+        self.session
+            .audio_targets_mut()
+            .insert(instance.clone(), devices);
+        self.audio.add(instance, remote);
+    }
+
+    pub fn remove_audio_target(&mut self, instance: &str) {
+        self.session.audio_targets_mut().remove(instance);
+        self.audio.remove(instance);
+    }
+
+    /// Tells the audio targets where each loco plays (N-05).
     fn route_audio(&mut self) {
         for entry in self.session.locos() {
-            self.audio.route(entry.id, entry.loco.audio_device());
+            let loco = &entry.loco;
+            self.audio
+                .route(entry.id, loco.audio_instance(), loco.audio_device());
         }
     }
 
@@ -194,7 +210,7 @@ impl Host {
             };
         }
         self.route_audio();
-        let driven = self.session.drive(seconds, &mut *self.audio);
+        let driven = self.session.drive(seconds, &mut self.audio);
         self.send_locos();
         changed || driven
     }

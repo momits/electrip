@@ -2,13 +2,16 @@
 //! receive the state, one JSON message per line. The format is described in
 //! `spec/steuerkanal.md`.
 
+use electrip_core::audio::AudioEvent;
 use electrip_core::host::Host;
 use electrip_core::session::{Command, Session};
 use serde_json::{Value, json};
 use std::collections::hash_map::RandomState;
+use std::fs;
 use std::hash::BuildHasher;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -44,7 +47,7 @@ struct Shared {
     last_broadcast: Instant,
     /// Why the instance runs alone, for the window (N-03).
     alone: Option<String>,
-    /// A random id in `hello`, so the host does not join itself.
+    /// The instance id in `hello`, so the host does not join itself.
     id: String,
     /// The host to join, as a client asked (N-03).
     joined: Option<SocketAddr>,
@@ -52,14 +55,30 @@ struct Shared {
     stopped: bool,
 }
 
+/// The id of the instance with the library, the same after a restart; a
+/// new library gets a random one (N-05).
+pub fn instance_id(library: &Path) -> io::Result<u64> {
+    let file = library.join("instance");
+    let saved = fs::read_to_string(&file).ok();
+    if let Some(id) = saved.and_then(|id| u64::from_str_radix(id.trim(), 16).ok()) {
+        return Ok(id);
+    }
+    // A random number without a further dependency.
+    let id = RandomState::new().hash_one(());
+    fs::create_dir_all(library)?;
+    fs::write(file, format!("{id:016x}"))?;
+    Ok(id)
+}
+
 /// Serves clients, each in a thread, and polls the host and the input
-/// devices on the calling thread. `alone` tells the clients why other
-/// instances cannot find this one. When `handover` names another host,
+/// devices on the calling thread; `id` is the instance id. `alone` tells
+/// the clients why other instances cannot find this one. When `handover` names another host,
 /// or a client asks to join one, it closes all connections and returns
 /// that host (N-03); the host is dropped when their threads end.
 pub fn serve(
     listener: TcpListener,
     host: Host,
+    id: u64,
     input: impl FnMut() -> Vec<Command>,
     alone: Option<String>,
     handover: impl FnMut() -> Option<SocketAddr>,
@@ -71,8 +90,7 @@ pub fn serve(
         last_poll: Instant::now(),
         last_broadcast: Instant::now(),
         alone,
-        // A random number without a further dependency.
-        id: format!("{:016x}", RandomState::new().hash_one(())),
+        id: format!("{id:016x}"),
         joined: None,
         stopped: false,
     }));
@@ -103,31 +121,38 @@ fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) {
     }
 }
 
+/// What a client added to the host.
+#[derive(Default)]
+struct Added {
+    /// The `add_device` commands of its input devices.
+    devices: Vec<Command>,
+    /// Its instance, if it plays sounds (N-05).
+    audio: Option<String>,
+}
+
 /// Greets the client with the version and the state, then executes its
 /// commands. A disconnected client ends the thread and removes its input
-/// devices, so their locos do not drive on.
+/// devices, so their locos do not drive on, and its audio target.
 fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
-    let mut devices = Vec::new();
-    let result = serve_client(stream, shared, &mut devices);
-    if !devices.is_empty() {
+    let mut added = Added::default();
+    let result = serve_client(stream, shared, &mut added);
+    if !added.devices.is_empty() || added.audio.is_some() {
         let mut shared = lock(shared)?;
-        for added in devices {
-            if let Command::AddDevice { device, .. } = added {
+        for command in added.devices {
+            if let Command::AddDevice { device, .. } = command {
                 let _ = shared.host.apply(Command::RemoveDevice { device });
             }
+        }
+        if let Some(instance) = added.audio {
+            shared.host.remove_audio_target(&instance);
         }
         shared.broadcast();
     }
     result
 }
 
-/// Executes the commands of the client and keeps `devices` up to date
-/// with the input devices it added.
-fn serve_client(
-    stream: TcpStream,
-    shared: &Mutex<Shared>,
-    devices: &mut Vec<Command>,
-) -> io::Result<()> {
+/// Executes the commands of the client and keeps `added` up to date.
+fn serve_client(stream: TcpStream, shared: &Mutex<Shared>, added: &mut Added) -> io::Result<()> {
     stream.set_nodelay(true)?;
     let mut writer = stream.try_clone()?;
     {
@@ -149,12 +174,20 @@ fn serve_client(
             lock(shared)?.joined = result.ok();
             continue;
         }
+        if let Some(offer) = offer_request(&line) {
+            added.audio = Some(offer.0.clone());
+            let mut shared = lock(shared)?;
+            offer_audio(&mut shared.host, offer, writer.try_clone()?);
+            send(&mut writer, &reply(&Ok::<(), String>(())))?;
+            shared.broadcast();
+            continue;
+        }
         let mut shared = lock(shared)?;
         // Drives up to now first, so the command counts from its arrival.
         let polled = shared.poll();
         let result = sync::answer(&mut shared.host, &line).unwrap_or_else(|| {
             let command = execute(&mut shared.host, &line)?;
-            track(devices, &command);
+            track(&mut added.devices, &command);
             Ok(json!({}))
         });
         let ok = result.is_ok();
@@ -240,6 +273,28 @@ fn join_request(line: &str) -> Option<String> {
         return None;
     }
     request["address"].as_str().map(String::from)
+}
+
+/// The instance and its output devices of an `offer_audio` request: it
+/// offers to play the sounds of the locos that name it (N-05). The host
+/// handles it itself, since the audio events go back on the connection.
+fn offer_request(line: &str) -> Option<(String, Vec<String>)> {
+    let request: Value = serde_json::from_str(line).ok()?;
+    if request["command"] != "offer_audio" {
+        return None;
+    }
+    let instance = request["instance"].as_str()?.to_string();
+    let devices = serde_json::from_value(request["devices"].clone()).ok()?;
+    Some((instance, devices))
+}
+
+/// Sends the audio events of the locos that name the instance to the
+/// client.
+fn offer_audio(host: &mut Host, (instance, devices): (String, Vec<String>), mut client: TcpStream) {
+    let remote = Box::new(move |event: &AudioEvent| {
+        send(&mut client, &json!({"type": "audio", "audio": event})).is_ok()
+    });
+    host.add_audio_target(instance, devices, remote);
 }
 
 /// The host at `address` if it greets with another id than `id`: with
