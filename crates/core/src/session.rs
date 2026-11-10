@@ -347,6 +347,9 @@ pub enum CommandError {
     ConfigurationExists(String),
     ConfigurationOpen(String),
     File(String),
+    UnknownConfiguration(String),
+    /// A guest only drives with its configuration (Q-016).
+    GuestChange,
 }
 
 impl From<LocoError> for CommandError {
@@ -390,6 +393,12 @@ impl fmt::Display for CommandError {
                 write!(f, "the configuration {name:?} is open")
             }
             CommandError::File(reason) => write!(f, "file error: {reason}"),
+            CommandError::UnknownConfiguration(id) => {
+                write!(f, "the configuration {id} is not in this session")
+            }
+            CommandError::GuestChange => {
+                f.write_str("change this configuration on the instance that opened it")
+            }
         }
     }
 }
@@ -493,6 +502,10 @@ pub struct Session {
     /// The round trip in milliseconds to each of these instances, once
     /// measured (N-05).
     audio_latency: BTreeMap<String, u64>,
+    /// The addresses whose axis was deflected since the host last took
+    /// them (Q-016).
+    #[serde(skip)]
+    deflected: Vec<u16>,
 }
 
 impl Session {
@@ -800,8 +813,45 @@ impl Session {
     }
 
     fn set_axis(&mut self, loco: u32, deflection: f64, dead_zone: f64) -> Result<(), CommandError> {
-        self.entry(loco)?.axis = drive::deflection(deflection, dead_zone);
+        let entry = self.entry(loco)?;
+        entry.axis = drive::deflection(deflection, dead_zone);
+        if entry.axis != 0.0 {
+            let address = entry.loco.decoder().address();
+            self.deflected.push(address);
+        }
         Ok(())
+    }
+
+    /// The addresses whose axis was deflected since the last call.
+    pub(crate) fn take_deflected(&mut self) -> Vec<u16> {
+        std::mem::take(&mut self.deflected)
+    }
+
+    /// Releases the axis of each loco with the address: another input
+    /// drives it now (Q-016).
+    pub(crate) fn release_axis(&mut self, address: u16) {
+        for entry in &mut self.locos {
+            if entry.loco.decoder().address() == address {
+                entry.axis = 0.0;
+            }
+        }
+    }
+
+    /// A session for the configuration of a guest (Q-016). Its locos get
+    /// ids after those of this session, which goes on after them, so loco
+    /// ids stay unique on the host.
+    pub(crate) fn guest(&mut self, config: Config) -> Session {
+        let mut guest = Session {
+            last_id: self.last_id,
+            ..Session::default()
+        };
+        guest.load(config, Vec::new());
+        self.last_id = guest.last_id;
+        guest
+    }
+
+    pub(crate) fn configuration_id(&self) -> &str {
+        &self.configuration_id
     }
 
     pub(crate) fn toggle_sound(

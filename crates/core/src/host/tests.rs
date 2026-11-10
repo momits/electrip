@@ -148,7 +148,7 @@ fn a_broken_connection_disconnects_and_can_be_reopened() {
 
 /// A connected host with one loco (id 1, address 1, 100 km/h, 128 steps,
 /// 11.5 s to accelerate) and what the driver got after connecting.
-fn driving_host() -> (Host, Sent, TempDir) {
+pub(super) fn driving_host() -> (Host, Sent, TempDir) {
     let (mut host, _, sent, library) = host();
     host.apply(Command::AddLoco).unwrap();
     set_server(&mut host, "srcp").unwrap();
@@ -157,7 +157,7 @@ fn driving_host() -> (Host, Sent, TempDir) {
     (host, sent, library)
 }
 
-fn set_axis(host: &mut Host, deflection: f64) {
+pub(super) fn set_axis(host: &mut Host, deflection: f64) {
     host.apply(Command::SetAxis {
         loco: 1,
         deflection,
@@ -165,11 +165,11 @@ fn set_axis(host: &mut Host, deflection: f64) {
     .unwrap();
 }
 
-fn speed(host: &Host) -> f64 {
+pub(super) fn speed(host: &Host) -> f64 {
     host.session().locos()[0].motion.speed()
 }
 
-fn state(forward: bool, step: u8) -> Call {
+pub(super) fn state(forward: bool, step: u8) -> Call {
     let state = LocoState {
         forward,
         step,
@@ -685,7 +685,7 @@ fn a_tapped_sound_function_switches_off_at_the_end() {
 
 /// A connected host with loco 1 at address 1 with function F0, its events
 /// and what the driver got after connecting.
-fn host_with_light() -> (Host, Events, Sent, TempDir) {
+pub(super) fn host_with_light() -> (Host, Events, Sent, TempDir) {
     let (mut host, events, sent, library) = host();
     host.apply(Command::AddLoco).unwrap();
     let name = "Licht".into();
@@ -706,7 +706,7 @@ fn host_with_light() -> (Host, Events, Sent, TempDir) {
     (host, events, sent, library)
 }
 
-fn report(events: &Events, forward: bool, step: u8, functions: u32) {
+pub(super) fn report(events: &Events, forward: bool, step: u8, functions: u32) {
     let state = LocoState {
         forward,
         step,
