@@ -25,6 +25,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-04: Lokbilder per SHA-256 zwischen Instanzen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
+- `sync_configuration` antwortet zusätzlich mit `missing`: den Lokbildern der Konfiguration, die in der Bibliothek fehlen. Neue Anfragen `picture` (Bild als Hex nach seinem SHA-256-Namen; andere Namen werden abgelehnt, damit keine Datei außerhalb von `media/` gelesen wird) und `add_picture` (legt ein Bild unter dem SHA-256 seines Inhalts ab).
+- `electrip_control::sync` holt nach dem Zusammenführen jeder gemeinsamen Konfiguration die fehlenden Bilder von der anderen Seite; hat sie das Bild auch nicht, wird es übersprungen.
+- In `core`: `picture::add` und `picture::content`; `store_bytes` nutzt `add`. `image` ist Dev-Abhängigkeit von `electrip-control` (Testbild).
+- Tests: `crates/control/src/sync/tests.rs` (Lok mit Bild kommt samt Bilddatei beim anderen Host an), `picture/tests.rs` (gleicher Name in einer anderen Bibliothek, nur SHA-256-Namen lesbar). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (6662 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Kürzerer Fehler in `picture::content`, Test mit benannten Verzeichnissen, Kommentar klarer.
+- **N-04** bleibt offen.
+- **Offen:**
+  - Sounds: Ihre Pfade in der Konfiguration sind absolut (auch die aus Paketen in `sounds/<SHA-256>.<Endung>`), auf einem anderen Gerät also falsch. Vorher müssen Sounds aus der Bibliothek relativ zu ihr in der Konfiguration stehen; danach wie die Bilder übertragen.
+  - Prüfpunkt für Mo in `spec/hw-checklist.md` (zwei Rechner, Lok mit Bild und Sounds anlegen) kommt mit den Sounds.
+  - Weitere offene Punkte wie im Eintrag davor (erster Abgleich ohne gemeinsame Geschichte, Zentrale beim Übernehmen, Loks nach Position).
+
 ## 2026-11-10 – N-04: Konfigurationen zwischen Instanzen abgleichen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
