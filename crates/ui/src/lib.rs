@@ -7,7 +7,7 @@ mod view;
 
 use serde::Deserialize;
 use serde_json::{Value, json};
-use slint::{ComponentHandle, Image, ModelRc, VecModel, Weak};
+use slint::{ComponentHandle, Image, ModelRc, SharedString, VecModel, Weak};
 use std::io::{BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
@@ -94,6 +94,13 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<Connection>) {
             &s,
             json!({"command": "set_volume", "loco": loco, "volume": volume}),
         )
+    });
+    let s = Rc::clone(&stream);
+    window.on_set_audio_target(move |loco, target| {
+        let text = |s: SharedString| (!s.is_empty()).then(|| s.to_string());
+        let command = json!({"command": "set_audio_device", "loco": loco,
+            "instance": text(target.instance), "device": text(target.device)});
+        send(&s, command)
     });
     window.on_toggle_power(move || send(&stream, json!({"command": "toggle_power"})));
 }

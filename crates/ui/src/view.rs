@@ -1,10 +1,11 @@
 //! What the window shows of the state of the host.
 
-use crate::generated::{ButtonKind, ControlButton, Controller, MainWindow};
+use crate::generated::{AudioTarget, ButtonKind, ControlButton, Controller, MainWindow};
 use electrip_core::picture;
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use slint::{Image, Model, ModelRc, SharedString, VecModel};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 /// The part of the state the window shows; see `spec/steuerkanal.md`.
@@ -14,6 +15,8 @@ pub struct State {
     devices: Vec<Device>,
     station: Station,
     view: View,
+    audio_devices: Vec<String>,
+    audio_targets: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -30,6 +33,8 @@ struct Loco {
     sound_functions: Vec<Switch>,
     event_sounds: Vec<Switch>,
     functions: Vec<Switch>,
+    audio_instance: Option<String>,
+    audio_device: Option<String>,
 }
 
 /// A function, sound function or event sound.
@@ -68,13 +73,15 @@ pub fn show(window: &MainWindow, state: &State, media: &Path) {
     window.set_track_power(state.station.track_power);
     window.set_auto_focus(state.view.auto_focus);
     window.set_only_active(state.view.only_active);
-    let rows = controllers(state, media);
+    let targets = audio_targets(state);
+    let rows = controllers(state, &targets, media);
     let buttons = rows.iter().map(|c| c.buttons.row_count()).max();
     window.set_button_rows(buttons.unwrap_or(0) as i32);
     let model = window.get_controllers();
     let focused = focus(state, &model);
     let index = focused.and_then(|loco| rows.iter().position(|c| c.id == loco));
     update_controllers(&model, rows);
+    window.set_audio_targets(ModelRc::new(VecModel::from(targets)));
     if let Some(index) = index {
         window.invoke_bring_into_view(index as i32);
     }
@@ -129,17 +136,17 @@ fn update<T: Clone + PartialEq + 'static>(model: &ModelRc<T>, rows: Vec<T>) {
 
 /// With the filter "only active" just the locos that are controlled or
 /// moving.
-pub(crate) fn controllers(state: &State, media: &Path) -> Vec<Controller> {
+pub(crate) fn controllers(state: &State, targets: &[AudioTarget], media: &Path) -> Vec<Controller> {
     let active = |l: &&Loco| l.speed > 0.0 || state.devices.iter().any(|d| d.loco == Some(l.id));
     state
         .locos
         .iter()
         .filter(|l| !state.view.only_active || active(l))
-        .map(|l| controller(state, l, media))
+        .map(|l| controller(state, l, targets, media))
         .collect()
 }
 
-fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
+fn controller(state: &State, loco: &Loco, targets: &[AudioTarget], media: &Path) -> Controller {
     let picture = loco
         .picture
         .as_ref()
@@ -161,6 +168,44 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         forward: loco.forward,
         buttons: ModelRc::new(VecModel::from(buttons(loco))),
         devices: ModelRc::new(VecModel::from(devices)),
+        audio_target: targets
+            .iter()
+            .position(|t| *t == audio_target(loco))
+            .map_or(-1, |i| i as i32),
+    }
+}
+
+/// The output devices of the host, then those of the other instances, each
+/// with its default device first (N-05). A target a loco names that is not
+/// connected comes last, so the window still shows it.
+pub(crate) fn audio_targets(state: &State) -> Vec<AudioTarget> {
+    let others = state.audio_targets.iter().map(|(i, d)| (i.as_str(), d));
+    let mut targets: Vec<AudioTarget> = std::iter::once(("", &state.audio_devices))
+        .chain(others)
+        .flat_map(|(instance, devices)| {
+            let defaults = std::iter::once(String::new());
+            defaults
+                .chain(devices.iter().cloned())
+                .map(|device| AudioTarget {
+                    instance: instance.into(),
+                    device: device.into(),
+                })
+        })
+        .collect();
+    for target in state.locos.iter().map(audio_target) {
+        if !targets.contains(&target) {
+            targets.push(target);
+        }
+    }
+    targets
+}
+
+/// Empty is the host or its default device, like `null` in the state.
+fn audio_target(loco: &Loco) -> AudioTarget {
+    let text = |s: &Option<String>| s.as_deref().unwrap_or_default().into();
+    AudioTarget {
+        instance: text(&loco.audio_instance),
+        device: text(&loco.audio_device),
     }
 }
 
