@@ -143,6 +143,7 @@ impl Host {
             command => self.change(|session| session.apply(command))?,
         }
         self.release_axes(index);
+        self.share_devices();
         Ok(())
     }
 
@@ -250,6 +251,7 @@ impl Host {
             };
         }
         changed |= self.route_audio();
+        changed |= self.share_devices();
         let mut driven = self.session.drive(seconds, &mut self.audio);
         for guest in &mut self.guests {
             driven |= guest.drive(seconds, &mut self.audio);
@@ -334,6 +336,26 @@ impl Host {
                 session.release_axis(address);
             }
         }
+    }
+
+    /// Shows the devices of each session in the others (Q-016), so device
+    /// numbers stay unique on the host; returns whether that changed.
+    fn share_devices(&mut self) -> bool {
+        let others: Vec<Vec<_>> = self
+            .sessions()
+            .enumerate()
+            .map(|(index, session)| {
+                let others = self.sessions().enumerate().filter(|(o, _)| *o != index);
+                others
+                    .flat_map(|(_, other)| session.devices_of(other))
+                    .collect()
+            })
+            .collect();
+        let mut changed = false;
+        for (session, devices) in self.sessions_mut().zip(others) {
+            changed |= session.set_other_devices(devices);
+        }
+        changed
     }
 
     /// The session of the host, then those of the guests.

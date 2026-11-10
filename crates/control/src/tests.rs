@@ -478,6 +478,23 @@ fn a_guest_drives_with_its_configuration_and_gets_its_state() {
 }
 
 #[test]
+fn the_host_shows_the_device_of_a_guest_at_its_loco_with_the_address() {
+    let (address, _library) = serve_host();
+    assert_eq!(request(address, json!({"command": "add_loco"}))["ok"], true);
+    let set_address = json!({"command": "set_address", "loco": 1, "address": 3});
+    assert_eq!(request(address, set_address)["ok"], true);
+    let (mut guest, mut lines) = connect_guest(address, &use_guest(50.0));
+    let add = json!({"command": "add_device", "device": 1, "kind": "pad"});
+    send(&mut guest, &add).unwrap();
+    wait_for(&mut lines, |m| m["type"] == "reply" && m["ok"] == true);
+
+    let mut host_lines = BufReader::new(TcpStream::connect(address).unwrap()).lines();
+    wait_for(&mut host_lines, |m| {
+        m["state"]["other_devices"] == json!([{"number": 1, "loco": 1}])
+    });
+}
+
+#[test]
 fn the_host_removes_a_guest_when_its_last_client_is_gone() {
     let (address, _library) = serve_host();
     let first = connect_guest(address, &use_guest(50.0));

@@ -11,7 +11,7 @@ use crate::electrip1::ImportError;
 use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function};
 use crate::function_sound::SoundFunction;
-use crate::input::{Device, Mapping, Target};
+use crate::input::{Device, Mapping, OtherDevice, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
 use crate::sound::{Engine, EngineSound, SegmentSound, Steam};
@@ -478,6 +478,8 @@ pub struct Session {
     /// One mapping per device type, in the order they were first used.
     mappings: Vec<Mapping>,
     devices: Vec<Device>,
+    /// The devices of the other sessions on the host (Q-016).
+    other_devices: Vec<OtherDevice>,
     station: Station,
     view: View,
     /// Ids are never reused, so a command for a removed loco cannot hit a
