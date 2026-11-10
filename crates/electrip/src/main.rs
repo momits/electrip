@@ -21,8 +21,6 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
 
-const DEFAULT_CONTROL_PORT: u16 = 4711;
-
 /// How long the instance waits for the host at `--host` (N-03).
 const HOST_TIMEOUT: Duration = Duration::from_secs(2);
 
@@ -147,7 +145,7 @@ fn session(
                 let next = electrip_control::serve(serving, *host, input, alone, || {
                     handover.try_recv().ok()
                 })?;
-                eprintln!("ERROR the host {next} has a smaller id, this instance hands over to it");
+                eprintln!("ERROR this instance hands over to the host {next}");
                 Role::Client(next)
             }
             Role::Client(host) => {
@@ -316,7 +314,7 @@ fn open_host(
 /// Reads the options; `--control-port 0` picks a free port.
 fn parse(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
     let mut parsed = Args {
-        control_port: DEFAULT_CONTROL_PORT,
+        control_port: electrip_control::DEFAULT_PORT,
         library: None,
         file: None,
         headless: false,

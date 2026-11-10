@@ -1,7 +1,7 @@
 // The control view (B-22): one controller per loco side by side, the
 // emergency stop below. Like Electrip 1 (control_ui.py, control.css).
 
-import { CheckBox, ScrollView } from "std-widgets.slint";
+import { Button, CheckBox, LineEdit, ScrollView } from "std-widgets.slint";
 import { LocoDialog } from "loco.slint";
 
 // What a button of a controller switches; the groups have their own colors
@@ -226,6 +226,8 @@ export component MainWindow inherits Window {
     in property <int> button-rows;
     // Why other instances cannot find this one; empty if they can (N-03).
     in property <string> alone;
+    // The error of the last command of the window, empty if it succeeded.
+    in property <string> error;
     // The options of the view.
     in-out property <bool> auto-focus;
     in-out property <bool> only-active;
@@ -237,6 +239,8 @@ export component MainWindow inherits Window {
     callback load-picture(string) -> image;
     callback set-picture(int, string, float, float, float);
     callback set-volume(int, float);
+    // Joins the session of the host at the address, without mDNS (N-03).
+    callback join-host(string);
     // The loco whose properties are open, as it was on opening, so a
     // filter changing the controllers keeps it.
     property <Controller> editing;
@@ -306,6 +310,17 @@ export component MainWindow inherits Window {
                 }
             }
         }
+        if error != "": Rectangle {
+            background: #f8d7d7;
+            VerticalLayout {
+                padding: 8px;
+                Text {
+                    text: error;
+                    wrap: word-wrap;
+                    color: #7a0000;
+                }
+            }
+        }
         HorizontalLayout {
             height: 56px;
             // Grey while the track power is on, red while it is off, like
@@ -342,6 +357,27 @@ export component MainWindow inherits Window {
                     checked <=> root.only-active;
                     toggled => {
                         root.set-view(root.auto-focus, root.only-active);
+                    }
+                }
+            }
+            VerticalLayout {
+                horizontal-stretch: 0;
+                padding-right: 12px;
+                alignment: center;
+                HorizontalLayout {
+                    spacing: 4px;
+                    host := LineEdit {
+                        width: 160px;
+                        placeholder-text: @tr("Host address");
+                        accepted => {
+                            root.join-host(self.text);
+                        }
+                    }
+                    Button {
+                        text: @tr("Join");
+                        clicked => {
+                            root.join-host(host.text);
+                        }
                     }
                 }
             }

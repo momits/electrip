@@ -212,7 +212,7 @@ Ergebnis: _offen_
 Vorbereitung: zwei Rechner A und B wie bei „Host-Ausfall“, Gamepad an A und an B.
 
 - [ ] Netzwerk zwischen A und B trennen (Kabel ziehen bzw. WLAN aus), dann auf beiden Electrip ohne `--host` starten: Beide werden Host (`dns-sd -B _electrip._tcp` auf jedem Rechner zeigt nur sich selbst als `host`).
-- [ ] Netzwerk wieder verbinden: Eine der beiden Instanzen meldet `ERROR the host … has a smaller id, this instance hands over to it` und wird Client der anderen; danach zeigt `dns-sd -L` genau einen Host. Bitte notieren, wie lange das nach dem Verbinden dauert (mDNS fragt in wachsenden Abständen neu).
+- [ ] Netzwerk wieder verbinden: Eine der beiden Instanzen meldet `ERROR this instance hands over to the host …` und wird Client der anderen; danach zeigt `dns-sd -L` genau einen Host. Bitte notieren, wie lange das nach dem Verbinden dauert (mDNS fragt in wachsenden Abständen neu).
 - [ ] Das Fenster der abgebenden Instanz bleibt offen und zeigt danach den Zustand des verbleibenden Hosts; beide Gamepads fahren dort weiter, ohne sie neu einzustecken.
 
 Ergebnis: _offen_
@@ -224,5 +224,16 @@ Vorbereitung: Mac, `cargo run --release` ohne `--host`.
 - [ ] In Systemeinstellungen › Datenschutz & Sicherheit › Lokales Netzwerk den Zugriff für Electrip (bzw. das Terminal, aus dem es läuft) ausschalten und Electrip neu starten: Das Fenster öffnet sich, steuert die Zentrale wie gewohnt und zeigt über dem Nothalt den gelben Hinweis „Electrip läuft allein …“ mit dem Grund darunter. Die Konsole zeigt `ERROR no discovery: no access to the local network: …`.
 - [ ] Zugriff wieder einschalten und Electrip neu starten: kein Hinweis.
 - [ ] WLAN ganz aus und kein Kabel: Electrip startet, läuft allein und zeigt den Hinweis.
+
+Ergebnis: _offen_
+
+## N-03 – Host-Adresse im Fenster eintragen
+
+Vorbereitung: zwei Rechner im selben Netz, beide `cargo run --release` (ohne `--host`), dieselbe Zentrale; IP-Adresse von Rechner A notieren.
+
+- [ ] Auf B in das Feld „Host-Adresse“ (unten rechts) die IP-Adresse von A ohne Port eintragen und „Beitreten“ drücken: Das Fenster von B zeigt kurz „Nicht verbunden“, dann die Loks von A. Die Konsole von B zeigt `ERROR this instance hands over to the host …`. Eine Lok, die B fährt, fährt auch im Fenster von A.
+- [ ] Gamepad an B: Es steuert danach Loks über A.
+- [ ] Eine falsche Adresse (z. B. `192.0.2.1`) eintragen: Nach ca. 2 s erscheint über dem Nothalt rot „cannot reach the host …“; B bleibt, wie es war.
+- [ ] Auf A die eigene Adresse eintragen: rot „… is this instance“; A bleibt Host.
 
 Ergebnis: _offen_

@@ -42,3 +42,9 @@ msgstr "Schließen"
 
 msgid "Electrip runs alone: other Electrip instances cannot find it. Allow access to the local network (macOS: System Settings › Privacy & Security › Local Network) and restart Electrip."
 msgstr "Electrip läuft allein: Andere Electrip-Instanzen finden es nicht. Erlaube den Zugriff auf das lokale Netzwerk (macOS: Systemeinstellungen › Datenschutz & Sicherheit › Lokales Netzwerk) und starte Electrip neu."
+
+msgid "Host address"
+msgstr "Host-Adresse"
+
+msgid "Join"
+msgstr "Beitreten"

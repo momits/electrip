@@ -423,6 +423,17 @@ fn window_shows_the_state_and_sends_commands() {
         Rgb([0xff, 0xf3, 0xc4])
     );
     main.set_alone("".into());
+
+    // N-03: the window shows the error of its last command, e.g. when it
+    // cannot join a host.
+    main.set_error("cannot reach the host pc:4711: no answer".into());
+    let image = screenshot(&window);
+    save(&image, "control_view_error.png");
+    assert_eq!(
+        *image.get_pixel(WIDTH - 5, HEIGHT - 62),
+        Rgb([0xf8, 0xd7, 0xd7])
+    );
+    main.set_error("".into());
     slint::select_bundled_translation("en").unwrap();
 
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -461,12 +472,14 @@ fn window_shows_the_state_and_sends_commands() {
     );
     click(&window, 443, 506);
     click(&window, 434, 542);
+    main.invoke_join_host(" pc:4711 ".into());
     let (host, _) = listener.accept().unwrap();
     // A missed click fails instead of waiting for ever.
     host.set_read_timeout(Some(std::time::Duration::from_secs(5)))
         .unwrap();
-    let commands: Vec<Command> = BufReader::new(host)
-        .lines()
+    let mut lines = BufReader::new(host).lines();
+    let commands: Vec<Command> = lines
+        .by_ref()
         .take(7)
         .map(|l| serde_json::from_str(&l.unwrap()).unwrap())
         .collect();
@@ -502,4 +515,7 @@ fn window_shows_the_state_and_sends_commands() {
             },
         ]
     );
+    // N-03: the host address without the blanks around it.
+    let join: Value = serde_json::from_str(&lines.next().unwrap().unwrap()).unwrap();
+    assert_eq!(join, json!({"command": "join_host", "address": "pc:4711"}));
 }
