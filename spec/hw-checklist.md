@@ -196,7 +196,7 @@ Ergebnis: _offen_
 
 ## N-03 – Host-Ausfall
 
-Vorbereitung: zwei Rechner A und B im selben LAN oder WLAN, beide mit derselben Zentrale und derselben Lok in der Konfiguration (bis Q-016 beantwortet ist), auf beiden `cargo run --release` ohne `--host`, Gamepad an B. A ist Host, B Client.
+Vorbereitung: zwei Rechner A und B im selben LAN oder WLAN, beide mit derselben Zentrale und derselben Lok in der Konfiguration, auf beiden `cargo run --release` ohne `--host`, Gamepad an B. A ist Host, B Client.
 
 - [ ] B fährt die Lok mit dem Gamepad. A hart beenden (`kill -9`): Nach höchstens etwa 3 s plus Suche (2 s) wird B Host. Das Fenster von B bleibt offen und zeigt die Lok mit Geschwindigkeit, Richtung und Funktionen von der Zentrale; die Lok fährt ruhig weiter.
 - [ ] Das Gamepad an B fährt die Lok danach weiter, ohne es neu einzustecken.
@@ -300,15 +300,5 @@ Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client),
 - [ ] Auf das Bild einer Lok klicken: bei den Geräten von B steht hinter der Instanz-ID die gemessene Zeit, z. B. „· 12 ms“; bei Geräten von A steht keine.
 - [ ] Verzögerung künstlich erhöhen, z. B. an B `sudo tc qdisc add dev wlan0 root netem delay 200ms` (Linux; danach `sudo tc qdisc del dev wlan0 root`): nach wenigen Sekunden steht dort rot „… ms, zu langsam“.
 - [ ] Hörbare Latenz messen: Lok mit Fahrgeräusch auf ein Gerät von B legen, am Gamepad von B anfahren; Handy-Video mit Gamepad und Lautsprecher im Bild, Zeit zwischen Drücken und Ton ablesen (Bildrate 60/s). Zielwert ≤ 150 ms. Dasselbe auf einem Gerät von A. Werte hier notieren.
-
-Ergebnis: _offen_
-
-## N-05 – Warnung bei verschiedenen Audio-Zielen
-
-Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client). B hat eine eigene Konfiguration mit einer Lok derselben Adresse wie eine Lok von A; deren Tonausgabe ist ein Gerät von B, die der Lok von A ein Gerät von A.
-
-- [ ] In den Fenstern von A und B steht auf dem Bild der Lok ein rotes „!“; im Dialog der Lok steht unter „Tonausgabe“ rot „Diese Adresse spielt auch auf einer anderen Ausgabe.“
-- [ ] Fahrgeräusch einschalten und fahren: die Lok ist an A und an B zu hören.
-- [ ] An A die Tonausgabe der Lok auf dasselbe Gerät von B legen: das „!“ verschwindet in beiden Fenstern.
 
 Ergebnis: _offen_

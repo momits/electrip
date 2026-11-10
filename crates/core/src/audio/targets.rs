@@ -84,8 +84,7 @@ impl Targets {
         }
     }
 
-    /// Silences the locos that are not among `locos`: removed ones and
-    /// those of a guest that left.
+    /// Silences the locos that are not among `locos`, the removed ones.
     pub(crate) fn retain(&mut self, locos: &HashSet<u32>) {
         let gone: Vec<_> = self
             .placed

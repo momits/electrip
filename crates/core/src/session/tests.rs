@@ -143,7 +143,6 @@ fn the_state_is_written_as_json() {
                 {"control": "lefty", "target": {"type": "action", "action": 1}}
             ]}],
             "devices": [{"id": 7, "kind": "Xbox", "loco": 1, "number": 1, "focus": false}],
-            "other_devices": [],
             "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
             "view": {"auto_focus": true, "only_active": false},
             "import_report": [],
@@ -151,8 +150,7 @@ fn the_state_is_written_as_json() {
             "configurations": [],
             "audio_devices": [],
             "audio_targets": {},
-            "audio_latency": {},
-            "audio_conflicts": []
+            "audio_latency": {}
         })
     );
 }

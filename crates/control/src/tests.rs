@@ -1,8 +1,5 @@
 use super::*;
 use electrip_core::audio::{AudioSink, ChannelId};
-use electrip_core::config::Config;
-use electrip_core::decoder::{Decoder, Protocol};
-use electrip_core::loco::Loco;
 use electrip_core::station::StationError;
 use std::net::SocketAddr;
 use std::path::Path;
@@ -49,7 +46,7 @@ fn host_in(library: TempDir) -> (Host, TempDir) {
 fn execute_applies_a_command() {
     let (mut host, _library) = host();
     assert_eq!(
-        execute(&mut host, None, r#"{"command": "add_loco"}"#),
+        execute(&mut host, r#"{"command": "add_loco"}"#),
         Ok(Command::AddLoco)
     );
     assert_eq!(host.session().locos().len(), 1);
@@ -58,7 +55,7 @@ fn execute_applies_a_command() {
 #[test]
 fn execute_explains_invalid_json() {
     let (mut host, _library) = host();
-    let error = execute(&mut host, None, r#"{"command": "fly"}"#).unwrap_err();
+    let error = execute(&mut host, r#"{"command": "fly"}"#).unwrap_err();
     assert!(
         error.starts_with("invalid command: unknown variant `fly`"),
         "{error}"
@@ -70,7 +67,6 @@ fn execute_explains_a_failed_command() {
     let (mut host, _library) = host();
     let error = execute(
         &mut host,
-        None,
         r#"{"command": "set_address", "loco": 1, "address": 3}"#,
     );
     assert_eq!(error, Err("there is no loco with id 1".into()));
@@ -414,178 +410,4 @@ fn the_host_measures_the_round_trip_to_an_audio_target() {
     drop((lines, client));
     let mut lines = BufReader::new(TcpStream::connect(address).unwrap()).lines();
     wait_for(&mut lines, |m| m["state"]["audio_latency"] == json!({}));
-}
-
-/// A `use_configuration` request with a configuration "guest" whose loco
-/// reaches `max_speed`.
-fn use_guest(max_speed: f64) -> Value {
-    let decoder = Decoder::new(Protocol::DccShort, 3, 128).unwrap();
-    let config = Config {
-        id: "guest".into(),
-        locos: vec![Loco::new(decoder, max_speed).unwrap()],
-        ..Config::default()
-    };
-    json!({"command": "use_configuration", "configuration": config})
-}
-
-/// Connects to the host at `address` as a guest with `request`; returns
-/// the connection and its messages after the reply.
-fn connect_guest(address: SocketAddr, request: &Value) -> (TcpStream, Lines) {
-    let mut client = TcpStream::connect(address).unwrap();
-    client.set_read_timeout(Some(SILENCE)).unwrap();
-    let mut lines = BufReader::new(client.try_clone().unwrap()).lines();
-    send(&mut client, request).unwrap();
-    wait_for(&mut lines, |m| m == &json!({"type": "reply", "ok": true}));
-    (client, lines)
-}
-
-type Lines = io::Lines<BufReader<TcpStream>>;
-
-fn guest_max_speed(lines: &mut Lines) -> Value {
-    let message = lines
-        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
-        .find(|m| m["type"] == "state")
-        .unwrap();
-    message["state"]["locos"][0]["max_speed"].clone()
-}
-
-#[test]
-fn a_guest_drives_with_its_configuration_and_gets_its_state() {
-    let (address, _library) = serve_host();
-    assert_eq!(request(address, json!({"command": "add_loco"}))["ok"], true);
-    let (mut guest, mut lines) = connect_guest(address, &use_guest(50.0));
-    assert_eq!(guest_max_speed(&mut lines), 50.0);
-
-    // The loco of the guest has the id after the one of the host.
-    let axis = json!({"command": "set_axis", "loco": 2, "deflection": 0.5});
-    send(&mut guest, &axis).unwrap();
-    wait_for(&mut lines, |m| m["type"] == "reply" && m["ok"] == true);
-    send(&mut guest, &json!({"command": "add_loco"})).unwrap();
-    let error = "change this configuration on the instance that opened it";
-    wait_for(&mut lines, |m| m["error"] == error);
-
-    // Other clients still get the state of the host.
-    let mut host = TcpStream::connect(address).unwrap();
-    let mut host_lines = BufReader::new(host.try_clone().unwrap()).lines();
-    assert_eq!(guest_max_speed(&mut host_lines), 100.0);
-
-    // The guest sees the audio targets of the host.
-    let offer = json!({"command": "offer_audio", "instance": "b", "devices": ["USB"]});
-    send(&mut host, &offer).unwrap();
-    wait_for(&mut lines, |m| {
-        m["state"]["audio_targets"] == json!({"b": ["USB"]})
-    });
-}
-
-#[test]
-fn the_host_shows_the_device_of_a_guest_at_its_loco_with_the_address() {
-    let (address, _library) = serve_host();
-    assert_eq!(request(address, json!({"command": "add_loco"}))["ok"], true);
-    let set_address = json!({"command": "set_address", "loco": 1, "address": 3});
-    assert_eq!(request(address, set_address)["ok"], true);
-    let (mut guest, mut lines) = connect_guest(address, &use_guest(50.0));
-    let add = json!({"command": "add_device", "device": 1, "kind": "pad"});
-    send(&mut guest, &add).unwrap();
-    wait_for(&mut lines, |m| m["type"] == "reply" && m["ok"] == true);
-
-    let mut host_lines = BufReader::new(TcpStream::connect(address).unwrap()).lines();
-    wait_for(&mut host_lines, |m| {
-        m["state"]["other_devices"] == json!([{"number": 1, "loco": 1}])
-    });
-}
-
-#[test]
-fn the_host_removes_a_guest_when_its_last_client_is_gone() {
-    let (address, _library) = serve_host();
-    let first = connect_guest(address, &use_guest(50.0));
-    let mut second = connect_guest(address, &use_guest(40.0));
-    // The configuration of the first one counts.
-    assert_eq!(guest_max_speed(&mut second.1), 50.0);
-
-    drop(first);
-    let mut third = connect_guest(address, &use_guest(40.0));
-    assert_eq!(guest_max_speed(&mut third.1), 50.0);
-
-    drop((second, third));
-    // Until the host has seen both go.
-    let deadline = Instant::now() + SILENCE;
-    while guest_max_speed(&mut connect_guest(address, &use_guest(40.0)).1) != 40.0 {
-        assert!(Instant::now() < deadline, "the guest stays");
-        thread::sleep(POLL_INTERVAL);
-    }
-}
-
-#[test]
-fn a_client_that_becomes_a_guest_leaves_its_devices_on_the_host() {
-    let (address, _library) = serve_host();
-    let mut client = TcpStream::connect(address).unwrap();
-    let mut lines = BufReader::new(client.try_clone().unwrap()).lines();
-    let device = json!({"command": "add_device", "device": 1, "kind": "Gamepad"});
-    send(&mut client, &device).unwrap();
-    wait_for(&mut lines, |m| m["state"]["devices"][0]["id"] == 1);
-
-    send(&mut client, &use_guest(50.0)).unwrap();
-    wait_for(&mut lines, |m| m["type"] == "reply");
-    assert_eq!(first_state(address)["devices"], json!([]));
-
-    let invalid = json!({"command": "use_configuration", "configuration": 1});
-    send(&mut client, &invalid).unwrap();
-    wait_for(&mut lines, |m| {
-        m["error"]
-            .as_str()
-            .is_some_and(|e| e.starts_with("invalid configuration: "))
-    });
-}
-
-/// The state the host at `address` greets a new client with.
-fn first_state(address: SocketAddr) -> Value {
-    let stream = TcpStream::connect(address).unwrap();
-    let lines = BufReader::new(stream).lines();
-    let state = lines
-        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
-        .find(|m| m["type"] == "state");
-    state.unwrap()["state"].clone()
-}
-
-/// A relay of a client instance with the configuration "guest" to the
-/// host at `host`, and the address of its control channel.
-fn guest_relay(host: SocketAddr) -> (Relay, SocketAddr) {
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let address = listener.local_addr().unwrap();
-    let mut relay = Relay::new(listener, host, 2, Box::new(NoAudio));
-    let config = serde_json::from_value(use_guest(50.0)["configuration"].clone()).unwrap();
-    relay.drive_with(Some(config));
-    relay.switch(host, true);
-    (relay, address)
-}
-
-#[test]
-fn a_client_instance_drives_with_its_configuration_as_a_guest() {
-    let (address, _library) = serve_host();
-    let (_relay, relayed) = guest_relay(address);
-    let stream = TcpStream::connect(relayed).unwrap();
-    stream.set_read_timeout(Some(SILENCE)).unwrap();
-    let mut messages = BufReader::new(stream)
-        .lines()
-        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap());
-    assert_eq!(messages.next().unwrap()["type"], "hello");
-    // The state of the guest follows, without the reply to the request.
-    let state = messages.next().unwrap();
-    assert_eq!(state["type"], "state");
-    assert_eq!(state["state"]["locos"][0]["max_speed"], 50.0);
-    assert_eq!(first_state(address)["locos"], json!([]));
-}
-
-#[test]
-fn the_devices_of_a_client_instance_drive_its_configuration() {
-    let (address, _library) = serve_host();
-    let (mut relay, _) = guest_relay(address);
-    thread::spawn(move || relay.run(one_gamepad()));
-
-    let (_guest, mut lines) = connect_guest(address, &use_guest(40.0));
-    let gamepad = |m: &Value| m["state"]["devices"][0]["id"].as_u64();
-    wait_for(&mut lines, |m| {
-        gamepad(m).is_some_and(|id| id & 0xffff == 1)
-    });
-    assert_eq!(first_state(address)["devices"], json!([]));
 }

@@ -4,7 +4,6 @@
 //! mDNS or at `--host`, and changes its role when the hosts change (N-03).
 
 use electrip_control::{Discovery, Relay, Status, station_id};
-use electrip_core::config::{self, Config};
 use electrip_core::host::{Driver, Host};
 use electrip_core::media::LibrarySink;
 use electrip_core::session::{Command, Station};
@@ -15,7 +14,7 @@ use electrip_station_z21::Z21Station;
 use std::env;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver};
@@ -155,7 +154,6 @@ fn session(
                 Role::Client(next)
             }
             Role::Client(host) => {
-                relay.drive_with(own_configuration(&library, file.as_deref()));
                 relay.switch(host, true);
                 if let Some(discovery) = &discovery {
                     announce(discovery, Status::Client, port);
@@ -232,21 +230,6 @@ fn follow(
         relay.switch(host, true);
         announce(discovery, Status::Client, port);
     }
-}
-
-/// The configuration the instance opens when it is host: `file`, else
-/// the first one of the library; a client drives with it as a guest of
-/// the host (Q-016). Without locos it has nothing to drive, e.g. on a new
-/// instance; then the client drives with the configuration of the host.
-fn own_configuration(library: &Path, file: Option<&str>) -> Option<Config> {
-    let name = match file {
-        Some(file) => file.to_string(),
-        None => config::names(library).ok()?.into_iter().next()?,
-    };
-    config::read(&config::path(library, &name))
-        .inspect_err(|e| eprintln!("ERROR cannot read the configuration {name}: {e}"))
-        .ok()
-        .filter(|config| !config.locos.is_empty())
 }
 
 /// The new host after the old one is gone: it reads back the state from

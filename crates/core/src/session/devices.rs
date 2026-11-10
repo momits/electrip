@@ -2,7 +2,7 @@
 
 use super::{Command, CommandError, LocoEntry, Session};
 use crate::electrip1;
-use crate::input::{Device, Mapping, OtherDevice, Target};
+use crate::input::{Device, Mapping, Target};
 use std::mem;
 
 impl Session {
@@ -19,13 +19,7 @@ impl Session {
             return Err(CommandError::DeviceExists(id));
         }
         // The range is unbounded, so there is always a free number.
-        let others = self.other_devices.iter().map(|d| d.number);
-        let taken: Vec<_> = self
-            .devices
-            .iter()
-            .map(|d| d.number)
-            .chain(others)
-            .collect();
+        let taken: Vec<_> = self.devices.iter().map(|d| d.number).collect();
         let number = (1..)
             .find(|number| !taken.contains(number))
             .unwrap_or_default();
@@ -41,34 +35,6 @@ impl Session {
             entry.axis = 0.0;
         }
         Ok(())
-    }
-
-    /// The devices of `other`, each with the first loco here that has the
-    /// address of its loco there (Q-016).
-    pub(crate) fn devices_of(&self, other: &Session) -> Vec<OtherDevice> {
-        let address = |id| {
-            let index = other.index(id).ok()?;
-            Some(other.locos[index].loco.decoder().address())
-        };
-        let here = |address| {
-            let entry = self
-                .locos
-                .iter()
-                .find(|e| e.loco.decoder().address() == address)?;
-            Some(entry.id)
-        };
-        let devices = other.devices.iter().map(|device| OtherDevice {
-            number: device.number,
-            loco: device.loco.and_then(address).and_then(here),
-        });
-        devices.collect()
-    }
-
-    /// Returns whether they changed.
-    pub(crate) fn set_other_devices(&mut self, devices: Vec<OtherDevice>) -> bool {
-        let changed = self.other_devices != devices;
-        self.other_devices = devices;
-        changed
     }
 
     pub(super) fn bind(

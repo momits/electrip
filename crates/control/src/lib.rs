@@ -3,16 +3,14 @@
 //! `spec/steuerkanal.md`.
 
 use electrip_core::audio::AudioEvent;
-use electrip_core::config::Config;
 use electrip_core::host::Host;
-use electrip_core::session::{Command, CommandError, Session};
+use electrip_core::session::{Command, Session};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::fs;
 use std::hash::BuildHasher;
 use std::io::{self, BufRead, BufReader, Write};
-use std::mem;
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -61,12 +59,10 @@ struct Shared {
     offers: HashMap<String, Offer>,
 }
 
-/// A connection that gets the state, of the host or of the
-/// configuration it drives as a guest (Q-016).
+/// A connection that gets the state.
 struct Client {
     stream: TcpStream,
     address: SocketAddr,
-    guest: Option<String>,
 }
 
 /// An instance that plays sounds and the ping that measures the round
@@ -158,14 +154,13 @@ struct Added {
 
 /// Greets the client with the version and the state, then executes its
 /// commands. A disconnected client ends the thread and removes its input
-/// devices, so their locos do not drive on, its audio target, and the
-/// configuration it drove unless another client drives it too.
+/// devices, so their locos do not drive on, and its audio target.
 fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
     let address = stream.peer_addr()?;
     let mut added = Added::default();
     let result = serve_client(stream, address, shared, &mut added);
     let mut shared = lock(shared)?;
-    shared.leave(address, added.devices);
+    shared.leave(added.devices);
     shared.clients.retain(|c| c.address != address);
     if let Some((instance, address)) = added.audio
         && shared.offers.get(&instance).map(|o| o.address) == Some(address)
@@ -196,7 +191,6 @@ fn serve_client(
         shared.clients.push(Client {
             stream: stream.try_clone()?,
             address,
-            guest: None,
         });
     }
     for line in BufReader::new(stream).lines() {
@@ -225,16 +219,6 @@ fn serve_client(
             shared.broadcast();
             continue;
         }
-        if let Some(config) = guest_request(&line) {
-            let mut shared = lock(shared)?;
-            let result = config.map(|config| {
-                shared.leave(address, mem::take(&mut added.devices));
-                shared.drive_as_guest(address, config);
-            });
-            send(&mut writer, &reply(&result))?;
-            shared.broadcast();
-            continue;
-        }
         if is_pong(&line) {
             if let Some((instance, address)) = &added.audio {
                 lock(shared)?.pong(instance, *address);
@@ -245,8 +229,7 @@ fn serve_client(
         // Drives up to now first, so the command counts from its arrival.
         let polled = shared.poll();
         let result = sync::answer(&mut shared.host, &line).unwrap_or_else(|| {
-            let guest = shared.guest(address);
-            let command = execute(&mut shared.host, guest.as_deref(), &line)?;
+            let command = execute(&mut shared.host, &line)?;
             track(&mut added.devices, &command);
             Ok(json!({}))
         });
@@ -310,60 +293,20 @@ impl Shared {
         self.host.poll(seconds)
     }
 
-    /// Sends each client the state of its session and forgets the
-    /// disconnected ones.
+    /// Sends each client the state and forgets the disconnected ones.
     fn broadcast(&mut self) {
-        let host = &self.host;
-        self.clients.retain_mut(|c| {
-            let guest = c.guest.as_deref().and_then(|g| host.guest_view(g));
-            send(
-                &mut c.stream,
-                &state(guest.as_ref().unwrap_or(host.session())),
-            )
-            .is_ok()
-        });
+        let state = state(self.host.session());
+        self.clients
+            .retain_mut(|c| send(&mut c.stream, &state).is_ok());
         self.last_broadcast = Instant::now();
     }
 
-    /// The configuration the client at `address` drives as a guest.
-    fn guest(&self, address: SocketAddr) -> Option<String> {
-        let client = self.clients.iter().find(|c| c.address == address)?;
-        client.guest.clone()
-    }
-
-    /// Lets the client at `address` drive with `config` as a guest from
-    /// now on, unless the host has it open itself.
-    fn drive_as_guest(&mut self, address: SocketAddr, config: Config) {
-        let id = config.id.clone();
-        self.host.add_guest(config);
-        let guest = self.host.guest(&id).map(|_| id);
-        if let Some(client) = self.clients.iter_mut().find(|c| c.address == address) {
-            client.guest = guest;
-        }
-    }
-
-    /// Removes the input `devices` the client at `address` added from
-    /// its session and leaves the configuration it drove as a guest; the
-    /// host removes that when no client drives it any more.
-    fn leave(&mut self, address: SocketAddr, devices: Vec<Command>) {
-        let guest = self
-            .clients
-            .iter_mut()
-            .find(|c| c.address == address)
-            .and_then(|c| c.guest.take());
+    /// Removes the input `devices` a client added.
+    fn leave(&mut self, devices: Vec<Command>) {
         for command in devices {
             if let Command::AddDevice { device, .. } = command {
-                let command = Command::RemoveDevice { device };
-                let _ = apply(&mut self.host, guest.as_deref(), command);
+                let _ = self.host.apply(Command::RemoveDevice { device });
             }
-        }
-        if let Some(guest) = guest
-            && !self
-                .clients
-                .iter()
-                .any(|c| c.guest.as_ref() == Some(&guest))
-        {
-            self.host.remove_guest(&guest);
         }
     }
 
@@ -427,17 +370,6 @@ fn offer_request(line: &str) -> Option<(String, Vec<String>)> {
     Some((instance, devices))
 }
 
-/// The configuration of a `use_configuration` request: the client drives
-/// with it as a guest (Q-016).
-fn guest_request(line: &str) -> Option<Result<Config, String>> {
-    let request: Value = serde_json::from_str(line).ok()?;
-    if request["command"] != "use_configuration" {
-        return None;
-    }
-    let config = serde_json::from_value(request["configuration"].clone());
-    Some(config.map_err(|e| format!("invalid configuration: {e}")))
-}
-
 /// Whether the line is the answer of an instance to a ping (N-05).
 fn is_pong(line: &str) -> bool {
     serde_json::from_str::<Value>(line).is_ok_and(|request| request["command"] == "pong")
@@ -490,20 +422,12 @@ fn greeting(host: SocketAddr) -> io::Result<Value> {
     Ok(serde_json::from_str(&line)?)
 }
 
-/// Reads a command from a JSON line and applies it in the session of
-/// `guest`, or of the host; returns the command.
-fn execute(host: &mut Host, guest: Option<&str>, line: &str) -> Result<Command, String> {
+/// Reads a command from a JSON line and applies it; returns the command.
+fn execute(host: &mut Host, line: &str) -> Result<Command, String> {
     let command: Command =
         serde_json::from_str(line).map_err(|e| format!("invalid command: {e}"))?;
-    apply(host, guest, command.clone()).map_err(|e| e.to_string())?;
+    host.apply(command.clone()).map_err(|e| e.to_string())?;
     Ok(command)
-}
-
-fn apply(host: &mut Host, guest: Option<&str>, command: Command) -> Result<(), CommandError> {
-    match guest {
-        Some(guest) => host.apply_guest(guest, command),
-        None => host.apply(command),
-    }
 }
 
 fn hello(id: &str, alone: Option<&str>) -> Value {

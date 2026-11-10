@@ -14,7 +14,7 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
 - Beim Start ist die Konfiguration `-f`/`--file` geöffnet (B-24), sonst die erste nach Namen.
 - Der Steuerkanal ist TCP. Er lauscht auf allen Netzwerkschnittstellen, damit andere Instanzen sich mit dem Sitzungs-Host verbinden können (ADR 0010: dem lokalen Netz wird vertraut).
 - `--host`: Die Instanz ist Client des Sitzungs-Hosts an dieser Adresse (N-03; ohne Port gilt 4711; erreichbar heißt: er schickt binnen 2 s `hello`). Sie hat dann keinen eigenen Host: Ihr Steuerkanal reicht jede Verbindung an den Host weiter; ihre Gamepads schicken ihre Befehle dorthin, mit einem zufälligen Versatz in der Geräte-`id`, damit sich die Geräte verschiedener Instanzen nicht überschneiden.
-  Ist der Host beim Start nicht erreichbar, meldet die App `ERROR cannot reach the host …` und ist selbst Host. Bis Q-016 beantwortet ist, nutzt ein Client die Konfiguration des Hosts.
+  Ist der Host beim Start nicht erreichbar, meldet die App `ERROR cannot reach the host …` und ist selbst Host. Alle Instanzen einer Sitzung nutzen die Konfiguration des Hosts; ein Client fährt und ändert sie über den Host, auch wenn seine Bibliothek eine andere hat.
 - Ohne `--host` sucht die Instanz beim Start ca. 2 s per mDNS (`_electrip._tcp`) nach dem Host ihrer Zentrale und ist dann dessen Client; findet sie keinen, ist sie selbst Host (N-03, ADR 0010).
   Jede Instanz veröffentlicht als TXT-Einträge `id` (Instanz-ID, 16 Hex-Ziffern; beim ersten Start zufällig gewählt und in der Bibliothek unter `instance` gespeichert, N-05), `version` (wie in `hello`), `station` (Zentralen-ID: aufgelöste IP, Port und Bus der Zentrale; eine Zentrale auf `localhost` bekommt die LAN-Adresse des Rechners) und `status` (`searching`, `host` oder `client`); der Port ist der des Steuerkanals.
   Gibt es zwei Hosts derselben Zentrale, verbindet sie sich mit dem mit der kleineren `id`. Starten mehrere Instanzen gleichzeitig, wird von den suchenden die mit der kleinsten `id` Host; die anderen warten bis zu 4 s weiter auf sie.
@@ -29,7 +29,6 @@ Die spätere Client-Host-Verbindung (N-03, ADR 0010) nutzt dasselbe Format.
   Scheitert der Abgleich, meldet die App `ERROR cannot share configurations with …`.
 - Trennt sich ein Client, entfernt der Host die Eingabegeräte, die dieser Client angeschlossen hat (`add_device`); ihre Loks behalten ihre Geschwindigkeit wie bei `remove_device`. Hat der Client mit `offer_audio` Sounds angeboten, entfernt der Host auch dieses Audio-Ziel.
 - Audio-Ziel auf einer anderen Instanz (N-05): Eine Instanz, die Client ist, schickt ihrem Host nach dem Verbinden `offer_audio` mit ihrer Instanz-ID und ihren Ausgabegeräten. Der Host schickt ihr dann über dieselbe Verbindung die Audio-Ereignisse (`audio`) aller Loks, deren `audio_instance` diese ID ist; sie spielt sie mit den Sounds ihrer eigenen Bibliothek. Ist die Instanz nicht verbunden, spielt der Host die Sounds der Lok selbst auf seinem Standardgerät und meldet einmal `ERROR the instance … is not connected, the host plays the sounds of loco …`; bricht die Verbindung ab, meldet er `ERROR the instance … is gone, the host plays its sounds`. Wechselt eine Lok die Instanz, verstummen ihre Sounds auf der alten.
-- Gäste (N-03, Q-016): Ein Client mit einer anderen Konfiguration schickt sie mit `use_configuration`. Der Host hält sie als eigene Sitzung (Gast), führt die Befehle dieser Verbindung dort aus und schickt ihr deren Zustand, darin `station`, `audio_devices`, `audio_targets`, `audio_latency` und `audio_conflicts` des Hosts; andere Verbindungen bekommen weiter seinen eigenen. Die Loks eines Gasts haben IDs nach denen des Hosts; Loks mit derselben Adresse teilen den Fahrzustand. Ein Gast fährt nur; Befehle, die seine Konfiguration ändern, beantwortet der Host mit `change this configuration on the instance that opened it`. Schicken mehrere Clients dieselbe Konfiguration (`id`), gilt die zuerst geschickte; der Host entfernt den Gast, wenn sich der letzte dieser Clients trennt. Ist es die Konfiguration, die der Host selbst offen hat, bleibt die Verbindung beim Host. Eingabegeräte, die die Verbindung vorher angeschlossen hat, entfernt der Host dabei; eine ungültige Konfiguration beantwortet er mit `invalid configuration: …` und ändert nichts. Eine Instanz, die Client ist, schickt auf jeder weitergeleiteten Verbindung und auf der ihrer Eingabegeräte selbst `use_configuration` mit der Konfiguration, die sie als Host öffnen würde (`--file`, sonst die erste der Bibliothek), sofern diese Loks hat; der Client am Steuerkanal der Instanz bekommt dann nach `hello` gleich den Zustand des Gasts, ohne die Antwort darauf.
 - Die erste Zeile auf der Standardausgabe endet mit der Adresse: `… control channel on 127.0.0.1:4711`.
 - Jede Nachricht ist ein JSON-Objekt in einer Zeile (UTF-8, Zeilenende `\n`), in beide Richtungen.
 
@@ -75,7 +74,6 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   "actions": [{"id": 1, "name": "Licht"}],
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
   "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "number": 1, "focus": false}],
-  "other_devices": [{"number": 2, "loco": 1}],
   "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
   "view": {"auto_focus": true, "only_active": false},
   "import_report": [],
@@ -83,8 +81,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   "configurations": ["Electrip"],
   "audio_devices": ["MacBook Pro-Lautsprecher", "USB Audio"],
   "audio_targets": {"3f2a9c0d1b4e5a67": ["Pi-Kopfhörer"]},
-  "audio_latency": {"3f2a9c0d1b4e5a67": 42},
-  "audio_conflicts": []
+  "audio_latency": {"3f2a9c0d1b4e5a67": 42}
 }
 ```
 
@@ -109,8 +106,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `devices`: angeschlossene Eingabegeräte, auch virtuelle über den Steuerkanal; `loco` ist die Lok, die das Gerät steuert (`null`, wenn keine frei ist).
   Ein neues Gerät steuert die erste Lok, die kein anderes Gerät steuert; wird seine Lok gelöscht oder kommt eine Lok dazu, bekommt ein Gerät ohne Lok die erste freie.
   `focus`: ob das Gerät gerade „Fokus“ hält (B-22).
-  `number` ist die Nummer des Geräts (ab 1, ohne Obergrenze); ein neues Gerät bekommt die kleinste, die kein am Host angeschlossenes Gerät hat, auch keins eines Gasts. Die Oberfläche macht daraus eine Farbe der Palette: Nummer n bekommt Farbe `(n - 1) mod 8` (B-03).
-- `other_devices`: die Eingabegeräte der anderen Sitzungen am Host (Host und Gäste, N-03, Q-016) mit ihrer `number`; `loco` ist die erste Lok dieser Sitzung mit der Adresse der Lok, die das Gerät dort steuert, sonst `null`. Das Fenster zeigt sie bei dieser Lok wie die eigenen Geräte.
+  `number` ist die Nummer des Geräts (ab 1, ohne Obergrenze); ein neues Gerät bekommt die kleinste, die kein am Host angeschlossenes Gerät hat. Die Oberfläche macht daraus eine Farbe der Palette: Nummer n bekommt Farbe `(n - 1) mod 8` (B-03).
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `sound`: Fahrgeräusch `off`, `starting`, `on` oder `stopping` (B-11, B-12). Beim Diesel spielt `starting` das Anlassgeräusch bis zum Leerlauf; `stopping` wartet auf das Ende des Leerlaufgeräuschs und spielt das Abstellgeräusch. Währenddessen bleibt die Geschwindigkeit stehen, auch bei ausgelenkter Fahrachse; die Dauer kommt aus der Länge der Dateien.
@@ -125,7 +121,6 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `audio_devices`: Namen der Ausgabegeräte des Hosts, gelesen beim Start des Hosts (N-05).
 - `audio_targets`: die Instanzen, die mit `offer_audio` Sounds angeboten haben und verbunden sind, je Instanz-ID die Namen ihrer Ausgabegeräte (N-05).
 - `audio_latency`: je Instanz aus `audio_targets` die zuletzt gemessene Zeit in Millisekunden von `ping` bis `pong`, sobald gemessen (N-05). Das ist der Weg eines Fahrbefehls vom Gamepad dieser Instanz zum Host und des Audio-Ereignisses zurück; nicht enthalten sind bis zu 50 ms bis zum nächsten Takt des Hosts und der Puffer des Ausgabegeräts. Das Fenster zeigt den Wert bei der Tonausgabe und über 300 ms rot mit „zu langsam“.
-- `audio_conflicts`: die Adressen, deren Loks über alle Sitzungen des Hosts (seine und die der Gäste) auf verschiedenen Audio-Zielen spielen, sortiert (N-05). Beide Ziele bekommen die Audio-Ereignisse; das Fenster warnt mit einem roten „!“ auf dem Lokbild und im Lok-Dialog bei der Tonausgabe. Der Host prüft das bei jedem Takt.
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle
@@ -194,7 +189,6 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `export_configuration` | `path` (schreibt die geöffnete Konfiguration in eine Datei auf dem Rechner der App) | B-21 |
 | `import_electrip1` | `path` (Konfigurationsdatei von Electrip 1 auf dem Rechner der App; wird eine neue Konfiguration mit dem Dateinamen ohne Endung und geöffnet, nur ohne Verbindung; ein Fehler nennt die Ursache und ändert nichts). Übernommen wird bisher, was Electrip 2 kennt: Name, Decoder, Vmax, Kennlinie, Dauern, Lautstärke, Lokbild (mittig zugeschnitten; ein relativer Pfad gilt ab dem Ordner der Datei, ein fehlendes Bild steht im `import_report`), Sounds (jede fehlende Sounddatei steht einmal im `import_report`, der Pfad bleibt), Server. Fehlende Werte bekommen die Vorgaben von Electrip 1. | B-21, B-06 |
 | `join_host` | `address` (`host:port` oder nur `host`, dann Port 4711); die Instanz wird Client des Hosts an der Adresse; nach `ok` schließt sie alle Verbindungen. Ein Fehler (nicht erreichbar, die Instanz selbst) ändert nichts | N-03 |
-| `use_configuration` | `configuration` (eine Konfiguration wie in der Bibliothek, mit `id`); der Absender fährt ab jetzt als Gast mit ihr (siehe oben) | N-03 |
 | `offer_audio` | `instance` (Instanz-ID), `devices` (Namen der Ausgabegeräte); der Host schickt dem Absender ab jetzt die Audio-Ereignisse der Loks, die diese Instanz nennen, bis er sich trennt. Ein Client schickt das selbst | N-05 |
 | `pong` | – ; Antwort auf `ping`, ohne `reply`. Ein Client schickt das selbst | N-05 |
 | `configuration_ids` | – ; die Antwort trägt zusätzlich `ids`: die IDs aller Konfigurationen der Bibliothek des Hosts | N-04 |

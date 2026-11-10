@@ -63,6 +63,3 @@ msgstr " · {} ms"
 
 msgid " · {} ms, too slow"
 msgstr " · {} ms, zu langsam"
-
-msgid "This address also plays on another output."
-msgstr "Diese Adresse spielt auch auf einer anderen Ausgabe."

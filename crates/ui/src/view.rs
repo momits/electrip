@@ -13,14 +13,11 @@ use std::path::Path;
 pub struct State {
     locos: Vec<Loco>,
     devices: Vec<Device>,
-    /// The devices of the other instances (Q-016), never with focus here.
-    other_devices: Vec<Device>,
     station: Station,
     view: View,
     audio_devices: Vec<String>,
     audio_targets: BTreeMap<String, Vec<String>>,
     audio_latency: BTreeMap<String, i32>,
-    audio_conflicts: Vec<u16>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,12 +36,6 @@ struct Loco {
     functions: Vec<Switch>,
     audio_instance: Option<String>,
     audio_device: Option<String>,
-    decoder: Decoder,
-}
-
-#[derive(Debug, Deserialize)]
-struct Decoder {
-    address: u16,
 }
 
 /// A function, sound function or event sound.
@@ -157,11 +148,11 @@ pub(crate) fn controllers(state: &State, library: &Path) -> Vec<Controller> {
         .collect()
 }
 
-/// The numbers of the devices of this and of the other instances that
-/// control the loco.
+/// The numbers of the devices that control the loco.
 fn devices(state: &State, loco: i32) -> Vec<i32> {
-    let devices = state.devices.iter().chain(&state.other_devices);
-    devices
+    state
+        .devices
+        .iter()
         .filter(|d| d.loco == Some(loco))
         .map(|d| d.number)
         .collect()
@@ -184,7 +175,6 @@ fn controller(state: &State, loco: &Loco, library: &Path) -> Controller {
         buttons: ModelRc::new(VecModel::from(buttons(loco))),
         devices: ModelRc::new(VecModel::from(devices(state, loco.id))),
         audio_target: audio_target(state, loco),
-        audio_conflict: state.audio_conflicts.contains(&loco.decoder.address),
     }
 }
 
