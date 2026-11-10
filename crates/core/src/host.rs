@@ -3,6 +3,7 @@
 
 use crate::audio::{Audio, AudioSink, Remote, Targets};
 use crate::config::Config;
+use crate::decoder::Decoder;
 use crate::media::LibrarySink;
 use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
@@ -23,6 +24,8 @@ pub struct Host {
     audio: Targets,
     /// The last state of each loco the driver knows, by loco id.
     sent: HashMap<u32, LocoState>,
+    /// The decoder the driver was last asked about, by loco id.
+    requested: HashMap<u32, Decoder>,
     echoes: Echoes,
     /// The directory of the configuration files (B-21).
     library: PathBuf,
@@ -43,6 +46,7 @@ impl Host {
                 library: library.clone(),
             })),
             sent: HashMap::new(),
+            requested: HashMap::new(),
             echoes: Echoes::default(),
             library,
             saved: Config::default(),
@@ -172,19 +176,9 @@ impl Host {
         if power {
             driver.set_power(true).map_err(CommandError::Station)?;
         }
-        // A new host takes over what the locos do (ADR 0010).
-        for entry in self.session.locos() {
-            driver
-                .request_loco(entry.loco.decoder())
-                .map_err(CommandError::Station)?;
-        }
         self.driver = Some(driver);
-        self.sent = self
-            .session
-            .locos()
-            .iter()
-            .map(|e| (e.id, e.station_state()))
-            .collect();
+        self.requested.clear();
+        self.send_locos();
         self.session.set_connected(true);
         self.session.set_track_power(power);
         Ok(())
@@ -228,13 +222,21 @@ impl Host {
     }
 
     /// Sends each loco whose state changed since the driver last got it.
-    /// Locos are first sent after a change, so connecting or adding a loco
-    /// does not stop a loco that another program drives.
+    /// A loco that is new to the driver or has a new decoder is asked for
+    /// instead, so the host takes over what it does (ADR 0010) and does not
+    /// stop a loco that another program drives.
     fn send_locos(&mut self) {
         let Some(driver) = self.driver.as_mut() else {
             return;
         };
         for entry in self.session.locos() {
+            let decoder = entry.loco.decoder();
+            if self.requested.insert(entry.id, *decoder) != Some(*decoder) {
+                self.sent.insert(entry.id, entry.station_state());
+                // A broken connection arrives as an event and disconnects.
+                let _ = driver.request_loco(decoder);
+                continue;
+            }
             let mut state = entry.station_state();
             if let Some(last) = self.sent.get(&entry.id) {
                 state = entry.sound.synchronize(state, last);
