@@ -489,3 +489,35 @@ fn the_host_removes_a_guest_when_its_last_client_is_gone() {
         thread::sleep(POLL_INTERVAL);
     }
 }
+
+#[test]
+fn a_client_that_becomes_a_guest_leaves_its_devices_on_the_host() {
+    let (address, _library) = serve_host();
+    let mut client = TcpStream::connect(address).unwrap();
+    let mut lines = BufReader::new(client.try_clone().unwrap()).lines();
+    let device = json!({"command": "add_device", "device": 1, "kind": "Gamepad"});
+    send(&mut client, &device).unwrap();
+    wait_for(&mut lines, |m| m["state"]["devices"][0]["id"] == 1);
+
+    send(&mut client, &use_guest(50.0)).unwrap();
+    wait_for(&mut lines, |m| m["type"] == "reply");
+    assert_eq!(first_state(address)["devices"], json!([]));
+
+    let invalid = json!({"command": "use_configuration", "configuration": 1});
+    send(&mut client, &invalid).unwrap();
+    wait_for(&mut lines, |m| {
+        m["error"]
+            .as_str()
+            .is_some_and(|e| e.starts_with("invalid configuration: "))
+    });
+}
+
+/// The state the host at `address` greets a new client with.
+fn first_state(address: SocketAddr) -> Value {
+    let stream = TcpStream::connect(address).unwrap();
+    let lines = BufReader::new(stream).lines();
+    let state = lines
+        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
+        .find(|m| m["type"] == "state");
+    state.unwrap()["state"].clone()
+}
