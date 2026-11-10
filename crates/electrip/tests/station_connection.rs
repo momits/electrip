@@ -9,7 +9,9 @@
 mod common;
 
 use common::{App, Client, expect_event, z21_simulator};
-use electrip_core::station::StationEvent;
+use electrip_control::station_id;
+use electrip_core::session::Station;
+use electrip_core::station::{StationEvent, StationKind};
 use electrip_station_z21::Z21Station;
 use serde_json::json;
 use std::io::{BufRead, BufReader, Write};
@@ -160,4 +162,17 @@ fn drives_a_loco_on_the_z21_simulator() {
         &mut observer,
         |e| matches!(e, StationEvent::Loco { address: 1, state } if state.forward && state.step > 0),
     );
+}
+
+#[test]
+fn a_z21_is_known_by_its_serial_number() {
+    let z21 = Station {
+        kind: StationKind::Z21,
+        host: "127.0.0.1".into(),
+        port: z21_simulator(),
+        ..Station::default()
+    };
+    assert_eq!(station_id(&z21), "z21:210500");
+    let gone = Station { port: 1, ..z21 };
+    assert!(station_id(&gone).ends_with(":1:1"));
 }

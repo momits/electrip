@@ -177,6 +177,7 @@ Vorbereitung: zwei Rechner im selben LAN oder WLAN, beide mit derselben Zentrale
 - [ ] Beide beenden und gleichzeitig starten: Genau eine ist Host, die andere ihr Client.
 - [ ] B mit einer anderen Zentrale in der Konfiguration starten: B wird selbst Host.
 - [ ] WLAN auf B aus: B startet allein als Host, ohne Absturz.
+- [ ] Mit einer echten Z21: A trägt sie mit ihrer IP ein, B mit einem anderen Namen derselben Z21 (z. B. Hostname statt IP). `dns-sd -L` zeigt bei beiden `station=z21:<Seriennummer>`, B wird Client von A.
 
 Ergebnis: _offen_
 

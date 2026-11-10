@@ -36,23 +36,7 @@ pub struct Z21Station {
 impl Z21Station {
     /// Logs on and waits for the status, which tells the track power.
     pub fn connect(host: &str, port: u16) -> Result<Self, StationError> {
-        let unreachable =
-            |e: String| StationError(format!("cannot reach the Z21 {host}:{port}: {e}"));
-        let addr = (host, port)
-            .to_socket_addrs()
-            .map_err(|e| unreachable(e.to_string()))?
-            .next()
-            .ok_or_else(|| unreachable("unknown host".into()))?;
-        let local = if addr.is_ipv4() {
-            "0.0.0.0:0"
-        } else {
-            "[::]:0"
-        };
-        let socket = UdpSocket::bind(local).map_err(|e| unreachable(e.to_string()))?;
-        socket
-            .connect(addr)
-            .map_err(|e| unreachable(e.to_string()))?;
-        socket.set_read_timeout(Some(TIMEOUT)).map_err(io_error)?;
+        let socket = open(host, port)?;
         let mut station = Z21Station {
             socket,
             known: HashMap::new(),
@@ -62,13 +46,12 @@ impl Z21Station {
             last_heard: Instant::now(),
         };
         station.send(&[telegram::set_broadcast_flags(), telegram::get_status()].concat())?;
-        let no_answer = |e| StationError(format!("no Z21 answers on {host}:{port}: {e}"));
         while !station
             .pending
             .iter()
             .any(|e| matches!(e, StationEvent::Power(_)))
         {
-            let events = station.receive().map_err(no_answer)?;
+            let events = station.receive().map_err(|e| no_answer(host, port, e))?;
             station.pending.extend(events);
         }
         station.socket.set_nonblocking(true).map_err(io_error)?;
@@ -188,6 +171,48 @@ impl Drop for Z21Station {
     fn drop(&mut self) {
         let _ = self.socket.send(&telegram::logoff());
     }
+}
+
+/// Asks the Z21 for its serial number (2.1), which identifies it in the
+/// LAN (ADR 0010).
+pub fn serial_number(host: &str, port: u16) -> Result<u32, StationError> {
+    let socket = open(host, port)?;
+    socket
+        .send(&telegram::get_serial_number())
+        .map_err(io_error)?;
+    let mut buffer = [0; 1500];
+    let length = socket
+        .recv(&mut buffer)
+        .map_err(|e| no_answer(host, port, e))?;
+    let _ = socket.send(&telegram::logoff());
+    telegram::parse_serial_number(&buffer[..length])
+        .ok_or_else(|| StationError(format!("the Z21 {host}:{port} sent no serial number")))
+}
+
+/// A UDP socket connected to the Z21, which waits at most `TIMEOUT` for
+/// an answer.
+fn open(host: &str, port: u16) -> Result<UdpSocket, StationError> {
+    let unreachable = |e: String| StationError(format!("cannot reach the Z21 {host}:{port}: {e}"));
+    let addr = (host, port)
+        .to_socket_addrs()
+        .map_err(|e| unreachable(e.to_string()))?
+        .next()
+        .ok_or_else(|| unreachable("unknown host".into()))?;
+    let local = if addr.is_ipv4() {
+        "0.0.0.0:0"
+    } else {
+        "[::]:0"
+    };
+    let socket = UdpSocket::bind(local).map_err(|e| unreachable(e.to_string()))?;
+    socket
+        .connect(addr)
+        .map_err(|e| unreachable(e.to_string()))?;
+    socket.set_read_timeout(Some(TIMEOUT)).map_err(io_error)?;
+    Ok(socket)
+}
+
+fn no_answer(host: &str, port: u16, e: std::io::Error) -> StationError {
+    StationError(format!("no Z21 answers on {host}:{port}: {e}"))
 }
 
 fn disconnected(mut events: Vec<StationEvent>) -> Vec<StationEvent> {

@@ -1083,6 +1083,7 @@ name = "electrip-control"
 version = "0.1.0"
 dependencies = [
  "electrip-core",
+ "electrip-station-z21",
  "mdns-sd",
  "serde_json",
  "tempfile",

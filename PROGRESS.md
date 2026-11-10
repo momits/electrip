@@ -24,6 +24,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-10 – N-03: Zentralen-ID der Z21 per Seriennummer (Claude)
+
+- CI auf `main` beim Start grün. Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- ADR 0010 nennt als Zentralen-ID der Z21 ihre Seriennummer. Bisher galten wie bei srcpd IP, Port und Bus; zwei Instanzen, die dieselbe Z21 unter verschiedenen Namen eintragen, fanden sich deshalb nicht.
+- `electrip_station_z21::serial_number` fragt die Z21 mit `LAN_GET_SERIAL_NUMBER` (2.1) und meldet sich danach mit `LAN_LOGOFF` ab; der Socket-Aufbau ist mit `Z21Station::connect` gemeinsam (`open`). `station_id` liefert für eine Z21 `z21:<Seriennummer>`; antwortet sie nicht, steht wie bisher ihre Adresse ein (`ERROR the Z21 has no id, …`).
+- Tests: `telegram/tests.rs` (Telegramm und Antwort), `station_connection.rs` (ID am Z21-Simulator, Rückfall ohne Z21).
+- Prüfpunkt in `spec/hw-checklist.md` („N-03 – Host per mDNS finden“).
+- `cargo xtask test`, `cargo xtask loc` (6015 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent).
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Eingabe der Host-Adresse in der UI (heute nur `--host`).
+  - Doppel-Host während des Betriebs.
+  - Ist die Z21 beim Start einer Instanz aus, gilt ihre Adresse als ID; eine Instanz, die die Z21 später sieht, findet diesen Host dann nicht.
+
 ## 2026-11-10 – N-03: CI auf macOS rot, Steuerkanal ohne Nagle (Claude)
 
 - CI auf `main` beim Start rot: Auf macOS dauerte `a_change_in_one_instance_shows_in_all_others_within_300_ms` 349 ms. Der Commit änderte nur `PROGRESS.md`, der Test war vorher grün, also wacklig.

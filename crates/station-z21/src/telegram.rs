@@ -37,6 +37,19 @@ pub fn get_status() -> Vec<u8> {
     x_bus(&[0x21, 0x24])
 }
 
+/// LAN_GET_SERIAL_NUMBER (2.1).
+pub fn get_serial_number() -> Vec<u8> {
+    dataset(0x10, &[])
+}
+
+/// The serial number in the answer to LAN_GET_SERIAL_NUMBER (2.1).
+pub fn parse_serial_number(packet: &[u8]) -> Option<u32> {
+    match *packet {
+        [0x08, 0x00, 0x10, 0x00, b0, b1, b2, b3, ..] => Some(u32::from_le_bytes([b0, b1, b2, b3])),
+        _ => None,
+    }
+}
+
 /// LAN_LOGOFF (2.2).
 pub fn logoff() -> Vec<u8> {
     dataset(0x30, &[])
