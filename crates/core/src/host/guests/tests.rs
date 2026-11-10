@@ -226,3 +226,21 @@ fn devices_show_with_the_loco_of_the_same_address_in_the_other_sessions() {
         serde_json::json!([{"number": 1, "loco": loco}])
     );
 }
+
+#[test]
+fn a_new_guest_gets_a_device_number_the_host_does_not_use() {
+    let (mut host, _, _library) = driving_host();
+    let kind = || "pad".to_string();
+    host.apply(Command::AddDevice {
+        device: 1,
+        kind: kind(),
+    })
+    .unwrap();
+    host.add_guest(guest_config());
+    let command = Command::AddDevice {
+        device: 2,
+        kind: kind(),
+    };
+    host.apply_guest("guest", command).unwrap();
+    assert_eq!(host.guest("guest").unwrap().devices()[0].number, 2);
+}

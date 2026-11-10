@@ -78,6 +78,7 @@ impl Host {
             return Err(CommandError::GuestChange);
         }
         self.route_audio();
+        self.share_devices();
         let command = self.add_sound(command);
         let session = match index {
             0 => &mut self.session,
