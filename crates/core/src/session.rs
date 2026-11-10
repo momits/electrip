@@ -527,16 +527,43 @@ impl Session {
         for loco in config.locos {
             self.push(loco);
         }
-        self.last_action_id = config.actions.iter().map(|a| a.id).max().unwrap_or(0);
-        self.actions = config.actions;
-        self.mappings = config.mappings;
+        self.last_action_id = 0;
+        self.station = config.station;
+        self.import_report = report;
+        self.take_settings(config.actions, config.mappings, config.view);
+    }
+
+    /// Takes over the open configuration as merged with another instance
+    /// (N-04): locos keep their id and driving state by position unless
+    /// they changed; while connected, the station stays.
+    pub(crate) fn merge(&mut self, config: Config) {
+        let saved = self.config();
+        self.locos.truncate(config.locos.len());
+        for (index, loco) in config.locos.into_iter().enumerate() {
+            match self.locos.get_mut(index) {
+                Some(entry) if saved.locos[index] != loco => entry.loco = loco,
+                Some(_) => {}
+                None => self.push(loco),
+            }
+        }
+        if !self.station.connected {
+            self.station = config.station;
+        }
+        self.take_settings(config.actions, config.mappings, config.view);
+    }
+
+    /// Action ids are never used again; devices keep their locos if they
+    /// can and get a mapping if their type has none.
+    fn take_settings(&mut self, actions: Vec<Action>, mappings: Vec<Mapping>, view: View) {
+        let last = actions.iter().map(|a| a.id).max().unwrap_or(0);
+        self.last_action_id = self.last_action_id.max(last);
+        self.actions = actions;
+        self.mappings = mappings;
         let kinds: Vec<_> = self.devices.iter().map(|d| d.kind.clone()).collect();
         for kind in kinds {
             self.mapping(kind);
         }
-        self.station = config.station;
-        self.view = config.view;
-        self.import_report = report;
+        self.view = view;
         self.assign_locos();
     }
 

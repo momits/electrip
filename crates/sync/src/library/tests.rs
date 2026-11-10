@@ -58,3 +58,10 @@ fn an_id_cannot_reach_a_file_outside_the_library() {
     let result = document(a.path(), NAME);
     assert!(matches!(result, Err(Error::InvalidId(id)) if id == "../outside"));
 }
+
+#[test]
+fn ids_name_the_configurations() {
+    let config = config();
+    let a = library(&config);
+    assert_eq!(ids(a.path()).unwrap(), [(config.id, NAME.to_string())]);
+}

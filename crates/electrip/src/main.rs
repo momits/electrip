@@ -24,6 +24,10 @@ use std::time::Duration;
 /// How often a host checks whether to yield to another host (N-03).
 const WATCH_INTERVAL: Duration = Duration::from_secs(2);
 
+/// How often the instance merges its configurations with the ones other
+/// instances share (N-04).
+const SYNC_INTERVAL: Duration = Duration::from_secs(5);
+
 const USAGE: &str = "usage: electrip [--headless] [--control-port <port>] [--library <dir>] [-f|--file <configuration>] [--host <address[:port]>] [--no-discovery]";
 
 fn main() -> ExitCode {
@@ -69,6 +73,10 @@ fn run() -> Result<(), String> {
         "Electrip {} control channel on {address}",
         env!("CARGO_PKG_VERSION")
     );
+    let discovery = discovery.map(Arc::new);
+    if let Some(discovery) = discovery.clone() {
+        thread::spawn(move || share(&discovery, address));
+    }
     // The gamepads stay on the thread that opens them.
     let server = thread::spawn(move || {
         // Without SDL the app still runs with the control channel.
@@ -76,7 +84,6 @@ fn run() -> Result<(), String> {
             .inspect_err(|e| eprintln!("ERROR no gamepads: {e}"))
             .ok();
         let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
-        let discovery = discovery.map(Arc::new);
         session(listener, role, input, discovery, library, args.file).map_err(|e| e.to_string())
     });
     if !args.headless {
@@ -173,6 +180,19 @@ fn watch(discovery: Option<Arc<Discovery>>) -> Receiver<SocketAddr> {
         });
     }
     receiver
+}
+
+/// Merges the configurations of the instance at `local` with the ones
+/// the other instances share, also without a host or a command station
+/// in common (N-04).
+fn share(discovery: &Discovery, local: SocketAddr) {
+    loop {
+        thread::sleep(SYNC_INTERVAL);
+        for peer in discovery.instances() {
+            let _ = electrip_control::sync(local, peer)
+                .inspect_err(|e| eprintln!("ERROR cannot share configurations with {peer}: {e}"));
+        }
+    }
 }
 
 fn announce(discovery: &Discovery, status: Status, port: u16) {
