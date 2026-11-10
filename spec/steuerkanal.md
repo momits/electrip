@@ -119,7 +119,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.
 - `audio_devices`: Namen der Ausgabegeräte des Hosts, gelesen beim Start des Hosts (N-05).
 - `audio_targets`: die Instanzen, die mit `offer_audio` Sounds angeboten haben und verbunden sind, je Instanz-ID die Namen ihrer Ausgabegeräte (N-05).
-- `audio_latency`: je Instanz aus `audio_targets` die zuletzt gemessene Zeit in Millisekunden von `ping` bis `pong`, sobald gemessen (N-05). Das ist der Weg eines Fahrbefehls vom Gamepad dieser Instanz zum Host und des Audio-Ereignisses zurück; nicht enthalten sind bis zu 50 ms bis zum nächsten Takt des Hosts und der Puffer des Ausgabegeräts. Das Fenster zeigt den Wert bei der Tonausgabe und ab 300 ms rot mit „zu langsam“.
+- `audio_latency`: je Instanz aus `audio_targets` die zuletzt gemessene Zeit in Millisekunden von `ping` bis `pong`, sobald gemessen (N-05). Das ist der Weg eines Fahrbefehls vom Gamepad dieser Instanz zum Host und des Audio-Ereignisses zurück; nicht enthalten sind bis zu 50 ms bis zum nächsten Takt des Hosts und der Puffer des Ausgabegeräts. Das Fenster zeigt den Wert bei der Tonausgabe und über 300 ms rot mit „zu langsam“.
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle

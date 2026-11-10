@@ -169,7 +169,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         forward: loco.forward,
         buttons: ModelRc::new(VecModel::from(buttons(loco))),
         devices: ModelRc::new(VecModel::from(devices)),
-        audio_target: audio_target(loco),
+        audio_target: audio_target(state, loco),
     }
 }
 
@@ -181,7 +181,7 @@ pub(crate) fn audio_targets(state: &State) -> Vec<AudioTarget> {
     let others = state.audio_targets.iter().map(|(i, d)| (i.as_str(), d));
     let mut targets = Vec::new();
     for (instance, devices) in std::iter::once(("", &state.audio_devices)).chain(others) {
-        let latency = state.audio_latency.get(instance).copied().unwrap_or(-1);
+        let latency = latency(state, instance);
         for device in std::iter::once("").chain(devices.iter().map(String::as_str)) {
             let (instance, device) = (instance.into(), device.into());
             targets.push(AudioTarget {
@@ -191,9 +191,8 @@ pub(crate) fn audio_targets(state: &State) -> Vec<AudioTarget> {
             });
         }
     }
-    for target in state.locos.iter().map(audio_target) {
-        let same = |t: &AudioTarget| t.instance == target.instance && t.device == target.device;
-        if !targets.iter().any(same) {
+    for target in state.locos.iter().map(|l| audio_target(state, l)) {
+        if !targets.contains(&target) {
             targets.push(target);
         }
     }
@@ -201,13 +200,18 @@ pub(crate) fn audio_targets(state: &State) -> Vec<AudioTarget> {
 }
 
 /// Empty is the host or its default device, like `null` in the state.
-fn audio_target(loco: &Loco) -> AudioTarget {
+fn audio_target(state: &State, loco: &Loco) -> AudioTarget {
     let text = |s: &Option<String>| s.as_deref().unwrap_or_default().into();
     AudioTarget {
         instance: text(&loco.audio_instance),
         device: text(&loco.audio_device),
-        latency: -1,
+        latency: latency(state, loco.audio_instance.as_deref().unwrap_or_default()),
     }
+}
+
+/// The round trip to the instance, -1 if not measured.
+fn latency(state: &State, instance: &str) -> i32 {
+    state.audio_latency.get(instance).copied().unwrap_or(-1)
 }
 
 /// In the order of Electrip 1 (B-19): driving sound, sound functions, event
