@@ -24,17 +24,17 @@ use crate::open;
 type Samples = Box<dyn Iterator<Item = Sample> + Send>;
 
 /// A mixer and its format.
-pub struct Output {
-    pub mixer: Mixer,
-    pub channels: ChannelCount,
-    pub rate: SampleRate,
+pub(crate) struct Output {
+    pub(crate) mixer: Mixer,
+    pub(crate) channels: ChannelCount,
+    pub(crate) rate: SampleRate,
     /// The device plays the mixer as long as it lives; `None` for a mixer
     /// without one, e.g. in tests.
-    pub device: Option<MixerDeviceSink>,
+    pub(crate) _device: Option<MixerDeviceSink>,
 }
 
 /// Opens the output on the named device, `None` on the default one.
-pub type Open = Box<dyn FnMut(Option<&str>) -> Result<Output, String> + Send>;
+pub(crate) type Open = Box<dyn FnMut(Option<&str>) -> Result<Output, String> + Send>;
 
 /// Plays the sounds of each loco into the output of its device (N-05).
 /// Without an output it only knows the lengths of the sounds, so the sound
@@ -79,21 +79,30 @@ fn open_device(name: Option<&str>) -> Result<Output, String> {
         mixer: device.mixer().clone(),
         channels: device.config().channel_count(),
         rate: device.config().sample_rate(),
-        device: Some(device),
+        _device: Some(device),
     })
 }
 
 fn find_device(name: &str) -> Result<Device, String> {
-    let mut devices = cpal::default_host()
-        .output_devices()
-        .map_err(|e| e.to_string())?;
-    devices
-        .find(|d| d.description().is_ok_and(|d| d.name() == name))
+    output_devices()
+        .into_iter()
+        .find(|(n, _)| n == name)
+        .map(|(_, device)| device)
         .ok_or_else(|| format!("there is no output device {name:?}"))
 }
 
+/// The output devices of the computer by name.
+fn output_devices() -> Vec<(String, Device)> {
+    let Ok(devices) = cpal::default_host().output_devices() else {
+        return Vec::new();
+    };
+    devices
+        .filter_map(|d| Some((d.description().ok()?.name().to_string(), d)))
+        .collect()
+}
+
 impl Speaker {
-    pub fn new(open: Open) -> Self {
+    pub(crate) fn new(open: Open) -> Self {
         Speaker {
             outputs: Outputs {
                 open,
@@ -145,15 +154,17 @@ impl Outputs {
     /// The output of the loco. A device that cannot be opened is reported
     /// once; its locos play on the default device.
     fn of(&mut self, loco: u32) -> Option<&Output> {
-        let routed = self.routes.get(&loco).cloned();
-        let device = if self.opens(&routed) { routed } else { None };
-        self.opens(&device);
+        let mut device = self.routes.get(&loco).cloned();
+        if !self.try_open(&device) {
+            device = None;
+            self.try_open(&device);
+        }
         self.opened.get(&device)?.as_ref()
     }
 
     /// Opens the device unless it was tried before; returns whether it is
     /// open.
-    fn opens(&mut self, device: &Option<String>) -> bool {
+    fn try_open(&mut self, device: &Option<String>) -> bool {
         let open = &mut self.open;
         let output = self.opened.entry(device.clone()).or_insert_with(|| {
             let name = device.as_deref().unwrap_or("default");
@@ -244,12 +255,7 @@ impl AudioSink for Speaker {
     }
 
     fn devices(&mut self) -> Vec<String> {
-        let Ok(devices) = cpal::default_host().output_devices() else {
-            return Vec::new();
-        };
-        devices
-            .filter_map(|d| Some(d.description().ok()?.name().to_string()))
-            .collect()
+        output_devices().into_iter().map(|(name, _)| name).collect()
     }
 
     /// The sounds of the loco stop when it changes the device; the next
