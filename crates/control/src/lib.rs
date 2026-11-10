@@ -371,7 +371,7 @@ fn join(address: &str, id: &str) -> Result<SocketAddr, String> {
     let (host, hello) =
         find_host(address).map_err(|e| format!("cannot reach the host {address}: {e}"))?;
     if hello["id"] == id {
-        return Err(format!("{address} is this instance"));
+        return Err(format!("{address} is already in this session"));
     }
     Ok(host)
 }
