@@ -22,6 +22,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Funktionen, die eine Konfiguration nicht kennt (Claude)
+
+- CI auf `main` lief beim Start noch. Offener Punkt aus „Konfigurationen von Gästen im Host“ und „Änderungen fremder Programme übernehmen“.
+- Bisher schickte eine Sitzung bei jeder Änderung einer Lok nur die Funktionen, die ihre Konfiguration kennt; alle anderen schaltete sie an der Zentrale aus, auch die eines Gasts oder eines fremden Programms. Jetzt merkt sich jede Lok beim Übernehmen eines Zustands die übrigen Funktionen (`LocoEntry::other_functions`) und schickt sie unverändert mit. Ändert sich die Adresse der Lok, vergisst sie sie.
+- Tests: `host/tests.rs` (gemeldete F2 bleibt beim Schalten von F0 an, neue Adresse vergisst sie), `host/guests/tests.rs` (Licht des Hosts bleibt an, wenn der Gast ohne Licht fährt).
+- `cargo xtask test`, `cargo xtask loc` (7860 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent). Der Vorschlag, jede Funktion der Lok direkt zu setzen statt zu maskieren, wurde nicht übernommen: Zwei Aktionen dürfen dieselbe Funktion schalten, dann gilt sie weiter als an, wenn eine von beiden an ist.
+- **N-03** bleibt offen.
+- **Offen:** Q-018.
+
 ## 2026-11-10 – N-03: Geräte anderer Instanzen bei der Lok (Claude)
 
 - CI auf `main` lief beim Start noch. Punkt 6 von Q-016 aus „Konfigurationen von Gästen im Host“.
