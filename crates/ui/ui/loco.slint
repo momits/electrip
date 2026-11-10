@@ -16,8 +16,8 @@ export component LocoDialog inherits Rectangle {
     in property <image> picture;
     in property <float> volume;
     in property <[AudioTarget]> audio-targets;
-    // The index of the target of the loco.
-    in-out property <int> audio-target;
+    // Where the sounds of the loco play.
+    in-out property <AudioTarget> audio-target;
     callback load(string) -> image;
     // The crop in pixels of the image: left, top, width.
     callback save-picture(string, float, float, float);
@@ -130,9 +130,9 @@ export component LocoDialog inherits Rectangle {
                                 font-weight: 700;
                             }
                             ListView {
-                                for target[i] in audio-targets: Rectangle {
+                                for target in audio-targets: Rectangle {
                                     height: 36px;
-                                    background: i == audio-target ? #cfe0f5 : transparent;
+                                    background: target == audio-target ? #cfe0f5 : transparent;
                                     VerticalLayout {
                                         padding-left: 6px;
                                         Text {
@@ -149,7 +149,7 @@ export component LocoDialog inherits Rectangle {
                                     }
                                     TouchArea {
                                         clicked => {
-                                            audio-target = i;
+                                            audio-target = target;
                                             root.set-audio-target(target);
                                         }
                                     }

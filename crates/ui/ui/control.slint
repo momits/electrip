@@ -32,8 +32,8 @@ export struct Controller {
     buttons: [ControlButton],
     // The numbers (from 1) of the devices that control the loco.
     devices: [int],
-    // Its index in the audio targets of the window.
-    audio-target: int,
+    // Where its sounds play (N-05).
+    audio-target: AudioTarget,
 }
 
 // The colors of the input devices, dark enough for white text; from the

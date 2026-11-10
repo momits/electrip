@@ -54,7 +54,7 @@ fn loco_with_buttons() -> Value {
 #[test]
 fn buttons_in_the_order_of_electrip_1() {
     let state = state(vec![loco_with_buttons()], json!([]));
-    let controllers = controllers(&state, &[], Path::new(""));
+    let controllers = controllers(&state, Path::new(""));
     let buttons: Vec<_> = controllers[0]
         .buttons
         .iter()
@@ -75,19 +75,14 @@ fn buttons_in_the_order_of_electrip_1() {
 #[test]
 fn without_sound_model_no_driving_sound_button() {
     let state = state(vec![loco(1, "Köf")], json!([]));
-    assert_eq!(
-        controllers(&state, &[], Path::new(""))[0]
-            .buttons
-            .row_count(),
-        0
-    );
+    assert_eq!(controllers(&state, Path::new(""))[0].buttons.row_count(), 0);
 }
 
 #[test]
 fn devices_mark_their_locos() {
     let devices = json!([device(2, 3), device(None, 1), device(2, 5)]);
     let state = state(vec![loco(1, "A"), loco(2, "B")], devices);
-    let controllers = controllers(&state, &[], Path::new(""));
+    let controllers = controllers(&state, Path::new(""));
     assert_eq!(controllers[0].devices.row_count(), 0);
     assert_eq!(controllers[1].devices.iter().collect::<Vec<_>>(), [3, 5]);
 }
@@ -99,7 +94,7 @@ fn only_active_shows_controlled_or_moving_locos() {
     let locos = vec![loco(1, "A"), moving, loco(3, "C"), loco(4, "D")];
     let mut state = state(locos, json!([device(3, 1)]));
     state.view.only_active = true;
-    let ids: Vec<_> = controllers(&state, &[], Path::new(""))
+    let ids: Vec<_> = controllers(&state, Path::new(""))
         .iter()
         .map(|c| c.id)
         .collect();
@@ -111,7 +106,7 @@ fn only_active_shows_controlled_or_moving_locos() {
 fn focus_after(devices: Value, auto_focus: bool) -> Option<i32> {
     let locos = vec![loco(1, "A"), loco(2, "B"), loco(3, "C")];
     let shown = state(locos.clone(), json!([device(1, 1)]));
-    let shown = ModelRc::new(VecModel::from(controllers(&shown, &[], Path::new(""))));
+    let shown = ModelRc::new(VecModel::from(controllers(&shown, Path::new(""))));
     let mut state = state(locos, devices);
     state.view.auto_focus = auto_focus;
     focus(&state, &shown)
@@ -158,8 +153,9 @@ fn audio_targets_of_the_host_then_of_the_instances() {
             ("77aa", "")
         ]
     );
-    let rows = controllers(&state, &targets, Path::new(""));
-    assert_eq!([rows[0].audio_target, rows[1].audio_target], [0, 4]);
+    let rows = controllers(&state, Path::new(""));
+    assert_eq!(rows[0].audio_target, targets[0]);
+    assert_eq!(rows[1].audio_target, targets[4]);
 }
 
 #[test]
@@ -168,10 +164,7 @@ fn missing_picture_shows_none() {
     loco["picture"] = json!("missing.png");
     let state = state(vec![loco], json!([]));
     assert_eq!(
-        controllers(&state, &[], Path::new(""))[0]
-            .picture
-            .size()
-            .width,
+        controllers(&state, Path::new(""))[0].picture.size().width,
         0
     );
 }
@@ -181,7 +174,7 @@ fn driving_and_switching_keep_the_buttons() {
     let model = ModelRc::new(VecModel::<Controller>::default());
     let mut loco = loco_with_buttons();
     let show = |loco: &Value| {
-        let rows = controllers(&state(vec![loco.clone()], json!([])), &[], Path::new(""));
+        let rows = controllers(&state(vec![loco.clone()], json!([])), Path::new(""));
         update_controllers(&model, rows);
         model.row_data(0).unwrap()
     };
