@@ -21,6 +21,8 @@ export component LocoDialog inherits Rectangle {
     in property <[AudioTarget]> audio-targets;
     // Where the sounds of the loco play.
     in-out property <AudioTarget> audio-target;
+    // Locos with its address play on another target too (N-05).
+    in property <bool> audio-conflict;
     callback load(string) -> image;
     // The crop in pixels of the image: left, top, width.
     callback save-picture(string, float, float, float);
@@ -131,6 +133,12 @@ export component LocoDialog inherits Rectangle {
                                 text: @tr("Sound output");
                                 height: 20px;
                                 font-weight: 700;
+                            }
+                            if audio-conflict: Text {
+                                text: @tr("Another configuration plays this address on another output.");
+                                color: #c62828;
+                                font-size: 11px;
+                                wrap: word-wrap;
                             }
                             ListView {
                                 for target in audio-targets: Rectangle {

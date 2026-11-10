@@ -34,6 +34,8 @@ export struct Controller {
     devices: [int],
     // Where its sounds play (N-05).
     audio-target: AudioTarget,
+    // Locos with its address play on another target too (N-05).
+    audio-conflict: bool,
 }
 
 // The colors of the input devices, dark enough for white text; from the
@@ -162,6 +164,19 @@ component ControllerView inherits Rectangle {
                 width: parent.width;
                 height: parent.height;
                 image-fit: cover;
+            }
+            if controller.audio-conflict: Rectangle {
+                x: parent.width - self.width - 2px;
+                y: 2px;
+                width: 18px;
+                height: 18px;
+                border-radius: 9px;
+                background: #c62828;
+                Text {
+                    text: "!";
+                    color: white;
+                    font-weight: 700;
+                }
             }
             TouchArea {
                 clicked => {
@@ -398,6 +413,7 @@ export component MainWindow inherits Window {
         volume: editing.volume;
         audio-targets: audio-targets;
         audio-target: editing.audio-target;
+        audio-conflict: editing.audio-conflict;
         load(path) => {
             root.load-picture(path)
         }

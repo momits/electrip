@@ -18,6 +18,7 @@ pub struct State {
     audio_devices: Vec<String>,
     audio_targets: BTreeMap<String, Vec<String>>,
     audio_latency: BTreeMap<String, i32>,
+    audio_conflicts: Vec<u16>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,6 +37,12 @@ struct Loco {
     functions: Vec<Switch>,
     audio_instance: Option<String>,
     audio_device: Option<String>,
+    decoder: Decoder,
+}
+
+#[derive(Debug, Deserialize)]
+struct Decoder {
+    address: u16,
 }
 
 /// A function, sound function or event sound.
@@ -170,6 +177,7 @@ fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
         buttons: ModelRc::new(VecModel::from(buttons(loco))),
         devices: ModelRc::new(VecModel::from(devices)),
         audio_target: audio_target(state, loco),
+        audio_conflict: state.audio_conflicts.contains(&loco.decoder.address),
     }
 }
 

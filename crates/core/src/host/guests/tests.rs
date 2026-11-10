@@ -169,3 +169,29 @@ fn a_guest_sees_the_command_station_and_audio_targets_of_the_host() {
     assert_eq!(state["audio_latency"], serde_json::json!({"b": 30}));
     assert_eq!(view.locos(), host.guest("guest").unwrap().locos());
 }
+
+#[test]
+fn the_host_and_the_guest_learn_of_an_address_with_two_audio_targets() {
+    let (mut host, _, _library) = driving_host();
+    let mut config = guest_config();
+    config.locos[0].set_audio_target(Some("b".into()), None);
+    host.add_guest(config);
+    assert!(host.poll(0.05));
+    assert!(!host.poll(0.05));
+
+    let conflicts =
+        |session: &Session| serde_json::to_value(session).unwrap()["audio_conflicts"].clone();
+    assert_eq!(conflicts(host.session()), serde_json::json!([1]));
+    assert_eq!(
+        conflicts(&host.guest_view("guest").unwrap()),
+        serde_json::json!([1])
+    );
+    host.apply(Command::SetAudioDevice {
+        loco: 1,
+        instance: Some("b".into()),
+        device: None,
+    })
+    .unwrap();
+    assert!(host.poll(0.05));
+    assert_eq!(conflicts(host.session()), serde_json::json!([]));
+}

@@ -20,7 +20,7 @@ use std::sync::{Arc, Mutex};
 fn loco(id: i32, name: &str) -> Value {
     json!({
         "id": id, "name": name, "max_speed": 100.0, "volume": 0.8, "speed": 0.0, "forward": true,
-        "picture": null, "sound_model": null, "sound": "off",
+        "picture": null, "sound_model": null, "sound": "off", "decoder": {"address": id},
         "sound_functions": [], "event_sounds": [], "functions": []
     })
 }
@@ -30,7 +30,7 @@ fn state(locos: Vec<Value>, devices: Value) -> State {
     let view = json!({"auto_focus": true, "only_active": false});
     let state = json!({"locos": locos, "devices": devices, "station": station, "view": view,
         "audio_devices": ["USB Audio"], "audio_targets": {"3f2a9c0d": ["Pi"]},
-        "audio_latency": {"3f2a9c0d": 340}});
+        "audio_latency": {"3f2a9c0d": 340}, "audio_conflicts": [2]});
     serde_json::from_value(state).unwrap()
 }
 
@@ -159,6 +159,9 @@ fn audio_targets_of_the_host_then_of_the_instances() {
     let rows = controllers(&state, Path::new(""));
     assert_eq!(rows[0].audio_target, targets[0]);
     assert_eq!(rows[1].audio_target, targets[4]);
+    // Another configuration plays address 2 elsewhere.
+    let conflicts: Vec<_> = rows.iter().map(|r| r.audio_conflict).collect();
+    assert_eq!(conflicts, [false, true]);
 }
 
 #[test]

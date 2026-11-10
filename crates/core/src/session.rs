@@ -502,6 +502,9 @@ pub struct Session {
     /// The round trip in milliseconds to each of these instances, once
     /// measured (N-05).
     audio_latency: BTreeMap<String, u64>,
+    /// The addresses whose locos play on different audio targets, as
+    /// sessions name different ones (N-05); sorted.
+    audio_conflicts: Vec<u16>,
     /// The addresses whose axis was deflected since the host last took
     /// them (Q-016).
     #[serde(skip)]
@@ -617,6 +620,13 @@ impl Session {
         &mut self.audio_latency
     }
 
+    /// Returns whether they changed.
+    pub(crate) fn set_audio_conflicts(&mut self, addresses: Vec<u16>) -> bool {
+        let changed = self.audio_conflicts != addresses;
+        self.audio_conflicts = addresses;
+        changed
+    }
+
     /// Takes over what belongs to the host, not to a configuration: the
     /// command station and the audio targets (Q-016).
     pub(crate) fn share(&mut self, host: &Session) {
@@ -624,6 +634,7 @@ impl Session {
         self.audio_devices = host.audio_devices.clone();
         self.audio_targets = host.audio_targets.clone();
         self.audio_latency = host.audio_latency.clone();
+        self.audio_conflicts = host.audio_conflicts.clone();
     }
 
     pub(crate) fn set_connected(&mut self, connected: bool) {
