@@ -93,6 +93,52 @@ fn a_change_in_one_instance_shows_in_all_others_within_300_ms() {
     assert!(took < Duration::from_millis(300), "{took:?}");
 }
 
+/// The same with two configurations that both have a loco at address 3:
+/// the client with a configuration of its own drives as a guest (Q-016).
+#[test]
+fn a_change_shows_in_other_configurations_within_300_ms() {
+    let host = App::start();
+    add_loco_at(&mut host.connect(), 3);
+    let library_b = TempDir::new().unwrap();
+    let alone = App::start_in(library_b.path(), &[]);
+    let mut at_alone = alone.connect();
+    add_loco_at(&mut at_alone, 3);
+    at_alone
+        .command(json!({"command": "rename_loco", "loco": 1, "name": "V 60"}))
+        .unwrap();
+    drop((at_alone, alone));
+    let network = slow_network(host.address());
+    let library_c = TempDir::new().unwrap();
+    let (b, c) = (
+        client_of(&network, &library_b),
+        client_of(&network, &library_c),
+    );
+    let mut at_host = host.connect();
+    let mut at_b = b.connect();
+    let mut at_c = c.connect();
+    assert_eq!(at_b.state["locos"][0]["name"], "V 60");
+    assert_ne!(at_c.state["locos"][0]["name"], "V 60");
+    let forward = |is: bool| move |state: &Value| state["locos"][0]["forward"] == is;
+
+    // The locos of a guest get ids after those of the host.
+    let loco_b = at_b.state["locos"][0]["id"].clone();
+    let start = Instant::now();
+    at_b.command(json!({"command": "reverse", "loco": loco_b}))
+        .unwrap();
+    wait_for(&mut at_host, forward(false));
+    wait_for(&mut at_c, forward(false));
+    let took = start.elapsed();
+    assert!(took < Duration::from_millis(300), "{took:?}");
+
+    let start = Instant::now();
+    at_c.command(json!({"command": "reverse", "loco": 1}))
+        .unwrap();
+    wait_for(&mut at_host, forward(true));
+    wait_for(&mut at_b, forward(true));
+    let took = start.elapsed();
+    assert!(took < Duration::from_millis(300), "{took:?}");
+}
+
 #[test]
 fn the_devices_of_a_client_leave_with_it() {
     let host = App::start();

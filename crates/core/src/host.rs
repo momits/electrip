@@ -257,8 +257,8 @@ impl Host {
         for guest in &mut self.guests {
             driven |= guest.drive(seconds, &mut self.audio);
         }
-        self.send_locos();
-        changed || driven
+        let mirrored = self.send_locos();
+        changed || driven || mirrored
     }
 
     /// Takes over a loco state that the host did not send itself as the
@@ -274,8 +274,9 @@ impl Host {
     /// the locos with the same address in the other sessions take it over.
     /// A loco that is new to the driver or has a new decoder is asked for
     /// instead, so the host takes over what it does (ADR 0010) and does not
-    /// stop a loco that another program drives.
-    fn send_locos(&mut self) {
+    /// stop a loco that another program drives. Returns whether a loco
+    /// took over a state.
+    fn send_locos(&mut self) -> bool {
         let mut changes = Vec::new();
         let sessions = iter::once(&self.session).chain(&self.guests);
         for (index, session) in sessions.enumerate() {
@@ -305,9 +306,11 @@ impl Host {
                 }
             }
         }
+        let mut mirrored = false;
         for (index, address, state) in changes {
-            self.mirror(Some(index), address, &state);
+            mirrored |= self.mirror(Some(index), address, &state);
         }
+        mirrored
     }
 
     /// The locos with the address take over the state in all sessions but
