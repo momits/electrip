@@ -257,12 +257,25 @@ impl Host {
         }
         changed |= self.route_audio();
         changed |= self.share_devices();
+        self.prepare_sounds();
         let mut driven = self.session.drive(seconds, &mut self.audio);
         for guest in &mut self.guests {
             driven |= guest.drive(seconds, &mut self.audio);
         }
         let mirrored = self.send_locos();
         changed || driven || mirrored
+    }
+
+    /// Has the audio target read the sounds of all locos ahead, also of
+    /// new and changed ones, so a sound plays at once the first time.
+    fn prepare_sounds(&mut self) {
+        let sessions = iter::once(&self.session).chain(&self.guests);
+        for sound in sessions
+            .flat_map(Session::locos)
+            .flat_map(|e| e.loco.sounds())
+        {
+            self.audio.prepare(&sound);
+        }
     }
 
     /// Takes over a loco state that the host did not send itself as the

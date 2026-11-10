@@ -19,6 +19,8 @@ pub(crate) struct LogSink {
     pub devices: Vec<String>,
     /// The device of each loco it was told, `None` the default one.
     pub routes: Arc<Mutex<HashMap<u32, Option<String>>>>,
+    /// The sounds it was told to read ahead.
+    pub prepared: Arc<Mutex<Vec<PathBuf>>>,
 }
 
 impl LogSink {
@@ -42,6 +44,10 @@ impl AudioSink for LogSink {
         let name = sound.to_string_lossy();
         let length = self.lengths.get(name.as_ref()).ok_or("unknown sound")?;
         Ok(Duration::from_secs_f64(*length))
+    }
+
+    fn prepare(&mut self, sound: &Path) {
+        self.prepared.lock().unwrap().push(sound.into());
     }
 
     fn queue(&mut self, channel: ChannelId, sound: &Path) {

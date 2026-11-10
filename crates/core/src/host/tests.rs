@@ -640,6 +640,12 @@ fn the_speed_stays_while_the_engine_starts() {
 fn host_with_horn(mode: &str) -> (Host, Played, TempDir) {
     let audio = LogSink::new(&[("horn", 1.0)]);
     let played = Arc::clone(&audio.played);
+    let (host, library) = horn_host(mode, audio);
+    (host, played, library)
+}
+
+/// The host of [`host_with_horn`] on the audio target.
+fn horn_host(mode: &str, audio: LogSink) -> (Host, TempDir) {
     let library = TempDir::new().unwrap();
     let connector: Connector = Box::new(|_| Err(StationError("offline".into())));
     let mut host = Host::new(connector, Box::new(audio), library.path().into()).unwrap();
@@ -652,7 +658,16 @@ fn host_with_horn(mode: &str) -> (Host, Played, TempDir) {
     host.apply(Command::AddSoundFunction { loco: 1, function })
         .unwrap();
     bind(&mut host, "x", Target::Action { action: 1 });
-    (host, played, library)
+    (host, library)
+}
+
+#[test]
+fn the_sounds_of_the_locos_are_read_ahead() {
+    let audio = LogSink::default();
+    let prepared = Arc::clone(&audio.prepared);
+    let (mut host, _library) = horn_host("switch", audio);
+    host.poll(0.1);
+    assert!(prepared.lock().unwrap().contains(&"horn".into()));
 }
 
 fn take(played: &Played) -> Vec<String> {

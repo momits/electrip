@@ -212,19 +212,16 @@ impl Host {
 
 /// Names each sound of an imported loco that is missing in the report.
 fn check_sounds(loco: &Loco, report: &mut Vec<String>) {
-    loco.clone().map_sounds(|path| {
-        if !path.is_file() {
-            let line = format!(
-                "{}: cannot read the sound ({})",
-                loco.name(),
-                path.display()
-            );
-            if !report.contains(&line) {
-                report.push(line);
-            }
+    for path in loco.sounds().iter().filter(|p| !p.is_file()) {
+        let line = format!(
+            "{}: cannot read the sound ({})",
+            loco.name(),
+            path.display()
+        );
+        if !report.contains(&line) {
+            report.push(line);
         }
-        None
-    });
+    }
 }
 
 #[cfg(test)]
