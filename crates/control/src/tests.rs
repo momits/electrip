@@ -249,7 +249,10 @@ fn a_host_joins_the_host_a_client_names() {
 fn a_host_does_not_join_itself_or_an_unreachable_host() {
     let (address, _library) = serve_host();
     let reply = ask_to_join(address, &address.to_string());
-    assert_eq!(reply["error"], format!("{address} is this instance"));
+    assert_eq!(
+        reply["error"],
+        format!("{address} is already in this session")
+    );
 
     let reply = ask_to_join(address, "127.0.0.1:1");
     let error = reply["error"].as_str().unwrap();
