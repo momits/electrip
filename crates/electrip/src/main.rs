@@ -141,7 +141,7 @@ fn session(
                     Some(listener) => listener,
                     None => bind()?,
                 };
-                relay.switch(serving.local_addr()?);
+                relay.switch(serving.local_addr()?, false);
                 if let Some(discovery) = &discovery {
                     announce(discovery, Status::Host, port);
                 }
@@ -154,7 +154,7 @@ fn session(
                 Role::Client(next)
             }
             Role::Client(host) => {
-                relay.switch(host);
+                relay.switch(host, true);
                 if let Some(discovery) = &discovery {
                     announce(discovery, Status::Client, port);
                 }
@@ -203,7 +203,8 @@ fn announce(discovery: &Discovery, status: Status, port: u16) {
 }
 
 /// Relays to the host and, when it is gone, to the next host the discovery
-/// finds; returns when there is none, so the instance becomes host (N-03).
+/// finds or a client asks to join; returns when there is none, so the
+/// instance becomes host (N-03).
 fn follow(
     relay: &mut Relay,
     mut host: SocketAddr,
@@ -215,13 +216,18 @@ fn follow(
         if let Err(e) = relay.run(&mut input) {
             eprintln!("ERROR the host {host} is gone: {e}");
         }
+        if let Some(next) = relay.joined() {
+            eprintln!("ERROR this instance joins the host {next}");
+            host = next;
+            continue;
+        }
         let Some(discovery) = discovery else { return };
         announce(discovery, Status::Searching, port);
         let Some(next) = discovery.find_host(Some(host)).filter(answers) else {
             return;
         };
         host = next;
-        relay.switch(host);
+        relay.switch(host, true);
         announce(discovery, Status::Client, port);
     }
 }

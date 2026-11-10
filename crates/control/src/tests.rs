@@ -185,7 +185,7 @@ fn the_next_host_gets_the_devices_still_connected() {
     assert!(relay.run(&mut input).is_err());
 
     let (address, _library) = serve_host();
-    relay.switch(address);
+    relay.switch(address, true);
     thread::spawn(move || relay.run(input));
     assert_eq!(first_device(address) & 0xffff, 1);
 }

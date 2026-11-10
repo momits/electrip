@@ -199,22 +199,41 @@ fn a_host_joins_the_host_at_the_address_entered() {
     let (a, b) = (App::start(), App::start());
     let mut at_a = a.connect();
     at_a.command(json!({"command": "add_loco"})).unwrap();
-    // The connection closes after the reply, with no state.
-    let mut at_b = TcpStream::connect(b.address()).unwrap();
-    let join = json!({"command": "join_host", "address": a.address()});
-    writeln!(at_b, "{join}").unwrap();
-    let mut messages = String::new();
-    at_b.read_to_string(&mut messages).unwrap();
-    assert!(
-        messages.ends_with("{\"ok\":true,\"type\":\"reply\"}\n"),
-        "{messages}"
-    );
+    ask_to_join(&b, &a);
 
     let mut at_b = connect_until(&b, |state| state["locos"].as_array().unwrap().len() == 1);
     at_b.command(json!({"command": "add_loco"})).unwrap();
     wait_for(&mut at_a, |state| {
         state["locos"].as_array().unwrap().len() == 2
     });
+}
+
+/// A client joins the host entered in its window by itself; its old host
+/// stays host.
+#[test]
+fn a_client_joins_the_host_at_the_address_entered() {
+    let (a, b) = (App::start(), App::start());
+    let library = TempDir::new().unwrap();
+    let c = client_of(b.address(), &library);
+    a.connect().command(json!({"command": "add_loco"})).unwrap();
+    ask_to_join(&c, &a);
+
+    connect_until(&c, |state| state["locos"].as_array().unwrap().len() == 1);
+    assert_eq!(b.connect().state["locos"], json!([]));
+}
+
+/// Sends `join_host` with the address of `host` to `app`; the connection
+/// closes after the reply, with no state.
+fn ask_to_join(app: &App, host: &App) {
+    let mut stream = TcpStream::connect(app.address()).unwrap();
+    let join = json!({"command": "join_host", "address": host.address()});
+    writeln!(stream, "{join}").unwrap();
+    let mut messages = String::new();
+    stream.read_to_string(&mut messages).unwrap();
+    assert!(
+        messages.ends_with("{\"ok\":true,\"type\":\"reply\"}\n"),
+        "{messages}"
+    );
 }
 
 /// Connects to `app` until its state satisfies `done`, e.g. once it

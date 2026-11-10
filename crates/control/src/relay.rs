@@ -2,8 +2,9 @@
 //! control channel forwards each client to the host, and its input devices
 //! send their commands there. When the host is gone, the relay switches to
 //! the next host, which may be the instance itself. A host instance runs
-//! behind the relay too, so it can hand over to another host. The relay
-//! plays the sounds of the locos that name the instance (N-05).
+//! behind the relay too, so it can hand over to another host. A client
+//! instance joins another host on `join_host` by itself, its host stays.
+//! The relay plays the sounds of the locos that name the instance (N-05).
 
 use electrip_core::audio::{Audio, AudioEvent};
 use electrip_core::session::Command;
@@ -16,14 +17,13 @@ use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
-use crate::{POLL_INTERVAL, SILENCE, track};
+use crate::{POLL_INTERVAL, SILENCE, join, join_request, reply, track};
 
 /// How long the relay waits for the host to accept a connection.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub struct Relay {
-    /// The host the clients of the control channel go to.
-    target: Arc<Mutex<SocketAddr>>,
+    route: Arc<Mutex<Route>>,
     /// The `add_device` commands of the devices still connected.
     devices: Vec<Command>,
     /// Gamepads of other instances have the same ids from SDL.
@@ -33,26 +33,56 @@ pub struct Relay {
     audio: Arc<Mutex<Audio>>,
 }
 
+/// Where the clients of the control channel go (N-03).
+struct Route {
+    host: SocketAddr,
+    /// Whether the instance is client of the host; else it is the host
+    /// and handles `join_host` itself.
+    client: bool,
+    /// The host a client asked to join, until the relay runs there.
+    joined: Option<SocketAddr>,
+    /// The connections of the clients, closed when the instance joins.
+    clients: Vec<TcpStream>,
+}
+
+impl Route {
+    /// Sends the clients to `host` from now on and closes the connections
+    /// of the old host, so they connect again.
+    fn join(&mut self, host: SocketAddr) {
+        self.host = host;
+        self.joined = Some(host);
+        for client in self.clients.drain(..) {
+            let _ = client.shutdown(Shutdown::Both);
+        }
+    }
+}
+
 impl Relay {
     /// Forwards each client of `listener` to the host at `host`; the
     /// instance `instance` plays sounds on `audio`.
     pub fn start(listener: TcpListener, host: SocketAddr, instance: u64, audio: Audio) -> Relay {
-        let target = Arc::new(Mutex::new(host));
-        let shared = Arc::clone(&target);
+        let route = Arc::new(Mutex::new(Route {
+            host,
+            client: false,
+            joined: None,
+            clients: Vec::new(),
+        }));
+        let shared = Arc::clone(&route);
         thread::spawn(move || {
             for client in listener.incoming() {
-                let host = *lock(&shared);
+                let host = lock(&shared).host;
                 let upstream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT);
                 match client.and_then(|client| Ok((upstream?, client))) {
                     Ok((upstream, client)) => {
-                        thread::spawn(move || forward(client, upstream));
+                        let route = Arc::clone(&shared);
+                        thread::spawn(move || forward(client, upstream, &route));
                     }
                     Err(error) => eprintln!("ERROR control channel: {error}"),
                 }
             }
         });
         Relay {
-            target,
+            route,
             devices: Vec::new(),
             offset: (RandomState::new().hash_one(()) as u32) & 0x7fff_0000 | 0x4000_0000,
             instance,
@@ -60,9 +90,16 @@ impl Relay {
         }
     }
 
-    /// Sends the clients that connect from now on to `host`.
-    pub fn switch(&self, host: SocketAddr) {
-        *lock(&self.target) = host;
+    /// Sends the clients that connect from now on to `host`; `client`
+    /// tells whether the instance is client of it.
+    pub fn switch(&self, host: SocketAddr, client: bool) {
+        let mut route = lock(&self.route);
+        (route.host, route.client) = (host, client);
+    }
+
+    /// The host a client asked to join, once.
+    pub fn joined(&self) -> Option<SocketAddr> {
+        lock(&self.route).joined.take()
     }
 
     /// The `add_device` commands of the devices still connected.
@@ -82,9 +119,9 @@ impl Relay {
     /// Offers the audio target to the host and sends it the commands of
     /// the input devices, first those that add the devices still
     /// connected, since a new host does not know them; returns when the
-    /// host is gone.
+    /// host is gone, or when a client asked to join another one.
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
-        let host = *lock(&self.target);
+        let host = lock(&self.route).host;
         let stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
         stream.set_nodelay(true)?;
         // Reads all messages, so the host never waits to write them; it
@@ -109,6 +146,9 @@ impl Relay {
             thread::sleep(POLL_INTERVAL);
             if host_alive.is_finished() {
                 return Err(io::Error::other("no sign of life"));
+            }
+            if lock(&self.route).joined.is_some() {
+                return Ok(());
             }
             for command in self.track(input()) {
                 send(&stream, &command, self.offset)?;
@@ -152,19 +192,54 @@ fn write(stream: &Mutex<TcpStream>, message: &Value) -> io::Result<()> {
     lock(stream).write_all(format!("{message}\n").as_bytes())
 }
 
-/// Copies both directions until one side closes or the host falls silent,
-/// then closes the other.
-fn forward(client: TcpStream, upstream: TcpStream) -> io::Result<()> {
+/// Copies the lines of both directions until one side closes or the host
+/// falls silent, then closes the other. While the instance is client, it
+/// answers `join_host` itself.
+fn forward(client: TcpStream, upstream: TcpStream, route: &Mutex<Route>) -> io::Result<()> {
+    let peer = client.peer_addr()?;
+    lock(route).clients.push(client.try_clone()?);
+    let result = copy_lines(client, upstream, route);
+    lock(route)
+        .clients
+        .retain(|c| c.peer_addr().is_ok_and(|a| a != peer));
+    result
+}
+
+fn copy_lines(client: TcpStream, upstream: TcpStream, route: &Mutex<Route>) -> io::Result<()> {
     client.set_nodelay(true)?;
     upstream.set_nodelay(true)?;
-    let (mut from_host, mut to_client) = (upstream.try_clone()?, client.try_clone()?);
-    from_host.set_read_timeout(Some(SILENCE))?;
+    let mut from_host = BufReader::new(upstream.try_clone()?);
+    from_host.get_ref().set_read_timeout(Some(SILENCE))?;
+    let mut hello = String::new();
+    from_host.read_line(&mut hello)?;
+    let host_id = serde_json::from_str::<Value>(&hello)?["id"].clone();
+    let to_client = Arc::new(Mutex::new(client.try_clone()?));
+    lock(&to_client).write_all(hello.as_bytes())?;
+    let writer = Arc::clone(&to_client);
     let replies = thread::spawn(move || {
-        let _ = io::copy(&mut from_host, &mut to_client);
-        let _ = to_client.shutdown(Shutdown::Both);
+        for line in from_host.lines().map_while(Result::ok) {
+            if lock(&writer)
+                .write_all(format!("{line}\n").as_bytes())
+                .is_err()
+            {
+                break;
+            }
+        }
+        let _ = lock(&writer).shutdown(Shutdown::Both);
     });
-    let (mut from_client, mut to_host) = (client, upstream);
-    let _ = io::copy(&mut from_client, &mut to_host);
+    let mut to_host = upstream;
+    for line in BufReader::new(client).lines().map_while(Result::ok) {
+        match join_request(&line).filter(|_| lock(route).client) {
+            Some(address) => {
+                let result = join(&address, host_id.as_str().unwrap_or_default());
+                write(&to_client, &reply(&result))?;
+                if let Ok(host) = result {
+                    lock(route).join(host);
+                }
+            }
+            None => to_host.write_all(format!("{line}\n").as_bytes())?,
+        }
+    }
     let _ = to_host.shutdown(Shutdown::Both);
     let _ = replies.join();
     Ok(())
