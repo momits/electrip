@@ -248,3 +248,28 @@ fn connect_until(app: &App, done: impl Fn(&Value) -> bool) -> Client {
         thread::sleep(Duration::from_millis(100));
     }
 }
+
+/// Q-016: a client instance with a configuration of its own drives with
+/// it as a guest of the host.
+#[test]
+fn a_client_drives_with_its_own_configuration() {
+    let host = App::start();
+    let library = TempDir::new().unwrap();
+    let alone = App::start_in(library.path(), &[]);
+    let mut at_alone = alone.connect();
+    at_alone.command(json!({"command": "add_loco"})).unwrap();
+    at_alone
+        .command(json!({"command": "rename_loco", "loco": 1, "name": "V 60"}))
+        .unwrap();
+    drop((at_alone, alone));
+
+    let client = client_of(host.address(), &library);
+    let mut at_client = client.connect();
+    assert_eq!(at_client.state["locos"][0]["name"], "V 60");
+    assert_eq!(host.connect().state["locos"], json!([]));
+    let error = "change this configuration on the instance that opened it";
+    assert_eq!(
+        at_client.command(json!({"command": "add_loco"})),
+        Err(error.into())
+    );
+}

@@ -521,3 +521,46 @@ fn first_state(address: SocketAddr) -> Value {
         .find(|m| m["type"] == "state");
     state.unwrap()["state"].clone()
 }
+
+/// A relay of a client instance with the configuration "guest" to the
+/// host at `host`, and the address of its control channel.
+fn guest_relay(host: SocketAddr) -> (Relay, SocketAddr) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let relay = Relay::start(listener, host, 2, Box::new(NoAudio));
+    let config = serde_json::from_value(use_guest(50.0)["configuration"].clone()).unwrap();
+    relay.drive_with(Some(config));
+    relay.switch(host, true);
+    (relay, address)
+}
+
+#[test]
+fn a_client_instance_drives_with_its_configuration_as_a_guest() {
+    let (address, _library) = serve_host();
+    let (_relay, relayed) = guest_relay(address);
+    let stream = TcpStream::connect(relayed).unwrap();
+    stream.set_read_timeout(Some(SILENCE)).unwrap();
+    let mut messages = BufReader::new(stream)
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap());
+    assert_eq!(messages.next().unwrap()["type"], "hello");
+    // The state of the guest follows, without the reply to the request.
+    let state = messages.next().unwrap();
+    assert_eq!(state["type"], "state");
+    assert_eq!(state["state"]["locos"][0]["max_speed"], 50.0);
+    assert_eq!(first_state(address)["locos"], json!([]));
+}
+
+#[test]
+fn the_devices_of_a_client_instance_drive_its_configuration() {
+    let (address, _library) = serve_host();
+    let (mut relay, _) = guest_relay(address);
+    thread::spawn(move || relay.run(one_gamepad()));
+
+    let (_guest, mut lines) = connect_guest(address, &use_guest(40.0));
+    let gamepad = |m: &Value| m["state"]["devices"][0]["id"].as_u64();
+    wait_for(&mut lines, |m| {
+        gamepad(m).is_some_and(|id| id & 0xffff == 1)
+    });
+    assert_eq!(first_state(address)["devices"], json!([]));
+}
