@@ -22,6 +22,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Gast über den Steuerkanal (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Nächster offener Punkt aus „Konfigurationen von Gästen im Host“, Host-Seite des Steuerkanals.
+- Neuer Befehl `use_configuration` mit einer Konfiguration: Der Host legt sie als Gast an (`Host::add_guest`), führt die Befehle dieser Verbindung in der Gast-Sitzung aus und schickt ihr deren Zustand; andere Verbindungen bekommen weiter den des Hosts. Senden mehrere Clients dieselbe Konfiguration, gilt die zuerst geschickte; der Gast wird entfernt, wenn sich sein letzter Client trennt. Die Konfiguration, die der Host selbst offen hat, wird kein Gast.
+- Eingabegeräte, die die Verbindung vorher angeschlossen hat, entfernt der Host beim Wechsel aus der alten Sitzung. Eine ungültige Konfiguration ergibt `invalid configuration: …`.
+- Tests: `control/src/tests.rs` (Gast bekommt seinen Zustand, fährt, ändert nichts an der Konfiguration, andere Clients sehen den Host; Gast bleibt, solange ein Client ihn nutzt; Geräte beim Wechsel entfernt; ungültige Konfiguration). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7664 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Geräte blieben nach dem Wechsel zum Gast im Host hängen (Test ergänzt); die Gast-ID steht nur noch beim Client; Fehlermeldung bei ungültiger Konfiguration.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Relay: Eine Client-Instanz öffnet ihre eigene Konfiguration und schickt `use_configuration` auf jeder weitergeleiteten Verbindung und auf der ihrer Eingabegeräte, wenn sie sich von der des Hosts unterscheidet.
+  - Übrige offene Punkte aus „Konfigurationen von Gästen im Host“ (Station und Audio im Zustand des Gasts, Sounds entfernter Loks, Punkte 5 und 6 von Q-016).
+
 ## 2026-11-10 – N-03: Konfigurationen von Gästen im Host (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist beantwortet; dieses Inkrement setzt die Punkte 1 bis 4 im Kern um, noch ohne Netz.
