@@ -574,7 +574,8 @@
         "Auto-Fokus ist standardmäßig an",
         "Loks, die gerade von einem Eingabegerät gesteuert werden, sind deutlich hervorgehoben",
         "Reicht der Platz nicht, werden die Regler kompakter dargestellt, bevor gescrollt werden muss",
-        "Filter „nur gesteuerte oder fahrende Loks“"
+        "Filter „nur gesteuerte oder fahrende Loks“",
+        "Füllstandsanzeige wie in Electrip 1 (Geräuschpegel-Balken): Bei Loks mit Sound zeigt sie am Geschwindigkeitsregler, wo der Sound gerade im Verhältnis zur gewählten Fahrstufe bzw. Geschwindigkeit steht; ein- und ausschaltbar wie in Electrip 1 (show_level_bar); der Wert kommt aus dem Zustand des Hosts"
       ],
       "verification": [
         "screenshot",
@@ -583,8 +584,8 @@
       "phase": 3,
       "hw": false,
       "status": {
-        "wired": true,
-        "verified": true,
+        "wired": false,
+        "verified": false,
         "accepted": false
       },
       "notes": "Verbesserungen gegenüber Electrip 1 von Mo freigegeben (Q-009); weitere Vorschläge als Frage in spec/questions.md."
@@ -626,16 +627,18 @@
       "description": "Bedienung per Maus als Fallback; Start direkt im Steuerungsmodus.",
       "acceptance": [
         "Alle Steuerfunktionen per Maus erreichbar",
+        "Der Geschwindigkeitsregler im Fenster lässt sich mit der Maus ziehen und ändert die Geschwindigkeit der Lok (Bug: bisher ohne Wirkung)",
         "Start mit -f/--file <konfiguration> öffnet direkt die Steuerung dieser Konfiguration"
       ],
       "verification": [
-        "control-channel"
+        "control-channel",
+        "screenshot"
       ],
       "phase": 1,
       "hw": false,
       "status": {
-        "wired": true,
-        "verified": true,
+        "wired": false,
+        "verified": false,
         "accepted": false
       }
     },
