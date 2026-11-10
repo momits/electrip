@@ -15,6 +15,7 @@ use std::time::{Duration, Instant};
 
 pub use discovery::{Discovery, Status, station_id};
 pub use relay::Relay;
+pub use sync::sync;
 
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
@@ -151,12 +152,23 @@ fn serve_client(
         let mut shared = lock(shared)?;
         // Drives up to now first, so the command counts from its arrival.
         let polled = shared.poll();
-        let result = execute(&mut shared.host, &line);
-        if let Ok(command) = &result {
-            track(devices, command);
-        }
-        send(&mut writer, &reply(&result))?;
-        if result.is_ok() || polled {
+        let (message, ok) = match sync::answer(&mut shared.host, &line) {
+            Some(Ok(mut fields)) => {
+                fields["type"] = "reply".into();
+                fields["ok"] = true.into();
+                (fields, true)
+            }
+            Some(Err(error)) => (reply::<()>(&Err(error)), false),
+            None => {
+                let result = execute(&mut shared.host, &line);
+                if let Ok(command) = &result {
+                    track(devices, command);
+                }
+                (reply(&result), result.is_ok())
+            }
+        };
+        send(&mut writer, &message)?;
+        if ok || polled {
             shared.broadcast();
         }
     }
@@ -317,5 +329,6 @@ fn lock(shared: &Mutex<Shared>) -> io::Result<std::sync::MutexGuard<'_, Shared>>
 
 mod discovery;
 mod relay;
+mod sync;
 #[cfg(test)]
 mod tests;

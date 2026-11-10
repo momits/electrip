@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 electrip-core = { path = "../core" }
 electrip-station-z21 = { path = "../station-z21" }
+electrip-sync = { path = "../sync" }
 mdns-sd = "0.21"
 serde_json = "1"
 

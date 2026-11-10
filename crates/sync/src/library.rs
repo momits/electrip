@@ -9,6 +9,16 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
+/// The ids of the configurations of the library and their names, to find
+/// the ones another instance shares.
+pub fn ids(library: &Path) -> Result<Vec<(String, String)>, Error> {
+    let mut ids = Vec::new();
+    for name in config::names(library)? {
+        ids.push((config::read(&config::path(library, &name))?.id, name));
+    }
+    Ok(ids)
+}
+
 /// The document of the configuration `name`, with the changes of its
 /// file since the last call.
 pub fn document(library: &Path, name: &str) -> Result<Document, Error> {

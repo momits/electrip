@@ -210,6 +210,15 @@ impl Discovery {
         yields_to(self.instance, &self.station, &self.seen())
     }
 
+    /// The control channels of the other instances, whatever their
+    /// station, to share configurations with (N-04).
+    pub fn instances(&self) -> Vec<SocketAddr> {
+        let seen = self.seen().into_iter();
+        seen.filter(|a| a.instance != self.instance)
+            .map(|a| a.address)
+            .collect()
+    }
+
     fn seen(&self) -> Vec<Announcement> {
         let seen = self.seen.lock().unwrap_or_else(PoisonError::into_inner);
         seen.values().cloned().collect()

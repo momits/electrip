@@ -439,3 +439,31 @@ fn a_failed_loco_import_changes_nothing() {
     assert!(matches!(error, CommandError::Import(_)), "{error}");
     assert_eq!(*host.session(), before);
 }
+
+#[test]
+fn a_merged_configuration_is_taken_over_while_the_locos_drive() {
+    let (mut host, _, _, library) = host();
+    host.apply(Command::AddLoco).unwrap();
+    host.apply(Command::AddLoco).unwrap();
+    host.apply(Command::SetAxis {
+        loco: 1,
+        deflection: 1.0,
+    })
+    .unwrap();
+    host.poll(1.0);
+    let speed = host.session().locos()[0].motion.speed();
+    assert!(speed > 0.0);
+
+    let path = config::path(library.path(), DEFAULT_NAME);
+    let mut config = config::read(&path).unwrap();
+    config.locos[1].set_name("Merged".into());
+    config.locos.push(config.locos[1].clone());
+    config::write(&path, &config).unwrap();
+    host.reload().unwrap();
+
+    assert_eq!(loco_names(&host), ["Unbenannte Lok", "Merged", "Merged"]);
+    let ids: Vec<_> = host.session().locos().iter().map(|e| e.id).collect();
+    assert_eq!(ids, [1, 2, 3]);
+    assert_eq!(host.session().locos()[0].motion.speed(), speed);
+    assert_eq!(host.session().config(), config);
+}

@@ -21,6 +21,17 @@ pub enum Error {
     InvalidId(String),
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Error::Automerge(error) => write!(f, "{error}"),
+            Error::Json(error) => write!(f, "{error}"),
+            Error::Io(error) => write!(f, "{error}"),
+            Error::InvalidId(id) => write!(f, "invalid configuration id {id}"),
+        }
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         Error::Io(error)

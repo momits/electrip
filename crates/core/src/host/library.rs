@@ -43,6 +43,20 @@ impl Host {
         self.load(name, config, Vec::new())
     }
 
+    /// Takes over the open configuration from its file after another
+    /// instance changed it (N-04); the locos keep driving.
+    pub fn reload(&mut self) -> Result<(), CommandError> {
+        let path = config::path(&self.library, self.session.configuration());
+        self.session.merge(config::read(&path)?);
+        self.saved = self.session.config();
+        Ok(())
+    }
+
+    /// The directory of the configuration files.
+    pub fn library(&self) -> &Path {
+        &self.library
+    }
+
     pub(super) fn rename(&mut self, name: String) -> Result<(), CommandError> {
         let from = config::path(&self.library, self.session.configuration());
         fs::rename(from, self.new_path(&name)?)?;

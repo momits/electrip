@@ -26,7 +26,10 @@ impl AudioSink for NoAudio {
 
 /// A host without sound and its library, deleted when dropped.
 fn host() -> (Host, TempDir) {
-    let library = TempDir::new().unwrap();
+    host_in(TempDir::new().unwrap())
+}
+
+fn host_in(library: TempDir) -> (Host, TempDir) {
     let connect = Box::new(|_: &_| Err(StationError("no station".into())));
     let host = Host::new(connect, Box::new(NoAudio), library.path().into()).unwrap();
     (host, library)
@@ -88,7 +91,12 @@ fn hello_tells_why_the_instance_runs_alone() {
 
 /// Serves a new host on a free port; returns its address.
 fn serve_host() -> (SocketAddr, TempDir) {
-    let (host, library) = host();
+    serve_library(TempDir::new().unwrap())
+}
+
+/// Serves a new host on `library`.
+pub(crate) fn serve_library(library: TempDir) -> (SocketAddr, TempDir) {
+    let (host, library) = host_in(library);
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     thread::spawn(move || serve(listener, host, Vec::new, None, || None));
@@ -205,8 +213,12 @@ fn a_host_that_hands_over_closes_all_connections() {
 
 /// Sends a `join_host` request to the host at `host`; returns the reply.
 fn ask_to_join(host: SocketAddr, address: &str) -> Value {
+    request(host, json!({"command": "join_host", "address": address}))
+}
+
+/// Sends `request` to the host at `host`; returns the reply.
+pub(crate) fn request(host: SocketAddr, request: Value) -> Value {
     let mut stream = TcpStream::connect(host).unwrap();
-    let request = json!({"command": "join_host", "address": address});
     send(&mut stream, &request).unwrap();
     BufReader::new(stream)
         .lines()
