@@ -19,19 +19,25 @@ pub const SOUNDS: &str = "sounds";
 /// Saves the sound `bytes` with the extension of `source` in the library;
 /// returns its path there.
 pub fn add_sound(library: &Path, bytes: &[u8], source: &Path) -> io::Result<PathBuf> {
-    let path = Path::new(SOUNDS).join(sound_name(bytes, source));
+    let path = sound_path(bytes, source);
     fs::create_dir_all(library.join(SOUNDS))?;
     fs::write(library.join(&path), bytes)?;
-    Ok(path)
+    Ok(path.into())
 }
 
-/// The name of a sound file by its content, with the extension of `path`.
-pub(crate) fn sound_name(bytes: &[u8], path: &Path) -> String {
+/// The path of a sound in the library by its content, with the extension
+/// of `source`.
+pub(crate) fn sound_path(bytes: &[u8], source: &Path) -> String {
     let name = content_name(bytes);
-    match path.extension() {
-        Some(extension) => format!("{name}.{}", extension.to_string_lossy()),
-        None => name,
+    match source.extension() {
+        Some(extension) => format!("{SOUNDS}/{name}.{}", extension.to_string_lossy()),
+        None => format!("{SOUNDS}/{name}"),
     }
+}
+
+/// The path of the picture `name` in the library.
+pub(crate) fn picture_path(name: &str) -> String {
+    format!("{PICTURES}/{name}.png")
 }
 
 /// The file of a sound: one of the library there, any other as it is.
@@ -65,7 +71,7 @@ pub fn write(library: &Path, path: &str, bytes: &[u8]) -> io::Result<()> {
 pub fn missing(library: &Path, config: &Config) -> Vec<String> {
     let mut files = Vec::new();
     for loco in &config.locos {
-        files.extend(loco.picture().map(|name| format!("{PICTURES}/{name}.png")));
+        files.extend(loco.picture().map(picture_path));
         loco.clone().map_sounds(|sound| {
             files.extend(sound.to_str().map(String::from));
             None
@@ -105,26 +111,17 @@ pub(crate) struct LibrarySink {
     pub(crate) library: PathBuf,
 }
 
-impl LibrarySink {
-    fn file(&self, sound: &Path) -> PathBuf {
-        file(&self.library, sound)
-    }
-}
-
 impl AudioSink for LibrarySink {
     fn length(&mut self, sound: &Path) -> Result<Duration, String> {
-        let file = self.file(sound);
-        self.sink.length(&file)
+        self.sink.length(&file(&self.library, sound))
     }
 
     fn queue(&mut self, channel: ChannelId, sound: &Path) {
-        let file = self.file(sound);
-        self.sink.queue(channel, &file);
+        self.sink.queue(channel, &file(&self.library, sound));
     }
 
     fn play(&mut self, channel: ChannelId, sound: &Path, delay: Duration) {
-        let file = self.file(sound);
-        self.sink.play(channel, &file, delay);
+        self.sink.play(channel, &file(&self.library, sound), delay);
     }
 
     fn stop(&mut self, channel: ChannelId) {
@@ -132,8 +129,8 @@ impl AudioSink for LibrarySink {
     }
 
     fn fade_in(&mut self, channel: ChannelId, sound: &Path, fade: Duration) {
-        let file = self.file(sound);
-        self.sink.fade_in(channel, &file, fade);
+        self.sink
+            .fade_in(channel, &file(&self.library, sound), fade);
     }
 
     fn fade_out(&mut self, channel: ChannelId, fade: Duration) {

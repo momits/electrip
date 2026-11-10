@@ -8,7 +8,7 @@ use image::{GenericImageView, ImageFormat};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs;
-use std::io::{self, Cursor};
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
 /// Size of a saved picture, 4 times that of Electrip 1 for high resolution
@@ -97,14 +97,10 @@ pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<Strin
         .resize_exact(WIDTH, HEIGHT, FilterType::Lanczos3)
         .write_to(&mut Cursor::new(&mut png), ImageFormat::Png)
         .map_err(|e| PictureError::Write(e.to_string()))?;
-    add(dir, &png).map_err(|e| PictureError::Write(e.to_string()))
-}
-
-/// Saves the PNG in the media directory `dir` under its content name.
-fn add(dir: &Path, png: &[u8]) -> io::Result<String> {
-    let name = media::content_name(png);
-    fs::create_dir_all(dir)?;
-    fs::write(path(dir, &name), png)?;
+    let name = media::content_name(&png);
+    fs::create_dir_all(dir)
+        .and_then(|()| fs::write(path(dir, &name), &png))
+        .map_err(|e| PictureError::Write(e.to_string()))?;
     Ok(name)
 }
 
