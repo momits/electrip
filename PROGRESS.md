@@ -32,7 +32,7 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - `electrip_control::sync(local, peer)` gleicht die gemeinsamen Konfigurationen zweier Hosts ab: eigenes Dokument holen, beim anderen einführen, Ergebnis beim eigenen einführen. Die Instanz macht das alle 5 s mit allen Instanzen, die mDNS zeigt, über den eigenen Steuerkanal (als Client also über ihren Host), auch mit Instanzen anderer Zentralen.
 - Ändert der Abgleich die geöffnete Konfiguration, übernimmt der Host sie (`Host::reload`, `Session::merge`): Loks behalten nach Position ihre ID und ihren Fahrzustand, nur geänderte Loks werden ersetzt; die Zentrale bleibt, solange sie verbunden ist.
 - Tests: `crates/control/src/sync/tests.rs` (zwei Hosts mit einer Kopie derselben Konfiguration führen getrennte Änderungen zusammen und zeigen sie im Zustand; unbekannte ID; Hex), `host/library/tests.rs` (Übernahme, während eine Lok fährt), `sync/library/tests.rs` (IDs). Der Abgleich per mDNS ist im Container nicht testbar (Multicast gesperrt). `spec/steuerkanal.md` ergänzt.
-- `cargo xtask test`, `cargo xtask loc` (6610 Zeilen) und `cargo xtask parity` grün.
+- `cargo xtask test`, `cargo xtask loc` (6615 Zeilen) und `cargo xtask parity` grün.
 - Einfachheits-Review: refactored (Sub-Agent). Antwort mit Feldern nur noch über `reply`, Fehler in `sync.rs` per `?` statt sechsmal `map_err`.
 - **N-04** bleibt offen.
 - **Offen:**
