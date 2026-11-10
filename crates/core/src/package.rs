@@ -60,8 +60,8 @@ pub fn write(path: &Path, loco: &Loco, actions: &[Action], library: &Path) -> io
         zip.write_all(&bytes)?;
     }
     if let Some(name) = loco.picture() {
-        zip.start_file(media_entry(name), SimpleFileOptions::default())?;
-        zip.write_all(&fs::read(library.join(media_entry(name)))?)?;
+        zip.start_file(media::picture_path(name), SimpleFileOptions::default())?;
+        zip.write_all(&fs::read(library.join(media::picture_path(name)))?)?;
     }
     zip.finish()?;
     Ok(())
@@ -74,7 +74,7 @@ fn pack_sounds(loco: &mut Loco, library: &Path) -> io::Result<BTreeMap<String, V
     let mut error = None;
     loco.map_sounds(|path| match fs::read(media::file(library, path)) {
         Ok(bytes) => {
-            let name = format!("{}/{}", media::SOUNDS, media::sound_name(&bytes, path));
+            let name = media::sound_path(&bytes, path);
             sounds.insert(name.clone(), bytes);
             Some(name.into())
         }
@@ -96,7 +96,7 @@ pub fn read(path: &Path, library: &Path) -> Result<Package, ImportError> {
     let (mut loco, actions, picture) = if zip.index_for_name(CONTENT).is_some() {
         let content: Content = serde_json::from_slice(&entry(&mut zip, CONTENT)?)
             .map_err(|e| ImportError::Invalid(e.to_string()))?;
-        let picture = content.loco.picture().map(media_entry);
+        let picture = content.loco.picture().map(media::picture_path);
         (content.loco, content.actions, picture)
     } else {
         let name = zip
@@ -143,10 +143,6 @@ fn store_picture(zip: &mut ZipArchive<File>, name: &str, library: &Path) -> Resu
 fn store_sound(zip: &mut ZipArchive<File>, name: &Path, library: &Path) -> Result<PathBuf, String> {
     let bytes = entry(zip, &name.to_string_lossy()).map_err(|e| e.to_string())?;
     media::add_sound(library, &bytes, name).map_err(|e| e.to_string())
-}
-
-fn media_entry(name: &str) -> String {
-    format!("{}/{name}.png", media::PICTURES)
 }
 
 /// The content of the file `name` in the archive.
