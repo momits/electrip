@@ -11,6 +11,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Sounds auf anderen Instanzen vorab laden:** Der Host dekodiert die Sounds aller Loks jetzt vorab (siehe Eintrag „Sounds vorab dekodieren“). Eine andere Instanz, die als Audio-Ziel spielt (N-05), dekodiert eine Datei weiter erst beim ersten Spielen im Thread ihrer Verbindung. Dafür bräuchte das Protokoll ein Ereignis zum Vorab-Laden.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-03 vereinfacht: eine geteilte Konfiguration (Mo, Claude)
+
+- Mo braucht keine verschiedenen Konfigurationen je Instanz. Alle Instanzen einer Sitzung nutzen dieselbe Konfiguration; ein Client übernimmt die des Hosts, Änderungen gleicht N-04 ab.
+- N-03 und N-05 in `spec/requirements.json` angepasst: Beschreibung und erstes Kriterium von N-03 nennen eine Konfiguration; das Kriterium „zwei Konfigurationen mit derselben Adresse und verschiedenen Audio-Zielen“ von N-05 entfällt, weil jede Lok nur ein Ziel hat.
+- Q-016 ist überholt, Q-018 entfällt. Q-017 (`take_configuration`) bleibt: Ein Gerät muss die Konfiguration des Hosts erst bekommen.
+- **Aufgabe für Phase 3 (Abbau, vor neuen Funktionen):**
+  - Gäste entfernen: `crates/core/src/host/guests.rs`, `use_configuration` und die Gast-Sitzungen im Steuerkanal, die Fehlermeldung `change this configuration on the instance that opened it`, das Senden von `use_configuration` durch den Client.
+  - Die Warnung bei verschiedenen Audio-Zielen entfernen (`audio_conflicts`, das rote „!“ im Fenster).
+  - Der Fahrzustand bleibt an der Lok-Adresse (ADR 0003).
+  - `spec/steuerkanal.md` und `spec/hw-checklist.md` nachziehen (Absatz „Gäste“, Prüfpunkte „Warnung bei verschiedenen Audio-Zielen“).
+  - Danach N-03 fertigstellen: Ein Client ohne die Konfiguration des Hosts holt sie (`take_configuration`, Q-017).
+  - Das Zeilenbudget in `cargo xtask loc` sollte danach sinken; die Zahl in den Eintrag schreiben.
+
 ## 2026-11-10 – Aufräumen: Sounds vorab dekodieren (Claude)
 
 - CI auf `main` lief beim Start noch (danach grün). **N-03** ist die einzige offene Anforderung und hängt an Q-018; deshalb der Aufräumkandidat „Sounds vor dem Spielen laden“.
