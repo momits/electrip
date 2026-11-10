@@ -3,13 +3,14 @@
 //! sounds are converted to the format of the mixer first, so the channel
 //! can switch between them at any sample.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::iter;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use std::vec;
+use std::{thread, vec};
 
 use electrip_core::audio::{AudioSink, ChannelId};
 use rodio::buffer::SamplesBuffer;
@@ -23,6 +24,9 @@ use rodio::{
 use crate::open;
 
 type Samples = Box<dyn Iterator<Item = Sample> + Send>;
+
+/// The sounds decoded so far.
+type Decoded = Arc<Mutex<HashMap<PathBuf, SamplesBuffer>>>;
 
 /// A mixer and its format.
 pub(crate) struct Output {
@@ -47,7 +51,10 @@ pub struct Speaker {
     outputs: Outputs,
     /// The sounds of each channel and the number of the output they play on.
     channels: HashMap<ChannelId, (u64, Arc<Mutex<Sounds>>)>,
-    decoded: HashMap<PathBuf, SamplesBuffer>,
+    decoded: Decoded,
+    /// The sounds sent to the thread that decodes them ahead.
+    prepared: HashSet<PathBuf>,
+    prepare: Sender<PathBuf>,
 }
 
 /// The outputs of the locos, each opened when a loco first plays on it.
@@ -143,6 +150,17 @@ fn output_devices() -> Vec<(String, Device)> {
 
 impl Speaker {
     pub(crate) fn new(open: Open) -> Self {
+        let decoded = Decoded::default();
+        let (prepare, sounds) = mpsc::channel::<PathBuf>();
+        let ahead = Arc::clone(&decoded);
+        let spawned = thread::Builder::new().spawn(move || {
+            for sound in sounds {
+                let _ = decode(&ahead, &sound);
+            }
+        });
+        if let Err(e) = spawned {
+            eprintln!("ERROR cannot decode the sounds ahead: {e}");
+        }
         Speaker {
             outputs: Outputs {
                 open,
@@ -151,22 +169,14 @@ impl Speaker {
                 routes: HashMap::new(),
             },
             channels: HashMap::new(),
-            decoded: HashMap::new(),
+            decoded,
+            prepared: HashSet::new(),
+            prepare,
         }
     }
 
-    /// The sound, decoded once. Decoding it whole also avoids a bug in
-    /// rodio: the first span of an OGG file has no samples, and a
-    /// conversion of the decoder ends there.
-    fn decode(&mut self, sound: &Path) -> Result<SamplesBuffer, String> {
-        if let Some(decoded) = self.decoded.get(sound) {
-            return Ok(decoded.clone());
-        }
-        let decoder = open(sound)?;
-        let (channels, rate) = (decoder.channels(), decoder.sample_rate());
-        let decoded = SamplesBuffer::new(channels, rate, decoder.collect::<Vec<_>>());
-        self.decoded.insert(sound.into(), decoded.clone());
-        Ok(decoded)
+    fn decode(&self, sound: &Path) -> Result<SamplesBuffer, String> {
+        decode(&self.decoded, sound)
     }
 
     /// Changes the sounds of the channel, if its loco has an output; a new
@@ -260,6 +270,13 @@ impl AudioSink for Speaker {
         Ok(self.decode(sound)?.total_duration().unwrap_or_default())
     }
 
+    /// Decodes the sound in another thread, once.
+    fn prepare(&mut self, sound: &Path) {
+        if self.prepared.insert(sound.into()) {
+            let _ = self.prepare.send(sound.into());
+        }
+    }
+
     fn queue(&mut self, id: ChannelId, sound: &Path) {
         let Ok(decoded) = self.decode(sound) else {
             return;
@@ -345,6 +362,25 @@ impl AudioSink for Speaker {
             self.stop(id);
         }
     }
+}
+
+/// The sound, decoded once. Decoding it whole also avoids a bug in rodio:
+/// the first span of an OGG file has no samples, and a conversion of the
+/// decoder ends there.
+fn decode(
+    decoded: &Mutex<HashMap<PathBuf, SamplesBuffer>>,
+    sound: &Path,
+) -> Result<SamplesBuffer, String> {
+    if let Some(samples) = decoded.lock().ok().and_then(|d| d.get(sound).cloned()) {
+        return Ok(samples);
+    }
+    let decoder = open(sound)?;
+    let (channels, rate) = (decoder.channels(), decoder.sample_rate());
+    let samples = SamplesBuffer::new(channels, rate, decoder.collect::<Vec<_>>());
+    if let Ok(mut decoded) = decoded.lock() {
+        decoded.insert(sound.into(), samples.clone());
+    }
+    Ok(samples)
 }
 
 /// The share of a fade over `n` samples reached at sample `i`.

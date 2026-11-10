@@ -128,6 +128,21 @@ fn wav_plays_at_the_sample_rate_of_the_file() {
 }
 
 #[test]
+fn a_prepared_sound_is_decoded_ahead() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = wav(dir.path(), "a.wav", RATE, &[0x4000], 80);
+    let (mut speaker, _output) = speaker();
+    speaker.prepare(&file);
+    let decoded = (0..200).any(|_| {
+        thread::sleep(Duration::from_millis(10));
+        speaker.decoded.lock().unwrap().contains_key(&file)
+    });
+    assert!(decoded);
+    fs::remove_file(&file).unwrap();
+    assert_eq!(speaker.length(&file).unwrap(), Duration::from_millis(10));
+}
+
+#[test]
 fn ogg_plays() {
     let dir = tempfile::tempdir().unwrap();
     let file = extract(dir.path(), "V 60.zip", "horn.ogg");

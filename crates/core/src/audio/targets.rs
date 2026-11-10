@@ -126,6 +126,12 @@ impl AudioSink for Targets {
         self.local.length(sound)
     }
 
+    /// The host reads the sounds ahead for their lengths; the other
+    /// instances read them when they play.
+    fn prepare(&mut self, sound: &Path) {
+        self.local.prepare(sound);
+    }
+
     fn queue(&mut self, channel: ChannelId, sound: &Path) {
         let sound = sound.into();
         self.dispatch(channel, AudioEvent::Queue { channel, sound });

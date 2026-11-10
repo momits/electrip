@@ -45,6 +45,10 @@ pub trait AudioSink {
     /// [`AudioSink::stop`] (B-17).
     fn fade_out(&mut self, channel: ChannelId, fade: Duration);
 
+    /// Reads the sound ahead, so it plays without delay later. A target
+    /// that reads the sounds only when they play ignores it.
+    fn prepare(&mut self, _sound: &Path) {}
+
     /// The names of the output devices (N-05).
     fn devices(&mut self) -> Vec<String> {
         Vec::new()

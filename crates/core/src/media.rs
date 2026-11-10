@@ -72,10 +72,8 @@ pub fn missing(library: &Path, config: &Config) -> Vec<String> {
     let mut files = Vec::new();
     for loco in &config.locos {
         files.extend(loco.picture().map(picture_path));
-        loco.clone().map_sounds(|sound| {
-            files.extend(sound.to_str().map(String::from));
-            None
-        });
+        let sounds = loco.sounds();
+        files.extend(sounds.iter().filter_map(|s| s.to_str()).map(String::from));
     }
     files.retain(|file| hash(file).is_ok() && !library.join(file).exists());
     files.sort();
@@ -114,6 +112,10 @@ pub struct LibrarySink {
 impl AudioSink for LibrarySink {
     fn length(&mut self, sound: &Path) -> Result<Duration, String> {
         self.sink.length(&file(&self.library, sound))
+    }
+
+    fn prepare(&mut self, sound: &Path) {
+        self.sink.prepare(&file(&self.library, sound));
     }
 
     fn queue(&mut self, channel: ChannelId, sound: &Path) {
