@@ -22,6 +22,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Client fährt mit seiner Konfiguration (Claude)
+
+- CI auf `main` lief beim Start noch (danach grün). Offener Punkt „Relay“ aus „Gast über den Steuerkanal“.
+- Eine Instanz, die Client ist, liest die Konfiguration, die sie als Host öffnen würde (`--file`, sonst die erste der Bibliothek), und schickt sie mit `use_configuration` auf jeder weitergeleiteten Verbindung und auf der ihrer Eingabegeräte. Das Relay überspringt dabei die Nachrichten des Hosts bis zur Antwort, sodass das Fenster nach `hello` gleich den Zustand des Gasts bekommt. Hat der Host dieselbe Konfiguration offen, bleibt alles wie bisher.
+- Eine Konfiguration ohne Loks schickt die Instanz nicht (neue Instanz mit leerer Standardkonfiguration); dann fährt und ändert sie die des Hosts wie bisher. Sonst konnte ein Host, der einem anderen beitritt, nichts mehr anlegen (Test `a_host_joins_the_host_at_the_address_entered`). Wie eine Client-Instanz ihre eigene Konfiguration ändert, ist offen: Q-018.
+- Tests: `control/src/tests.rs` (Client am Relay bekommt nach `hello` den Zustand des Gasts; Geräte der Instanz landen im Gast), `session_host.rs` (Client-App mit eigener Lok sieht sie, der Host nicht; Ändern abgelehnt). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7711 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Das Relay hielt seine Sperre, während es auf die Antwort des Hosts wartete; eine abgelehnte Konfiguration wird jetzt gemeldet. Die Regel „`--file`, sonst die erste“ steht nun in `main.rs` und `Host::open_first` (zweites Vorkommen, bleibt).
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-018 (eigene Konfiguration auf einer Client-Instanz ändern).
+  - Ändert sich die Konfiguration der Client-Instanz (Abgleich N-04), gilt das erst nach dem nächsten Rollenwechsel.
+  - Übrige offene Punkte aus „Konfigurationen von Gästen im Host“ (Station und Audio im Zustand des Gasts, Sounds entfernter Loks, Punkte 5 und 6 von Q-016).
+
 ## 2026-11-10 – N-03: Gast über den Steuerkanal (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Nächster offener Punkt aus „Konfigurationen von Gästen im Host“, Host-Seite des Steuerkanals.

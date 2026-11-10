@@ -119,3 +119,10 @@ Heute kommt K nur auf B, wenn jemand die JSON-Datei in die Bibliothek von B kopi
 **Vorschlag:** Das Fenster zeigt neben den eigenen Konfigurationen die der anderen Instanzen (per mDNS gefunden, Name und ID über `configuration_ids`). „Übernehmen“ holt Dokument, Bilder und Sounds von der anderen Instanz und legt K unter derselben ID an; ab dann gleichen beide K mit gemeinsamer Geschichte ab. Ein neuer Befehl am Steuerkanal (`take_configuration` mit Instanz und ID) macht das auch ohne Fenster.
 Alternative: Jede Instanz übernimmt automatisch alle Konfigurationen der anderen (einfacher, aber jede Bibliothek wächst um alle Konfigurationen im Netz).
 **Antwort:** Ja, wie vorgeschlagen: Fenster und Befehl `take_configuration`, keine automatische Übernahme (N-04). (Mo, 2026-11-10)
+
+## Q-018 – 2026-11-10 – N-03, Q-016
+**Frage:** Wie ändert man die eigene Konfiguration auf einer Instanz, die Client ist?
+Seit diesem Stand fährt eine Client-Instanz mit ihrer eigenen Konfiguration als Gast des Hosts (Q-016). Ein Gast fährt nur; Änderungen beantwortet der Host mit „change this configuration on the instance that opened it“. Die Instanz, die sie geöffnet hat, ist aber gerade diese Client-Instanz, deren Fenster über den Host geht. Solange sie Client ist, lässt sich ihre Konfiguration also nirgends ändern (Lok anlegen, Mapping, Sounds), und `open_configuration` geht an den Host.
+Vorläufig fährt eine Client-Instanz, deren Konfiguration keine Loks hat (z. B. eine neue Instanz), mit der Konfiguration des Hosts und darf diese ändern wie bisher.
+**Vorschlag:** Der Host übernimmt Änderungen am Gast und schickt sie an die Client-Instanz zurück, die sie in ihrer Bibliothek speichert (über `sync_configuration` wie bei N-04). Alternative: Die Client-Instanz führt Änderungen an ihrer Konfiguration selbst aus und schickt dem Host danach die neue Konfiguration mit `use_configuration`.
+**Antwort:** _offen_
