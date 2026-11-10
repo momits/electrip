@@ -450,20 +450,27 @@ pub struct LocoEntry {
     /// The deflection of the drive axis, 0 within the dead zone.
     #[serde(skip)]
     axis: f64,
+    /// The functions the command station last reported on that the loco
+    /// does not map, as bits; sent along so they stay on (Q-016).
+    #[serde(skip)]
+    other_functions: u32,
 }
 
 impl LocoEntry {
     /// What the command station gets: the speed step from the speed curve,
-    /// cut off like Electrip 1, and the functions that are on.
+    /// cut off like Electrip 1, and the functions that are on, also those
+    /// the loco does not map.
     pub fn station_state(&self) -> LocoState {
         let curve = self.loco.speed_curve();
         let step = curve.step_at(self.motion.speed()).unwrap_or(0.0);
+        let functions = self.loco.functions();
+        let mapped = functions.iter().fold(0, |bits, f| bits | 1 << f.number);
         let mut state = LocoState {
             forward: self.motion.forward(),
             step: step as u8,
-            functions: 0,
+            functions: self.other_functions & !mapped,
         };
-        for function in self.loco.functions().iter().filter(|f| f.on) {
+        for function in functions.iter().filter(|f| f.on) {
             state.set_function(function.number, true);
         }
         state
@@ -668,6 +675,7 @@ impl Session {
             }
             let speed = entry.loco.speed_curve().speed_of_step(state.step);
             entry.motion = Motion::new(speed, state.forward);
+            entry.other_functions = state.functions;
             for function in entry.loco.functions_mut() {
                 function.on = state.function(function.number);
             }
@@ -686,7 +694,11 @@ impl Session {
                 self.locos.remove(self.index(loco)?);
             }
             Command::MoveLoco { loco, position } => self.move_loco(loco, position)?,
-            Command::SetAddress { loco, address } => self.loco(loco)?.set_address(address)?,
+            Command::SetAddress { loco, address } => {
+                let entry = self.entry(loco)?;
+                entry.loco.set_address(address)?;
+                entry.other_functions = 0;
+            }
             Command::SetProtocol {
                 loco,
                 protocol,
@@ -929,6 +941,7 @@ impl Session {
             motion: Motion::default(),
             sound: DrivingSound::new(self.last_id),
             axis: 0.0,
+            other_functions: 0,
         });
     }
 
