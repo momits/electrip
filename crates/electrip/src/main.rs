@@ -134,7 +134,7 @@ fn session(
         sink: Box::new(electrip_audio::sound_card()),
         library: library.clone(),
     });
-    let mut relay = Relay::start(listener, first, id, audio);
+    let mut relay = Relay::new(listener, first, id, audio);
     loop {
         role = match role {
             Role::Host { host, alone } => {

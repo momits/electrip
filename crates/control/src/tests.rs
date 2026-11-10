@@ -31,7 +31,7 @@ impl AudioSink for NoAudio {
 /// A relay to `host` for an instance without sound.
 fn relay(host: SocketAddr) -> Relay {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    Relay::start(listener, host, 2, Box::new(NoAudio))
+    Relay::new(listener, host, 2, Box::new(NoAudio))
 }
 
 /// A host without sound and its library, deleted when dropped.
@@ -351,7 +351,7 @@ fn a_client_instance_offers_its_audio_target_and_plays_the_audio_events() {
     let address = host.local_addr().unwrap();
     let routes = Routes::default();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let mut relay = Relay::start(listener, address, 0xb, Box::new(routes.clone()));
+    let mut relay = Relay::new(listener, address, 0xb, Box::new(routes.clone()));
     thread::spawn(move || relay.run(Vec::new));
 
     let (mut stream, _) = host.accept().unwrap();
@@ -552,7 +552,7 @@ fn first_state(address: SocketAddr) -> Value {
 fn guest_relay(host: SocketAddr) -> (Relay, SocketAddr) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
-    let relay = Relay::start(listener, host, 2, Box::new(NoAudio));
+    let mut relay = Relay::new(listener, host, 2, Box::new(NoAudio));
     let config = serde_json::from_value(use_guest(50.0)["configuration"].clone()).unwrap();
     relay.drive_with(Some(config));
     relay.switch(host, true);
