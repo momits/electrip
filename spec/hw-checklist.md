@@ -234,7 +234,8 @@ Vorbereitung: zwei Rechner im selben Netz, beide `cargo run --release` (ohne `--
 - [ ] Auf B in das Feld „Host-Adresse“ (unten rechts) die IP-Adresse von A ohne Port eintragen und „Beitreten“ drücken: Das Fenster von B zeigt kurz „Nicht verbunden“, dann die Loks von A. Die Konsole von B zeigt `ERROR this instance hands over to the host …`. Eine Lok, die B fährt, fährt auch im Fenster von A.
 - [ ] Gamepad an B: Es steuert danach Loks über A.
 - [ ] Eine falsche Adresse (z. B. `192.0.2.1`) eintragen: Nach ca. 2 s erscheint über dem Nothalt rot „cannot reach the host …“; B bleibt, wie es war.
-- [ ] Auf A die eigene Adresse eintragen: rot „… is this instance“; A bleibt Host.
+- [ ] Auf A die eigene Adresse eintragen: rot „… is already in this session“; A bleibt Host.
+- [ ] Dritter Rechner C mit `cargo run --release -- --host <IP von B>` (B vorher wieder als eigener Host starten): Auf C die IP-Adresse von A eintragen und „Beitreten“ drücken. C zeigt danach die Loks von A, die Konsole von C zeigt `ERROR this instance joins the host …`; B bleibt Host mit seinen eigenen Loks.
 
 Ergebnis: _offen_
 

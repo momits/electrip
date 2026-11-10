@@ -26,6 +26,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-03: Client tritt einem anderen Host selbst bei (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 und N-05 hängen in großen Teilen an Q-016 und Q-017; dieses Inkrement nicht (offener Punkt aus „Host-Adresse im Fenster eintragen“).
+- Bisher reichte eine Instanz, die Client ist, `join_host` an ihren Host weiter; dann trat der Host bei, und ohne mDNS blieb der Client allein zurück. Jetzt beantwortet das Relay des Clients `join_host` selbst: Es prüft das `hello` an der Adresse gegen die `id` seines Hosts, antwortet, schließt seine weitergeleiteten Verbindungen und schickt neue zum anderen Host; `follow` verbindet sich dorthin. Der bisherige Host bleibt Host.
+- Dafür leitet das Relay zeilenweise statt mit `io::copy` weiter, damit seine Antwort nicht mitten in eine Nachricht des Hosts fällt.
+- Fehlertext beim Beitreten zum eigenen Host oder zu sich selbst jetzt „… is already in this session“.
+- Tests: `session_host.rs` (Client tritt A bei, sein Host B behält seine Loks; Hilfsfunktion `ask_to_join` mit dem Host-Fall geteilt). `spec/steuerkanal.md` und `spec/hw-checklist.md` („N-03 – Host-Adresse im Fenster eintragen“) ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7391 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Fehlertext passt jetzt auch für den Client. `join_request`/`join`/`reply` stehen nun in Host und Relay hintereinander (zweites Vorkommen, bleibt nach Rule of Three). `ERROR this instance joins …` bleibt wie `ERROR this instance hands over …`.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Wie schnell sich zwei Hosts nach dem Verbinden des Netzes sehen, misst Mo.
+
 ## 2026-11-10 – N-05: Latenz je Audio-Ziel messen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 und N-05 hängen in großen Teilen an Q-016 und Q-017; dieses Inkrement nicht (offener Punkt „Latenz je Ziel messen und in der UI melden“).
