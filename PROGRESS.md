@@ -22,6 +22,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-05: Warnung bei verschiedenen Audio-Zielen (Claude)
+
+- CI auf `main` lief beim Start noch (danach grün). Offener Punkt „Warnung bei derselben Lok-Adresse mit verschiedenen Zielen“ aus N-05, seit Q-016 umsetzbar.
+- Der Host sammelt bei jedem Takt die Adressen, deren Loks über seine Sitzung und die der Gäste auf verschiedenen Audio-Zielen spielen, und schreibt sie als `audio_conflicts` in den Zustand; Gäste bekommen sie mit. Ändern sie sich, meldet `poll` eine Änderung. Beide Ziele bekamen die Ereignisse schon vorher.
+- Das Fenster zeigt bei einer solchen Lok ein rotes „!“ auf dem Bild und im Lok-Dialog unter „Tonausgabe“ „Diese Adresse spielt auch auf einer anderen Ausgabe.“ Das gilt auch für zwei Loks derselben Adresse in einer Konfiguration.
+- Tests: `host/guests/tests.rs` (Host und Gast erfahren die Adresse; nach dem Angleichen des Ziels ist sie weg), `ui/src/view/tests.rs` (nur die Lok mit der Adresse warnt; Bildschirmfoto `control_view.png`). `spec/steuerkanal.md` und `spec/hw-checklist.md` („N-05 – Warnung bei verschiedenen Audio-Zielen“) ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7791 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). DRY, YAGNI und KISS ok; der Text im Dialog nennt keine „andere Konfiguration“ mehr, weil er auch innerhalb einer Konfiguration gilt.
+- **N-05** ist jetzt `wired` und `verified`: Alle Akzeptanzkriterien sind umgesetzt, die automatischen Prüfungen grün. Offen sind die Hardware-Prüfungen in `spec/hw-checklist.md`, darunter die hörbare Latenz je Ziel (Mo).
+- **Offen:** `audio_devices` wird weiter nur beim Start des Hosts gelesen. Ziele gelten als verschieden, wenn sie verschieden benannt sind; „Standardgerät“ und das Gerät, das gerade Standard ist, zählen als zwei.
+
 ## 2026-11-10 – N-03: Sounds entfernter Loks und Gäste verstummen (Claude)
 
 - CI auf `main` lief beim Start noch. Offener Punkt aus „Konfigurationen von Gästen im Host“.
