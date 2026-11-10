@@ -22,8 +22,8 @@ pub const VERSION: u32 = 1;
 /// The port of the control channel unless set otherwise.
 pub const DEFAULT_PORT: u16 = 4711;
 
-/// How long a host to join has to connect and greet (N-03).
-const JOIN_TIMEOUT: Duration = Duration::from_secs(2);
+/// How long a host has to answer (N-03).
+pub const HOST_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// How often the host handles the events of the command station and
 /// drives the locos; Electrip 1 drove every 50 ms.
@@ -70,6 +70,7 @@ pub fn serve(
         last_poll: Instant::now(),
         last_broadcast: Instant::now(),
         alone,
+        // A random number without a further dependency.
         id: format!("{:016x}", RandomState::new().hash_one(())),
         joined: None,
         stopped: false,
@@ -140,6 +141,7 @@ fn serve_client(
     for line in BufReader::new(stream).lines() {
         let line = line?;
         if let Some(address) = join_request(&line) {
+            // Without the lock while it waits for the other host.
             let id = lock(shared)?.id.clone();
             let result = join(&address, &id);
             send(&mut writer, &reply(&result))?;
@@ -236,30 +238,37 @@ fn join_request(line: &str) -> Option<String> {
     request["address"].as_str().map(String::from)
 }
 
-/// The host at `address` (the port defaults to [`DEFAULT_PORT`]) if it
-/// greets with another id than `id`: with the same, it is this host or
-/// a client of it.
+/// The host at `address` if it greets with another id than `id`: with
+/// the same, it is this host or a client of it.
 fn join(address: &str, id: &str) -> Result<SocketAddr, String> {
-    let cannot = |e: &dyn std::fmt::Display| format!("cannot reach the host {address}: {e}");
+    let (host, hello) =
+        find_host(address).map_err(|e| format!("cannot reach the host {address}: {e}"))?;
+    if hello["id"] == id {
+        return Err(format!("{address} is this instance"));
+    }
+    Ok(host)
+}
+
+/// The first address of `address` with a host that greets, and its
+/// `hello`; the port defaults to [`DEFAULT_PORT`].
+pub fn find_host(address: &str) -> io::Result<(SocketAddr, Value)> {
     let addresses = address
         .to_socket_addrs()
-        .or_else(|_| (address, DEFAULT_PORT).to_socket_addrs())
-        .map_err(|e| cannot(&e))?;
+        .or_else(|_| (address, DEFAULT_PORT).to_socket_addrs())?;
     let mut error = io::Error::other("no address");
     for host in addresses {
         match greeting(host) {
-            Ok(hello) if hello["id"] == id => return Err(format!("{address} is this instance")),
-            Ok(_) => return Ok(host),
+            Ok(hello) => return Ok((host, hello)),
             Err(e) => error = e,
         }
     }
-    Err(cannot(&error))
+    Err(error)
 }
 
 /// The first message of the host at `host`.
 fn greeting(host: SocketAddr) -> io::Result<Value> {
-    let stream = TcpStream::connect_timeout(&host, JOIN_TIMEOUT)?;
-    stream.set_read_timeout(Some(JOIN_TIMEOUT))?;
+    let stream = TcpStream::connect_timeout(&host, HOST_TIMEOUT)?;
+    stream.set_read_timeout(Some(HOST_TIMEOUT))?;
     let line = BufReader::new(stream)
         .lines()
         .next()
@@ -276,10 +285,11 @@ fn execute(host: &mut Host, line: &str) -> Result<Command, String> {
 }
 
 fn hello(id: &str, alone: Option<&str>) -> Value {
-    match alone {
-        Some(reason) => json!({"type": "hello", "version": VERSION, "id": id, "alone": reason}),
-        None => json!({"type": "hello", "version": VERSION, "id": id}),
+    let mut hello = json!({"type": "hello", "version": VERSION, "id": id});
+    if let Some(reason) = alone {
+        hello["alone"] = reason.into();
     }
+    hello
 }
 
 fn reply<T>(result: &Result<T, String>) -> Value {
