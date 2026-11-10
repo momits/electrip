@@ -135,6 +135,7 @@ export component LocoDialog inherits Rectangle {
                             ListView {
                                 for target in audio-targets: Rectangle {
                                     height: 36px;
+                                    // The latency of the target changes while the dialog is open.
                                     background: target.instance == audio-target.instance && target.device == audio-target.device ? #cfe0f5 : transparent;
                                     VerticalLayout {
                                         padding-left: 6px;
