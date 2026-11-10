@@ -15,6 +15,10 @@ pub(crate) type Played = Arc<Mutex<Vec<String>>>;
 pub(crate) struct LogSink {
     pub lengths: HashMap<String, f64>,
     pub played: Played,
+    /// The output devices it offers.
+    pub devices: Vec<String>,
+    /// The device of each loco it was told, `None` the default one.
+    pub routes: Arc<Mutex<HashMap<u32, Option<String>>>>,
 }
 
 impl LogSink {
@@ -23,7 +27,7 @@ impl LogSink {
         let lengths = lengths.iter().map(|(s, l)| (s.to_string(), *l)).collect();
         LogSink {
             lengths,
-            played: Played::default(),
+            ..LogSink::default()
         }
     }
 
@@ -65,6 +69,15 @@ impl AudioSink for LogSink {
     fn fade_out(&mut self, channel: ChannelId, fade: Duration) {
         let line = format!("{} fade out {fade:?}", name(channel));
         self.played.lock().unwrap().push(line);
+    }
+
+    fn devices(&mut self) -> Vec<String> {
+        self.devices.clone()
+    }
+
+    fn route(&mut self, loco: u32, device: Option<&str>) {
+        let device = device.map(str::to_string);
+        self.routes.lock().unwrap().insert(loco, device);
     }
 }
 

@@ -48,6 +48,8 @@ impl Host {
             saved: Config::default(),
         };
         host.open_first()?;
+        let devices = host.audio.devices();
+        host.session.set_audio_devices(devices);
         Ok(host)
     }
 
@@ -57,6 +59,7 @@ impl Host {
 
     /// Executes a command; on an error the session stays unchanged.
     pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
+        self.route_audio();
         match self.add_sound(command) {
             Command::Connect => self.connect(self.session.station().power_on_start)?,
             Command::Disconnect => self.disconnect(),
@@ -116,6 +119,13 @@ impl Host {
             command => self.change(|session| session.apply(command))?,
         }
         Ok(())
+    }
+
+    /// Tells the audio target on which device each loco plays (N-05).
+    fn route_audio(&mut self) {
+        for entry in self.session.locos() {
+            self.audio.route(entry.id, entry.loco.audio_device());
+        }
     }
 
     /// Changes the session and saves it; on an error both stay unchanged.
@@ -183,6 +193,7 @@ impl Host {
                 }
             };
         }
+        self.route_audio();
         let driven = self.session.drive(seconds, &mut *self.audio);
         self.send_locos();
         changed || driven

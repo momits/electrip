@@ -247,3 +247,14 @@ Vorbereitung: zwei Rechner im selben Netz, Bibliothek mit `--library <Ordner>` (
 - [ ] Netz trennen, auf A die Lok umbenennen, auf B ihre Vmax ändern, Netz verbinden: Nach ca. 10 s haben beide Rechner beide Änderungen.
 
 Ergebnis: _offen_
+
+## N-05 – Ausgabegerät pro Lok
+
+Vorbereitung: ein Rechner mit zwei Ausgabegeräten (z. B. eingebaute Lautsprecher und USB-Soundkarte oder Kopfhörer), `cargo run --release`, zwei Loks mit Fahrgeräusch.
+
+- [ ] Im Zustand (Steuerkanal, z. B. `nc localhost 4711`) stehen unter `audio_devices` beide Geräte.
+- [ ] `{"command": "set_audio_device", "loco": 2, "device": "<zweites Gerät>"}` schicken, bei beiden Loks das Fahrgeräusch einschalten: Lok 1 ist auf dem Standardgerät zu hören, Lok 2 nur auf dem zweiten Gerät, beide gleichzeitig.
+- [ ] App neu starten: Lok 2 spielt weiter auf dem zweiten Gerät (gespeichert).
+- [ ] Zweites Gerät abziehen, App neu starten, Fahrgeräusch von Lok 2 einschalten: Konsole zeigt einmal `ERROR cannot open the output device …`, Lok 2 ist auf dem Standardgerät zu hören.
+
+Ergebnis: _offen_

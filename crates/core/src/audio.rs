@@ -40,6 +40,15 @@ pub trait AudioSink {
     /// Lowers the channel to silence over `fade`, then silences it like
     /// [`AudioSink::stop`] (B-17).
     fn fade_out(&mut self, channel: ChannelId, fade: Duration);
+
+    /// The names of the output devices (N-05).
+    fn devices(&mut self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Plays the channels of the loco on the output device, `None` on the
+    /// default one (N-05). A target with one output ignores it.
+    fn route(&mut self, _loco: u32, _device: Option<&str>) {}
 }
 
 /// What the host knows of a channel of the audio target: how long its

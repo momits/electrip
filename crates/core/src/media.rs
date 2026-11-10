@@ -136,6 +136,14 @@ impl AudioSink for LibrarySink {
     fn fade_out(&mut self, channel: ChannelId, fade: Duration) {
         self.sink.fade_out(channel, fade);
     }
+
+    fn devices(&mut self) -> Vec<String> {
+        self.sink.devices()
+    }
+
+    fn route(&mut self, loco: u32, device: Option<&str>) {
+        self.sink.route(loco, device);
+    }
 }
 
 #[cfg(test)]

@@ -63,6 +63,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "event_sounds": [],
     "sound_model": null,
     "picture": null,
+    "audio_device": null,
     "speed": 0.0,
     "forward": true
   }],
@@ -73,7 +74,8 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   "view": {"auto_focus": true, "only_active": false},
   "import_report": [],
   "configuration": "Electrip",
-  "configurations": ["Electrip"]
+  "configurations": ["Electrip"],
+  "audio_devices": ["MacBook Pro-Lautsprecher", "USB Audio"]
 }
 ```
 
@@ -88,6 +90,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Es spielt nur, wenn die Lok ein Sound-Modell hat, und läuft im Loop, solange alle Bedingungen gelten; gelten sie nicht mehr, blendet es aus. Der Host prüft bei jeder Abfrage (50 ms); die Beschleunigung ist die Änderung der Geschwindigkeit seit der letzten Abfrage.
 - `sound_model`: Sound-Modell der Lok (B-11, B-14, B-15) oder `null` („Kein Geräusch“). `engine`: `diesel` (Verbrennungsmotor, auch für E-Loks) oder `steam`; `sounds`: Sounddateien auf dem Host je Motorgeräusch `start`, `idle`, `quit` (Diesel) bzw. `idle`, `cylinder` (Dampf); `segments`: Geräuschsegmente nach Geschwindigkeit sortiert, je mit `start` (km/h, ab hier gilt das Segment bis zum nächsten, das letzte bis Vmax; das erste beginnt bei 0), `sounds` je `load`, `idle`, `accel`, `decel` (Diesel) und `strokes` (Dampf: Sounddatei je Taktnummer ab 0); `steam`: `strokes` (Takte je Radumdrehung, 1–9999, Standard 4), `wheel_diameter` (m, 0,1–99, Standard 1,2), `start_delay` (s vom Zylinderdampf bis zum ersten Takt, 0–9999, Standard 2), `min_frequency` (Takte je Sekunde mindestens, 0,1–9999, Standard 0,2). Ändert sich Vmax, wandern die Grenzen der Segmente mit.
 - `picture`: Name des Lokbilds (B-05) oder `null`. Die Datei `media/<picture>.png` in der Bibliothek ist der gespeicherte Ausschnitt in 440×340 px; der Name ist ihr SHA-256, so liegt jedes Bild nur einmal dort.
+- `audio_device`: Ausgabegerät des Hosts, auf dem die Sounds der Lok spielen (N-05), ein Name aus `audio_devices`, oder `null` für das Standardgerät; wird gespeichert. Kann der Host das Gerät nicht öffnen, meldet er `ERROR cannot open the output device …` (einmal) und spielt auf dem Standardgerät. Wechselt eine Lok das Gerät, verstummen ihre laufenden Sounds; die nächsten spielen auf dem neuen.
 - `actions`: logische Aktionen der Konfiguration (N-07); eine `id` wird nie wiederverwendet.
 - `mappings`: je Gerätetyp `kind` die Belegung seiner Bedienelemente (N-01, B-02, ADR 0009).
   `control` heißt wie in SDL, z. B. `a`, `lefty`, `dpleft`; Joysticks ohne Gamepad-Belegung z. B. `button0`, `axis1`, `hat0_left`.
@@ -108,6 +111,7 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
   Hält ein Gerät „Fokus“ (`focus` in `devices`), zeigt das Fenster dessen Lok.
 - `configuration`: Name der geöffneten Konfiguration; `configurations`: alle Konfigurationen der Bibliothek, sortiert (B-21).
   Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.
+- `audio_devices`: Namen der Ausgabegeräte des Hosts, gelesen beim Start des Hosts (N-05).
 - `import_report`: Was der letzte Import aus Electrip 1 angepasst hat, eine Zeile je Änderung, z. B. Loks mit N 1 und Adresse über 127, die auf DCC lang umgestellt wurden (B-06).
 
 ## Befehle
@@ -129,6 +133,7 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `set_accel_duration` | `loco`, `seconds` | B-05 |
 | `set_brake_duration` | `loco`, `seconds` | B-05 |
 | `set_volume` | `loco`, `volume` | B-05 |
+| `set_audio_device` | `loco`, `device` (Name aus `audio_devices` oder `null` für das Standardgerät) | N-05 |
 | `set_picture` | `loco`, `path` (PNG oder JPEG auf dem Rechner der App), optional `crop` (Ausschnitt in Pixeln des Bildes: `x`, `y` linke obere Ecke, `width` Breite; die Höhe folgt aus dem Seitenverhältnis 22:17. Verschieben ändert `x`/`y`, Zoomen `width`. Standard: der größte Ausschnitt in der Mitte); speichert den Ausschnitt als Lokbild in 440×340 px | B-05 |
 | `add_curve_point` | `loco`, `speed`, `step` | B-08 |
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
