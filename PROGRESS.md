@@ -20,6 +20,26 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
+- **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
+
+## 2026-11-10 – N-03: Konfigurationen von Gästen im Host (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist beantwortet; dieses Inkrement setzt die Punkte 1 bis 4 im Kern um, noch ohne Netz.
+- Der Host hält neben seiner Konfiguration je Gast-Konfiguration eine eigene Sitzung (`Host::add_guest`, `remove_guest`, `guest`, `apply_guest`, Modul `crates/core/src/host/guests.rs`). Eine Konfiguration, die der Host selbst offen hat, wird kein Gast.
+- Lok-IDs bleiben im Host eindeutig: Die Loks eines Gasts bekommen IDs nach denen des Hosts, der danach weiterzählt. So bleiben Senden, Abfragen und Audio-Kanäle je Lok getrennt.
+- Fahrzustand je Adresse: Ändert sich der Zustand einer Lok in einer Sitzung, schickt der Host ihn einmal an die Zentrale; die Loks mit derselben Adresse in den anderen Sitzungen übernehmen ihn wie eine fremde Änderung (Fahrstufe, Richtung, Funktionen), jeweils mit ihrer eigenen Kennlinie. Meldungen der Zentrale übernehmen alle Sitzungen. Ein neuer Gast übernimmt beim Hinzufügen den Zustand der Loks mit seinen Adressen.
+- Konfliktregel: Wer eine Achse zuletzt auslenkt, gewinnt; die Achsen derselben Adresse in den anderen Sitzungen werden freigegeben. Ein Nothalt gibt die Achse in allen Sitzungen frei.
+- Ein Gast fährt nur (Achse, Richtung, Nothalt, Fahrgeräusch, Aktionen, Eingaben, Geräte, Gleisspannung); Änderungen an seiner Konfiguration lehnt der Host ab („change this configuration on the instance that opened it“).
+- Tests: `host/guests/tests.rs` (IDs, Host fährt → Gast übernimmt und nur ein Fahrbefehl an die Zentrale, Gast fährt mit seiner Kennlinie → Host übernimmt, letzte Achse gewinnt, neuer Gast übernimmt den Zustand ohne Senden, Meldung der Zentrale, Nothalt des Gasts, Gast fährt nur, eigene Konfiguration kein Gast).
+- `cargo xtask test`, `cargo xtask loc` (7592 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Ein Nothalt ließ eine ausgelenkte Achse in einer anderen Sitzung weiterrampen; jetzt wird sie überall freigegeben (Test ergänzt). `release_axes` und `send_locos` vereinfacht.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Steuerkanal: Client schickt dem Host beim Verbinden seine Konfiguration, der Host führt dessen Befehle in der Gast-Sitzung aus und schickt ihm deren Zustand; Gast entfernen, wenn sein letzter Client geht.
+  - Station (verbunden, Gleisspannung), `audio_devices` und `audio_targets` stehen in der Sitzung eines Gasts noch nicht.
+  - Funktionen, die eine Konfiguration nicht kennt, gehen verloren, sobald sie die Lok das nächste Mal schickt (gilt auch für Änderungen fremder Programme).
+  - Sounds einer entfernten Lok oder eines entfernten Gasts laufen weiter (gilt auch für `remove_loco`).
+  - Punkt 5 (Sound je Konfiguration auf ihrem Audio-Ziel) und 6 (Geräte anderer Instanzen bei der Lok) sowie die Warnung aus N-05.
 
 ## 2026-11-10 – N-05: Ausgabegerät neu öffnen (Claude)
 
