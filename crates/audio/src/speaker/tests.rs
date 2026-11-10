@@ -3,6 +3,8 @@ use std::fs;
 use std::iter;
 use std::num::NonZero;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use electrip_core::audio::{AudioSink, ChannelId};
@@ -30,6 +32,7 @@ fn speaker_with(channels: NonZero<u16>) -> (Speaker, MixerSource) {
             channels,
             rate,
             _device: None,
+            gone: Box::new(|| false),
         })
     };
     (Speaker::new(Box::new(open)), output)
@@ -55,6 +58,7 @@ fn speaker_on(devices: &[Option<&str>]) -> (Speaker, Vec<MixerSource>) {
             channels: NonZero::<u16>::MIN,
             rate,
             _device: None,
+            gone: Box::new(|| false),
         })
     };
     (Speaker::new(Box::new(open)), outputs)
@@ -264,4 +268,32 @@ fn a_loco_on_a_missing_device_plays_on_the_default_one() {
     speaker.route(CHANNEL.loco, Some("gone"));
     speaker.queue(CHANNEL, &file);
     assert_eq!(sound(&mut outputs[0], 1000), [(0.25, 100)]);
+}
+
+#[test]
+fn a_gone_output_is_opened_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 1000);
+    let rate = NonZero::new(RATE).unwrap();
+    let gone = Arc::new(AtomicBool::new(false));
+    let (old, mut old_output) = mixer(NonZero::<u16>::MIN, rate);
+    let (new, mut new_output) = mixer(NonZero::<u16>::MIN, rate);
+    let mut mixers = vec![new, old];
+    let is_gone = Arc::clone(&gone);
+    let open = move |_: Option<&str>| {
+        let is_gone = Arc::clone(&is_gone);
+        Ok(Output {
+            mixer: mixers.pop().ok_or("no device")?,
+            channels: NonZero::<u16>::MIN,
+            rate,
+            _device: None,
+            gone: Box::new(move || is_gone.swap(false, Ordering::Relaxed)),
+        })
+    };
+    let mut speaker = Speaker::new(Box::new(open));
+    speaker.queue(CHANNEL, &file);
+    assert_eq!(runs(&mut old_output, 100), [(0.25, 100)]);
+    gone.store(true, Ordering::Relaxed);
+    speaker.queue(CHANNEL, &file);
+    assert_eq!(runs(&mut new_output, 100), [(0.25, 100)]);
 }

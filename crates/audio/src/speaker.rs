@@ -6,8 +6,9 @@
 use std::collections::HashMap;
 use std::iter;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::vec;
 
 use electrip_core::audio::{AudioSink, ChannelId};
@@ -31,6 +32,9 @@ pub(crate) struct Output {
     /// The device plays the mixer as long as it lives; `None` for a mixer
     /// without one, e.g. in tests.
     pub(crate) _device: Option<MixerDeviceSink>,
+    /// Whether the output no longer plays where it should, so it has to be
+    /// opened again.
+    pub(crate) gone: Box<dyn FnMut() -> bool + Send>,
 }
 
 /// Opens the output on the named device, `None` on the default one.
@@ -41,15 +45,18 @@ pub(crate) type Open = Box<dyn FnMut(Option<&str>) -> Result<Output, String> + S
 /// models still run.
 pub struct Speaker {
     outputs: Outputs,
-    channels: HashMap<ChannelId, Arc<Mutex<Sounds>>>,
+    /// The sounds of each channel and the number of the output they play on.
+    channels: HashMap<ChannelId, (u64, Arc<Mutex<Sounds>>)>,
     decoded: HashMap<PathBuf, SamplesBuffer>,
 }
 
 /// The outputs of the locos, each opened when a loco first plays on it.
 struct Outputs {
     open: Open,
-    /// By device; `None` where the device cannot be opened.
-    opened: HashMap<Option<String>, Option<Output>>,
+    /// By device with the number of their opening; `None` where the device
+    /// cannot be opened.
+    opened: HashMap<Option<String>, Option<(u64, Output)>>,
+    openings: u64,
     /// The devices of the locos that do not play on the default one.
     routes: HashMap<u32, String>,
 }
@@ -67,20 +74,53 @@ pub fn sound_card() -> Speaker {
     Speaker::new(Box::new(open_device))
 }
 
-/// Opens the named output device, `None` the default one.
+/// Opens the named output device, `None` the default one. The output is
+/// gone when its stream fails or, for the default one, when the computer
+/// has another default device; that is checked at most once a second.
 fn open_device(name: Option<&str>) -> Result<Output, String> {
     let device = match name {
-        None => DeviceSinkBuilder::open_default_sink(),
-        Some(name) => DeviceSinkBuilder::from_device(find_device(name)?)
-            .and_then(|builder| builder.open_sink_or_fallback()),
+        None => default_device().ok_or("there is no default output device")?,
+        Some(name) => find_device(name)?,
     };
-    let device = device.map_err(|e| e.to_string())?;
+    let opened_on = device_name(&device);
+    let failed = Arc::new(AtomicBool::new(false));
+    let fail = Arc::clone(&failed);
+    let device = DeviceSinkBuilder::from_device(device)
+        .map(|builder| {
+            builder.with_error_callback(move |e| {
+                eprintln!("ERROR the output device failed: {e}");
+                fail.store(true, Ordering::Relaxed);
+            })
+        })
+        .and_then(|builder| builder.open_sink_or_fallback())
+        .map_err(|e| e.to_string())?;
+    let follows_default = name.is_none();
+    let mut checked = Instant::now();
+    let gone = move || {
+        if failed.load(Ordering::Relaxed) {
+            return true;
+        }
+        if !follows_default || checked.elapsed() < Duration::from_secs(1) {
+            return false;
+        }
+        checked = Instant::now();
+        default_device().and_then(|d| device_name(&d)) != opened_on
+    };
     Ok(Output {
         mixer: device.mixer().clone(),
         channels: device.config().channel_count(),
         rate: device.config().sample_rate(),
         _device: Some(device),
+        gone: Box::new(gone),
     })
+}
+
+fn default_device() -> Option<Device> {
+    cpal::default_host().default_output_device()
+}
+
+fn device_name(device: &Device) -> Option<String> {
+    Some(device.description().ok()?.name().to_string())
 }
 
 fn find_device(name: &str) -> Result<Device, String> {
@@ -97,7 +137,7 @@ fn output_devices() -> Vec<(String, Device)> {
         return Vec::new();
     };
     devices
-        .filter_map(|d| Some((d.description().ok()?.name().to_string(), d)))
+        .filter_map(|d| Some((device_name(&d)?, d)))
         .collect()
 }
 
@@ -107,6 +147,7 @@ impl Speaker {
             outputs: Outputs {
                 open,
                 opened: HashMap::new(),
+                openings: 0,
                 routes: HashMap::new(),
             },
             channels: HashMap::new(),
@@ -129,21 +170,21 @@ impl Speaker {
     }
 
     /// Changes the sounds of the channel, if its loco has an output; a new
-    /// channel joins the mixer of the output.
+    /// channel, or one whose output was opened again, joins the mixer of the
+    /// output.
     fn change(&mut self, id: ChannelId, change: impl FnOnce(&mut Sounds, &Output)) {
-        let Some(output) = self.outputs.of(id.loco) else {
+        let Some((opening, output)) = self.outputs.of(id.loco) else {
             return;
         };
-        let sounds = self.channels.entry(id).or_insert_with(|| {
-            let sounds = Arc::default();
-            output.mixer.add(ChannelSource {
-                sounds: Arc::clone(&sounds),
-                frame: Vec::new().into_iter(),
-                channels: output.channels,
-                rate: output.rate,
-            });
-            sounds
-        });
+        let (_, sounds) = self
+            .channels
+            .entry(id)
+            .and_modify(|channel| {
+                if channel.0 != opening {
+                    *channel = (opening, output.join());
+                }
+            })
+            .or_insert_with(|| (opening, output.join()));
         if let Ok(mut sounds) = sounds.lock() {
             change(&mut sounds, output);
         }
@@ -151,26 +192,35 @@ impl Speaker {
 }
 
 impl Outputs {
-    /// The output of the loco. A device that cannot be opened is reported
-    /// once; its locos play on the default device.
-    fn of(&mut self, loco: u32) -> Option<&Output> {
+    /// The output of the loco and the number of its opening. A device that
+    /// cannot be opened is reported once; its locos play on the default
+    /// device.
+    fn of(&mut self, loco: u32) -> Option<(u64, &Output)> {
         let mut device = self.routes.get(&loco).cloned();
         if !self.try_open(&device) {
             device = None;
             self.try_open(&device);
         }
-        self.opened.get(&device)?.as_ref()
+        let (opening, output) = self.opened.get(&device)?.as_ref()?;
+        Some((*opening, output))
     }
 
-    /// Opens the device unless it was tried before; returns whether it is
-    /// open.
+    /// Opens the device unless it was tried before or opens it again when
+    /// it is gone; returns whether it is open.
     fn try_open(&mut self, device: &Option<String>) -> bool {
-        let open = &mut self.open;
+        if let Some(Some((_, output))) = self.opened.get_mut(device)
+            && (output.gone)()
+        {
+            self.opened.remove(device);
+        }
+        let (open, openings) = (&mut self.open, &mut self.openings);
         let output = self.opened.entry(device.clone()).or_insert_with(|| {
             let name = device.as_deref().unwrap_or("default");
+            *openings += 1;
             open(device.as_deref())
                 .inspect_err(|e| eprintln!("ERROR cannot open the output device {name}: {e}"))
                 .ok()
+                .map(|output| (*openings, output))
         });
         output.is_some()
     }
@@ -180,6 +230,18 @@ impl Output {
     /// The samples of the sound in the format of the output.
     fn convert(&self, sound: SamplesBuffer) -> Samples {
         Box::new(UniformSourceIterator::new(sound, self.channels, self.rate))
+    }
+
+    /// A new channel in the mixer.
+    fn join(&self) -> Arc<Mutex<Sounds>> {
+        let sounds = Arc::default();
+        self.mixer.add(ChannelSource {
+            sounds: Arc::clone(&sounds),
+            frame: Vec::new().into_iter(),
+            channels: self.channels,
+            rate: self.rate,
+        });
+        sounds
     }
 
     /// The number of samples the output plays in `duration`.
@@ -222,7 +284,7 @@ impl AudioSink for Speaker {
     }
 
     fn stop(&mut self, id: ChannelId) {
-        if let Some(sounds) = self.channels.remove(&id)
+        if let Some((_, sounds)) = self.channels.remove(&id)
             && let Ok(mut sounds) = sounds.lock()
         {
             sounds.stopped = true;
