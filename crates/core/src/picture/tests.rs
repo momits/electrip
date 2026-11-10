@@ -122,16 +122,14 @@ fn files_that_are_no_images_cannot_be_read() {
 #[test]
 fn a_picture_goes_to_another_media_directory_under_the_same_name() {
     let dir = TempDir::new().unwrap();
+    let (a, b) = (dir.path().join("a"), dir.path().join("b"));
     let source = image_file(dir.path(), "lok.png", 440, 340, 100);
-    let name = store(&dir.path().join("a"), &source, None).unwrap();
+    let name = store(&a, &source, None).unwrap();
 
-    let png = content(&dir.path().join("a"), &name).unwrap();
+    let png = content(&a, &name).unwrap();
 
-    assert_eq!(add(&dir.path().join("b"), &png).unwrap(), name);
-    assert_eq!(
-        saved(&dir.path().join("b"), &name),
-        saved(&dir.path().join("a"), &name)
-    );
+    assert_eq!(add(&b, &png).unwrap(), name);
+    assert_eq!(saved(&b, &name), saved(&a, &name));
 }
 
 #[test]
