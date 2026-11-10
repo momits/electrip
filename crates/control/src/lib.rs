@@ -315,8 +315,12 @@ impl Shared {
     fn broadcast(&mut self) {
         let host = &self.host;
         self.clients.retain_mut(|c| {
-            let guest = c.guest.as_deref().and_then(|g| host.guest(g));
-            send(&mut c.stream, &state(guest.unwrap_or(host.session()))).is_ok()
+            let guest = c.guest.as_deref().and_then(|g| host.guest_view(g));
+            send(
+                &mut c.stream,
+                &state(guest.as_ref().unwrap_or(host.session())),
+            )
+            .is_ok()
         });
         self.last_broadcast = Instant::now();
     }

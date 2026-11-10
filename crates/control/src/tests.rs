@@ -465,8 +465,16 @@ fn a_guest_drives_with_its_configuration_and_gets_its_state() {
     wait_for(&mut lines, |m| m["error"] == error);
 
     // Other clients still get the state of the host.
-    let mut host_lines = BufReader::new(TcpStream::connect(address).unwrap()).lines();
+    let mut host = TcpStream::connect(address).unwrap();
+    let mut host_lines = BufReader::new(host.try_clone().unwrap()).lines();
     assert_eq!(guest_max_speed(&mut host_lines), 100.0);
+
+    // The guest sees the audio targets of the host.
+    let offer = json!({"command": "offer_audio", "instance": "b", "devices": ["USB"]});
+    send(&mut host, &offer).unwrap();
+    wait_for(&mut lines, |m| {
+        m["state"]["audio_targets"] == json!({"b": ["USB"]})
+    });
 }
 
 #[test]

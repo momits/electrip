@@ -617,6 +617,15 @@ impl Session {
         &mut self.audio_latency
     }
 
+    /// Takes over what belongs to the host, not to a configuration: the
+    /// command station and the audio targets (Q-016).
+    pub(crate) fn share(&mut self, host: &Session) {
+        self.station = host.station.clone();
+        self.audio_devices = host.audio_devices.clone();
+        self.audio_targets = host.audio_targets.clone();
+        self.audio_latency = host.audio_latency.clone();
+    }
+
     pub(crate) fn set_connected(&mut self, connected: bool) {
         self.station.connected = connected;
         self.station.track_power &= connected;
