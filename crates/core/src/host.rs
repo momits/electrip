@@ -9,7 +9,7 @@ use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
 use echoes::Echoes;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::iter;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -170,14 +170,18 @@ impl Host {
             .insert(instance.into(), millis);
     }
 
-    /// Tells the audio targets where each loco plays (N-05).
+    /// Tells the audio targets where each loco plays (N-05) and silences
+    /// the locos that are gone.
     fn route_audio(&mut self) {
         let sessions = iter::once(&self.session).chain(&self.guests);
+        let mut locos = HashSet::new();
         for entry in sessions.flat_map(Session::locos) {
             let loco = &entry.loco;
             self.audio
                 .route(entry.id, loco.audio_instance(), loco.audio_device());
+            locos.insert(entry.id);
         }
+        self.audio.retain(&locos);
     }
 
     /// Changes the session and saves it; on an error both stay unchanged.

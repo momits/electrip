@@ -89,6 +89,27 @@ fn a_loco_that_moves_falls_silent_on_the_old_instance() {
 }
 
 #[test]
+fn a_loco_that_is_gone_falls_silent() {
+    let (mut targets, host, sent) = targets(true);
+    targets.route(1, None, None);
+    targets.route(2, Some("b"), None);
+    targets.queue(channel(1), Path::new("a.ogg"));
+    targets.queue(channel(2), Path::new("a.ogg"));
+    host.take();
+    sent.lock().unwrap().clear();
+
+    targets.retain(&HashSet::from([2]));
+    assert_eq!(host.take(), ["1 stop"]);
+    targets.retain(&HashSet::new());
+    let stop = AudioEvent::Stop {
+        channel: channel(2),
+    };
+    assert_eq!(*sent.lock().unwrap(), [stop]);
+    targets.retain(&HashSet::new());
+    assert!(host.take().is_empty());
+}
+
+#[test]
 fn an_unchanged_route_is_not_sent_again() {
     let (mut targets, _host, sent) = targets(true);
     targets.route(1, Some("b"), None);
