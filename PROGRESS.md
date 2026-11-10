@@ -23,6 +23,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Ob das Dekodieren die Ursache ist, ist vermutet und nicht nachgewiesen.
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
+- **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
+
+## 2026-11-10 – N-04: Konfiguration als Automerge-Dokument, erstes Inkrement (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; N-04 war noch nicht begonnen.
+- Neues Crate `electrip-sync` (ADR 0003): `Document` hält eine Konfiguration als Automerge-Dokument. `update` schreibt nur die Felder, in denen sich die neue `Config` vom Dokument unterscheidet (Maps und Listen werden durchlaufen, in Listen bleiben gleiche Einträge an Anfang und Ende stehen); `merge` übernimmt die Änderungen einer anderen Kopie; `save`/`load` speichern das Dokument.
+- Damit werden Änderungen, die zwei Kopien getrennt machen, feldweise zusammengeführt; ändern beide dasselbe Feld, haben danach beide denselben Wert.
+- Neue Abhängigkeit `automerge` 0.7. Im Dev-Profil sind `automerge` und `hexane` optimiert, sonst braucht das Anlegen einer Konfiguration mit 7 Loks im Test ca. 3 s statt 0,2 s.
+- Tests: `crates/sync/src/tests.rs` (Konfiguration aus dem Korpus unverändert zurück, keine Änderung ohne Unterschied, getrennte Änderungen zusammengeführt, Änderung trifft die richtige Lok, wenn eine andere gelöscht wird, gleiches Feld überall gleich).
+- `cargo xtask test`, `cargo xtask loc` (6360 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Unveränderte Felder werden ohne Nachschlagen im Dokument übersprungen.
+- **N-04** bleibt offen; das Dokument ist noch nicht angebunden.
+- **Offen:**
+  - Bibliothek speichert Konfigurationen als Automerge-Dokument statt JSON (je Konfiguration eine ID), Abgleich zwischen Instanzen über mDNS und Steuerkanal, Medien per SHA-256.
+  - Verschiebt ein Gerät Loks oder löscht und ergänzt in einem Schritt, vergleicht `update` die Loks in der Mitte nach Position; eine gleichzeitige Änderung des anderen Geräts kann dann die falsche Lok treffen. Abhilfe später: Loks mit fester ID.
+  - Der Speicherplatz im Container ist knapp (`target/debug` ca. 16 GB, Platte voll beim ersten Test); `target/debug/incremental` gelöscht.
 
 ## 2026-11-10 – N-03: Host-Adresse im Fenster eintragen (Claude)
 
