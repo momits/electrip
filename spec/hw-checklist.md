@@ -271,3 +271,13 @@ Vorbereitung: zwei Rechner A und B im selben Netz, beide mit `cargo run --releas
 - [ ] Verzögerung zwischen Fahrbefehl und hörbarem Sound an B grob schätzen (Ziel ≤ 150 ms) und hier notieren.
 
 Ergebnis: _offen_
+
+## N-05 – Tonausgabe im Fenster wählen
+
+Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client), Fenster an A.
+
+- [ ] Auf das Bild einer Lok klicken: Unter „Tonausgabe“ stehen „Standardgerät“ und die Geräte von A mit „Sitzungs-Host“, darunter „Standardgerät“ und die Geräte von B mit der Instanz-ID von B; die aktuelle Ausgabe der Lok ist markiert.
+- [ ] Ein Gerät von B anklicken, Fahrgeräusch einschalten: die Lok ist an B auf diesem Gerät zu hören. Dialog schließen und neu öffnen: das Gerät ist markiert.
+- [ ] B beenden, Dialog öffnen: die Ausgabe von B steht weiter in der Liste und ist markiert.
+
+Ergebnis: _offen_

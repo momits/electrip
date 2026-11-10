@@ -26,6 +26,20 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-05: Tonausgabe im Fenster wählen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 und N-05 hängen in großen Teilen an Q-016 und Q-017; dieses Inkrement nicht (offener Punkt „Audio-Ziel im Fenster wählen“).
+- Der Lok-Dialog (Klick aufs Bild) zeigt neben dem Bild die Liste „Tonausgabe“: Standardgerät und Ausgabegeräte des Hosts (`audio_devices`), danach je Instanz aus `audio_targets` ihr Standardgerät und ihre Geräte. Ein Ziel, das eine Lok nennt, das aber nicht verbunden ist, steht am Ende, damit es sichtbar bleibt. Die Ausgabe der Lok ist markiert; ein Klick schickt `set_audio_device`.
+- Texte auf Deutsch übersetzt („Tonausgabe“, „Standardgerät“, „Sitzungs-Host“).
+- Tests: `ui/src/view/tests.rs` (Reihenfolge der Ziele, nicht verbundenes Ziel, Klick im Dialog schickt `set_audio_device` mit Instanz und Gerät; Bildschirmfoto `loco_dialog_audio_target.png`). Prüfpunkte in `spec/hw-checklist.md` („N-05 – Tonausgabe im Fenster wählen“).
+- `target/` war voll (18 GB), dabei wurde eine Datei beim Schreiben geleert; `cargo clean`, Datei aus Git wiederhergestellt.
+- `cargo xtask test`, `cargo xtask loc` (7249 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Die Lok trägt ihr Ziel statt eines Index in die Liste, die Liste wird mit zwei Schleifen gebaut.
+- **N-05** bleibt offen.
+- **Offen:**
+  - Instanzen erscheinen nur mit ihrer Instanz-ID, ohne Namen.
+  - Warnung bei derselben Lok-Adresse mit verschiedenen Zielen (hängt an Q-016); Latenz je Ziel messen und in der UI melden (> 300 ms).
+
 ## 2026-11-10 – N-03: neue Loks bei bestehender Verbindung abfragen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; dieses Inkrement hängt nicht davon ab (offener Punkt aus „Zustand der Loks beim Verbinden zurücklesen“).
