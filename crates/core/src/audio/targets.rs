@@ -44,9 +44,10 @@ impl Targets {
     /// another instance falls silent on the old one.
     pub(crate) fn route(&mut self, loco: u32, instance: Option<&str>, device: Option<&str>) {
         let connected = instance.is_none_or(|i| self.remote.contains_key(i));
-        let place = match connected {
-            true => (instance.map(String::from), device.map(String::from)),
-            false => (None, None),
+        let place = if connected {
+            (instance.map(String::from), device.map(String::from))
+        } else {
+            (None, None)
         };
         let before = self.placed.insert(loco, place.clone());
         if before.as_ref() == Some(&place) {

@@ -130,6 +130,7 @@ impl Host {
         self.audio.add(instance, remote);
     }
 
+    /// The host plays the sounds of the locos that name `instance` itself.
     pub fn remove_audio_target(&mut self, instance: &str) {
         self.session.audio_targets_mut().remove(instance);
         self.audio.remove(instance);
