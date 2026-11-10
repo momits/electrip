@@ -17,7 +17,8 @@ pub(crate) struct Targets {
     remote: HashMap<String, Remote>,
     /// Where each loco plays now.
     placed: HashMap<u32, Place>,
-    /// The channels the locos used, to silence them when a loco moves.
+    /// The channels the locos used, to silence them when a loco moves or
+    /// is gone.
     channels: HashSet<ChannelId>,
 }
 
@@ -59,18 +60,40 @@ impl Targets {
             );
         }
         if let Some((old, _)) = before.filter(|b| b.0 != place.0) {
-            let moved: Vec<_> = self
-                .channels
-                .iter()
-                .filter(|c| c.loco == loco)
-                .copied()
-                .collect();
-            for channel in moved {
-                self.send(&old, &AudioEvent::Stop { channel });
-            }
+            self.silence(loco, &old);
         }
         let (instance, device) = place;
         self.send(&instance, &AudioEvent::Route { loco, device });
+    }
+
+    /// Silences the locos that are not among `locos`: removed ones and
+    /// those of a guest that left.
+    pub(crate) fn retain(&mut self, locos: &HashSet<u32>) {
+        let gone: Vec<_> = self
+            .placed
+            .keys()
+            .filter(|l| !locos.contains(l))
+            .copied()
+            .collect();
+        for loco in gone {
+            if let Some((instance, _)) = self.placed.remove(&loco) {
+                self.silence(loco, &instance);
+            }
+        }
+    }
+
+    /// Stops the channels the loco used on the instance.
+    fn silence(&mut self, loco: u32, instance: &Option<String>) {
+        let used: Vec<_> = self
+            .channels
+            .iter()
+            .filter(|c| c.loco == loco)
+            .copied()
+            .collect();
+        for channel in used {
+            self.channels.remove(&channel);
+            self.send(instance, &AudioEvent::Stop { channel });
+        }
     }
 
     /// Sends the event of the channel to where its loco plays.

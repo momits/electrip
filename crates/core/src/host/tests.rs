@@ -671,6 +671,16 @@ fn a_bound_action_plays_the_sound_functions_of_the_device_loco() {
 }
 
 #[test]
+fn a_removed_loco_falls_silent() {
+    let (mut host, played, _library) = host_with_horn("switch");
+    press(&mut host, "x");
+    take(&played);
+    host.apply(Command::RemoveLoco { loco: 1 }).unwrap();
+    host.poll(0.1);
+    assert_eq!(take(&played), ["1.10001 stop"]);
+}
+
+#[test]
 fn a_tapped_sound_function_switches_off_at_the_end() {
     let (mut host, played, _library) = host_with_horn("tap");
     let on = |host: &Host| host.session().locos()[0].loco.sound_functions()[0].on;
