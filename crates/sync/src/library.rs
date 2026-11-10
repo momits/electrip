@@ -13,7 +13,9 @@ use std::path::{Path, PathBuf};
 /// file since the last call.
 pub fn document(library: &Path, name: &str) -> Result<Document, Error> {
     let config = config::read(&config::path(library, name))?;
-    stored(library, &config, || Document::new(&config))
+    let mut document = stored(library, &config, || Document::new(&config))?;
+    save(library, &config.id, &mut document)?;
+    Ok(document)
 }
 
 /// Merges `other` into the configuration `name` and saves both; returns
@@ -46,7 +48,6 @@ fn stored(
         Err(error) => return Err(error.into()),
     };
     document.update(config)?;
-    save(library, &config.id, &mut document)?;
     Ok(document)
 }
 
