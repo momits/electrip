@@ -10,6 +10,7 @@ use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
 use echoes::Echoes;
 use std::collections::HashMap;
+use std::iter;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -20,6 +21,8 @@ pub type Connector = Box<dyn FnMut(&Station) -> Result<Driver, StationError> + S
 
 pub struct Host {
     session: Session,
+    /// The sessions of the configurations of guests (Q-016).
+    guests: Vec<Session>,
     driver: Option<Driver>,
     connect: Connector,
     audio: Targets,
@@ -40,6 +43,7 @@ impl Host {
     pub fn new(connect: Connector, audio: Audio, library: PathBuf) -> Result<Self, CommandError> {
         let mut host = Host {
             session: Session::default(),
+            guests: Vec::new(),
             driver: None,
             connect,
             audio: Targets::new(Box::new(LibrarySink {
@@ -64,8 +68,22 @@ impl Host {
 
     /// Executes a command; on an error the session stays unchanged.
     pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
+        self.apply_to(0, command)
+    }
+
+    /// Executes a command in the session with the `index`: 0 is the one
+    /// of the host, the others are of guests and only drive.
+    fn apply_to(&mut self, index: usize, command: Command) -> Result<(), CommandError> {
+        if index > 0 && !guests::drives(&command) {
+            return Err(CommandError::GuestChange);
+        }
         self.route_audio();
-        match self.add_sound(command) {
+        let command = self.add_sound(command);
+        let session = match index {
+            0 => &mut self.session,
+            _ => &mut self.guests[index - 1],
+        };
+        match command {
             Command::Connect => self.connect(self.session.station().power_on_start)?,
             Command::Disconnect => self.disconnect(),
             Command::TogglePower => {
@@ -75,33 +93,30 @@ impl Host {
                 self.session.set_track_power(on);
             }
             Command::EmergencyStop { loco } => {
-                let entry = self.session.emergency_stop(loco)?;
-                let state = entry.station_state();
+                let entry = session.emergency_stop(loco)?;
+                let (state, decoder) = (entry.station_state(), *entry.loco.decoder());
+                let before = self.sent.insert(loco, state);
+                self.mirror(Some(index), decoder.address(), &state);
                 if let Some(driver) = self.driver.as_mut() {
-                    let before = self.sent.insert(loco, state);
-                    let address = entry.loco.decoder().address();
-                    self.echoes.note(address, before, state);
+                    self.echoes.note(decoder.address(), before, state);
                     driver
-                        .emergency_stop(entry.loco.decoder(), &state)
+                        .emergency_stop(&decoder, &state)
                         .map_err(CommandError::Station)?;
                 }
             }
-            Command::ToggleSound { loco } => self.session.toggle_sound(loco, &mut self.audio)?,
+            Command::ToggleSound { loco } => session.toggle_sound(loco, &mut self.audio)?,
             Command::TriggerAction {
                 loco,
                 action,
                 pressed,
-            } => {
-                let audio = &mut self.audio;
-                self.session.trigger_action(loco, action, pressed, audio)?
-            }
+            } => session.trigger_action(loco, action, pressed, &mut self.audio)?,
             Command::Input {
                 device,
                 control,
                 value,
             } => {
-                if let Some(command) = self.session.input(device, &control, value)? {
-                    self.apply(command)?;
+                if let Some(command) = session.input(device, &control, value)? {
+                    self.apply_to(index, command)?;
                 }
             }
             Command::NewConfiguration { name } => self.create(name, Config::default())?,
@@ -121,8 +136,10 @@ impl Host {
                     Ok(())
                 })?;
             }
+            command if index > 0 => session.apply(command)?,
             command => self.change(|session| session.apply(command))?,
         }
+        self.release_axes(index);
         Ok(())
     }
 
@@ -152,7 +169,8 @@ impl Host {
 
     /// Tells the audio targets where each loco plays (N-05).
     fn route_audio(&mut self) {
-        for entry in self.session.locos() {
+        let sessions = iter::once(&self.session).chain(&self.guests);
+        for entry in sessions.flat_map(Session::locos) {
             let loco = &entry.loco;
             self.audio
                 .route(entry.id, loco.audio_instance(), loco.audio_device());
@@ -215,7 +233,10 @@ impl Host {
             };
         }
         self.route_audio();
-        let driven = self.session.drive(seconds, &mut self.audio);
+        let mut driven = self.session.drive(seconds, &mut self.audio);
+        for guest in &mut self.guests {
+            driven |= guest.drive(seconds, &mut self.audio);
+        }
         self.send_locos();
         changed || driven
     }
@@ -226,25 +247,28 @@ impl Host {
         if self.echoes.contains(address, state) {
             return false;
         }
-        let adopted = self.session.adopt(address, state);
-        self.sent.extend(adopted.iter().copied());
-        !adopted.is_empty()
+        self.mirror(None, address, state)
     }
 
-    /// Sends each loco whose state changed since the driver last got it.
+    /// Sends each loco whose state changed since the driver last got it;
+    /// the locos with the same address in the other sessions take it over.
     /// A loco that is new to the driver or has a new decoder is asked for
     /// instead, so the host takes over what it does (ADR 0010) and does not
     /// stop a loco that another program drives.
     fn send_locos(&mut self) {
-        let Some(driver) = self.driver.as_mut() else {
-            return;
-        };
-        for entry in self.session.locos() {
+        let mut changes = Vec::new();
+        let sessions = iter::once(&self.session).chain(&self.guests);
+        for (index, entry) in sessions
+            .enumerate()
+            .flat_map(|(index, session)| session.locos().iter().map(move |e| (index, e)))
+        {
             let decoder = entry.loco.decoder();
             if self.requested.insert(entry.id, *decoder) != Some(*decoder) {
                 self.sent.insert(entry.id, entry.station_state());
-                // A broken connection arrives as an event and disconnects.
-                let _ = driver.request_loco(decoder);
+                if let Some(driver) = self.driver.as_mut() {
+                    // A broken connection arrives as an event and disconnects.
+                    let _ = driver.request_loco(decoder);
+                }
                 continue;
             }
             let mut state = entry.station_state();
@@ -252,12 +276,56 @@ impl Host {
                 state = entry.sound.synchronize(state, last);
             }
             let last = self.sent.insert(entry.id, state);
-            if last.is_some_and(|last| last != state) {
+            if last.is_none_or(|last| last == state) {
+                continue;
+            }
+            changes.push((index, decoder.address(), state));
+            if let Some(driver) = self.driver.as_mut() {
                 self.echoes.note(decoder.address(), last, state);
                 // A broken connection arrives as an event and disconnects.
                 let _ = driver.set_loco(decoder, &state);
             }
         }
+        for (index, address, state) in changes {
+            self.mirror(Some(index), address, &state);
+        }
+    }
+
+    /// The locos with the address take over the state in all sessions but
+    /// the one with the index `except`; returns whether any did.
+    fn mirror(&mut self, except: Option<usize>, address: u16, state: &LocoState) -> bool {
+        let mut adopted = Vec::new();
+        for (index, session) in self.sessions_mut().enumerate() {
+            if Some(index) != except {
+                adopted.extend(session.adopt(address, state));
+            }
+        }
+        self.sent.extend(adopted.iter().copied());
+        !adopted.is_empty()
+    }
+
+    /// The axes deflected in the session with the index win over those of
+    /// the other sessions (ADR 0010): their locos stop ramping.
+    fn release_axes(&mut self, index: usize) {
+        let session = match index {
+            0 => &mut self.session,
+            _ => &mut self.guests[index - 1],
+        };
+        let deflected = session.take_deflected();
+        for (other, session) in self.sessions_mut().enumerate() {
+            for &address in deflected.iter().filter(|_| other != index) {
+                session.release_axis(address);
+            }
+        }
+    }
+
+    /// The session of the host, then those of the guests.
+    fn sessions(&self) -> impl Iterator<Item = &Session> {
+        iter::once(&self.session).chain(&self.guests)
+    }
+
+    fn sessions_mut(&mut self) -> impl Iterator<Item = &mut Session> {
+        iter::once(&mut self.session).chain(&mut self.guests)
     }
 
     fn disconnect(&mut self) {
@@ -267,6 +335,7 @@ impl Host {
 }
 
 mod echoes;
+mod guests;
 mod library;
 #[cfg(test)]
 mod tests;
