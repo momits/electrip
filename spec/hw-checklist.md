@@ -205,3 +205,13 @@ Vorbereitung: zwei Rechner A und B im selben LAN oder WLAN, beide mit derselben 
 - [ ] B mit `--host <A>:4711` statt mDNS: B wird nach dem Ausfall von A ebenfalls Host.
 
 Ergebnis: _offen_
+
+## N-03 – Ohne Netzwerkzugriff allein weiter
+
+Vorbereitung: Mac, `cargo run --release` ohne `--host`.
+
+- [ ] In Systemeinstellungen › Datenschutz & Sicherheit › Lokales Netzwerk den Zugriff für Electrip (bzw. das Terminal, aus dem es läuft) ausschalten und Electrip neu starten: Das Fenster öffnet sich, steuert die Zentrale wie gewohnt und zeigt über dem Nothalt den gelben Hinweis „Electrip läuft allein …“ mit dem Grund darunter. Die Konsole zeigt `ERROR no discovery: no access to the local network: …`.
+- [ ] Zugriff wieder einschalten und Electrip neu starten: kein Hinweis.
+- [ ] WLAN ganz aus und kein Kabel: Electrip startet, läuft allein und zeigt den Hinweis.
+
+Ergebnis: _offen_

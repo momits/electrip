@@ -11,7 +11,7 @@ use common::{App, Client, z21_simulator};
 use electrip_station_z21::Z21Station;
 use serde_json::{Value, json};
 use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{TcpListener, TcpStream, UdpSocket};
 use std::thread;
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
@@ -109,11 +109,10 @@ fn the_devices_of_a_client_leave_with_it() {
 
 #[test]
 fn an_unreachable_host_leaves_the_instance_on_its_own() {
-    let unused = TcpListener::bind("127.0.0.1:0").unwrap();
-    let address = unused.local_addr().unwrap().to_string();
-    drop(unused);
+    // A freed port could go to an app of another test; nothing listens on
+    // the privileged port 1.
     let library = TempDir::new().unwrap();
-    let app = client_of(&address, &library);
+    let app = client_of("127.0.0.1:1", &library);
     let mut client = app.connect();
     client.command(json!({"command": "add_loco"})).unwrap();
     assert!(library.path().join("Electrip.json").exists());
@@ -153,5 +152,26 @@ fn connect_when_host(app: &App) -> Client {
             _ => assert!(Instant::now() < deadline, "ERROR no new host"),
         }
         thread::sleep(Duration::from_millis(100));
+    }
+}
+
+/// Without access to the local network (as in the container, where
+/// multicast is not permitted) the instance runs alone and tells its
+/// clients why; with access it says nothing.
+#[test]
+fn an_instance_without_network_says_it_runs_alone() {
+    let library = TempDir::new().unwrap();
+    let app = App::start_with(library.path(), &[]);
+    let client = app.connect();
+    let multicast = UdpSocket::bind("0.0.0.0:0")
+        .and_then(|s| s.send_to(&[0; 12], "224.0.0.251:5353"))
+        .is_ok();
+    let alone = client.hello["alone"].as_str();
+    assert_eq!(alone.is_none(), multicast, "{}", client.hello);
+    if let Some(reason) = alone {
+        assert!(
+            reason.starts_with("no access to the local network"),
+            "{reason}"
+        );
     }
 }

@@ -74,12 +74,21 @@ fn replies_report_success_or_the_error() {
     );
 }
 
+#[test]
+fn hello_tells_why_the_instance_runs_alone() {
+    assert_eq!(hello(None), json!({"type": "hello", "version": VERSION}));
+    assert_eq!(
+        hello(Some("no access to the local network")),
+        json!({"type": "hello", "version": VERSION, "alone": "no access to the local network"})
+    );
+}
+
 /// Serves a new host on a free port; returns its address.
 fn serve_host() -> (SocketAddr, TempDir) {
     let (host, library) = host();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
-    thread::spawn(move || serve(listener, host, Vec::new));
+    thread::spawn(move || serve(listener, host, Vec::new, None));
     (address, library)
 }
 

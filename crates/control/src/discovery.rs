@@ -89,11 +89,24 @@ pub fn station_id(station: &Station) -> String {
     format!("{ip}:{}:{}", station.port, station.bus)
 }
 
+const MDNS: (Ipv4Addr, u16) = (Ipv4Addr::new(224, 0, 0, 251), 5353);
+
 /// The address this computer sends mDNS from; no packet is sent.
 fn lan_ip() -> Option<std::net::IpAddr> {
     let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).ok()?;
-    socket.connect((Ipv4Addr::new(224, 0, 0, 251), 5353)).ok()?;
+    socket.connect(MDNS).ok()?;
     Some(socket.local_addr().ok()?.ip())
+}
+
+/// Fails without access to the local network, e.g. on macOS without the
+/// permission, where the mDNS daemon only logs its failed sends.
+fn check_network() -> io::Result<()> {
+    let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0))?;
+    // An mDNS header without questions, which receivers ignore.
+    socket
+        .send_to(&[0; 12], MDNS)
+        .map_err(|e| io::Error::other(format!("no access to the local network: {e}")))?;
+    Ok(())
 }
 
 /// The announcement of this instance; it lasts as long as the value.
@@ -106,6 +119,7 @@ pub struct Discovery {
 impl Discovery {
     /// Announces the instance with a random id as searching.
     pub fn start(station: String) -> io::Result<Discovery> {
+        check_network()?;
         let discovery = Discovery {
             daemon: ServiceDaemon::new().map_err(io::Error::other)?,
             instance: RandomState::new().hash_one(()),
