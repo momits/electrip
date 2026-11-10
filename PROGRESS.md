@@ -26,6 +26,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-05: Ausgabegerät pro Lok, erstes Inkrement (Claude)
+
+- CI auf `main` beim Start grün. N-03 wartet in großen Teilen auf Q-016, N-04 ist verifiziert; N-05 war noch nicht begonnen. Dieses Inkrement hängt nicht von Q-016 ab (eine Konfiguration, Host spielt selbst).
+- Jede Lok hat in der Konfiguration ein Ausgabegerät `audio_device` (Name, `null` = Standardgerät); neuer Befehl `set_audio_device`. Der Zustand nennt unter `audio_devices` die Ausgabegeräte des Hosts (beim Start gelesen).
+- `AudioSink` hat zwei neue Methoden mit Vorgabe: `devices` und `route` (Lok → Gerät). Der Host meldet vor jedem Befehl und jeder Abfrage, wo jede Lok spielt.
+- `Speaker` öffnet je Gerät einen Mixer, sobald dort zum ersten Mal eine Lok spielt; ein Gerät, das sich nicht öffnen lässt, meldet er einmal (`ERROR cannot open the output device …`), seine Loks spielen dann auf dem Standardgerät. Wechselt eine Lok das Gerät, verstummen ihre laufenden Sounds, die nächsten spielen auf dem neuen.
+- Der Speaker hält seine Geräte selbst; `main.rs` reicht die Soundkarte nicht mehr neben dem Host durch.
+- Tests: `speaker/tests.rs` (jede Lok auf ihrem Gerät, Gerätewechsel, fehlendes Gerät → Standardgerät), `host/tests.rs` (Befehl, Meldung an das Audio-Ziel, gespeichert, `audio_devices` im Zustand), Zustandstests angepasst. Prüfpunkte in `spec/hw-checklist.md` („N-05 – Ausgabegerät pro Lok“), `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (ca. 6870 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Gerätenamen nur an einer Stelle (`output_devices`), Rückfall auf das Standardgerät lesbarer, `Speaker::new`/`Output` nur noch im Crate sichtbar.
+- **N-05** bleibt offen.
+- **Offen:**
+  - Audio-Ziel auf einer anderen Instanz: braucht eine feste Instanz-ID (heute zufällig je Start) und Audio-Ereignisse über den Steuerkanal an die Ziel-Instanz.
+  - Warnung in der UI, wenn zwei Konfigurationen dieselbe Lok-Adresse mit verschiedenen Zielen haben (hängt an Q-016); Latenz je Ziel messen.
+  - `audio_devices` wird nur beim Start des Hosts gelesen; ein später angestecktes Gerät erscheint erst nach einem Neustart. Ein Gerät, das während des Betriebs wegfällt, wird nicht neu geöffnet (siehe Aufräumkandidat „Ausgabegerät wechseln“).
+  - Gerätenamen kommen von cpal (unter Linux/ALSA die Beschreibung, z. B. „Discard all samples …“ für `null`).
+
 ## 2026-11-10 – N-04: Status gesetzt, Frage zur ersten Übertragung (Claude)
 
 - CI auf `main` beim Start grün. N-03 und N-05 warten in großen Teilen auf Q-016.
