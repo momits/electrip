@@ -24,8 +24,6 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub struct Relay {
     route: Arc<Mutex<Route>>,
-    /// The control channel, until the relay knows where its clients go.
-    listener: Option<TcpListener>,
     /// The `add_device` commands of the devices still connected.
     devices: Vec<Command>,
     /// Gamepads of other instances have the same ids from SDL.
@@ -60,19 +58,26 @@ impl Route {
 }
 
 impl Relay {
-    /// A relay to the host at `host` that forwards the clients of
-    /// `listener` from the first [`Relay::switch`] on; the instance
-    /// `instance` plays sounds on `audio`.
-    pub fn new(listener: TcpListener, host: SocketAddr, instance: u64, audio: Audio) -> Relay {
+    /// A relay that forwards the clients of `listener` to the host at
+    /// `host`; `client` tells whether the instance is client of it. The
+    /// instance `instance` plays sounds on `audio`.
+    pub fn new(
+        listener: TcpListener,
+        host: SocketAddr,
+        client: bool,
+        instance: u64,
+        audio: Audio,
+    ) -> Relay {
         let route = Arc::new(Mutex::new(Route {
             host,
-            client: false,
+            client,
             joined: None,
             clients: Vec::new(),
         }));
+        let accepting = Arc::clone(&route);
+        thread::spawn(move || accept(listener, &accepting));
         Relay {
             route,
-            listener: Some(listener),
             devices: Vec::new(),
             offset: (RandomState::new().hash_one(()) as u32) & 0x7fff_0000 | 0x4000_0000,
             instance,
@@ -81,16 +86,10 @@ impl Relay {
     }
 
     /// Sends the clients that connect from now on to `host`; `client`
-    /// tells whether the instance is client of it. The first switch
-    /// starts to forward the clients, so none reaches the host before the
-    /// relay knows whether the instance is client.
+    /// tells whether the instance is client of it.
     pub fn switch(&mut self, host: SocketAddr, client: bool) {
         let mut route = lock(&self.route);
         (route.host, route.client) = (host, client);
-        if let Some(listener) = self.listener.take() {
-            let route = Arc::clone(&self.route);
-            thread::spawn(move || accept(listener, &route));
-        }
     }
 
     /// The host a client asked to join, once.
