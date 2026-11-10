@@ -22,6 +22,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
 
+## 2026-11-10 – N-03: Sounds entfernter Loks und Gäste verstummen (Claude)
+
+- CI auf `main` lief beim Start noch. Offener Punkt aus „Konfigurationen von Gästen im Host“.
+- Bisher liefen die Sounds einer Lok weiter, wenn sie entfernt wurde (`remove_loco`, Abgleich N-04) oder ihr Gast ging. Jetzt gibt `Host::route_audio` den Audio-Zielen die IDs aller Loks des Hosts und der Gäste; `Targets::retain` stoppt die Kanäle der übrigen Loks dort, wo sie zuletzt spielten. Das greift beim nächsten Takt des Hosts (höchstens 50 ms).
+- Tests: `audio/targets/tests.rs` (Lok verstummt auf dem Host und auf einer anderen Instanz), `host/tests.rs` (entfernte Lok mit laufender Hupe verstummt).
+- `cargo xtask test`, `cargo xtask loc` (7746 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent). Das Stoppen beim Umzug einer Lok und beim Entfernen steht jetzt einmal in `Targets::silence`.
+- **N-03** bleibt offen.
+- **Offen:** Q-018; Funktionen, die eine Konfiguration nicht kennt, gehen verloren; Punkt 6 von Q-016 (Geräte anderer Instanzen bei der Lok); Warnung aus N-05.
+
 ## 2026-11-10 – N-03: Station und Audio im Zustand des Gasts (Claude)
 
 - CI auf `main` lief beim Start noch (danach grün). Offener Punkt aus „Konfigurationen von Gästen im Host“.
