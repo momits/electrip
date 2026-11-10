@@ -243,10 +243,9 @@ impl Host {
             }
             let last = self.sent.insert(entry.id, state);
             if last.is_some_and(|last| last != state) {
-                let address = entry.loco.decoder().address();
-                self.echoes.note(address, last, state);
+                self.echoes.note(decoder.address(), last, state);
                 // A broken connection arrives as an event and disconnects.
-                let _ = driver.set_loco(entry.loco.decoder(), &state);
+                let _ = driver.set_loco(decoder, &state);
             }
         }
     }
