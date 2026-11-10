@@ -160,7 +160,8 @@ impl Relay {
             "devices": devices,
         });
         write(&stream, &offer)?;
-        if let Some(request) = lock(&self.route).guest_request() {
+        let guest = lock(&self.route).guest_request();
+        if let Some(request) = guest {
             write(&stream, &request)?;
         }
         for command in &self.devices {
@@ -238,7 +239,9 @@ fn copy_lines(client: TcpStream, upstream: TcpStream, route: &Mutex<Route>) -> i
     from_host.read_line(&mut hello)?;
     let host_id = serde_json::from_str::<Value>(&hello)?["id"].clone();
     let mut to_host = upstream;
-    if let Some(request) = lock(route).guest_request() {
+    // Without the lock while it waits for the host.
+    let guest = lock(route).guest_request();
+    if let Some(request) = guest {
         to_host.write_all(format!("{request}\n").as_bytes())?;
         skip_to_reply(&mut from_host)?;
     }
@@ -282,7 +285,11 @@ fn skip_to_reply(from_host: &mut BufReader<TcpStream>) -> io::Result<()> {
         if from_host.read_line(&mut line)? == 0 {
             return Err(io::ErrorKind::UnexpectedEof.into());
         }
-        if serde_json::from_str::<Value>(&line)?["type"] == "reply" {
+        let message: Value = serde_json::from_str(&line)?;
+        if message["type"] == "reply" {
+            if let Some(error) = message["error"].as_str() {
+                eprintln!("ERROR the host drives without the configuration: {error}");
+            }
             return Ok(());
         }
     }
