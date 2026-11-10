@@ -100,7 +100,8 @@ pub fn store_bytes(dir: &Path, bytes: &[u8], crop: Option<Crop>) -> Result<Strin
     add(dir, &png).map_err(|e| PictureError::Write(e.to_string()))
 }
 
-/// Saves a saved picture, e.g. from another instance (N-04), in the media
+/// Saves a finished picture (PNG as stored), e.g. from another instance
+/// (N-04), in the media
 /// directory `dir`; returns its name.
 pub fn add(dir: &Path, png: &[u8]) -> io::Result<String> {
     let name = content_name(png);
@@ -113,10 +114,7 @@ pub fn add(dir: &Path, png: &[u8]) -> io::Result<String> {
 /// that is not a content name cannot reach a file outside `dir`.
 pub fn content(dir: &Path, name: &str) -> io::Result<Vec<u8>> {
     if name.len() != 64 || !name.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!("there is no picture {name}"),
-        ));
+        return Err(io::Error::other(format!("there is no picture {name}")));
     }
     fs::read(path(dir, name))
 }
