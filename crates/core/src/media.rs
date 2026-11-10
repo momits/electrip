@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// The directory of the pictures in the library (B-05).
-pub const PICTURES: &str = "media";
+pub(crate) const PICTURES: &str = "media";
 /// The directory of the sounds in the library.
 pub const SOUNDS: &str = "sounds";
 
