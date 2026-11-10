@@ -75,12 +75,14 @@ fn update(
     old: Option<&Value>,
     new: &Value,
 ) -> Result<(), AutomergeError> {
+    if old == Some(new) {
+        return Ok(());
+    }
     let child = match doc.get(obj, prop.clone())? {
         Some((automerge::Value::Object(_), id)) => Some(id),
         _ => None,
     };
     match (child, old, new) {
-        (_, Some(old), _) if old == new => Ok(()),
         (Some(id), Some(Value::Object(old)), Value::Object(new)) => update_map(doc, &id, old, new),
         (Some(id), Some(Value::Array(old)), Value::Array(new)) => update_list(doc, &id, old, new),
         _ => put(doc, obj, prop, new),
