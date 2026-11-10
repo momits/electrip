@@ -267,7 +267,9 @@ impl Host {
     }
 
     /// Has the audio target read the sounds of all locos ahead, also of
-    /// new and changed ones, so a sound plays at once the first time.
+    /// new and changed ones, so a sound plays at once the first time. Each
+    /// tick, because the locos of the host and the guests change in many
+    /// places; the target reads each sound only once.
     fn prepare_sounds(&mut self) {
         let sessions = iter::once(&self.session).chain(&self.guests);
         for sound in sessions

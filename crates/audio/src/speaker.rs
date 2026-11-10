@@ -175,10 +175,6 @@ impl Speaker {
         }
     }
 
-    fn decode(&self, sound: &Path) -> Result<SamplesBuffer, String> {
-        decode(&self.decoded, sound)
-    }
-
     /// Changes the sounds of the channel, if its loco has an output; a new
     /// channel, or one whose output was opened again, joins the mixer of the
     /// output.
@@ -267,18 +263,21 @@ impl Output {
 
 impl AudioSink for Speaker {
     fn length(&mut self, sound: &Path) -> Result<Duration, String> {
-        Ok(self.decode(sound)?.total_duration().unwrap_or_default())
+        Ok(decode(&self.decoded, sound)?
+            .total_duration()
+            .unwrap_or_default())
     }
 
     /// Decodes the sound in another thread, once.
     fn prepare(&mut self, sound: &Path) {
-        if self.prepared.insert(sound.into()) {
+        if !self.prepared.contains(sound) {
+            self.prepared.insert(sound.into());
             let _ = self.prepare.send(sound.into());
         }
     }
 
     fn queue(&mut self, id: ChannelId, sound: &Path) {
-        let Ok(decoded) = self.decode(sound) else {
+        let Ok(decoded) = decode(&self.decoded, sound) else {
             return;
         };
         self.change(id, |sounds, output| {
@@ -291,7 +290,7 @@ impl AudioSink for Speaker {
     }
 
     fn play(&mut self, id: ChannelId, sound: &Path, delay: Duration) {
-        let Ok(decoded) = self.decode(sound) else {
+        let Ok(decoded) = decode(&self.decoded, sound) else {
             return;
         };
         self.change(id, |sounds, output| {
@@ -313,7 +312,7 @@ impl AudioSink for Speaker {
     }
 
     fn fade_in(&mut self, id: ChannelId, sound: &Path, fade: Duration) {
-        let Ok(decoded) = self.decode(sound) else {
+        let Ok(decoded) = decode(&self.decoded, sound) else {
             return;
         };
         self.change(id, |sounds, output| {
@@ -367,10 +366,7 @@ impl AudioSink for Speaker {
 /// The sound, decoded once. Decoding it whole also avoids a bug in rodio:
 /// the first span of an OGG file has no samples, and a conversion of the
 /// decoder ends there.
-fn decode(
-    decoded: &Mutex<HashMap<PathBuf, SamplesBuffer>>,
-    sound: &Path,
-) -> Result<SamplesBuffer, String> {
+fn decode(decoded: &Decoded, sound: &Path) -> Result<SamplesBuffer, String> {
     if let Some(samples) = decoded.lock().ok().and_then(|d| d.get(sound).cloned()) {
         return Ok(samples);
     }

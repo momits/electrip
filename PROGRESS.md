@@ -8,14 +8,19 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
-- **Sounds vor dem Spielen laden:** `Speaker::decode` dekodiert jede Datei beim ersten Einreihen ganz und im Host-Thread (`length()` und `samples()` in `crates/audio/src/speaker.rs`).
-  Gemessen für Dateien von V 60: 25 bis 46 ms je Segmentdatei, 163 ms für `stop2.ogg` im Debug-Build, 2,5 bis 11 ms im Release-Build.
-  Der Mixer selbst ist lückenlos: zwei eingereihte Sounds ergaben keine Lücke auf Sample-Ebene.
-  Mo hört beim Hörtest sporadisch Pausen und Knacken, vor allem wenn ein noch nie gespieltes Segment startet.
-  Ob das Dekodieren die Ursache ist, ist vermutet und nicht nachgewiesen.
-  Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
-  Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
+- **Sounds auf anderen Instanzen vorab laden:** Der Host dekodiert die Sounds aller Loks jetzt vorab (siehe Eintrag „Sounds vorab dekodieren“). Eine andere Instanz, die als Audio-Ziel spielt (N-05), dekodiert eine Datei weiter erst beim ersten Spielen im Thread ihrer Verbindung. Dafür bräuchte das Protokoll ein Ereignis zum Vorab-Laden.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
+
+## 2026-11-10 – Aufräumen: Sounds vorab dekodieren (Claude)
+
+- CI auf `main` lief beim Start noch (danach grün). **N-03** ist die einzige offene Anforderung und hängt an Q-018; deshalb der Aufräumkandidat „Sounds vor dem Spielen laden“.
+- Neu `AudioSink::prepare`: Der Host gibt seinem Audio-Ziel bei jedem Takt alle Sounds der Loks des Hosts und der Gäste (`Host::prepare_sounds`, `Loco::sounds`). Der `Speaker` schickt jede neue Datei einmal an einen eigenen Thread, der sie in den gemeinsamen Puffer dekodiert; `length` und `queue` nehmen sie dann fertig. Fehlt sie dort noch, wird wie bisher sofort dekodiert. So greift das auch für neue Loks, geänderte Sound-Modelle und Konfigurationen von Gästen.
+- `Loco::sounds` ersetzt auch die zwei lesenden Aufrufe von `map_sounds` (`media::missing`, `check_sounds`), drittes Vorkommen.
+- Ob das die Pausen und das Knacken aus Mos Hörtest behebt, ist ungeprüft (Hardware). Der Puffer hält jetzt alle Sounds aller Loks dekodiert, nicht nur die gespielten (bei 44,1 kHz Stereo etwa 10 MB je Minute Sound).
+- Tests: `speaker/tests.rs` (vorab dekodierte Datei hat ihre Länge, auch wenn sie danach gelöscht ist), `host/tests.rs` (`the_sounds_of_the_locos_are_read_ahead`).
+- `cargo xtask test`, `cargo xtask loc` (7941 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Die Hülle `Speaker::decode` entfällt, `prepare` legt einen Pfad nur für neue Sounds an, Kommentar zum Aufruf je Takt.
+- **Offen:** Q-018; Sounds auf anderen Instanzen (Aufräumkandidat).
 
 ## 2026-11-10 – Aufräumen: Achse ohne Speichern (Claude)
 
