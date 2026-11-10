@@ -33,6 +33,14 @@ impl Host {
             .find(|g| g.configuration_id() == configuration)
     }
 
+    /// The session a guest sees: its locos and devices on the command
+    /// station and with the audio targets of the host.
+    pub fn guest_view(&self, configuration: &str) -> Option<Session> {
+        let mut view = self.guest(configuration)?.clone();
+        view.share(&self.session);
+        Some(view)
+    }
+
     /// Executes a command of a guest in the session of its configuration.
     pub fn apply_guest(
         &mut self,

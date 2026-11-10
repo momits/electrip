@@ -152,3 +152,20 @@ fn an_emergency_stop_by_the_guest_stops_what_the_host_drives() {
     host.poll(1.0);
     assert_eq!((speed(&host), guest_loco(&host).motion.speed()), (0.0, 0.0));
 }
+
+#[test]
+fn a_guest_sees_the_command_station_and_audio_targets_of_the_host() {
+    let (mut host, _, _library) = driving_host();
+    host.add_guest(guest_config());
+    host.apply(Command::TogglePower).unwrap();
+    host.add_audio_target("b".into(), vec!["USB".into()], Box::new(|_| true));
+    host.set_audio_latency("b", std::time::Duration::from_millis(30));
+
+    let view = host.guest_view("guest").unwrap();
+    assert_eq!(view.station(), host.session().station());
+    assert!(view.station().connected);
+    let state = serde_json::to_value(&view).unwrap();
+    assert_eq!(state["audio_targets"], serde_json::json!({"b": ["USB"]}));
+    assert_eq!(state["audio_latency"], serde_json::json!({"b": 30}));
+    assert_eq!(view.locos(), host.guest("guest").unwrap().locos());
+}
