@@ -912,3 +912,43 @@ fn a_loco_plays_on_the_instance_of_its_configuration() {
     let state = serde_json::to_value(host.session()).unwrap();
     assert_eq!(state["audio_targets"], serde_json::json!({}));
 }
+
+fn functions_sent(sent: &Sent) -> Vec<u32> {
+    let calls = sent.lock().unwrap();
+    let states = calls.iter().filter_map(|c| match c {
+        Call::Loco(_, state) => Some(state.functions),
+        _ => None,
+    });
+    states.collect()
+}
+
+#[test]
+fn a_reported_function_the_loco_does_not_map_stays_on() {
+    let (mut host, events, sent, _library) = host_with_light();
+    report(&events, true, 0, 0b101);
+    host.poll(0.0);
+    let light = Command::TriggerAction {
+        loco: 1,
+        action: 1,
+        pressed: true,
+    };
+    host.apply(light).unwrap();
+    host.poll(0.05);
+    assert_eq!(functions_sent(&sent), [0b100]);
+}
+
+#[test]
+fn a_new_address_forgets_the_functions_reported_for_the_old() {
+    let (mut host, events, sent, _library) = host_with_light();
+    report(&events, true, 0, 0b100);
+    host.poll(0.0);
+    let address = Command::SetAddress {
+        loco: 1,
+        address: 7,
+    };
+    host.apply(address).unwrap();
+    host.poll(0.05);
+    set_axis(&mut host, 1.0);
+    host.poll(1.15);
+    assert_eq!(functions_sent(&sent), [0]);
+}

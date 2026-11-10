@@ -3,6 +3,7 @@ use crate::decoder::{Decoder, Protocol};
 use crate::host::tests::{Call, driving_host, host_with_light, report, set_axis, speed, state};
 use crate::loco::Loco;
 use crate::session::LocoEntry;
+use crate::station::LocoState;
 
 /// A configuration "guest" with a loco at address 1 that reaches only
 /// 50 km/h and one at address 2.
@@ -101,6 +102,27 @@ fn the_guest_takes_over_a_change_by_another_program() {
     host.poll(0.05);
     let state = guest_loco(&host).station_state();
     assert_eq!((state.forward, state.step), (false, 64));
+}
+
+#[test]
+fn the_light_of_the_host_stays_on_when_the_guest_without_it_drives() {
+    let (mut host, _, sent, _library) = host_with_light();
+    host.add_guest(guest_config());
+    let light = Command::TriggerAction {
+        loco: 1,
+        action: 1,
+        pressed: true,
+    };
+    host.apply(light).unwrap();
+    host.poll(0.05);
+    guest_axis(&mut host, 1.0);
+    host.poll(1.15);
+    let driven = LocoState {
+        forward: true,
+        step: 12,
+        functions: 1,
+    };
+    assert_eq!(sent.lock().unwrap().last(), Some(&Call::Loco(1, driven)));
 }
 
 #[test]
