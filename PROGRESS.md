@@ -26,6 +26,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-05: Latenz je Audio-Ziel messen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 und N-05 hängen in großen Teilen an Q-016 und Q-017; dieses Inkrement nicht (offener Punkt „Latenz je Ziel messen und in der UI melden“).
+- Der Host schickt jeder Instanz, die mit `offer_audio` Sounds angeboten hat, ein `ping`: gleich nach dem Angebot, dann frühestens eine Sekunde nach jedem `pong`. Der Client antwortet mit `pong`; die Zeit dazwischen steht im Zustand unter `audio_latency` (ms je Instanz). Ein `pong` einer alten Verbindung derselben Instanz zählt nicht.
+- Gemessen wird der Weg Gamepad der Instanz → Host → Audio-Ereignis zurück. Nicht enthalten sind bis zu 50 ms Takt des Hosts und der Puffer des Ausgabegeräts; die hörbare Latenz misst Mo per Video (`spec/hw-checklist.md`, „N-05 – Latenz je Audio-Ziel“). Beim Host selbst gibt es keinen Netzweg, dort steht kein Wert.
+- Das Fenster zeigt im Lok-Dialog unter „Tonausgabe“ hinter der Instanz-ID „· N ms“, über 300 ms rot „· N ms, zu langsam“.
+- Tests: `control/src/tests.rs` (Host misst den Weg, nächster `ping` nach dem `pong`, Wert verschwindet mit der Verbindung; Relay antwortet auf `ping`), `session_host.rs` (Client-App bekommt einen gemessenen Wert), `ui/src/view/tests.rs` (Latenz je Ziel; Bildschirmfoto `loco_dialog_audio_target.png` zeigt den roten Hinweis). `spec/steuerkanal.md` ergänzt (`ping`, `pong`, `audio_latency`).
+- `cargo xtask test`, `cargo xtask loc` (7325 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Die Lok trägt die Latenz ihres Ziels, so findet `contains` sie in der Liste wieder; Schwelle in der Doku „über 300 ms“ wie in der Anforderung. Im Dialog bleibt der Vergleich nach Instanz und Gerät, weil sich die Latenz bei offenem Dialog ändert.
+- **N-05** bleibt offen.
+- **Offen:**
+  - Warnung bei derselben Lok-Adresse mit verschiedenen Zielen (hängt an Q-016).
+  - Hörbare Latenz je Ziel messen und hier dokumentieren (Mo, Hardware).
+  - Instanzen erscheinen nur mit ihrer Instanz-ID, ohne Namen.
+
 ## 2026-11-10 – N-05: Tonausgabe im Fenster wählen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 und N-05 hängen in großen Teilen an Q-016 und Q-017; dieses Inkrement nicht (offener Punkt „Audio-Ziel im Fenster wählen“).
