@@ -24,6 +24,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-10 – N-03: Host-Adresse im Fenster eintragen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- Rückfall ohne mDNS: Das Fenster hat neben den Ansichtsoptionen ein Feld „Host-Adresse“ mit „Beitreten“. Es schickt `join_host`; der Host prüft die Adresse (ohne Port 4711), indem er sich verbindet und `hello` liest, antwortet und wird dann wie beim Doppel-Host Client des anderen (Übergabe über `serve`).
+- `hello` trägt jetzt eine zufällige `id` des Hosts. Sieht der Host beim Beitreten seine eigene `id`, ist die Adresse er selbst oder einer seiner Clients; das wird abgelehnt, sonst würden sich die Relays gegenseitig endlos weiterreichen.
+- Das Fenster zeigt den Fehler seines letzten Befehls rot über dem Nothalt (bisher nur in der Konsole), z. B. „cannot reach the host …“.
+- `--host` nutzt dieselbe Prüfung: ohne Port gilt 4711, erreichbar heißt `hello` binnen 2 s.
+- Tests: `crates/control/src/tests.rs` (Beitreten, nicht sich selbst, nicht unerreichbar), `crates/ui/src/view/tests.rs` (Befehl, Screenshot `control_view_error.png`), `session_host.rs` (zwei Apps, eine tritt der anderen bei und reicht weiter). Prüfpunkte in `spec/hw-checklist.md` („N-03 – Host-Adresse im Fenster eintragen“), `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (6200 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Adresse auflösen und Host prüfen nur noch in `electrip_control::find_host` (auch für `--host`), eine Warte-Hilfe im Test, `hello` ohne doppelte Felder. Vorschlag, `reply` wieder nicht generisch zu machen, nicht übernommen (sonst Umwandlung des Ergebnisses beim Beitreten).
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Ist die Instanz Client, reicht sie `join_host` an ihren Host weiter; dann tritt dieser bei, nicht nur sie.
+  - Wie schnell sich zwei Hosts nach dem Verbinden des Netzes sehen, misst Mo.
+
 ## 2026-11-10 – N-03: Doppel-Host während des Betriebs (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
