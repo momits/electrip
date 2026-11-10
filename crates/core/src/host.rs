@@ -97,6 +97,9 @@ impl Host {
                 let (state, decoder) = (entry.station_state(), *entry.loco.decoder());
                 let before = self.sent.insert(loco, state);
                 self.mirror(Some(index), decoder.address(), &state);
+                for session in self.sessions_mut() {
+                    session.release_axis(decoder.address());
+                }
                 if let Some(driver) = self.driver.as_mut() {
                     self.echoes.note(decoder.address(), before, state);
                     driver
@@ -258,32 +261,31 @@ impl Host {
     fn send_locos(&mut self) {
         let mut changes = Vec::new();
         let sessions = iter::once(&self.session).chain(&self.guests);
-        for (index, entry) in sessions
-            .enumerate()
-            .flat_map(|(index, session)| session.locos().iter().map(move |e| (index, e)))
-        {
-            let decoder = entry.loco.decoder();
-            if self.requested.insert(entry.id, *decoder) != Some(*decoder) {
-                self.sent.insert(entry.id, entry.station_state());
-                if let Some(driver) = self.driver.as_mut() {
-                    // A broken connection arrives as an event and disconnects.
-                    let _ = driver.request_loco(decoder);
+        for (index, session) in sessions.enumerate() {
+            for entry in session.locos() {
+                let decoder = entry.loco.decoder();
+                if self.requested.insert(entry.id, *decoder) != Some(*decoder) {
+                    self.sent.insert(entry.id, entry.station_state());
+                    if let Some(driver) = self.driver.as_mut() {
+                        // A broken connection arrives as an event and disconnects.
+                        let _ = driver.request_loco(decoder);
+                    }
+                    continue;
                 }
-                continue;
-            }
-            let mut state = entry.station_state();
-            if let Some(last) = self.sent.get(&entry.id) {
-                state = entry.sound.synchronize(state, last);
-            }
-            let last = self.sent.insert(entry.id, state);
-            if last.is_none_or(|last| last == state) {
-                continue;
-            }
-            changes.push((index, decoder.address(), state));
-            if let Some(driver) = self.driver.as_mut() {
-                self.echoes.note(decoder.address(), last, state);
-                // A broken connection arrives as an event and disconnects.
-                let _ = driver.set_loco(decoder, &state);
+                let mut state = entry.station_state();
+                if let Some(last) = self.sent.get(&entry.id) {
+                    state = entry.sound.synchronize(state, last);
+                }
+                let last = self.sent.insert(entry.id, state);
+                if last.is_none_or(|last| last == state) {
+                    continue;
+                }
+                changes.push((index, decoder.address(), state));
+                if let Some(driver) = self.driver.as_mut() {
+                    self.echoes.note(decoder.address(), last, state);
+                    // A broken connection arrives as an event and disconnects.
+                    let _ = driver.set_loco(decoder, &state);
+                }
             }
         }
         for (index, address, state) in changes {
@@ -307,13 +309,14 @@ impl Host {
     /// The axes deflected in the session with the index win over those of
     /// the other sessions (ADR 0010): their locos stop ramping.
     fn release_axes(&mut self, index: usize) {
-        let session = match index {
-            0 => &mut self.session,
-            _ => &mut self.guests[index - 1],
-        };
-        let deflected = session.take_deflected();
-        for (other, session) in self.sessions_mut().enumerate() {
-            for &address in deflected.iter().filter(|_| other != index) {
+        let deflected = self
+            .sessions_mut()
+            .nth(index)
+            .map(Session::take_deflected)
+            .unwrap_or_default();
+        let others = self.sessions_mut().enumerate().filter(|(o, _)| *o != index);
+        for (_, session) in others {
+            for &address in &deflected {
                 session.release_axis(address);
             }
         }

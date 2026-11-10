@@ -139,3 +139,16 @@ fn a_removed_guest_is_gone() {
     host.remove_guest("guest");
     assert!(host.guest("guest").is_none());
 }
+
+#[test]
+fn an_emergency_stop_by_the_guest_stops_what_the_host_drives() {
+    let (mut host, _, _library) = driving_host();
+    host.add_guest(guest_config());
+    set_axis(&mut host, 1.0);
+    host.poll(5.75);
+    let loco = guest_loco(&host).id;
+    host.apply_guest("guest", Command::EmergencyStop { loco })
+        .unwrap();
+    host.poll(1.0);
+    assert_eq!((speed(&host), guest_loco(&host).motion.speed()), (0.0, 0.0));
+}
