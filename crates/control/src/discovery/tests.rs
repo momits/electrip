@@ -63,6 +63,18 @@ fn clients_and_other_stations_do_not_count() {
     assert_eq!(elect(5, STATION, &others), Election::Host);
 }
 
+#[test]
+fn a_host_yields_only_to_a_host_with_a_smaller_id() {
+    let others = [
+        seen(3, STATION, Status::Host),
+        seen(4, STATION, Status::Host),
+        seen(1, STATION, Status::Client),
+        seen(2, "192.168.1.6:4303:1", Status::Host),
+    ];
+    assert_eq!(yields_to(5, STATION, &others), Some(others[0].address));
+    assert_eq!(yields_to(3, STATION, &others), None);
+}
+
 fn resolved(version: &str) -> ResolvedService {
     let properties = [
         ("id", "00000000000000ff"),

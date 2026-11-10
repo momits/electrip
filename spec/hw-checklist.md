@@ -207,6 +207,16 @@ Vorbereitung: zwei Rechner A und B im selben LAN oder WLAN, beide mit derselben 
 
 Ergebnis: _offen_
 
+## N-03 – Doppel-Host während des Betriebs
+
+Vorbereitung: zwei Rechner A und B wie bei „Host-Ausfall“, Gamepad an A und an B.
+
+- [ ] Netzwerk zwischen A und B trennen (Kabel ziehen bzw. WLAN aus), dann auf beiden Electrip ohne `--host` starten: Beide werden Host (`dns-sd -B _electrip._tcp` auf jedem Rechner zeigt nur sich selbst als `host`).
+- [ ] Netzwerk wieder verbinden: Eine der beiden Instanzen meldet `ERROR the host … has a smaller id, this instance hands over to it` und wird Client der anderen; danach zeigt `dns-sd -L` genau einen Host. Bitte notieren, wie lange das nach dem Verbinden dauert (mDNS fragt in wachsenden Abständen neu).
+- [ ] Das Fenster der abgebenden Instanz bleibt offen und zeigt danach den Zustand des verbleibenden Hosts; beide Gamepads fahren dort weiter, ohne sie neu einzustecken.
+
+Ergebnis: _offen_
+
 ## N-03 – Ohne Netzwerkzugriff allein weiter
 
 Vorbereitung: Mac, `cargo run --release` ohne `--host`.

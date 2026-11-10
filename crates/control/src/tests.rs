@@ -88,7 +88,7 @@ fn serve_host() -> (SocketAddr, TempDir) {
     let (host, library) = host();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
-    thread::spawn(move || serve(listener, host, Vec::new, None));
+    thread::spawn(move || serve(listener, host, Vec::new, None, || None));
     (address, library)
 }
 
@@ -175,4 +175,27 @@ fn the_next_host_gets_the_devices_still_connected() {
     relay.switch(address);
     thread::spawn(move || relay.run(input));
     assert_eq!(first_device(address) & 0xffff, 1);
+}
+
+#[test]
+fn a_host_that_hands_over_closes_all_connections() {
+    let (host, _library) = host();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let next: SocketAddr = "192.168.1.7:4711".parse().unwrap();
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let server =
+        thread::spawn(move || serve(listener, host, Vec::new, None, || receiver.try_recv().ok()));
+    let stream = TcpStream::connect(address).unwrap();
+    stream.set_read_timeout(Some(SILENCE)).unwrap();
+    let mut lines = BufReader::new(stream).lines();
+    lines.next(); // hello
+
+    sender.send(next).unwrap();
+    assert_eq!(server.join().unwrap().unwrap(), next);
+    // The rest of the messages, then the end of the connection.
+    assert!(lines.all(|line| line.is_ok()));
+    // No client gets in any more.
+    let late = TcpStream::connect(address).map(|stream| BufReader::new(stream).lines().next());
+    assert!(!matches!(late, Ok(Some(Ok(_)))), "{late:?}");
 }
