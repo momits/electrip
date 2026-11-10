@@ -5,8 +5,10 @@
 use electrip_core::host::Host;
 use electrip_core::session::{Command, Session};
 use serde_json::{Value, json};
+use std::collections::hash_map::RandomState;
+use std::hash::BuildHasher;
 use std::io::{self, BufRead, BufReader, Write};
-use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
+use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -16,6 +18,12 @@ pub use relay::Relay;
 
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
+
+/// The port of the control channel unless set otherwise.
+pub const DEFAULT_PORT: u16 = 4711;
+
+/// How long a host to join has to connect and greet (N-03).
+const JOIN_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// How often the host handles the events of the command station and
 /// drives the locos; Electrip 1 drove every 50 ms.
@@ -35,6 +43,10 @@ struct Shared {
     last_broadcast: Instant,
     /// Why the instance runs alone, for the window (N-03).
     alone: Option<String>,
+    /// A random id in `hello`, so the host does not join itself.
+    id: String,
+    /// The host to join, as a client asked (N-03).
+    joined: Option<SocketAddr>,
     /// The host handed over to another one; no client gets in any more.
     stopped: bool,
 }
@@ -42,8 +54,8 @@ struct Shared {
 /// Serves clients, each in a thread, and polls the host and the input
 /// devices on the calling thread. `alone` tells the clients why other
 /// instances cannot find this one. When `handover` names another host,
-/// it closes all connections and returns that host (N-03); the host is
-/// dropped when their threads end.
+/// or a client asks to join one, it closes all connections and returns
+/// that host (N-03); the host is dropped when their threads end.
 pub fn serve(
     listener: TcpListener,
     host: Host,
@@ -58,6 +70,8 @@ pub fn serve(
         last_poll: Instant::now(),
         last_broadcast: Instant::now(),
         alone,
+        id: format!("{:016x}", RandomState::new().hash_one(())),
+        joined: None,
         stopped: false,
     }));
     let acceptor = Arc::clone(&shared);
@@ -119,12 +133,19 @@ fn serve_client(
         if shared.stopped {
             return Ok(());
         }
-        send(&mut writer, &hello(shared.alone.as_deref()))?;
+        send(&mut writer, &hello(&shared.id, shared.alone.as_deref()))?;
         send(&mut writer, &state(shared.host.session()))?;
         shared.clients.push(stream.try_clone()?);
     }
     for line in BufReader::new(stream).lines() {
         let line = line?;
+        if let Some(address) = join_request(&line) {
+            let id = lock(shared)?.id.clone();
+            let result = join(&address, &id);
+            send(&mut writer, &reply(&result))?;
+            lock(shared)?.joined = result.ok();
+            continue;
+        }
         let mut shared = lock(shared)?;
         // Drives up to now first, so the command counts from its arrival.
         let polled = shared.poll();
@@ -166,6 +187,9 @@ fn poll(
         }
         let commands = input();
         let mut shared = lock(shared)?;
+        if let Some(next) = shared.joined.take() {
+            return Ok(next);
+        }
         let mut changed = false;
         for command in commands {
             changed |= shared.host.apply(command).is_ok();
@@ -202,6 +226,47 @@ impl Shared {
     }
 }
 
+/// The address of a `join_host` request; the host handles it itself, it
+/// is no command of the session.
+fn join_request(line: &str) -> Option<String> {
+    let request: Value = serde_json::from_str(line).ok()?;
+    if request["command"] != "join_host" {
+        return None;
+    }
+    request["address"].as_str().map(String::from)
+}
+
+/// The host at `address` (the port defaults to [`DEFAULT_PORT`]) if it
+/// greets with another id than `id`: with the same, it is this host or
+/// a client of it.
+fn join(address: &str, id: &str) -> Result<SocketAddr, String> {
+    let cannot = |e: &dyn std::fmt::Display| format!("cannot reach the host {address}: {e}");
+    let addresses = address
+        .to_socket_addrs()
+        .or_else(|_| (address, DEFAULT_PORT).to_socket_addrs())
+        .map_err(|e| cannot(&e))?;
+    let mut error = io::Error::other("no address");
+    for host in addresses {
+        match greeting(host) {
+            Ok(hello) if hello["id"] == id => return Err(format!("{address} is this instance")),
+            Ok(_) => return Ok(host),
+            Err(e) => error = e,
+        }
+    }
+    Err(cannot(&error))
+}
+
+/// The first message of the host at `host`.
+fn greeting(host: SocketAddr) -> io::Result<Value> {
+    let stream = TcpStream::connect_timeout(&host, JOIN_TIMEOUT)?;
+    stream.set_read_timeout(Some(JOIN_TIMEOUT))?;
+    let line = BufReader::new(stream)
+        .lines()
+        .next()
+        .unwrap_or_else(|| Err(io::Error::other("no greeting")))?;
+    Ok(serde_json::from_str(&line)?)
+}
+
 /// Reads a command from a JSON line and applies it; returns the command.
 fn execute(host: &mut Host, line: &str) -> Result<Command, String> {
     let command: Command =
@@ -210,14 +275,14 @@ fn execute(host: &mut Host, line: &str) -> Result<Command, String> {
     Ok(command)
 }
 
-fn hello(alone: Option<&str>) -> Value {
+fn hello(id: &str, alone: Option<&str>) -> Value {
     match alone {
-        Some(reason) => json!({"type": "hello", "version": VERSION, "alone": reason}),
-        None => json!({"type": "hello", "version": VERSION}),
+        Some(reason) => json!({"type": "hello", "version": VERSION, "id": id, "alone": reason}),
+        None => json!({"type": "hello", "version": VERSION, "id": id}),
     }
 }
 
-fn reply(result: &Result<Command, String>) -> Value {
+fn reply<T>(result: &Result<T, String>) -> Value {
     match result {
         Ok(_) => json!({"type": "reply", "ok": true}),
         Err(error) => json!({"type": "reply", "ok": false, "error": error}),

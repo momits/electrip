@@ -176,3 +176,41 @@ fn an_instance_without_network_says_it_runs_alone() {
         );
     }
 }
+
+/// Rückfall ohne mDNS: a host joins the host whose address the user
+/// enters in the window; it is no host of its own afterwards.
+#[test]
+fn a_host_joins_the_host_at_the_address_entered() {
+    let (a, b) = (App::start(), App::start());
+    let mut at_a = a.connect();
+    at_a.command(json!({"command": "add_loco"})).unwrap();
+    // The connection closes after the reply, with no state.
+    let mut at_b = TcpStream::connect(b.address()).unwrap();
+    let join = json!({"command": "join_host", "address": a.address()});
+    writeln!(at_b, "{join}").unwrap();
+    let mut messages = String::new();
+    at_b.read_to_string(&mut messages).unwrap();
+    assert!(
+        messages.ends_with("{\"ok\":true,\"type\":\"reply\"}\n"),
+        "{messages}"
+    );
+
+    let mut at_b = connect_until(&b, |state| state["locos"].as_array().unwrap().len() == 1);
+    at_b.command(json!({"command": "add_loco"})).unwrap();
+    wait_for(&mut at_a, |state| {
+        state["locos"].as_array().unwrap().len() == 2
+    });
+}
+
+/// Connects to `app` until its state satisfies `done`, e.g. once it
+/// relays to another host.
+fn connect_until(app: &App, done: impl Fn(&Value) -> bool) -> Client {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match app.try_connect() {
+            Some(client) if done(&client.state) => return client,
+            _ => assert!(Instant::now() < deadline, "ERROR no other host"),
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+}

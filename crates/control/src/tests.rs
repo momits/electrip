@@ -69,17 +69,20 @@ fn replies_report_success_or_the_error() {
         json!({"type": "reply", "ok": true})
     );
     assert_eq!(
-        reply(&Err("oops".into())),
+        reply::<Command>(&Err("oops".into())),
         json!({"type": "reply", "ok": false, "error": "oops"})
     );
 }
 
 #[test]
 fn hello_tells_why_the_instance_runs_alone() {
-    assert_eq!(hello(None), json!({"type": "hello", "version": VERSION}));
     assert_eq!(
-        hello(Some("no access to the local network")),
-        json!({"type": "hello", "version": VERSION, "alone": "no access to the local network"})
+        hello("7", None),
+        json!({"type": "hello", "version": VERSION, "id": "7"})
+    );
+    assert_eq!(
+        hello("7", Some("no access to the local network")),
+        json!({"type": "hello", "version": VERSION, "id": "7", "alone": "no access to the local network"})
     );
 }
 
@@ -198,4 +201,54 @@ fn a_host_that_hands_over_closes_all_connections() {
     // No client gets in any more.
     let late = TcpStream::connect(address).map(|stream| BufReader::new(stream).lines().next());
     assert!(!matches!(late, Ok(Some(Ok(_)))), "{late:?}");
+}
+
+/// Sends a `join_host` request to the host at `host`; returns the reply.
+fn ask_to_join(host: SocketAddr, address: &str) -> Value {
+    let mut stream = TcpStream::connect(host).unwrap();
+    let request = json!({"command": "join_host", "address": address});
+    send(&mut stream, &request).unwrap();
+    BufReader::new(stream)
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(&line.unwrap()).unwrap())
+        .find(|message| message["type"] == "reply")
+        .unwrap()
+}
+
+#[test]
+fn a_host_joins_the_host_a_client_names() {
+    let (next, _next_library) = serve_host();
+    let (host, _library) = host();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = thread::spawn(move || serve(listener, host, Vec::new, None, || None));
+
+    let reply = ask_to_join(address, &next.to_string());
+    assert_eq!(reply, json!({"type": "reply", "ok": true}));
+    assert_eq!(server.join().unwrap().unwrap(), next);
+}
+
+#[test]
+fn a_host_does_not_join_itself_or_an_unreachable_host() {
+    let (address, _library) = serve_host();
+    let reply = ask_to_join(address, &address.to_string());
+    assert_eq!(reply["error"], format!("{address} is this instance"));
+
+    let reply = ask_to_join(address, "127.0.0.1:1");
+    let error = reply["error"].as_str().unwrap();
+    assert!(
+        error.starts_with("cannot reach the host 127.0.0.1:1: "),
+        "{error}"
+    );
+    // Still the host.
+    assert_eq!(ask_to_join(address, "")["ok"], false);
+}
+
+#[test]
+fn a_join_request_names_the_host() {
+    assert_eq!(
+        join_request(r#"{"command": "join_host", "address": "pc:4711"}"#),
+        Some("pc:4711".into())
+    );
+    assert_eq!(join_request(r#"{"command": "add_loco"}"#), None);
 }

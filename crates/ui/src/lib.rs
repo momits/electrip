@@ -82,6 +82,13 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<Connection>) {
         )
     });
     let s = Rc::clone(&stream);
+    window.on_join_host(move |address| {
+        send(
+            &s,
+            json!({"command": "join_host", "address": address.trim()}),
+        )
+    });
+    let s = Rc::clone(&stream);
     window.on_set_volume(move |loco, volume| {
         send(
             &s,
@@ -137,8 +144,14 @@ fn show_states(stream: TcpStream, window: &Weak<MainWindow>, media: &Path) -> Op
                 break;
             }
         };
-        if let Some(error) = message.error {
-            eprintln!("ERROR {error}");
+        if message.kind == "reply" {
+            let error = message.error.unwrap_or_default();
+            if !error.is_empty() {
+                eprintln!("ERROR {error}");
+            }
+            window
+                .upgrade_in_event_loop(move |w| w.set_error(error.into()))
+                .ok()?;
         }
         if message.kind == "hello" {
             // Each hello, since the window may connect to a new host.
