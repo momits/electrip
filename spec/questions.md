@@ -111,6 +111,7 @@ Heute sind Konfiguration und Fahrzustand in einer `Session` vereint, Loks werden
 5. Jede Konfiguration rechnet ihr eigenes Sound-Modell auf dem gemeinsamen Fahrzustand und spielt auf ihrem Audio-Ziel (Q-011).
 6. Jede Instanz zeigt die Loks ihrer eigenen Konfiguration; Geräte anderer Instanzen erscheinen bei der Lok mit derselben Adresse.
 **Antwort:** Ja, alle sechs Vorschläge wie beschrieben (N-03, N-05). (Mo, 2026-11-10)
+**Überholt:** Mo braucht keine verschiedenen Konfigurationen je Instanz. Alle Instanzen einer Sitzung nutzen dieselbe Konfiguration; ein Client übernimmt die des Hosts. Die Gäste (Vorschläge 1 bis 6) entfallen wieder. (Mo, 2026-11-10)
 
 ## Q-017 – 2026-11-10 – N-04, ADR 0003
 **Frage:** Wie kommt eine Konfiguration zum ersten Mal auf ein zweites Gerät?
@@ -125,4 +126,4 @@ Alternative: Jede Instanz übernimmt automatisch alle Konfigurationen der andere
 Seit diesem Stand fährt eine Client-Instanz mit ihrer eigenen Konfiguration als Gast des Hosts (Q-016). Ein Gast fährt nur; Änderungen beantwortet der Host mit „change this configuration on the instance that opened it“. Die Instanz, die sie geöffnet hat, ist aber gerade diese Client-Instanz, deren Fenster über den Host geht. Solange sie Client ist, lässt sich ihre Konfiguration also nirgends ändern (Lok anlegen, Mapping, Sounds), und `open_configuration` geht an den Host.
 Vorläufig fährt eine Client-Instanz, deren Konfiguration keine Loks hat (z. B. eine neue Instanz), mit der Konfiguration des Hosts und darf diese ändern wie bisher.
 **Vorschlag:** Der Host übernimmt Änderungen am Gast und schickt sie an die Client-Instanz zurück, die sie in ihrer Bibliothek speichert (über `sync_configuration` wie bei N-04). Alternative: Die Client-Instanz führt Änderungen an ihrer Konfiguration selbst aus und schickt dem Host danach die neue Konfiguration mit `use_configuration`.
-**Antwort:** _offen_
+**Antwort:** Entfällt. Es gibt keine Gäste mehr: Alle Instanzen einer Sitzung nutzen dieselbe Konfiguration, die jede Instanz über den Abgleich von N-04 bearbeiten kann. (Mo, 2026-11-10)

@@ -721,9 +721,9 @@
         "ref": "Konzept 2026-10"
       },
       "title": "Gemeinsame Fahrsitzung über einen Sitzungs-Host",
-      "description": "Steuern mehrere Instanzen dieselbe Zentrale, gibt es genau einen Sitzungs-Host (ADR 0010). Clients senden nur Eingaben (Achsauslenkung, Aktionen); der Host hält den Lok-Zustand inklusive laufender Rampen und verteilt ihn. Mappings, Aktionen, Sounds und Ansicht dürfen pro Konfiguration verschieden sein.",
+      "description": "Steuern mehrere Instanzen dieselbe Zentrale, gibt es genau einen Sitzungs-Host (ADR 0010). Clients senden nur Eingaben (Achsauslenkung, Aktionen); der Host hält den Lok-Zustand inklusive laufender Rampen und verteilt ihn. Alle Instanzen einer Sitzung nutzen dieselbe Konfiguration (N-04); ein Client übernimmt die Konfiguration des Hosts.",
       "acceptance": [
-        "Drei Instanzen an derselben Zentrale, davon zwei mit verschiedenen Konfigurationen, die dieselbe Lok-Adresse enthalten: eine Änderung in einer Instanz ist in allen anderen innerhalb 300 ms sichtbar (gilt in Kabel-LAN oder WLAN mit < 20 ms Roundtrip; Test lokal mit 20 ms künstlicher Verzögerung)",
+        "Drei Instanzen an derselben Zentrale mit derselben Konfiguration: eine Änderung in einer Instanz ist in allen anderen innerhalb 300 ms sichtbar (gilt in Kabel-LAN oder WLAN mit < 20 ms Roundtrip; Test lokal mit 20 ms künstlicher Verzögerung)",
         "Konfliktregel im Host: die zuletzt aktive Eingabe gewinnt; eine ausgelenkte Achse rampt vom aktuellen Wert weiter. Die Ansicht zeigt bei der Lok die Symbole aller Eingabegeräte, die sie gerade steuern",
         "Keine Sperren (kein SRCP LOCK); jede Instanz darf jede Lok fahren",
         "Änderungen fremder Programme an der Zentrale übernimmt der Host als neuen Ausgangswert",
@@ -784,7 +784,6 @@
         "Das Audio-Ziel ist Teil der Lok in der Konfiguration und benennt Instanz und Ausgabegerät eindeutig",
         "Der Host erzeugt die Audio-Ereignisse (Datei starten, loopen, ein-/ausblenden, stoppen) aus dem Lok-Zustand; die Ziel-Instanz spielt sie nur ab – egal welche Instanz oder welches fremde Programm die Lok fährt",
         "Zwei Loks mit verschiedenen Zielen spielen gleichzeitig verschiedene Geräusche; mehrere Loks dürfen dasselbe Ziel teilen (Mischung wie in Electrip 1)",
-        "Enthalten zwei Konfigurationen dieselbe Lok-Adresse mit verschiedenen Audio-Zielen, bekommen beide Ziele Ereignisse; die UI warnt darüber",
         "Trait AudioSink erlaubt weitere Zieltypen (Bluetooth direkt, WLAN-Empfänger) ohne Änderung der Sound-Modelle",
         "Latenz pro Ziel wird gemessen und dokumentiert; Zielwert ≤ 150 ms zwischen Fahrbefehl und hörbarem Sound, Hinweis in der UI bei > 300 ms"
       ],
