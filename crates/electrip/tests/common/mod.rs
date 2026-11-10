@@ -120,7 +120,9 @@ impl Client {
     /// States that arrive before the reply, e.g. while a loco accelerates,
     /// are read into `state` as well.
     pub fn send_line(&mut self, line: &str) -> Value {
-        writeln!(self.writer, "{line}").unwrap();
+        self.writer
+            .write_all(format!("{line}\n").as_bytes())
+            .unwrap();
         let mut reply = self.next();
         while reply["type"] == "state" {
             self.state = reply["state"].clone();

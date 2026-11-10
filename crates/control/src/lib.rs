@@ -97,6 +97,7 @@ fn serve_client(
     shared: &Mutex<Shared>,
     devices: &mut Vec<Command>,
 ) -> io::Result<()> {
+    stream.set_nodelay(true)?;
     let mut writer = stream.try_clone()?;
     {
         let mut shared = lock(shared)?;
@@ -194,8 +195,10 @@ fn state(session: &Session) -> Value {
     json!({"type": "state", "state": session})
 }
 
+/// Writes the line at once: with Nagle's algorithm off, every write is
+/// a packet of its own.
 fn send(stream: &mut TcpStream, message: &Value) -> io::Result<()> {
-    writeln!(stream, "{message}")
+    stream.write_all(format!("{message}\n").as_bytes())
 }
 
 fn lock(shared: &Mutex<Shared>) -> io::Result<std::sync::MutexGuard<'_, Shared>> {
