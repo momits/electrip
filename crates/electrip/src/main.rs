@@ -13,7 +13,7 @@ use electrip_station_srcp::SrcpStation;
 use electrip_station_z21::Z21Station;
 use std::env;
 use std::io;
-use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
+use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
@@ -21,13 +21,10 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
 
-/// How long the instance waits for the host at `--host` (N-03).
-const HOST_TIMEOUT: Duration = Duration::from_secs(2);
-
 /// How often a host checks whether to yield to another host (N-03).
 const WATCH_INTERVAL: Duration = Duration::from_secs(2);
 
-const USAGE: &str = "usage: electrip [--headless] [--control-port <port>] [--library <dir>] [-f|--file <configuration>] [--host <address:port>] [--no-discovery]";
+const USAGE: &str = "usage: electrip [--headless] [--control-port <port>] [--library <dir>] [-f|--file <configuration>] [--host <address[:port]>] [--no-discovery]";
 
 fn main() -> ExitCode {
     match run() {
@@ -264,19 +261,13 @@ fn no_discovery(e: io::Error) -> String {
 /// The address of the host; `None` if it cannot be reached, then the
 /// instance is the host itself.
 fn reachable(address: &str) -> Option<SocketAddr> {
-    let reachable = address
-        .to_socket_addrs()
-        .and_then(|mut addresses| {
-            addresses
-                .find(answers)
-                .ok_or_else(|| io::Error::other("no answer"))
-        })
+    let found = electrip_control::find_host(address)
         .inspect_err(|e| eprintln!("ERROR cannot reach the host {address}: {e}"));
-    reachable.ok()
+    found.ok().map(|(host, _)| host)
 }
 
 fn answers(host: &SocketAddr) -> bool {
-    TcpStream::connect_timeout(host, HOST_TIMEOUT).is_ok()
+    TcpStream::connect_timeout(host, electrip_control::HOST_TIMEOUT).is_ok()
 }
 
 /// The host on the library; it opens `file` instead of the first

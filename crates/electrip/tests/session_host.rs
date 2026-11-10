@@ -146,14 +146,7 @@ fn a_client_becomes_host_when_the_host_is_gone() {
 /// Connects to `app` once it is host itself; before that its relay closes
 /// each connection to the host that is gone.
 fn connect_when_host(app: &App) -> Client {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    loop {
-        match app.try_connect() {
-            Some(client) if client.state["station"]["connected"] == true => return client,
-            _ => assert!(Instant::now() < deadline, "ERROR no new host"),
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
+    connect_until(app, |state| state["station"]["connected"] == true)
 }
 
 /// Without access to the local network (as in the container, where
@@ -209,7 +202,7 @@ fn connect_until(app: &App, done: impl Fn(&Value) -> bool) -> Client {
     loop {
         match app.try_connect() {
             Some(client) if done(&client.state) => return client,
-            _ => assert!(Instant::now() < deadline, "ERROR no other host"),
+            _ => assert!(Instant::now() < deadline, "ERROR not as expected"),
         }
         thread::sleep(Duration::from_millis(100));
     }
