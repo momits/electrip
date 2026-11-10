@@ -23,7 +23,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Ob das Dekodieren die Ursache ist, ist vermutet und nicht nachgewiesen.
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
+- **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
+
+## 2026-11-10 – N-04: Sounds in der Bibliothek und zwischen Instanzen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
+- Neues Modul `core::media`: Bilder und Sounds der Bibliothek heißen nach dem SHA-256 ihres Inhalts und werden über ihren Pfad in der Bibliothek angesprochen (`media/<SHA-256>.png`, `sounds/<SHA-256>.<Endung>`).
+- Sounds, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `add_sound_function` und `add_event_sound` setzen, kopiert der Host nach `sounds/` und trägt den Pfad relativ zur Bibliothek ein; Pakete (`import_loco`) ebenso. Der Host spielt solche Pfade aus der Bibliothek (`LibrarySink` um das Audio-Ziel). Eine Datei, die er nicht lesen kann, bleibt mit ihrem Pfad stehen (wie bisher, Electrip 1 lässt fehlende Sounds weg).
+- Abgleich: `missing` nennt jetzt Bilder und Sounds als Pfad; `file`/`add_file` ersetzen `picture`/`add_picture`. `add_file` prüft, dass der SHA-256 im Pfad zum Inhalt passt; andere Pfade werden abgelehnt.
+- `package::read`/`write` nehmen die Bibliothek statt einzelner Ordner.
+- Tests: `media/tests.rs` (Name, Übertragung, nur Bild- und Sound-Pfade, Inhalt muss passen, fehlende Dateien, Abspielen aus der Bibliothek), `host/library/tests.rs` (Sound kommt in die Bibliothek und wird von dort gespielt), `control/src/sync/tests.rs` (Lok kommt mit Bild und Sound beim anderen Host an), Pakettests angepasst. Prüfpunkte in `spec/hw-checklist.md` („N-04 – Gemeinsame Konfiguration mit Bild und Sounds“), `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (6767 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Sound- und Bildpfad nur noch in `media` gebaut (vorher mit `Path::join`, unter Windows mit `\\` und damit nicht erkannt), Hilfsfunktion in `LibrarySink` und `picture::add` eingespart.
+- **N-04** bleibt offen.
+- **Offen:**
+  - `import_electrip1` übernimmt die alten absoluten Soundpfade; diese Sounds werden nicht übertragen (siehe Aufräumkandidat „Fehlende Sounddateien melden“). Ebenso Sounds aus Paketen, die vor diesem Inkrement mit absolutem Pfad gespeichert wurden.
+  - Weitere offene Punkte wie im ersten Eintrag zum Abgleich (erster Abgleich ohne gemeinsame Geschichte, Zentrale beim Übernehmen, Loks nach Position); eine Konfiguration kommt auf ein zweites Gerät heute nur als Kopie der Datei.
 
 ## 2026-11-10 – N-04: Lokbilder per SHA-256 zwischen Instanzen (Claude)
 

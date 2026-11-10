@@ -237,3 +237,13 @@ Vorbereitung: zwei Rechner im selben Netz, beide `cargo run --release` (ohne `--
 - [ ] Auf A die eigene Adresse eintragen: rot „… is this instance“; A bleibt Host.
 
 Ergebnis: _offen_
+
+## N-04 – Gemeinsame Konfiguration mit Bild und Sounds
+
+Vorbereitung: zwei Rechner im selben Netz, Bibliothek mit `--library <Ordner>` (oder Standardordner `electrip` im Datenordner). Die Konfigurationsdatei (`<Name>.json`) von A in die Bibliothek von B kopieren, damit beide dieselbe Konfiguration (gleiche `id`) haben. Beide `cargo run --release`.
+
+- [ ] Auf A eine Lok anlegen, ihr ein Bild und eine Geräusch-Funktion mit Sound geben (im Fenster oder über den Steuerkanal, `add_sound_function`): Nach höchstens ca. 10 s zeigt B die Lok mit Bild; in der Bibliothek von B liegen Bild unter `media/` und Sound unter `sounds/`.
+- [ ] Auf B die Geräusch-Funktion der neuen Lok auslösen: Der Sound ist zu hören.
+- [ ] Netz trennen, auf A die Lok umbenennen, auf B ihre Vmax ändern, Netz verbinden: Nach ca. 10 s haben beide Rechner beide Änderungen.
+
+Ergebnis: _offen_
