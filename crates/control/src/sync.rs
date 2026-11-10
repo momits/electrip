@@ -19,38 +19,38 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 /// answers it itself, it is no command of the session.
 pub(crate) fn answer(host: &mut Host, line: &str) -> Option<Result<Value, String>> {
     let request: Value = serde_json::from_str(line).ok()?;
-    match request["command"].as_str()? {
-        "configuration_ids" => Some(ids(host.library()).map(|ids| json!({"ids": ids}))),
-        "sync_configuration" => Some(merge(host, &request)),
-        _ => None,
-    }
+    let result = match request["command"].as_str()? {
+        "configuration_ids" => ids(host.library()).map(|ids| json!({"ids": ids})),
+        "sync_configuration" => merge(host, &request),
+        _ => return None,
+    };
+    Some(result.map_err(|e| e.to_string()))
 }
 
-fn ids(library: &Path) -> Result<Vec<String>, String> {
-    let ids = library::ids(library).map_err(|e| e.to_string())?;
+type Error = Box<dyn std::error::Error>;
+
+fn ids(library: &Path) -> Result<Vec<String>, Error> {
+    let ids = library::ids(library)?;
     Ok(ids.into_iter().map(|(id, _)| id).collect())
 }
 
 /// Merges the `document` of the request, if any, into the configuration
 /// `id` and returns its document; the host takes over the open
 /// configuration if it changed.
-fn merge(host: &mut Host, request: &Value) -> Result<Value, String> {
+fn merge(host: &mut Host, request: &Value) -> Result<Value, Error> {
     let id = request["id"].as_str().ok_or("no configuration id")?;
     let library = host.library().to_path_buf();
-    let ids = library::ids(&library).map_err(|e| e.to_string())?;
-    let (_, name) = ids
+    let (_, name) = library::ids(&library)?
         .into_iter()
         .find(|(known, _)| known == id)
         .ok_or_else(|| format!("there is no configuration with id {id}"))?;
     if let Some(hex) = request["document"].as_str() {
-        let bytes = decode(hex).ok_or("invalid document")?;
-        let mut other = Document::load(&bytes).map_err(|e| e.to_string())?;
-        let changed = library::merge(&library, &name, &mut other).map_err(|e| e.to_string())?;
-        if changed && name == host.session().configuration() {
-            host.reload().map_err(|e| e.to_string())?;
+        let mut other = Document::load(&decode(hex).ok_or("invalid document")?)?;
+        if library::merge(&library, &name, &mut other)? && name == host.session().configuration() {
+            host.reload()?;
         }
     }
-    let mut document = library::document(&library, &name).map_err(|e| e.to_string())?;
+    let mut document = library::document(&library, &name)?;
     Ok(json!({"document": encode(&document.save())}))
 }
 
