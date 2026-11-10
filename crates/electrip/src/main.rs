@@ -13,7 +13,6 @@ use electrip_station_srcp::SrcpStation;
 use electrip_station_z21::Z21Station;
 use std::env;
 use std::io;
-use std::mem;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -64,8 +63,7 @@ fn run() -> Result<(), String> {
         None => default_library().ok_or("no data directory, use --library <dir>")?,
     };
     let media = library.join("media");
-    // The sound card plays as long as it lives.
-    let (role, _sound_card, discovery) = choose_role(&args, library.clone())?;
+    let (role, discovery) = choose_role(&args, library.clone())?;
     // A host serves the clients of other instances too (ADR 0010); a
     // client keeps the port if it becomes host.
     let listener =
@@ -95,10 +93,15 @@ fn run() -> Result<(), String> {
     server.join().map_err(|_| "the control channel failed")?
 }
 
-/// The session host, or a client of the host at the address (N-03). A host
-/// knows why it runs alone if the discovery fails.
+/// The session host, or a client of the host at the address (N-03).
 enum Role {
-    Host(Box<Host>, Option<String>),
+    Host {
+        host: Box<Host>,
+        /// The sound card plays as long as it lives.
+        sound_card: Option<MixerDeviceSink>,
+        /// Why the instance runs alone, if the discovery fails.
+        alone: Option<String>,
+    },
     Client(SocketAddr),
 }
 
@@ -116,20 +119,26 @@ fn session(
     file: Option<String>,
 ) -> io::Result<()> {
     let port = listener.local_addr()?.port();
-    let mut private = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
+    let bind = || TcpListener::bind((Ipv4Addr::LOCALHOST, 0));
+    // The host listens on a port of its own behind the relay.
+    let mut private = None;
     let first = match &role {
-        Role::Host(..) => private.local_addr()?,
+        Role::Host { .. } => private.insert(bind()?).local_addr()?,
         Role::Client(host) => *host,
     };
     let mut relay = Relay::start(listener, first);
-    // The sound card plays as long as it lives.
-    let mut _sound_card = None;
     loop {
         role = match role {
-            Role::Host(host, alone) => {
-                relay.switch(private.local_addr()?);
-                let serving =
-                    mem::replace(&mut private, TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?);
+            Role::Host {
+                host,
+                sound_card: _sound_card,
+                alone,
+            } => {
+                let serving = match private.take() {
+                    Some(listener) => listener,
+                    None => bind()?,
+                };
+                relay.switch(serving.local_addr()?);
                 if let Some(discovery) = &discovery {
                     announce(discovery, Status::Host, port);
                 }
@@ -147,9 +156,7 @@ fn session(
                     announce(discovery, Status::Client, port);
                 }
                 follow(&mut relay, host, &mut input, discovery.as_deref(), port);
-                let (host, sound_card) = take_over(&relay, library.clone(), file.clone())?;
-                _sound_card = sound_card;
-                Role::Host(Box::new(host), None)
+                take_over(&relay, library.clone(), file.clone())?
             }
         }
     }
@@ -206,11 +213,7 @@ fn follow(
 /// The new host after the old one is gone: it reads back the state from
 /// the command station and knows the input devices of the relay
 /// (ADR 0010).
-fn take_over(
-    relay: &Relay,
-    library: PathBuf,
-    file: Option<String>,
-) -> io::Result<(Host, Option<MixerDeviceSink>)> {
+fn take_over(relay: &Relay, library: PathBuf, file: Option<String>) -> io::Result<Role> {
     let (mut host, sound_card) = open_host(library, file).map_err(io::Error::other)?;
     let _ = host
         .take_over()
@@ -218,34 +221,31 @@ fn take_over(
     for command in relay.devices() {
         let _ = host.apply(command.clone());
     }
-    Ok((host, sound_card))
+    Ok(hosting(host, sound_card, None))
+}
+
+fn hosting(host: Host, sound_card: Option<MixerDeviceSink>, alone: Option<String>) -> Role {
+    Role::Host {
+        host: Box::new(host),
+        sound_card,
+        alone,
+    }
 }
 
 /// Without `--host` the instance searches for the host of its command
 /// station, unless `--no-discovery`; it is host if there is none (N-03).
-fn choose_role(
-    args: &Args,
-    library: PathBuf,
-) -> Result<(Role, Option<MixerDeviceSink>, Option<Discovery>), String> {
+fn choose_role(args: &Args, library: PathBuf) -> Result<(Role, Option<Discovery>), String> {
     if let Some(host) = args.host.as_deref().and_then(reachable) {
-        return Ok((Role::Client(host), None, None));
+        return Ok((Role::Client(host), None));
     }
     let (host, sound_card) = open_host(library, args.file.clone())?;
     if args.host.is_some() || !args.discovery {
-        return Ok((Role::Host(Box::new(host), None), sound_card, None));
+        return Ok((hosting(host, sound_card, None), None));
     }
     Ok(match search(host.session().station()) {
-        Ok((discovery, Some(address))) => (Role::Client(address), None, Some(discovery)),
-        Ok((discovery, None)) => (
-            Role::Host(Box::new(host), None),
-            sound_card,
-            Some(discovery),
-        ),
-        Err(e) => (
-            Role::Host(Box::new(host), Some(no_discovery(e))),
-            sound_card,
-            None,
-        ),
+        Ok((discovery, Some(address))) => (Role::Client(address), Some(discovery)),
+        Ok((discovery, None)) => (hosting(host, sound_card, None), Some(discovery)),
+        Err(e) => (hosting(host, sound_card, Some(no_discovery(e))), None),
     })
 }
 

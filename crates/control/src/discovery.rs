@@ -232,6 +232,7 @@ fn browse(events: &Receiver<ServiceEvent>, seen: &Mutex<HashMap<String, Announce
             _ => {}
         }
     }
+    eprintln!("ERROR the mDNS daemon stopped");
 }
 
 /// The announcement of an instance with the same protocol version.
