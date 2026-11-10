@@ -91,11 +91,19 @@ pub fn station_id(station: &Station) -> String {
 
 const MDNS: (Ipv4Addr, u16) = (Ipv4Addr::new(224, 0, 0, 251), 5353);
 
-/// The address this computer sends mDNS from; no packet is sent.
+/// An address outside the LAN (TEST-NET-1), for the unicast route.
+const OUTSIDE: (Ipv4Addr, u16) = (Ipv4Addr::new(192, 0, 2, 1), 9);
+
+/// The address this computer sends mDNS from, else the one of its default
+/// route, since Windows may send multicast over loopback; no packet is
+/// sent.
 fn lan_ip() -> Option<std::net::IpAddr> {
-    let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).ok()?;
-    socket.connect(MDNS).ok()?;
-    Some(socket.local_addr().ok()?.ip())
+    [MDNS, OUTSIDE].into_iter().find_map(|target| {
+        let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).ok()?;
+        socket.connect(target).ok()?;
+        let ip = socket.local_addr().ok()?.ip();
+        (!ip.is_loopback()).then_some(ip)
+    })
 }
 
 /// Fails without access to the local network, e.g. on macOS without the
