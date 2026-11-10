@@ -3,11 +3,12 @@ use electrip_core::electrip1;
 use std::path::Path;
 
 /// The configuration with the most locos in the corpus.
-fn config() -> Config {
+pub(crate) fn config() -> Config {
     let path =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/corpus/configs/packages.json");
     let import = electrip1::read(&path).unwrap();
     Config {
+        id: "0123456789abcdef".into(),
         locos: import.locos,
         actions: import.actions,
         mappings: vec![import.mapping],

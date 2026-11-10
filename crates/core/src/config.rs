@@ -6,7 +6,9 @@ use crate::input::Mapping;
 use crate::loco::Loco;
 use crate::session::Station;
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::RandomState;
 use std::fs;
+use std::hash::BuildHasher;
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -16,6 +18,9 @@ pub const DEFAULT_NAME: &str = "Electrip";
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
+    /// Stays the same when the configuration is renamed or copied to
+    /// another instance, so that copies can be merged (N-04).
+    pub id: String,
     pub locos: Vec<Loco>,
     pub actions: Vec<Action>,
     pub mappings: Vec<Mapping>,
@@ -54,6 +59,11 @@ pub fn valid_name(name: &str) -> bool {
         && !name.contains(|c: char| c.is_control() || FORBIDDEN.contains(&c))
 }
 
+/// A new, random configuration id.
+pub fn new_id() -> String {
+    format!("{:016x}", RandomState::new().hash_one(()))
+}
+
 /// The file of the configuration `name` in the library `dir`.
 pub fn path(dir: &Path, name: &str) -> PathBuf {
     dir.join(format!("{name}.json"))
@@ -74,9 +84,15 @@ pub fn names(dir: &Path) -> io::Result<Vec<String>> {
     Ok(names)
 }
 
+/// Reads a configuration; one without an id (from before N-04) gets one.
 pub fn read(path: &Path) -> io::Result<Config> {
     let json = fs::read_to_string(path)?;
-    serde_json::from_str(&json).map_err(io::Error::other)
+    let mut config: Config = serde_json::from_str(&json).map_err(io::Error::other)?;
+    if config.id.is_empty() {
+        config.id = new_id();
+        write(path, &config)?;
+    }
+    Ok(config)
 }
 
 /// Writes a temporary file first, so a crash cannot leave half a file.
