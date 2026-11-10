@@ -1,6 +1,6 @@
 use super::*;
 use crate::tests::{request, serve_library};
-use electrip_core::{config, picture};
+use electrip_core::config;
 use std::fs;
 use tempfile::TempDir;
 
@@ -41,24 +41,34 @@ fn shared_hosts() -> [(SocketAddr, TempDir); 2] {
 }
 
 #[test]
-fn a_loco_comes_to_the_other_host_with_its_picture() {
+fn a_loco_comes_to_the_other_host_with_its_picture_and_sounds() {
     let [(a, library_a), (b, library_b)] = shared_hosts();
     let source = library_a.path().join("lok.png");
     image::RgbImage::new(440, 340).save(&source).unwrap();
+    let horn = library_a.path().join("horn.ogg");
+    fs::write(&horn, "tuut").unwrap();
     request(a, json!({"command": "add_loco"}));
     request(
         a,
         json!({"command": "set_picture", "loco": 1, "path": source}),
     );
+    request(a, json!({"command": "add_action", "name": "Hupe"}));
+    let function = json!({"action": 1, "path": horn});
+    request(
+        a,
+        json!({"command": "add_sound_function", "loco": 1, "function": function}),
+    );
 
     sync(a, b).unwrap();
 
-    let name = state(b)["locos"][0]["picture"]
-        .as_str()
-        .unwrap()
-        .to_string();
-    let media = |library: &TempDir| fs::read(picture::path(&library.path().join("media"), &name));
-    assert_eq!(media(&library_b).unwrap(), media(&library_a).unwrap());
+    let loco = &state(b)["locos"][0];
+    let picture = format!("media/{}.png", loco["picture"].as_str().unwrap());
+    let sound = loco["sound_functions"][0]["path"].as_str().unwrap();
+    assert!(sound.starts_with("sounds/"), "{sound}");
+    for file in [picture.as_str(), sound] {
+        let read = |library: &TempDir| fs::read(library.path().join(file)).unwrap();
+        assert_eq!(read(&library_b), read(&library_a), "{file}");
+    }
 }
 
 #[test]

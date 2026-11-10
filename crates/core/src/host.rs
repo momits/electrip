@@ -3,6 +3,7 @@
 
 use crate::audio::Audio;
 use crate::config::Config;
+use crate::media::LibrarySink;
 use crate::picture;
 use crate::session::{Command, CommandError, Session, Station};
 use crate::station::{CommandStation, LocoState, StationError, StationEvent};
@@ -37,7 +38,10 @@ impl Host {
             session: Session::default(),
             driver: None,
             connect,
-            audio,
+            audio: Box::new(LibrarySink {
+                sink: audio,
+                library: library.clone(),
+            }),
             sent: HashMap::new(),
             echoes: Echoes::default(),
             library,
@@ -53,7 +57,7 @@ impl Host {
 
     /// Executes a command; on an error the session stays unchanged.
     pub fn apply(&mut self, command: Command) -> Result<(), CommandError> {
-        match command {
+        match self.add_sound(command) {
             Command::Connect => self.connect(self.session.station().power_on_start)?,
             Command::Disconnect => self.disconnect(),
             Command::TogglePower => {

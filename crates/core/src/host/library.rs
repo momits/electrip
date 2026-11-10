@@ -4,9 +4,12 @@
 use super::Host;
 use crate::config::{self, Config, DEFAULT_NAME};
 use crate::electrip1;
+use crate::event_sound::EventSound;
+use crate::function_sound::SoundFunction;
+use crate::media;
 use crate::package;
 use crate::picture;
-use crate::session::CommandError;
+use crate::session::{Command, CommandError};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -114,13 +117,12 @@ impl Host {
             path,
             &loco,
             self.session.actions(),
-            &self.media(),
+            &self.library,
         )?)
     }
 
     pub(super) fn import_loco(&mut self, path: &Path) -> Result<(), CommandError> {
-        let package =
-            package::read(path, &self.media(), &self.sounds()).map_err(CommandError::Import)?;
+        let package = package::read(path, &self.library).map_err(CommandError::Import)?;
         self.change(|session| {
             session.import_loco(package.loco, &package.actions, package.report);
             Ok(())
@@ -129,12 +131,40 @@ impl Host {
 
     /// The directory of the pictures (B-05).
     pub fn media(&self) -> PathBuf {
-        self.library.join("media")
+        self.library.join(media::PICTURES)
     }
 
-    /// The directory of the sounds from loco packages (B-20).
-    fn sounds(&self) -> PathBuf {
-        self.library.join("sounds")
+    /// Copies the sound file the command sets to the library, so other
+    /// instances get it too (N-04); a file it cannot read stays as it is.
+    pub(super) fn add_sound(&self, mut command: Command) -> Command {
+        if let Command::SetEngineSound {
+            path: Some(path), ..
+        }
+        | Command::SetSegmentSound {
+            path: Some(path), ..
+        }
+        | Command::SetStrokeSound {
+            path: Some(path), ..
+        }
+        | Command::AddSoundFunction {
+            function: SoundFunction {
+                path: Some(path), ..
+            },
+            ..
+        }
+        | Command::AddEventSound {
+            sound: EventSound {
+                path: Some(path), ..
+            },
+            ..
+        } = &mut command
+        {
+            let added = fs::read(&*path).and_then(|b| media::add_sound(&self.library, &b, path));
+            if let Ok(added) = added {
+                *path = added;
+            }
+        }
+        command
     }
 
     fn load(

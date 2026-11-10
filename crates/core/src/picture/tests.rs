@@ -118,23 +118,3 @@ fn files_that_are_no_images_cannot_be_read() {
     let result = store(dir.path(), &source, None);
     assert!(matches!(result, Err(PictureError::Read(_))), "{result:?}");
 }
-
-#[test]
-fn a_picture_goes_to_another_media_directory_under_the_same_name() {
-    let dir = TempDir::new().unwrap();
-    let (a, b) = (dir.path().join("a"), dir.path().join("b"));
-    let source = image_file(dir.path(), "lok.png", 440, 340, 100);
-    let name = store(&a, &source, None).unwrap();
-
-    let png = content(&a, &name).unwrap();
-
-    assert_eq!(add(&b, &png).unwrap(), name);
-    assert_eq!(saved(&b, &name), saved(&a, &name));
-}
-
-#[test]
-fn only_content_names_are_read() {
-    let dir = TempDir::new().unwrap();
-    let error = content(dir.path(), "../lok").unwrap_err();
-    assert_eq!(error.to_string(), "there is no picture ../lok");
-}
