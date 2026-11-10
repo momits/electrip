@@ -24,6 +24,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-10 – N-03: Hinweis ohne Netzwerkzugriff, sechstes Inkrement (Claude)
+
+- CI auf `main` beim Start grün. Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- Ohne Zugriff auf das lokale Netzwerk lief die Instanz schon allein weiter, aber ohne es zu bemerken: `mdns-sd` protokolliert gescheiterte Sendungen nur intern. `Discovery::start` schickt deshalb vorher einen leeren mDNS-Kopf an `224.0.0.251:5353`; scheitert das (macOS ohne Berechtigung „Lokales Netzwerk“, kein Netz, Container: `EPERM`), meldet die App `ERROR no discovery: no access to the local network: …` und ist Host.
+- Der Grund geht im `hello` des Steuerkanals als `alone` an die Clients (auch wenn ein Client nach dem Host-Ausfall ohne Discovery Host wird). Das Fenster zeigt dann über dem Nothalt einen gelben Hinweis, dass Electrip allein läuft und wie man den Zugriff erlaubt, mit dem Grund darunter (deutsch übersetzt).
+- Tests: `crates/control/src/tests.rs` (`hello` mit und ohne Grund), `crates/ui/src/view/tests.rs` (Screenshot `control_view_alone.png`), `session_host.rs` (App mit Discovery: `alone` genau dann, wenn Multicast scheitert – im Container ja, in der CI vermutlich nein). Dabei den wackligen Test `an_unreachable_host_leaves_the_instance_on_its_own` repariert: Der freigegebene Port konnte an die App eines parallelen Tests gehen; jetzt Port 1.
+- `spec/steuerkanal.md` (Feld `alone`), Prüfpunkte in `spec/hw-checklist.md` („N-03 – Ohne Netzwerkzugriff allein weiter“).
+- `cargo xtask test`, `cargo xtask loc` (5973 Zeilen) und `cargo xtask parity` grün. `target/` war wieder voll (17 GB); `cargo clean`.
+- Einfachheits-Review: ok (Sub-Agent). Vorschlag, `alone` immer (auch als `null`) zu schicken, nicht übernommen: `hello` ohne Grund bleibt wie bisher.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Eingabe der Host-Adresse in der UI (heute nur `--host`).
+  - Doppel-Host während des Betriebs; Zentralen-ID der Z21 per Seriennummer.
+  - Ein Host ohne Netzwerkzugriff, den ein Client per `--host` trotzdem erreicht, schickt `alone` auch an dessen Fenster.
+
 ## 2026-11-09 – N-03: Host-Ausfall, fünftes Inkrement (Claude)
 
 - CI auf `main` beim Start grün. Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
