@@ -41,7 +41,7 @@ impl Relay {
         let shared = Arc::clone(&target);
         thread::spawn(move || {
             for client in listener.incoming() {
-                let host = current(&shared);
+                let host = *lock(&shared);
                 let upstream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT);
                 match client.and_then(|client| Ok((upstream?, client))) {
                     Ok((upstream, client)) => {
@@ -84,7 +84,7 @@ impl Relay {
     /// connected, since a new host does not know them; returns when the
     /// host is gone.
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
-        let host = current(&self.target);
+        let host = *lock(&self.target);
         let mut stream = TcpStream::connect_timeout(&host, CONNECT_TIMEOUT)?;
         stream.set_nodelay(true)?;
         // Reads all messages, so the host never waits to write them; it
@@ -115,22 +115,21 @@ impl Relay {
     }
 }
 
-fn current(target: &Mutex<SocketAddr>) -> SocketAddr {
-    *lock(target)
-}
-
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// Plays the audio events among the messages of the host until it is gone
-/// or falls silent.
+/// or falls silent; an event it does not know is left out.
 fn play(replies: TcpStream, audio: &Mutex<Audio>) -> io::Result<()> {
     for line in BufReader::new(replies).lines() {
         let message: Value = serde_json::from_str(&line?)?;
-        if message["type"] == "audio" {
-            let event: AudioEvent = serde_json::from_value(message["audio"].clone())?;
-            event.apply(&mut **lock(audio));
+        if message["type"] != "audio" {
+            continue;
+        }
+        match serde_json::from_value::<AudioEvent>(message["audio"].clone()) {
+            Ok(event) => event.apply(&mut **lock(audio)),
+            Err(e) => eprintln!("ERROR unknown audio event {}: {e}", message["audio"]),
         }
     }
     Ok(())

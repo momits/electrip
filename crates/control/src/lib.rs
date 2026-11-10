@@ -6,6 +6,7 @@ use electrip_core::audio::AudioEvent;
 use electrip_core::host::Host;
 use electrip_core::session::{Command, Session};
 use serde_json::{Value, json};
+use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::fs;
 use std::hash::BuildHasher;
@@ -53,6 +54,9 @@ struct Shared {
     joined: Option<SocketAddr>,
     /// The host handed over to another one; no client gets in any more.
     stopped: bool,
+    /// The connection of each instance that plays sounds (N-05); one that
+    /// reconnects may offer before its old connection is closed.
+    offers: HashMap<String, SocketAddr>,
 }
 
 /// The id of the instance with the library, the same after a restart; a
@@ -93,6 +97,7 @@ pub fn serve(
         id: format!("{id:016x}"),
         joined: None,
         stopped: false,
+        offers: HashMap::new(),
     }));
     let acceptor = Arc::clone(&shared);
     thread::spawn(move || accept(listener, &acceptor));
@@ -126,8 +131,8 @@ fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) {
 struct Added {
     /// The `add_device` commands of its input devices.
     devices: Vec<Command>,
-    /// Its instance, if it plays sounds (N-05).
-    audio: Option<String>,
+    /// Its instance and address, if it plays sounds (N-05).
+    audio: Option<(String, SocketAddr)>,
 }
 
 /// Greets the client with the version and the state, then executes its
@@ -143,7 +148,10 @@ fn handle_client(stream: TcpStream, shared: &Mutex<Shared>) -> io::Result<()> {
                 let _ = shared.host.apply(Command::RemoveDevice { device });
             }
         }
-        if let Some(instance) = added.audio {
+        if let Some((instance, address)) = added.audio
+            && shared.offers.get(&instance) == Some(&address)
+        {
+            shared.offers.remove(&instance);
             shared.host.remove_audio_target(&instance);
         }
         shared.broadcast();
@@ -170,14 +178,17 @@ fn serve_client(stream: TcpStream, shared: &Mutex<Shared>, added: &mut Added) ->
             // Without the lock while it waits for the other host.
             let id = lock(shared)?.id.clone();
             let result = join(&address, &id);
+            let mut shared = lock(shared)?;
             send(&mut writer, &reply(&result))?;
-            lock(shared)?.joined = result.ok();
+            shared.joined = result.ok();
             continue;
         }
-        if let Some(offer) = offer_request(&line) {
-            added.audio = Some(offer.0.clone());
+        if let Some((instance, devices)) = offer_request(&line) {
+            let address = writer.peer_addr()?;
+            added.audio = Some((instance.clone(), address));
             let mut shared = lock(shared)?;
-            offer_audio(&mut shared.host, offer, writer.try_clone()?);
+            shared.offers.insert(instance.clone(), address);
+            offer_audio(&mut shared.host, instance, devices, writer.try_clone()?);
             send(&mut writer, &reply(&Ok::<(), String>(())))?;
             shared.broadcast();
             continue;
@@ -290,7 +301,7 @@ fn offer_request(line: &str) -> Option<(String, Vec<String>)> {
 
 /// Sends the audio events of the locos that name the instance to the
 /// client.
-fn offer_audio(host: &mut Host, (instance, devices): (String, Vec<String>), mut client: TcpStream) {
+fn offer_audio(host: &mut Host, instance: String, devices: Vec<String>, mut client: TcpStream) {
     let remote = Box::new(move |event: &AudioEvent| {
         send(&mut client, &json!({"type": "audio", "audio": event})).is_ok()
     });

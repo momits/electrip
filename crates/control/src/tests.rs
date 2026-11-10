@@ -361,3 +361,23 @@ fn a_client_instance_offers_its_audio_target_and_plays_the_audio_events() {
     }
     assert_eq!(*routes.0.lock().unwrap(), [r#"3 Some("USB")"#]);
 }
+
+#[test]
+fn an_instance_that_reconnects_keeps_its_audio_target() {
+    let (address, _library) = serve_host();
+    let offer = json!({"command": "offer_audio", "instance": "b", "devices": []});
+    let reply = |m: &Value| m["type"] == "reply";
+    let mut old = TcpStream::connect(address).unwrap();
+    send(&mut old, &offer).unwrap();
+    wait_for(&mut BufReader::new(old.try_clone().unwrap()).lines(), reply);
+    let mut new = TcpStream::connect(address).unwrap();
+    send(&mut new, &offer).unwrap();
+    wait_for(&mut BufReader::new(new.try_clone().unwrap()).lines(), reply);
+
+    drop(old);
+    thread::sleep(Duration::from_millis(200));
+    let mut at_host = BufReader::new(TcpStream::connect(address).unwrap()).lines();
+    at_host.next(); // hello
+    let state: Value = serde_json::from_str(&at_host.next().unwrap().unwrap()).unwrap();
+    assert_eq!(state["state"]["audio_targets"], json!({"b": []}));
+}
