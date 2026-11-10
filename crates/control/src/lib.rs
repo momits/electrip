@@ -64,8 +64,9 @@ pub fn serve(
     thread::spawn(move || accept(listener, &acceptor));
     let next = poll(&shared, input, handover)?;
     lock(&shared)?.stop();
-    // Wakes the acceptor, so it ends.
-    let _ = TcpStream::connect(address);
+    // Wakes the acceptor, so it ends and drops the host.
+    let _ = TcpStream::connect(address)
+        .inspect_err(|e| eprintln!("ERROR the old host stays open: {e}"));
     Ok(next)
 }
 

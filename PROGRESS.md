@@ -24,6 +24,21 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 
+## 2026-11-10 – N-03: Doppel-Host während des Betriebs (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
+- Sehen sich zwei Hosts derselben Zentrale während des Betriebs (z. B. nach getrenntem Netz), bleibt der mit der kleineren Instanz-ID Host (ADR 0010). Der andere prüft alle 2 s im Hintergrund, ob mDNS einen erreichbaren Host mit kleinerer ID zeigt; dann schließt er alle Verbindungen seines Steuerkanals, wird Client des anderen und meldet dort seine Gamepads an. Seine Clients finden den verbleibenden Host wie beim Host-Ausfall.
+- Dafür: `Discovery` browst jetzt dauerhaft und hält die gesehenen Instanzen (`find_host` und `smaller_host` lesen nur noch daraus); `serve` nimmt eine `handover`-Funktion und gibt den nächsten Host zurück; die Instanz läuft auch als Host hinter dem Relay (eigener Port auf `127.0.0.1`), damit der öffentliche Port das Ziel wechseln kann. `main` wechselt die Rolle in einer Schleife (`session`); die Soundkarte gehört zur Host-Rolle.
+- Tests: `discovery/tests.rs` (ein Host weicht nur einem Host derselben Zentrale mit kleinerer ID), `crates/control/src/tests.rs` (abgebender Host schließt alle Verbindungen, nimmt keine neuen mehr an und nennt den nächsten Host). Die Übergabe per mDNS selbst ist im Container nicht testbar (Multicast gesperrt); Prüfpunkte in `spec/hw-checklist.md` („N-03 – Doppel-Host während des Betriebs“), `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (6105 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Soundkarte mit der Host-Rolle statt zweimal geöffnet, Meldung `ERROR the mDNS daemon stopped`, kein ständig gebundener Ersatz-Listener, Meldung, wenn der alte Host nicht freigegeben werden kann.
+- **N-03** bleibt offen.
+- **Offen:**
+  - Q-016 (verschiedene Konfigurationen an einem Host).
+  - Eingabe der Host-Adresse in der UI (heute nur `--host`); die Übergabe in `session` ist dafür nutzbar.
+  - Wie schnell sich zwei Hosts nach dem Verbinden des Netzes sehen, hängt davon ab, wie oft `mdns-sd` neu fragt; Mo misst das.
+  - Ist die Z21 beim Start einer Instanz aus, gilt ihre Adresse als ID (wie zuvor).
+
 ## 2026-11-10 – N-03: Zentralen-ID der Z21 per Seriennummer (Claude)
 
 - CI auf `main` beim Start grün. Q-016 ist offen; dieses Inkrement hängt nicht davon ab.
