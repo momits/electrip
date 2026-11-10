@@ -5,11 +5,8 @@
 //! behind the relay too, so it can hand over to another host. A client
 //! instance joins another host on `join_host` by itself, its host stays.
 //! The relay plays the sounds of the locos that name the instance (N-05).
-//! A client instance drives with its own configuration as a guest of the
-//! host (Q-016).
 
 use electrip_core::audio::{Audio, AudioEvent};
-use electrip_core::config::Config;
 use electrip_core::session::Command;
 use serde_json::{Value, json};
 use std::collections::hash_map::RandomState;
@@ -48,8 +45,6 @@ struct Route {
     joined: Option<SocketAddr>,
     /// The connections of the clients, closed when the instance joins.
     clients: Vec<TcpStream>,
-    /// The configuration the instance drives with while it is client.
-    configuration: Option<Config>,
 }
 
 impl Route {
@@ -61,14 +56,6 @@ impl Route {
         for client in self.clients.drain(..) {
             let _ = client.shutdown(Shutdown::Both);
         }
-    }
-
-    /// The `use_configuration` request a connection to the host starts
-    /// with while the instance is client; the host keeps the connection
-    /// if it has the configuration open itself.
-    fn guest_request(&self) -> Option<Value> {
-        let config = self.configuration.as_ref().filter(|_| self.client)?;
-        Some(json!({"command": "use_configuration", "configuration": config}))
     }
 }
 
@@ -82,7 +69,6 @@ impl Relay {
             client: false,
             joined: None,
             clients: Vec::new(),
-            configuration: None,
         }));
         Relay {
             route,
@@ -97,7 +83,7 @@ impl Relay {
     /// Sends the clients that connect from now on to `host`; `client`
     /// tells whether the instance is client of it. The first switch
     /// starts to forward the clients, so none reaches the host before the
-    /// relay knows the configuration of the instance.
+    /// relay knows whether the instance is client.
     pub fn switch(&mut self, host: SocketAddr, client: bool) {
         let mut route = lock(&self.route);
         (route.host, route.client) = (host, client);
@@ -105,12 +91,6 @@ impl Relay {
             let route = Arc::clone(&self.route);
             thread::spawn(move || accept(listener, &route));
         }
-    }
-
-    /// Drives with `configuration` while the instance is client, on the
-    /// connections to the host from now on.
-    pub fn drive_with(&self, configuration: Option<Config>) {
-        lock(&self.route).configuration = configuration;
     }
 
     /// The host a client asked to join, once.
@@ -132,9 +112,8 @@ impl Relay {
         commands
     }
 
-    /// Offers the audio target to the host, drives with the configuration
-    /// of the instance and sends the host the commands of the input
-    /// devices, first those that add the devices still
+    /// Offers the audio target to the host and sends it the commands of
+    /// the input devices, first those that add the devices still
     /// connected, since a new host does not know them; returns when the
     /// host is gone, or when a client asked to join another one.
     pub fn run(&mut self, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
@@ -156,10 +135,6 @@ impl Relay {
             "devices": devices,
         });
         write(&stream, &offer)?;
-        let guest = lock(&self.route).guest_request();
-        if let Some(request) = guest {
-            write(&stream, &request)?;
-        }
         for command in &self.devices {
             send(&stream, command, self.offset)?;
         }
@@ -250,12 +225,6 @@ fn copy_lines(client: TcpStream, upstream: TcpStream, route: &Mutex<Route>) -> i
     from_host.read_line(&mut hello)?;
     let host_id = serde_json::from_str::<Value>(&hello)?["id"].clone();
     let mut to_host = upstream;
-    // Without the lock while it waits for the host.
-    let guest = lock(route).guest_request();
-    if let Some(request) = guest {
-        to_host.write_all(format!("{request}\n").as_bytes())?;
-        skip_to_reply(&mut from_host)?;
-    }
     let to_client = Arc::new(Mutex::new(client.try_clone()?));
     lock(&to_client).write_all(hello.as_bytes())?;
     let writer = Arc::clone(&to_client);
@@ -285,25 +254,6 @@ fn copy_lines(client: TcpStream, upstream: TcpStream, route: &Mutex<Route>) -> i
     let _ = to_host.shutdown(Shutdown::Both);
     let _ = replies.join();
     Ok(())
-}
-
-/// Skips the messages of the host up to the reply, so the client gets
-/// the state of the guest only and no reply it did not ask for.
-fn skip_to_reply(from_host: &mut BufReader<TcpStream>) -> io::Result<()> {
-    let mut line = String::new();
-    loop {
-        line.clear();
-        if from_host.read_line(&mut line)? == 0 {
-            return Err(io::ErrorKind::UnexpectedEof.into());
-        }
-        let message: Value = serde_json::from_str(&line)?;
-        if message["type"] == "reply" {
-            if let Some(error) = message["error"].as_str() {
-                eprintln!("ERROR the host drives without the configuration: {error}");
-            }
-            return Ok(());
-        }
-    }
 }
 
 fn offset_device(mut command: Command, offset: u32) -> Command {

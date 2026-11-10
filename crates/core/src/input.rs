@@ -96,14 +96,6 @@ impl Mapping {
     }
 }
 
-/// A device of another session on the host (Q-016) with the loco here
-/// that has the address of its loco there.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct OtherDevice {
-    pub number: u32,
-    pub loco: Option<u32>,
-}
-
 /// A connected input device and the loco it controls.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Device {

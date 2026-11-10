@@ -11,7 +11,7 @@ use crate::electrip1::ImportError;
 use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function};
 use crate::function_sound::SoundFunction;
-use crate::input::{Device, Mapping, OtherDevice, Target};
+use crate::input::{Device, Mapping, Target};
 use crate::loco::{Loco, LocoError};
 use crate::picture::{Crop, PictureError};
 use crate::sound::{Engine, EngineSound, SegmentSound, Steam};
@@ -347,9 +347,6 @@ pub enum CommandError {
     ConfigurationExists(String),
     ConfigurationOpen(String),
     File(String),
-    UnknownConfiguration(String),
-    /// A guest only drives with its configuration (Q-016).
-    GuestChange,
 }
 
 impl From<LocoError> for CommandError {
@@ -393,12 +390,6 @@ impl fmt::Display for CommandError {
                 write!(f, "the configuration {name:?} is open")
             }
             CommandError::File(reason) => write!(f, "file error: {reason}"),
-            CommandError::UnknownConfiguration(id) => {
-                write!(f, "the configuration {id} is not in this session")
-            }
-            CommandError::GuestChange => {
-                f.write_str("change this configuration on the instance that opened it")
-            }
         }
     }
 }
@@ -485,8 +476,6 @@ pub struct Session {
     /// One mapping per device type, in the order they were first used.
     mappings: Vec<Mapping>,
     devices: Vec<Device>,
-    /// The devices of the other sessions on the host (Q-016).
-    other_devices: Vec<OtherDevice>,
     station: Station,
     view: View,
     /// Ids are never reused, so a command for a removed loco cannot hit a
@@ -511,13 +500,6 @@ pub struct Session {
     /// The round trip in milliseconds to each of these instances, once
     /// measured (N-05).
     audio_latency: BTreeMap<String, u64>,
-    /// The addresses whose locos play on different audio targets, as
-    /// sessions name different ones (N-05); sorted.
-    audio_conflicts: Vec<u16>,
-    /// The addresses whose axis was deflected since the host last took
-    /// them (Q-016).
-    #[serde(skip)]
-    deflected: Vec<u16>,
 }
 
 impl Session {
@@ -627,23 +609,6 @@ impl Session {
 
     pub(crate) fn audio_latency_mut(&mut self) -> &mut BTreeMap<String, u64> {
         &mut self.audio_latency
-    }
-
-    /// Returns whether they changed.
-    pub(crate) fn set_audio_conflicts(&mut self, addresses: Vec<u16>) -> bool {
-        let changed = self.audio_conflicts != addresses;
-        self.audio_conflicts = addresses;
-        changed
-    }
-
-    /// Takes over what belongs to the host, not to a configuration: the
-    /// command station and the audio targets (Q-016).
-    pub(crate) fn share(&mut self, host: &Session) {
-        self.station = host.station.clone();
-        self.audio_devices = host.audio_devices.clone();
-        self.audio_targets = host.audio_targets.clone();
-        self.audio_latency = host.audio_latency.clone();
-        self.audio_conflicts = host.audio_conflicts.clone();
     }
 
     pub(crate) fn set_connected(&mut self, connected: bool) {
@@ -847,45 +812,17 @@ impl Session {
     }
 
     fn set_axis(&mut self, loco: u32, deflection: f64, dead_zone: f64) -> Result<(), CommandError> {
-        let entry = self.entry(loco)?;
-        entry.axis = drive::deflection(deflection, dead_zone);
-        if entry.axis != 0.0 {
-            let address = entry.loco.decoder().address();
-            self.deflected.push(address);
-        }
+        self.entry(loco)?.axis = drive::deflection(deflection, dead_zone);
         Ok(())
     }
 
-    /// The addresses whose axis was deflected since the last call.
-    pub(crate) fn take_deflected(&mut self) -> Vec<u16> {
-        std::mem::take(&mut self.deflected)
-    }
-
-    /// Releases the axis of each loco with the address: another input
-    /// drives it now (Q-016).
+    /// Releases the axis of each loco with the address.
     pub(crate) fn release_axis(&mut self, address: u16) {
         for entry in &mut self.locos {
             if entry.loco.decoder().address() == address {
                 entry.axis = 0.0;
             }
         }
-    }
-
-    /// A session for the configuration of a guest (Q-016). Its locos get
-    /// ids after those of this session, which goes on after them, so loco
-    /// ids stay unique on the host.
-    pub(crate) fn guest(&mut self, config: Config) -> Session {
-        let mut guest = Session {
-            last_id: self.last_id,
-            ..Session::default()
-        };
-        guest.load(config, Vec::new());
-        self.last_id = guest.last_id;
-        guest
-    }
-
-    pub(crate) fn configuration_id(&self) -> &str {
-        &self.configuration_id
     }
 
     pub(crate) fn toggle_sound(

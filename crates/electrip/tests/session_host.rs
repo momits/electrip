@@ -83,43 +83,6 @@ fn a_change_in_one_instance_shows_in_all_others_within_300_ms() {
     shows_within_300_ms(&mut at_host, rename, [&mut at_b, &mut at_c], renamed);
 }
 
-/// The same with two configurations that both have a loco at address 3:
-/// the client with a configuration of its own drives as a guest (Q-016).
-#[test]
-fn a_change_shows_in_other_configurations_within_300_ms() {
-    let host = App::start();
-    add_loco_at(&mut host.connect(), 3);
-    let library_b = TempDir::new().unwrap();
-    let alone = App::start_in(library_b.path(), &[]);
-    let mut at_alone = alone.connect();
-    add_loco_at(&mut at_alone, 3);
-    at_alone
-        .command(json!({"command": "rename_loco", "loco": 1, "name": "V 60"}))
-        .unwrap();
-    drop((at_alone, alone));
-    let network = slow_network(host.address());
-    let library_c = TempDir::new().unwrap();
-    let (b, c) = (
-        client_of(&network, &library_b),
-        client_of(&network, &library_c),
-    );
-    let mut at_host = host.connect();
-    let mut at_b = b.connect();
-    let mut at_c = c.connect();
-    assert_eq!(at_b.state["locos"][0]["name"], "V 60");
-    assert_ne!(at_c.state["locos"][0]["name"], "V 60");
-    let forward = |is: bool| move |state: &Value| state["locos"][0]["forward"] == is;
-
-    // The locos of a guest get ids after those of the host.
-    let reverse = json!({"command": "reverse", "loco": at_b.state["locos"][0]["id"]});
-    let others = [&mut at_host, &mut at_c];
-    shows_within_300_ms(&mut at_b, reverse, others, forward(false));
-
-    let reverse = json!({"command": "reverse", "loco": 1});
-    let others = [&mut at_host, &mut at_b];
-    shows_within_300_ms(&mut at_c, reverse, others, forward(true));
-}
-
 /// Sends `command` at `from`; within 300 ms the states of the `others`
 /// satisfy `done`.
 fn shows_within_300_ms(
@@ -293,27 +256,20 @@ fn connect_until(app: &App, done: impl Fn(&Value) -> bool) -> Client {
     }
 }
 
-/// Q-016: a client instance with a configuration of its own drives with
-/// it as a guest of the host.
+/// A client instance drives with the configuration of the host, also
+/// when its library has another one, and may change it.
 #[test]
-fn a_client_drives_with_its_own_configuration() {
+fn a_client_drives_with_the_configuration_of_the_host() {
     let host = App::start();
     let library = TempDir::new().unwrap();
     let alone = App::start_in(library.path(), &[]);
     let mut at_alone = alone.connect();
     at_alone.command(json!({"command": "add_loco"})).unwrap();
-    at_alone
-        .command(json!({"command": "rename_loco", "loco": 1, "name": "V 60"}))
-        .unwrap();
     drop((at_alone, alone));
 
     let client = client_of(host.address(), &library);
     let mut at_client = client.connect();
-    assert_eq!(at_client.state["locos"][0]["name"], "V 60");
-    assert_eq!(host.connect().state["locos"], json!([]));
-    let error = "change this configuration on the instance that opened it";
-    assert_eq!(
-        at_client.command(json!({"command": "add_loco"})),
-        Err(error.into())
-    );
+    assert_eq!(at_client.state["locos"], json!([]));
+    at_client.command(json!({"command": "add_loco"})).unwrap();
+    assert_eq!(host.connect().state["locos"][0]["id"], 1);
 }
