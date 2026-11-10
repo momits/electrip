@@ -266,17 +266,16 @@ impl Host {
         changed || driven || mirrored
     }
 
-    /// Has the audio target read the sounds of all locos ahead, also of
+    /// Has the audio targets read the sounds of all locos ahead, also of
     /// new and changed ones, so a sound plays at once the first time. Each
     /// tick, because the locos of the host and the guests change in many
-    /// places; the target reads each sound only once.
+    /// places; a target reads each sound only once.
     fn prepare_sounds(&mut self) {
         let sessions = iter::once(&self.session).chain(&self.guests);
-        for sound in sessions
-            .flat_map(Session::locos)
-            .flat_map(|e| e.loco.sounds())
-        {
-            self.audio.prepare(&sound);
+        for entry in sessions.flat_map(Session::locos) {
+            for sound in entry.loco.sounds() {
+                self.audio.read_ahead(entry.id, &sound);
+            }
         }
     }
 

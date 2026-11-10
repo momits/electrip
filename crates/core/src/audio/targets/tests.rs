@@ -11,6 +11,7 @@ fn targets(alive: bool) -> (Targets, LogSink, Sent) {
     let log = LogSink {
         played: Arc::clone(&local.played),
         routes: Arc::clone(&local.routes),
+        prepared: Arc::clone(&local.prepared),
         ..LogSink::default()
     };
     let mut targets = Targets::new(Box::new(local));
@@ -115,6 +116,35 @@ fn an_unchanged_route_is_not_sent_again() {
     targets.route(1, Some("b"), None);
     targets.route(1, Some("b"), None);
     assert_eq!(sent.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn the_instance_of_a_loco_reads_its_sounds_ahead_once() {
+    let (mut targets, host, sent) = targets(true);
+    targets.route(1, None, None);
+    targets.route(2, Some("b"), None);
+    sent.lock().unwrap().clear();
+    for _ in 0..2 {
+        targets.read_ahead(1, Path::new("a.ogg"));
+        targets.read_ahead(2, Path::new("b.ogg"));
+    }
+    let prepare = AudioEvent::Prepare {
+        sound: "b.ogg".into(),
+    };
+    assert_eq!(*sent.lock().unwrap(), std::slice::from_ref(&prepare));
+    assert!(host.prepared.lock().unwrap().contains(&"b.ogg".into()));
+
+    let again = Sent::default();
+    let remote = Arc::clone(&again);
+    targets.add(
+        "b".into(),
+        Box::new(move |event| {
+            remote.lock().unwrap().push(event.clone());
+            true
+        }),
+    );
+    targets.read_ahead(2, Path::new("b.ogg"));
+    assert_eq!(*again.lock().unwrap(), [prepare]);
 }
 
 #[test]
