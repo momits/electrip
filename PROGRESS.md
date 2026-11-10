@@ -25,6 +25,23 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
 
+## 2026-11-10 – N-04: Automerge-Dokument je Konfiguration in der Bibliothek (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; deshalb N-04 weiter.
+- Jede Konfiguration hat jetzt eine feste, zufällige `id` (Feld in der JSON-Datei). Sie bleibt beim Umbenennen und beim Export gleich; neue und importierte Konfigurationen bekommen eine eigene. Dateien ohne `id` (von vor N-04) bekommen beim Lesen eine und werden gleich gespeichert.
+- Der Host arbeitet weiter auf den JSON-Dateien (`core` bleibt ohne Automerge). `electrip_sync::library` hält daneben je Konfiguration ein Automerge-Dokument unter `sync/<id>.automerge`:
+  - `document` holt die Änderungen der JSON-Datei seit dem letzten Aufruf ins Dokument und gibt es zurück (zum Verschicken).
+  - `merge` führt das Dokument einer anderen Instanz ein, speichert Dokument und JSON-Datei und meldet, ob sich die Konfiguration geändert hat. Hat die Bibliothek noch kein Dokument, beginnt sie mit dem fremden, denn nur Dokumente mit gemeinsamer Geschichte werden feldweise zusammengeführt.
+  - IDs kommen von anderen Instanzen; eine ID, die kein gültiger Dateiname ist, wird abgelehnt.
+- Tests: `crates/sync/src/library/tests.rs` (Dokument unter der ID, Änderungen zweier Bibliotheken landen in beiden Dateien, keine Datei außerhalb der Bibliothek), `config/tests.rs` (ID für alte Dateien), `host/library/tests.rs` (neue Konfiguration mit neuer ID, Umbenennen behält sie).
+- `cargo xtask test`, `cargo xtask loc` (6440 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Jede öffentliche Funktion speichert das Dokument nur einmal.
+- **N-04** bleibt offen.
+- **Offen:**
+  - Abgleich zwischen Instanzen: nach dem Verbinden (mDNS, Steuerkanal) IDs austauschen und gemeinsame Dokumente mit `document`/`merge` abgleichen; Medien per SHA-256 nachladen (Bilder heißen schon nach ihrem SHA-256, Sounds aus Paketen ebenso prüfen).
+  - Ändert `merge` die offene Konfiguration, muss der Host sie neu laden, auch während er verbunden ist.
+  - Wie kommt eine Konfiguration zum ersten Mal auf ein zweites Gerät? Heute nur durch Kopieren der JSON-Datei (gleiche `id`); Export/Import liest nur das Format von Electrip 1. Legen zwei Geräte das Dokument getrennt aus derselben Datei an, gewinnt bei Listen eine Seite ganz.
+
 ## 2026-11-10 – N-04: Konfiguration als Automerge-Dokument, erstes Inkrement (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 wartet in großen Teilen auf Q-016; N-04 war noch nicht begonnen.
