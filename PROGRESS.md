@@ -6,6 +6,13 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
+- **Bug: Maussteuerung im Fenster (B-24):** Der Geschwindigkeitsregler lässt sich im Fenster nicht mit der Maus ändern (Mo, 2026-11-10, beim Start mit Z21-Simulator und den Lokpaketen aus `tests/corpus/packages/`).
+  Erst mit einem Test reproduzieren, dann beheben.
+  Das Fenster sendet nur Befehle des Kerns (`set_axis`, `reverse`).
+  B-24 steht deshalb wieder auf `wired: false`, `verified: false`.
+- **Füllstandsanzeige für Loks mit Sound (B-22):** In Electrip 1 zeigt sie, wo der Sound im Verhältnis zur gewählten Fahrstufe bzw. Geschwindigkeit steht (`legacy/src/electrip/control_ui.py`, `animate_fill_level`, Option `show_level_bar`).
+  Der Wert kommt aus dem Zustand des Hosts, nicht aus eigener Rechnung im Fenster.
+  B-22 hat dafür ein neues Kriterium und steht wieder auf `wired: false`, `verified: false`.
 - **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
