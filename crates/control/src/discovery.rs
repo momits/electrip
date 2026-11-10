@@ -1,16 +1,19 @@
 //! Discovery of the session host (N-03, ADR 0010): each instance announces
 //! itself per mDNS as `_electrip._tcp` with its instance id, the protocol
 //! version, the id of its command station and its status. A starting
-//! instance searches for the host of its command station.
+//! instance searches for the host of its command station; a host yields to
+//! a host of the same station with a smaller id.
 
 use electrip_core::session::Station;
 use electrip_core::station::StationKind;
-use mdns_sd::{RecvTimeoutError, ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
+use mdns_sd::{Receiver, ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
 use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr, ToSocketAddrs, UdpSocket};
+use std::sync::{Arc, Mutex, PoisonError};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::VERSION;
@@ -73,6 +76,16 @@ fn elect(me: u64, station: &str, seen: &[Announcement]) -> Election {
     }
 }
 
+/// The host this host yields to: of two hosts of `station`, the one with
+/// the smaller id stays host (ADR 0010).
+fn yields_to(me: u64, station: &str, seen: &[Announcement]) -> Option<SocketAddr> {
+    let smaller: Vec<_> = seen.iter().filter(|a| a.instance < me).cloned().collect();
+    match elect(me, station, &smaller) {
+        Election::Connect(host) => Some(host),
+        _ => None,
+    }
+}
+
 /// The id of the command station (ADR 0010): the serial number of a Z21,
 /// else its address, port and bus. A command station on this computer has
 /// the LAN address of the computer, so it differs from the one on another
@@ -125,21 +138,32 @@ fn check_network() -> io::Result<()> {
     Ok(())
 }
 
-/// The announcement of this instance; it lasts as long as the value.
+/// The announcements of the instances, by service name.
+type Seen = Arc<Mutex<HashMap<String, Announcement>>>;
+
+/// The announcement of this instance; it lasts as long as the value. It
+/// browses for the other instances all the time.
 pub struct Discovery {
     daemon: ServiceDaemon,
     instance: u64,
     station: String,
+    seen: Seen,
 }
 
 impl Discovery {
     /// Announces the instance with a random id as searching.
     pub fn start(station: String) -> io::Result<Discovery> {
         check_network()?;
+        let daemon = ServiceDaemon::new().map_err(io::Error::other)?;
+        let events = daemon.browse(SERVICE).map_err(io::Error::other)?;
+        let seen = Seen::default();
+        let shared = Arc::clone(&seen);
+        thread::spawn(move || browse(&events, &shared));
         let discovery = Discovery {
-            daemon: ServiceDaemon::new().map_err(io::Error::other)?,
+            daemon,
             instance: RandomState::new().hash_one(()),
             station,
+            seen,
         };
         discovery.announce(Status::Searching, 0)?;
         Ok(discovery)
@@ -165,38 +189,48 @@ impl Discovery {
     /// Searches for the host of the command station, apart from the one
     /// at `gone`, whose announcement can outlive it; `None` if this
     /// instance is to be host.
-    pub fn find_host(&self, gone: Option<SocketAddr>) -> io::Result<Option<SocketAddr>> {
-        let events = self.daemon.browse(SERVICE).map_err(io::Error::other)?;
+    pub fn find_host(&self, gone: Option<SocketAddr>) -> Option<SocketAddr> {
         let start = Instant::now();
-        let mut seen = HashMap::new();
-        let found = loop {
-            match events.recv_timeout(Duration::from_millis(100)) {
-                Ok(ServiceEvent::ServiceResolved(service)) => {
-                    if let Some(announcement) =
-                        announcement(&service).filter(|a| Some(a.address) != gone)
-                    {
-                        seen.insert(service.fullname, announcement);
-                    }
-                }
-                Ok(ServiceEvent::ServiceRemoved(_, name)) => {
-                    seen.remove(&name);
-                }
-                Err(RecvTimeoutError::Disconnected) => {
-                    return Err(io::Error::other("the mDNS daemon stopped"));
-                }
-                _ => {}
-            }
-            let seen: Vec<_> = seen.values().cloned().collect();
+        loop {
+            thread::sleep(Duration::from_millis(100));
+            let mut seen = self.seen();
+            seen.retain(|a| Some(a.address) != gone);
             let waited = start.elapsed();
             match elect(self.instance, &self.station, &seen) {
-                Election::Connect(host) => break Some(host),
-                Election::Host if waited >= SEARCH => break None,
-                Election::Wait if waited >= SEARCH + PATIENCE => break None,
+                Election::Connect(host) => return Some(host),
+                Election::Host if waited >= SEARCH => return None,
+                Election::Wait if waited >= SEARCH + PATIENCE => return None,
                 _ => {}
             }
-        };
-        self.daemon.stop_browse(SERVICE).map_err(io::Error::other)?;
-        Ok(found)
+        }
+    }
+
+    /// The host this host is to yield to, if there is one (N-03).
+    pub fn smaller_host(&self) -> Option<SocketAddr> {
+        yields_to(self.instance, &self.station, &self.seen())
+    }
+
+    fn seen(&self) -> Vec<Announcement> {
+        let seen = self.seen.lock().unwrap_or_else(PoisonError::into_inner);
+        seen.values().cloned().collect()
+    }
+}
+
+/// Keeps `seen` up to date until the mDNS daemon stops.
+fn browse(events: &Receiver<ServiceEvent>, seen: &Mutex<HashMap<String, Announcement>>) {
+    while let Ok(event) = events.recv() {
+        let mut seen = seen.lock().unwrap_or_else(PoisonError::into_inner);
+        match event {
+            ServiceEvent::ServiceResolved(service) => {
+                if let Some(announcement) = announcement(&service) {
+                    seen.insert(service.fullname.clone(), announcement);
+                }
+            }
+            ServiceEvent::ServiceRemoved(_, name) => {
+                seen.remove(&name);
+            }
+            _ => {}
+        }
     }
 }
 

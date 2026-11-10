@@ -1,7 +1,8 @@
 //! Client mode (N-03, ADR 0010): the instance has no host of its own. Its
 //! control channel forwards each client to the host, and its input devices
 //! send their commands there. When the host is gone, the relay switches to
-//! the next host, which may be the instance itself.
+//! the next host, which may be the instance itself. A host instance runs
+//! behind the relay too, so it can hand over to another host.
 
 use electrip_core::session::Command;
 use std::collections::hash_map::RandomState;
@@ -60,6 +61,15 @@ impl Relay {
         &self.devices
     }
 
+    /// Keeps the devices of `commands`, so the next host knows them,
+    /// also while the instance is host itself.
+    pub fn track(&mut self, commands: Vec<Command>) -> Vec<Command> {
+        for command in &commands {
+            track(&mut self.devices, command);
+        }
+        commands
+    }
+
     /// Sends the commands of the input devices to the host, first those
     /// that add the devices still connected, since a new host does not know
     /// them; returns when the host is gone.
@@ -80,8 +90,7 @@ impl Relay {
             if host_alive.is_finished() {
                 return Err(io::Error::other("no sign of life"));
             }
-            for command in input() {
-                track(&mut self.devices, &command);
+            for command in self.track(input()) {
                 send(&mut stream, &command, self.offset)?;
             }
         }

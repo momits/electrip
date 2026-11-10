@@ -1,7 +1,7 @@
 //! Electrip 2. The window is a client of the control channel on localhost
 //! (N-08); without a display or with `--headless` the app runs without it.
 //! The instance is the session host or a client of the host it finds per
-//! mDNS or at `--host` (N-03).
+//! mDNS or at `--host`, and changes its role when the hosts change (N-03).
 
 use electrip_audio::{MixerDeviceSink, Speaker};
 use electrip_control::{Discovery, Relay, Status, station_id};
@@ -13,9 +13,12 @@ use electrip_station_srcp::SrcpStation;
 use electrip_station_z21::Z21Station;
 use std::env;
 use std::io;
+use std::mem;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
+use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
 
@@ -23,6 +26,9 @@ const DEFAULT_CONTROL_PORT: u16 = 4711;
 
 /// How long the instance waits for the host at `--host` (N-03).
 const HOST_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// How often a host checks whether to yield to another host (N-03).
+const WATCH_INTERVAL: Duration = Duration::from_secs(2);
 
 const USAGE: &str = "usage: electrip [--headless] [--control-port <port>] [--library <dir>] [-f|--file <configuration>] [--host <address:port>] [--no-discovery]";
 
@@ -66,13 +72,6 @@ fn run() -> Result<(), String> {
         TcpListener::bind((Ipv4Addr::UNSPECIFIED, args.control_port)).map_err(|e| e.to_string())?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
-    let status = match role {
-        Role::Host(..) => Status::Host,
-        Role::Client(_) => Status::Client,
-    };
-    if let Some(discovery) = &discovery {
-        announce(discovery, status, port);
-    }
     println!(
         "Electrip {} control channel on {address}",
         env!("CARGO_PKG_VERSION")
@@ -84,11 +83,8 @@ fn run() -> Result<(), String> {
             .inspect_err(|e| eprintln!("ERROR no gamepads: {e}"))
             .ok();
         let input = move || gamepads.as_mut().map(Gamepads::poll).unwrap_or_default();
-        match role {
-            Role::Host(host, alone) => electrip_control::serve(listener, *host, input, alone),
-            Role::Client(host) => client(listener, host, input, discovery, library, args.file),
-        }
-        .map_err(|e| e.to_string())
+        let discovery = discovery.map(Arc::new);
+        session(listener, role, input, discovery, library, args.file).map_err(|e| e.to_string())
     });
     if !args.headless {
         match electrip_ui::run(address, media) {
@@ -106,27 +102,75 @@ enum Role {
     Client(SocketAddr),
 }
 
-/// Relays to the host; when there is no host left, the instance becomes
-/// host itself on a port of its own, and the relay passes its clients on
-/// (N-03).
-fn client(
+/// Plays the role and changes it until the control channel fails: a host
+/// hands over to a host with a smaller id, a client becomes host when
+/// there is no host left (N-03). The relay keeps the port of the control
+/// channel and passes its clients on to the host of the moment, which may
+/// be the instance itself.
+fn session(
     listener: TcpListener,
-    host: SocketAddr,
+    mut role: Role,
     mut input: impl FnMut() -> Vec<Command>,
-    discovery: Option<Discovery>,
+    discovery: Option<Arc<Discovery>>,
     library: PathBuf,
     file: Option<String>,
 ) -> io::Result<()> {
     let port = listener.local_addr()?.port();
-    let mut relay = Relay::start(listener, host);
-    let alone = follow(&mut relay, host, &mut input, discovery.as_ref(), port);
-    let (host, _sound_card) = take_over(&relay, library, file)?;
-    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
-    relay.switch(listener.local_addr()?);
-    if let Some(discovery) = &discovery {
-        announce(discovery, Status::Host, port);
+    let mut private = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
+    let first = match &role {
+        Role::Host(..) => private.local_addr()?,
+        Role::Client(host) => *host,
+    };
+    let mut relay = Relay::start(listener, first);
+    // The sound card plays as long as it lives.
+    let mut _sound_card = None;
+    loop {
+        role = match role {
+            Role::Host(host, alone) => {
+                relay.switch(private.local_addr()?);
+                let serving =
+                    mem::replace(&mut private, TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?);
+                if let Some(discovery) = &discovery {
+                    announce(discovery, Status::Host, port);
+                }
+                let handover = watch(discovery.clone());
+                let input = || relay.track(input());
+                let next = electrip_control::serve(serving, *host, input, alone, || {
+                    handover.try_recv().ok()
+                })?;
+                eprintln!("ERROR the host {next} has a smaller id, this instance hands over to it");
+                Role::Client(next)
+            }
+            Role::Client(host) => {
+                relay.switch(host);
+                if let Some(discovery) = &discovery {
+                    announce(discovery, Status::Client, port);
+                }
+                follow(&mut relay, host, &mut input, discovery.as_deref(), port);
+                let (host, sound_card) = take_over(&relay, library.clone(), file.clone())?;
+                _sound_card = sound_card;
+                Role::Host(Box::new(host), None)
+            }
+        }
     }
-    electrip_control::serve(listener, host, input, alone)
+}
+
+/// Checks in the background whether the host is to yield to another host,
+/// since an unreachable one would hold up the host (N-03).
+fn watch(discovery: Option<Arc<Discovery>>) -> Receiver<SocketAddr> {
+    let (sender, receiver) = mpsc::channel();
+    if let Some(discovery) = discovery {
+        thread::spawn(move || {
+            loop {
+                thread::sleep(WATCH_INTERVAL);
+                if let Some(host) = discovery.smaller_host().filter(answers) {
+                    let _ = sender.send(host);
+                    return;
+                }
+            }
+        });
+    }
+    receiver
 }
 
 fn announce(discovery: &Discovery, status: Status, port: u16) {
@@ -136,25 +180,24 @@ fn announce(discovery: &Discovery, status: Status, port: u16) {
 }
 
 /// Relays to the host and, when it is gone, to the next host the discovery
-/// finds; returns when there is none, so the instance becomes host, with
-/// the error if the discovery failed (N-03).
+/// finds; returns when there is none, so the instance becomes host (N-03).
 fn follow(
     relay: &mut Relay,
     mut host: SocketAddr,
     mut input: impl FnMut() -> Vec<Command>,
     discovery: Option<&Discovery>,
     port: u16,
-) -> Option<String> {
+) {
     loop {
         if let Err(e) = relay.run(&mut input) {
             eprintln!("ERROR the host {host} is gone: {e}");
         }
-        let discovery = discovery?;
+        let Some(discovery) = discovery else { return };
         announce(discovery, Status::Searching, port);
-        match discovery.find_host(Some(host)) {
-            Ok(next) => host = next.filter(answers)?,
-            Err(e) => return Some(no_discovery(e)),
-        }
+        let Some(next) = discovery.find_host(Some(host)).filter(answers) else {
+            return;
+        };
+        host = next;
         relay.switch(host);
         announce(discovery, Status::Client, port);
     }
@@ -210,7 +253,7 @@ fn choose_role(
 fn search(station: &Station) -> io::Result<(Discovery, Option<SocketAddr>)> {
     let discovery = Discovery::start(station_id(station))?;
     // An announcement can outlive a host that crashed.
-    let found = discovery.find_host(None)?.filter(answers);
+    let found = discovery.find_host(None).filter(answers);
     Ok((discovery, found))
 }
 

@@ -6,7 +6,7 @@ use electrip_core::host::Host;
 use electrip_core::session::{Command, Session};
 use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -35,33 +35,47 @@ struct Shared {
     last_broadcast: Instant,
     /// Why the instance runs alone, for the window (N-03).
     alone: Option<String>,
+    /// The host handed over to another one; no client gets in any more.
+    stopped: bool,
 }
 
 /// Serves clients, each in a thread, and polls the host and the input
-/// devices on the calling thread; returns only when the host state is
-/// poisoned. `alone` tells the clients why other instances cannot find
-/// this one.
+/// devices on the calling thread. `alone` tells the clients why other
+/// instances cannot find this one. When `handover` names another host,
+/// it closes all connections and returns that host (N-03); the host is
+/// dropped when their threads end.
 pub fn serve(
     listener: TcpListener,
     host: Host,
     input: impl FnMut() -> Vec<Command>,
     alone: Option<String>,
-) -> io::Result<()> {
+    handover: impl FnMut() -> Option<SocketAddr>,
+) -> io::Result<SocketAddr> {
+    let address = listener.local_addr()?;
     let shared = Arc::new(Mutex::new(Shared {
         host,
         clients: Vec::new(),
         last_poll: Instant::now(),
         last_broadcast: Instant::now(),
         alone,
+        stopped: false,
     }));
     let acceptor = Arc::clone(&shared);
     thread::spawn(move || accept(listener, &acceptor));
-    poll(&shared, input)
+    let next = poll(&shared, input, handover)?;
+    lock(&shared)?.stop();
+    // Wakes the acceptor, so it ends.
+    let _ = TcpStream::connect(address);
+    Ok(next)
 }
 
-/// A failed connection is reported and does not stop the listener.
+/// A failed connection is reported and does not stop the listener; ends
+/// when the host is stopped.
 fn accept(listener: TcpListener, shared: &Arc<Mutex<Shared>>) {
     for stream in listener.incoming() {
+        if lock(shared).map_or(true, |shared| shared.stopped) {
+            return;
+        }
         match stream {
             Ok(stream) => {
                 let shared = Arc::clone(shared);
@@ -101,6 +115,9 @@ fn serve_client(
     let mut writer = stream.try_clone()?;
     {
         let mut shared = lock(shared)?;
+        if shared.stopped {
+            return Ok(());
+        }
         send(&mut writer, &hello(shared.alone.as_deref()))?;
         send(&mut writer, &state(shared.host.session()))?;
         shared.clients.push(stream.try_clone()?);
@@ -135,10 +152,17 @@ fn track(devices: &mut Vec<Command>, command: &Command) {
 /// Executes the commands of the input devices, lets the host handle
 /// station events and drive the locos, and reports changes to all clients.
 /// A failed input command changes nothing, like a control without a
-/// target.
-fn poll(shared: &Mutex<Shared>, mut input: impl FnMut() -> Vec<Command>) -> io::Result<()> {
+/// target. Returns the host to hand over to.
+fn poll(
+    shared: &Mutex<Shared>,
+    mut input: impl FnMut() -> Vec<Command>,
+    mut handover: impl FnMut() -> Option<SocketAddr>,
+) -> io::Result<SocketAddr> {
     loop {
         thread::sleep(POLL_INTERVAL);
+        if let Some(next) = handover() {
+            return Ok(next);
+        }
         let commands = input();
         let mut shared = lock(shared)?;
         let mut changed = false;
@@ -166,6 +190,14 @@ impl Shared {
         let state = state(self.host.session());
         self.clients.retain_mut(|c| send(c, &state).is_ok());
         self.last_broadcast = Instant::now();
+    }
+
+    /// Closes the connections of all clients, so they find the next host.
+    fn stop(&mut self) {
+        self.stopped = true;
+        for client in self.clients.drain(..) {
+            let _ = client.shutdown(Shutdown::Both);
+        }
     }
 }
 
