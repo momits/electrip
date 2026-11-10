@@ -18,9 +18,17 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Ob das Dekodieren die Ursache ist, ist vermutet und nicht nachgewiesen.
   Zum Prüfen: Release-Build (`cargo run --release`) und jedes Segment vorab einmal spielen.
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
-- **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
-- **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
+- **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
 - **Achse ohne Speichern:** `SetAxis` und `Reverse` des Hosts laufen über `Host::change`, das bei jedem Befehl die Sitzung klont und das Speichern prüft; für häufige Fahrbefehle unnötig. Gefunden im Review zu N-03 (Gäste).
+
+## 2026-11-10 – Aufräumen: Pfad der Bilder an einer Stelle (Claude)
+
+- CI auf `main` lief beim Start noch. **N-03** ist die einzige offene Anforderung und hängt an Q-018 (eigene Konfiguration auf einer Client-Instanz ändern); deshalb ein Aufräumkandidat.
+- `picture::path`, `picture::store` und `picture::store_bytes` nehmen jetzt die Bibliothek statt des Bildordners; den Ordner kennt nur noch `media` (`media::picture_path`). `Host::media()` entfällt, `main.rs` gibt dem Fenster die Bibliothek, der Paket-Export liest das Bild über `picture::path`. Verhalten unverändert (Bilder liegen weiter unter `<Bibliothek>/media/<SHA-256>.png`).
+- Der Kandidat „Konfiguration aus dem Import bauen“ hat nur noch zwei Stellen und bleibt nach der Rule of Three liegen (Eintrag angepasst).
+- Tests angepasst (Bildordner über die Bibliothek). `cargo xtask test`, `cargo xtask loc` (7872 Zeilen, +10 durch Zeilenumbrüche von rustfmt) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). `media::PICTURES` ist nur noch im Crate sichtbar.
+- **Offen:** Q-018.
 
 ## 2026-11-10 – N-03: Änderungen in anderen Konfigurationen innerhalb 300 ms (Claude)
 
