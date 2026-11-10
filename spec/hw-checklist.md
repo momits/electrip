@@ -260,6 +260,16 @@ Vorbereitung: ein Rechner mit zwei Ausgabegeräten (z. B. eingebaute Lautspreche
 
 Ergebnis: _offen_
 
+## N-05 – Ausgabegerät neu öffnen
+
+Vorbereitung: ein Mac mit zwei Ausgabegeräten (z. B. eingebaute Lautsprecher und USB-Soundkarte oder Kopfhörer), `cargo run --release`, eine Lok mit Fahrgeräusch auf dem Standardgerät, eine zweite mit `set_audio_device` auf der USB-Soundkarte.
+
+- [ ] Fahrgeräusch der ersten Lok einschalten, dann in den Systemeinstellungen ein anderes Ausgabegerät wählen: Nach höchstens etwa einer Sekunde ist das Geräusch auf dem neuen Gerät zu hören (das laufende Geräusch darf dabei kurz abreißen), auf dem alten nicht mehr.
+- [ ] USB-Soundkarte abziehen, während die zweite Lok spielt: Konsole zeigt `ERROR the output device failed: …` und einmal `ERROR cannot open the output device …`; die zweite Lok ist danach auf dem Standardgerät zu hören.
+- [ ] USB-Soundkarte wieder anstecken: Nach etwa einer Sekunde spielt die zweite Lok wieder dort, ohne Neustart.
+
+Ergebnis: _offen_
+
 ## N-05 – Audio-Ziel auf einer anderen Instanz
 
 Vorbereitung: zwei Rechner A und B im selben Netz, beide mit `cargo run --release` und derselben Konfiguration samt Sounds (Konfigurationsdatei von A in die Bibliothek von B kopieren, dann gleichen sie die Sounds ab, N-04). B ist Client von A (per mDNS oder `--host <A>`). Zwei Loks mit Fahrgeräusch.

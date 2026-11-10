@@ -6,11 +6,6 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Ausgabegerät wechseln (Audio):** `electrip_audio::sound_card` öffnet beim Start einmal das Standardgerät (`open_default_sink`) und merkt sich Kanalzahl und Abtastrate.
-  Wählt Mo danach in den Mac-Systemeinstellungen ein anderes Ausgabegerät, bleibt der Ton auf dem alten Gerät und ist stumm. Gefunden beim Hörtest zu Tor C.
-  Der Fehler ist vermutet und nicht nachgestellt.
-  Behelf: App nach dem Wechsel neu starten.
-  Lösung mit N-05 in Phase 3: Gerät pro Lok wählen, bei Fehler oder Wechsel neu öffnen.
 - **Fehlende Sounddateien melden:** `import_electrip1` übernimmt die alten Pfade der Sounddateien (z. B. `/home/electrip/Lokomotiven/V 60/sound/FS1.ogg`) und prüft sie nicht.
   Fehlen die Dateien, antwortet `toggle_sound` mit `ok`, aber das Fahrgeräusch bleibt `off`, und der `import_report` bleibt leer.
   Bei Bildern steht dagegen „cannot read the picture“ im Bericht.
@@ -25,6 +20,22 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Lösung: alle Sounds eines Sound-Modells vorab in einem Hintergrund-Thread dekodieren, beim Laden der Konfiguration und bei Änderungen am Modell, sodass `queue` nur noch den fertigen Puffer nimmt.
 - **Pfad der Bilder an einer Stelle:** `Host::media()`, `main.rs` (`library.join(media::PICTURES)`) und `ui/src/view.rs` (`picture::path(media, name)`) finden den Bildordner jeweils selbst; einheitlich über `media::picture_path` relativ zur Bibliothek. Gefunden im Review zu N-04 (Sounds).
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an drei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/core/src/config/tests.rs`, `crates/sync/src/tests.rs`); ein `Config::from(Import)` in `core` spart das. Gefunden im Review zu N-04.
+
+## 2026-11-10 – N-05: Ausgabegerät neu öffnen (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). N-03 und N-05 hängen sonst an Q-016 und Q-017; dieses Inkrement nicht (Aufräumkandidat „Ausgabegerät wechseln“, dort als Lösung mit N-05 vorgesehen).
+- Bisher öffnete der Speaker jedes Ausgabegerät einmal. Wählte man ein anderes Standardgerät, blieb der Ton auf dem alten; ein abgezogenes Gerät blieb stumm, ein Gerät, das sich nicht öffnen ließ, wurde nie wieder versucht.
+- Jetzt gilt eine Ausgabe als weg, wenn ihr Stream einen Fehler meldet (`ERROR the output device failed: …`) oder, beim Standardgerät, wenn der Rechner höchstens eine Sekunde später ein anderes Standardgerät hat. Dann öffnet der Speaker sie beim nächsten Sound neu. Ein Gerät, das sich nicht öffnen lässt, versucht er jede Sekunde wieder und meldet es nur beim ersten Mal. Seine Loks spielen in der Zeit auf dem Standardgerät.
+- Ein Kanal merkt sich, auf welcher Öffnung seiner Ausgabe er spielt; nach dem Neuöffnen tritt er mit seinem nächsten Sound dem neuen Mixer bei. Was gerade lief, ist dabei weg: Ein Geräusch reißt kurz ab und spielt mit dem nächsten Ereignis weiter.
+- Das Standardgerät wird nicht mehr mit `open_default_sink` geöffnet, sondern wie jedes andere Gerät. Damit entfällt der Rückfall von rodio auf ein beliebiges anderes Gerät, wenn sich das Standardgerät nicht öffnen lässt.
+- Tests: `speaker/tests.rs` (eine weggefallene Ausgabe wird neu geöffnet, nach einem Fehlversuch eine Sekunde später wieder versucht). Wechsel des Standardgeräts und Abziehen sind im Container nicht prüfbar; Prüfpunkte in `spec/hw-checklist.md` („N-05 – Ausgabegerät neu öffnen“).
+- `cargo xtask test`, `cargo xtask loc` (7445 Zeilen) und `cargo xtask parity` grün. `target/` war wieder voll (17 GB), deshalb `cargo clean`.
+- Einfachheits-Review: refactored (Sub-Agent). Ein Neuöffnen, das fehlschlug, war endgültig; jetzt wird es jede Sekunde wiederholt. DRY, YAGNI und KISS sonst ok.
+- **N-05** bleibt offen.
+- **Offen:**
+  - Warnung bei derselben Lok-Adresse mit verschiedenen Zielen (hängt an Q-016).
+  - Hörbare Latenz je Ziel messen und hier dokumentieren (Mo, Hardware).
+  - `audio_devices` wird weiter nur beim Start des Hosts gelesen.
 
 ## 2026-11-10 – N-03: Client tritt einem anderen Host selbst bei (Claude)
 
