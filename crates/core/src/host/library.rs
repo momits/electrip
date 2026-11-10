@@ -128,7 +128,7 @@ impl Host {
     }
 
     /// The directory of the pictures (B-05).
-    pub(super) fn media(&self) -> PathBuf {
+    pub fn media(&self) -> PathBuf {
         self.library.join("media")
     }
 
