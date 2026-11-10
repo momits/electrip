@@ -152,21 +152,13 @@ fn serve_client(
         let mut shared = lock(shared)?;
         // Drives up to now first, so the command counts from its arrival.
         let polled = shared.poll();
-        let (message, ok) = match sync::answer(&mut shared.host, &line) {
-            Some(Ok(mut fields)) => {
-                fields["type"] = "reply".into();
-                fields["ok"] = true.into();
-                (fields, true)
-            }
-            Some(Err(error)) => (reply::<()>(&Err(error)), false),
-            None => {
-                let result = execute(&mut shared.host, &line);
-                if let Ok(command) = &result {
-                    track(devices, command);
-                }
-                (reply(&result), result.is_ok())
-            }
-        };
+        let result = sync::answer(&mut shared.host, &line).unwrap_or_else(|| {
+            let command = execute(&mut shared.host, &line)?;
+            track(devices, &command);
+            Ok(json!({}))
+        });
+        let ok = result.is_ok();
+        let message = reply_with(result);
         send(&mut writer, &message)?;
         if ok || polled {
             shared.broadcast();
@@ -309,6 +301,15 @@ fn reply<T>(result: &Result<T, String>) -> Value {
         Ok(_) => json!({"type": "reply", "ok": true}),
         Err(error) => json!({"type": "reply", "ok": false, "error": error}),
     }
+}
+
+/// The reply with the `fields` of a successful request.
+fn reply_with(result: Result<Value, String>) -> Value {
+    let mut message = reply(&result);
+    if let (Ok(Value::Object(fields)), Some(reply)) = (result, message.as_object_mut()) {
+        reply.extend(fields);
+    }
+    message
 }
 
 fn state(session: &Session) -> Value {
