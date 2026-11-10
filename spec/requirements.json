@@ -767,8 +767,8 @@
       "phase": 3,
       "hw": false,
       "status": {
-        "wired": false,
-        "verified": false,
+        "wired": true,
+        "verified": true,
         "accepted": false
       }
     },
