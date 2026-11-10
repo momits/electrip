@@ -19,12 +19,16 @@ impl Session {
             return Err(CommandError::DeviceExists(id));
         }
         // The range is unbounded, so there is always a free number.
-        let taken = |number| {
-            let mut numbers = self.devices.iter().map(|d| d.number);
-            let mut others = self.other_devices.iter().map(|d| d.number);
-            numbers.any(|n| n == number) || others.any(|n| n == number)
-        };
-        let number = (1..).find(|number| !taken(*number)).unwrap_or_default();
+        let others = self.other_devices.iter().map(|d| d.number);
+        let taken: Vec<_> = self
+            .devices
+            .iter()
+            .map(|d| d.number)
+            .chain(others)
+            .collect();
+        let number = (1..)
+            .find(|number| !taken.contains(number))
+            .unwrap_or_default();
         self.mapping(kind.clone());
         self.devices.push(Device::new(id, kind, number));
         Ok(())
@@ -42,9 +46,9 @@ impl Session {
     /// The devices of `other`, each with the first loco here that has the
     /// address of its loco there (Q-016).
     pub(crate) fn devices_of(&self, other: &Session) -> Vec<OtherDevice> {
-        let address = |session: &Session, id: u32| {
-            let entry = session.locos.iter().find(|e| e.id == id)?;
-            Some(entry.loco.decoder().address())
+        let address = |id| {
+            let index = other.index(id).ok()?;
+            Some(other.locos[index].loco.decoder().address())
         };
         let here = |address| {
             let entry = self
@@ -55,7 +59,7 @@ impl Session {
         };
         let devices = other.devices.iter().map(|device| OtherDevice {
             number: device.number,
-            loco: device.loco.and_then(|id| address(other, id)).and_then(here),
+            loco: device.loco.and_then(address).and_then(here),
         });
         devices.collect()
     }
