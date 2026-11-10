@@ -69,6 +69,20 @@ fn the_host_takes_over_what_the_guest_drives_with_its_speed_curve() {
     assert!(sent.lock().unwrap().contains(&state(true, 128)));
 }
 
+/// The clients of the host learn of it with the next poll (N-03: within
+/// 300 ms).
+#[test]
+fn a_poll_reports_what_the_host_takes_over_from_the_guest() {
+    let (mut host, _, _library) = driving_host();
+    host.add_guest(guest_config());
+    host.poll(0.05);
+    let loco = guest_loco(&host).id;
+    host.apply_guest("guest", Command::Reverse { loco })
+        .unwrap();
+    assert!(host.poll(0.05));
+    assert!(!host.session().locos()[0].motion.forward());
+}
+
 #[test]
 fn the_last_deflected_axis_wins() {
     let (mut host, _, _library) = driving_host();
