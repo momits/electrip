@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::iter;
 use std::num::NonZero;
@@ -21,12 +22,42 @@ fn speaker() -> (Speaker, MixerSource) {
 fn speaker_with(channels: NonZero<u16>) -> (Speaker, MixerSource) {
     let rate = NonZero::new(RATE).unwrap();
     let (mixer, output) = mixer(channels, rate);
-    let output_format = Output {
-        mixer,
-        channels,
-        rate,
+    let mut mixer = Some(mixer);
+    let open = move |_: Option<&str>| {
+        let mixer = mixer.take().ok_or("opened twice")?;
+        Ok(Output {
+            mixer,
+            channels,
+            rate,
+            device: None,
+        })
     };
-    (Speaker::new(Some(output_format)), output)
+    (Speaker::new(Box::new(open)), output)
+}
+
+/// A speaker with a mono mixer for each of the devices, `None` the default
+/// one, and the outputs of the mixers; other devices cannot be opened.
+fn speaker_on(devices: &[Option<&str>]) -> (Speaker, Vec<MixerSource>) {
+    let rate = NonZero::new(RATE).unwrap();
+    let (mixers, outputs): (HashMap<_, _>, Vec<_>) = devices
+        .iter()
+        .map(|d| {
+            let (mixer, output) = mixer(NonZero::<u16>::MIN, rate);
+            ((d.map(str::to_string), mixer), output)
+        })
+        .unzip();
+    let open = move |device: Option<&str>| {
+        let mixer = mixers
+            .get(&device.map(str::to_string))
+            .ok_or("no such device")?;
+        Ok(Output {
+            mixer: mixer.clone(),
+            channels: NonZero::<u16>::MIN,
+            rate,
+            device: None,
+        })
+    };
+    (Speaker::new(Box::new(open)), outputs)
 }
 
 /// Writes a 16 bit WAV file of `frames` frames, all equal to `frame`.
@@ -179,7 +210,7 @@ fn fade_out_ends_in_silence() {
 fn without_a_mixer_only_lengths_are_known() {
     let dir = tempfile::tempdir().unwrap();
     let file = wav(dir.path(), "a.wav", RATE, &[0x4000], 800);
-    let mut speaker = Speaker::new(None);
+    let mut speaker = Speaker::new(Box::new(|_| Err("no sound card".into())));
     assert_eq!(speaker.length(&file).unwrap(), Duration::from_millis(100));
     speaker.queue(CHANNEL, &file);
     assert!(speaker.channels.is_empty());
@@ -196,4 +227,41 @@ fn a_sound_starts_with_a_whole_frame() {
     speaker.play(CHANNEL, &file, Duration::ZERO);
     let samples: Vec<f32> = output.take(5).collect();
     assert_eq!(samples, [0.75, 0.25, 0.75, 0.25, 0.75]);
+}
+
+#[test]
+fn each_loco_plays_on_its_device() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 100);
+    let (mut speaker, mut outputs) = speaker_on(&[None, Some("USB")]);
+    let other = ChannelId { loco: 2, nr: 0 };
+    speaker.route(other.loco, Some("USB"));
+    speaker.queue(CHANNEL, &file);
+    speaker.queue(other, &file);
+    speaker.queue(ChannelId { nr: 1, ..other }, &file);
+    assert_eq!(sound(&mut outputs[0], 1000), [(0.25, 100)]);
+    assert_eq!(sound(&mut outputs[1], 1000), [(0.5, 100)]);
+}
+
+#[test]
+fn a_loco_that_changes_the_device_plays_its_next_sound_there() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 1000);
+    let (mut speaker, mut outputs) = speaker_on(&[None, Some("USB")]);
+    speaker.queue(CHANNEL, &file);
+    assert_eq!(runs(&mut outputs[0], 100), [(0.25, 100)]);
+    speaker.route(CHANNEL.loco, Some("USB"));
+    assert_eq!(runs(&mut outputs[0], 100), [(0.0, 100)]);
+    speaker.queue(CHANNEL, &file);
+    assert_eq!(runs(&mut outputs[1], 100), [(0.25, 100)]);
+}
+
+#[test]
+fn a_loco_on_a_missing_device_plays_on_the_default_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 100);
+    let (mut speaker, mut outputs) = speaker_on(&[None]);
+    speaker.route(CHANNEL.loco, Some("gone"));
+    speaker.queue(CHANNEL, &file);
+    assert_eq!(sound(&mut outputs[0], 1000), [(0.25, 100)]);
 }

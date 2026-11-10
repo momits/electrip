@@ -75,6 +75,12 @@ pub enum Command {
         loco: u32,
         volume: f64,
     },
+    /// Plays the sounds of the loco on the output device of the host named
+    /// in `audio_devices`; `null` is the default device (N-05).
+    SetAudioDevice {
+        loco: u32,
+        device: Option<String>,
+    },
     /// Loads the image at `path` on the host and saves the crop, by default
     /// the largest one in the middle, as the loco's picture (B-05).
     SetPicture {
@@ -475,6 +481,8 @@ pub struct Session {
     configuration_id: String,
     /// The names of all configurations in the library, sorted.
     configurations: Vec<String>,
+    /// The output devices of the host (N-05).
+    audio_devices: Vec<String>,
 }
 
 impl Session {
@@ -574,6 +582,10 @@ impl Session {
         self.configurations = names;
     }
 
+    pub(crate) fn set_audio_devices(&mut self, devices: Vec<String>) {
+        self.audio_devices = devices;
+    }
+
     pub(crate) fn set_connected(&mut self, connected: bool) {
         self.station.connected = connected;
         self.station.track_power &= connected;
@@ -644,6 +656,7 @@ impl Session {
                 self.loco(loco)?.set_brake_duration(seconds)?
             }
             Command::SetVolume { loco, volume } => self.loco(loco)?.set_volume(volume)?,
+            Command::SetAudioDevice { loco, device } => self.loco(loco)?.set_audio_device(device),
             Command::AddCurvePoint { loco, speed, step } => {
                 self.loco(loco)?.speed_curve_mut().add_point(speed, step)
             }

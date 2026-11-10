@@ -1,7 +1,7 @@
-//! The sound card as the audio target of the locos (B-18). Each channel is
-//! one source in the mixer of the sound card. Its sounds are converted to
-//! the format of the mixer first, so the channel can switch between them at
-//! any sample.
+//! The sound cards as the audio target of the locos (B-18, N-05). Each
+//! channel is one source in the mixer of the sound card of its loco. Its
+//! sounds are converted to the format of the mixer first, so the channel
+//! can switch between them at any sample.
 
 use std::collections::HashMap;
 use std::iter;
@@ -12,27 +12,46 @@ use std::vec;
 
 use electrip_core::audio::{AudioSink, ChannelId};
 use rodio::buffer::SamplesBuffer;
+use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::mixer::Mixer;
 use rodio::source::UniformSourceIterator;
-use rodio::{ChannelCount, DeviceSinkBuilder, MixerDeviceSink, Sample, SampleRate, Source};
+use rodio::{
+    ChannelCount, Device, DeviceSinkBuilder, MixerDeviceSink, Sample, SampleRate, Source, cpal,
+};
 
 use crate::open;
 
 type Samples = Box<dyn Iterator<Item = Sample> + Send>;
 
-/// The mixer and its format.
+/// A mixer and its format.
 pub struct Output {
     pub mixer: Mixer,
     pub channels: ChannelCount,
     pub rate: SampleRate,
+    /// The device plays the mixer as long as it lives; `None` for a mixer
+    /// without one, e.g. in tests.
+    pub device: Option<MixerDeviceSink>,
 }
 
-/// Plays the sounds into the output. Without one it only knows the lengths
-/// of the sounds, so the sound models still run.
+/// Opens the output on the named device, `None` on the default one.
+pub type Open = Box<dyn FnMut(Option<&str>) -> Result<Output, String> + Send>;
+
+/// Plays the sounds of each loco into the output of its device (N-05).
+/// Without an output it only knows the lengths of the sounds, so the sound
+/// models still run.
 pub struct Speaker {
-    output: Option<Output>,
+    outputs: Outputs,
     channels: HashMap<ChannelId, Arc<Mutex<Sounds>>>,
     decoded: HashMap<PathBuf, SamplesBuffer>,
+}
+
+/// The outputs of the locos, each opened when a loco first plays on it.
+struct Outputs {
+    open: Open,
+    /// By device; `None` where the device cannot be opened.
+    opened: HashMap<Option<String>, Option<Output>>,
+    /// The devices of the locos that do not play on the default one.
+    routes: HashMap<u32, String>,
 }
 
 /// The sounds of a channel.
@@ -43,22 +62,44 @@ struct Sounds {
     stopped: bool,
 }
 
-/// The speaker on the default sound card and the device, which plays as
-/// long as it lives.
-pub fn sound_card() -> Result<(Speaker, MixerDeviceSink), String> {
-    let device = DeviceSinkBuilder::open_default_sink().map_err(|e| e.to_string())?;
-    let output = Output {
+/// The speaker on the sound cards of the computer.
+pub fn sound_card() -> Speaker {
+    Speaker::new(Box::new(open_device))
+}
+
+/// Opens the named output device, `None` the default one.
+fn open_device(name: Option<&str>) -> Result<Output, String> {
+    let device = match name {
+        None => DeviceSinkBuilder::open_default_sink(),
+        Some(name) => DeviceSinkBuilder::from_device(find_device(name)?)
+            .and_then(|builder| builder.open_sink_or_fallback()),
+    };
+    let device = device.map_err(|e| e.to_string())?;
+    Ok(Output {
         mixer: device.mixer().clone(),
         channels: device.config().channel_count(),
         rate: device.config().sample_rate(),
-    };
-    Ok((Speaker::new(Some(output)), device))
+        device: Some(device),
+    })
+}
+
+fn find_device(name: &str) -> Result<Device, String> {
+    let mut devices = cpal::default_host()
+        .output_devices()
+        .map_err(|e| e.to_string())?;
+    devices
+        .find(|d| d.description().is_ok_and(|d| d.name() == name))
+        .ok_or_else(|| format!("there is no output device {name:?}"))
 }
 
 impl Speaker {
-    pub fn new(output: Option<Output>) -> Self {
+    pub fn new(open: Open) -> Self {
         Speaker {
-            output,
+            outputs: Outputs {
+                open,
+                opened: HashMap::new(),
+                routes: HashMap::new(),
+            },
             channels: HashMap::new(),
             decoded: HashMap::new(),
         }
@@ -78,26 +119,10 @@ impl Speaker {
         Ok(decoded)
     }
 
-    /// The samples of the sound in the format of the output, if there is
-    /// an output and the sound can be read.
-    fn samples(&mut self, sound: &Path) -> Option<Samples> {
-        let decoded = self.decode(sound).ok()?;
-        let output = self.output.as_ref()?;
-        let samples = UniformSourceIterator::new(decoded, output.channels, output.rate);
-        Some(Box::new(samples))
-    }
-
-    /// The number of samples the output plays in `duration`.
-    fn samples_in(&self, duration: Duration) -> usize {
-        self.output.as_ref().map_or(0, |o| {
-            let frames = duration.as_secs_f64() * f64::from(o.rate.get());
-            frames as usize * usize::from(o.channels.get())
-        })
-    }
-
-    /// Changes the sounds of the channel; a new channel joins the mixer.
-    fn change(&mut self, id: ChannelId, change: impl FnOnce(&mut Sounds)) {
-        let Some(output) = &self.output else {
+    /// Changes the sounds of the channel, if its loco has an output; a new
+    /// channel joins the mixer of the output.
+    fn change(&mut self, id: ChannelId, change: impl FnOnce(&mut Sounds, &Output)) {
+        let Some(output) = self.outputs.of(id.loco) else {
             return;
         };
         let sounds = self.channels.entry(id).or_insert_with(|| {
@@ -111,8 +136,45 @@ impl Speaker {
             sounds
         });
         if let Ok(mut sounds) = sounds.lock() {
-            change(&mut sounds);
+            change(&mut sounds, output);
         }
+    }
+}
+
+impl Outputs {
+    /// The output of the loco. A device that cannot be opened is reported
+    /// once; its locos play on the default device.
+    fn of(&mut self, loco: u32) -> Option<&Output> {
+        let routed = self.routes.get(&loco).cloned();
+        let device = if self.opens(&routed) { routed } else { None };
+        self.opens(&device);
+        self.opened.get(&device)?.as_ref()
+    }
+
+    /// Opens the device unless it was tried before; returns whether it is
+    /// open.
+    fn opens(&mut self, device: &Option<String>) -> bool {
+        let open = &mut self.open;
+        let output = self.opened.entry(device.clone()).or_insert_with(|| {
+            let name = device.as_deref().unwrap_or("default");
+            open(device.as_deref())
+                .inspect_err(|e| eprintln!("ERROR cannot open the output device {name}: {e}"))
+                .ok()
+        });
+        output.is_some()
+    }
+}
+
+impl Output {
+    /// The samples of the sound in the format of the output.
+    fn convert(&self, sound: SamplesBuffer) -> Samples {
+        Box::new(UniformSourceIterator::new(sound, self.channels, self.rate))
+    }
+
+    /// The number of samples the output plays in `duration`.
+    fn samples_in(&self, duration: Duration) -> usize {
+        let frames = duration.as_secs_f64() * f64::from(self.rate.get());
+        frames as usize * usize::from(self.channels.get())
     }
 }
 
@@ -122,23 +184,28 @@ impl AudioSink for Speaker {
     }
 
     fn queue(&mut self, id: ChannelId, sound: &Path) {
-        if let Some(samples) = self.samples(sound) {
-            self.change(id, |sounds| match sounds.playing {
+        let Ok(decoded) = self.decode(sound) else {
+            return;
+        };
+        self.change(id, |sounds, output| {
+            let samples = output.convert(decoded);
+            match sounds.playing {
                 Some(_) => sounds.waiting = Some(samples),
                 None => sounds.playing = Some(samples),
-            });
-        }
+            }
+        });
     }
 
     fn play(&mut self, id: ChannelId, sound: &Path, delay: Duration) {
-        let Some(samples) = self.samples(sound) else {
+        let Ok(decoded) = self.decode(sound) else {
             return;
         };
-        let delay = self.samples_in(delay);
-        self.change(id, |sounds| {
+        self.change(id, |sounds, output| {
             let before = sounds.playing.take().into_iter().flatten();
-            let before = before.chain(iter::repeat(0.0)).take(delay);
-            sounds.playing = Some(Box::new(before.chain(samples)));
+            let before = before
+                .chain(iter::repeat(0.0))
+                .take(output.samples_in(delay));
+            sounds.playing = Some(Box::new(before.chain(output.convert(decoded))));
             sounds.waiting = None;
         });
     }
@@ -152,19 +219,21 @@ impl AudioSink for Speaker {
     }
 
     fn fade_in(&mut self, id: ChannelId, sound: &Path, fade: Duration) {
-        let fade = self.samples_in(fade);
-        if let Some(samples) = self.samples(sound) {
+        let Ok(decoded) = self.decode(sound) else {
+            return;
+        };
+        self.change(id, |sounds, output| {
+            let fade = output.samples_in(fade);
+            let samples = output.convert(decoded);
             let rising = samples.enumerate().map(move |(i, s)| s * gain(i, fade));
-            self.change(id, |sounds| {
-                sounds.playing = Some(Box::new(rising));
-                sounds.waiting = None;
-            });
-        }
+            sounds.playing = Some(Box::new(rising));
+            sounds.waiting = None;
+        });
     }
 
     fn fade_out(&mut self, id: ChannelId, fade: Duration) {
-        let fade = self.samples_in(fade);
-        self.change(id, |sounds| {
+        self.change(id, |sounds, output| {
+            let fade = output.samples_in(fade);
             let playing = sounds.playing.take().into_iter().flatten().take(fade);
             let falling = playing
                 .enumerate()
@@ -172,6 +241,37 @@ impl AudioSink for Speaker {
             sounds.playing = Some(Box::new(falling));
             sounds.waiting = None;
         });
+    }
+
+    fn devices(&mut self) -> Vec<String> {
+        let Ok(devices) = cpal::default_host().output_devices() else {
+            return Vec::new();
+        };
+        devices
+            .filter_map(|d| Some(d.description().ok()?.name().to_string()))
+            .collect()
+    }
+
+    /// The sounds of the loco stop when it changes the device; the next
+    /// ones play on the new device.
+    fn route(&mut self, loco: u32, device: Option<&str>) {
+        let routes = &mut self.outputs.routes;
+        if routes.get(&loco).map(String::as_str) == device {
+            return;
+        }
+        match device {
+            Some(device) => routes.insert(loco, device.to_string()),
+            None => routes.remove(&loco),
+        };
+        let moved: Vec<_> = self
+            .channels
+            .keys()
+            .filter(|c| c.loco == loco)
+            .copied()
+            .collect();
+        for id in moved {
+            self.stop(id);
+        }
     }
 }
 

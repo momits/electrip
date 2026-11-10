@@ -3,7 +3,6 @@
 //! The instance is the session host or a client of the host it finds per
 //! mDNS or at `--host`, and changes its role when the hosts change (N-03).
 
-use electrip_audio::{MixerDeviceSink, Speaker};
 use electrip_control::{Discovery, Relay, Status, station_id};
 use electrip_core::host::{Driver, Host};
 use electrip_core::media;
@@ -100,8 +99,6 @@ fn run() -> Result<(), String> {
 enum Role {
     Host {
         host: Box<Host>,
-        /// The sound card plays as long as it lives.
-        sound_card: Option<MixerDeviceSink>,
         /// Why the instance runs alone, if the discovery fails.
         alone: Option<String>,
     },
@@ -132,11 +129,7 @@ fn session(
     let mut relay = Relay::start(listener, first);
     loop {
         role = match role {
-            Role::Host {
-                host,
-                sound_card: _sound_card,
-                alone,
-            } => {
+            Role::Host { host, alone } => {
                 let serving = match private.take() {
                     Some(listener) => listener,
                     None => bind()?,
@@ -230,20 +223,19 @@ fn follow(
 /// the command station and knows the input devices of the relay
 /// (ADR 0010).
 fn take_over(relay: &Relay, library: PathBuf, file: Option<String>) -> io::Result<Role> {
-    let (mut host, sound_card) = open_host(library, file).map_err(io::Error::other)?;
+    let mut host = open_host(library, file).map_err(io::Error::other)?;
     let _ = host
         .take_over()
         .inspect_err(|e| eprintln!("ERROR cannot take over the command station: {e}"));
     for command in relay.devices() {
         let _ = host.apply(command.clone());
     }
-    Ok(hosting(host, sound_card, None))
+    Ok(hosting(host, None))
 }
 
-fn hosting(host: Host, sound_card: Option<MixerDeviceSink>, alone: Option<String>) -> Role {
+fn hosting(host: Host, alone: Option<String>) -> Role {
     Role::Host {
         host: Box::new(host),
-        sound_card,
         alone,
     }
 }
@@ -254,14 +246,14 @@ fn choose_role(args: &Args, library: PathBuf) -> Result<(Role, Option<Discovery>
     if let Some(host) = args.host.as_deref().and_then(reachable) {
         return Ok((Role::Client(host), None));
     }
-    let (host, sound_card) = open_host(library, args.file.clone())?;
+    let host = open_host(library, args.file.clone())?;
     if args.host.is_some() || !args.discovery {
-        return Ok((hosting(host, sound_card, None), None));
+        return Ok((hosting(host, None), None));
     }
     Ok(match search(host.session().station()) {
         Ok((discovery, Some(address))) => (Role::Client(address), Some(discovery)),
-        Ok((discovery, None)) => (hosting(host, sound_card, None), Some(discovery)),
-        Err(e) => (hosting(host, sound_card, Some(no_discovery(e))), None),
+        Ok((discovery, None)) => (hosting(host, None), Some(discovery)),
+        Err(e) => (hosting(host, Some(no_discovery(e))), None),
     })
 }
 
@@ -293,10 +285,7 @@ fn answers(host: &SocketAddr) -> bool {
 
 /// The host on the library; it opens `file` instead of the first
 /// configuration (B-24).
-fn open_host(
-    library: PathBuf,
-    file: Option<String>,
-) -> Result<(Host, Option<MixerDeviceSink>), String> {
+fn open_host(library: PathBuf, file: Option<String>) -> Result<Host, String> {
     let connect = Box::new(|station: &Station| -> Result<Driver, _> {
         Ok(match station.kind {
             StationKind::Srcp => Box::new(SrcpStation::connect(
@@ -308,19 +297,13 @@ fn open_host(
         })
     });
     // Without a sound card the sound models still run, silently.
-    let (speaker, device) = match electrip_audio::sound_card() {
-        Ok((speaker, device)) => (speaker, Some(device)),
-        Err(e) => {
-            eprintln!("ERROR no sound card: {e}");
-            (Speaker::new(None), None)
-        }
-    };
-    let mut host = Host::new(connect, Box::new(speaker), library).map_err(|e| e.to_string())?;
+    let speaker = Box::new(electrip_audio::sound_card());
+    let mut host = Host::new(connect, speaker, library).map_err(|e| e.to_string())?;
     if let Some(name) = file {
         let command = Command::OpenConfiguration { name };
         host.apply(command).map_err(|e| e.to_string())?;
     }
-    Ok((host, device))
+    Ok(host)
 }
 
 /// Reads the options; `--control-port 0` picks a free port.

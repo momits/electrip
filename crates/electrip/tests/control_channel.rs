@@ -8,7 +8,14 @@ use serde_json::json;
 #[test]
 fn greets_with_version_and_state() {
     let app = App::start();
-    let client = app.connect();
+    let mut client = app.connect();
+    // The output devices depend on the computer (N-05).
+    let devices = client
+        .state
+        .as_object_mut()
+        .unwrap()
+        .remove("audio_devices");
+    assert!(devices.unwrap().is_array());
     assert_eq!(
         client.state,
         json!({"locos": [], "actions": [], "mappings": [], "devices": [], "import_report": [], "configuration": "Electrip", "configurations": ["Electrip"], "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false}, "view": {"auto_focus": true, "only_active": false}})

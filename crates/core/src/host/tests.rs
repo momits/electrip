@@ -1,11 +1,13 @@
 use super::*;
 use crate::audio::tests::{LogSink, Played};
+use crate::config;
 use crate::decoder::Decoder;
 use crate::driving_sound::SoundState;
 use crate::function::{Function, Mode};
 use crate::input::Target;
 use crate::sound::{Engine, EngineSound};
 use crate::station::{LocoState, StationKind};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
 
@@ -792,4 +794,31 @@ fn a_report_for_an_unknown_address_changes_nothing() {
     let event = StationEvent::Loco { address: 9, state };
     events.lock().unwrap().push(event);
     assert!(!host.poll(0.05));
+}
+
+#[test]
+fn each_loco_plays_on_the_output_device_of_its_configuration() {
+    let audio = LogSink {
+        devices: vec!["USB".into()],
+        ..LogSink::default()
+    };
+    let routes = Arc::clone(&audio.routes);
+    let library = TempDir::new().unwrap();
+    let connector: Connector = Box::new(|_| Err(StationError("no station".into())));
+    let mut host = Host::new(connector, Box::new(audio), library.path().into()).unwrap();
+    let state = serde_json::to_value(host.session()).unwrap();
+    assert_eq!(state["audio_devices"], serde_json::json!(["USB"]));
+    host.apply(Command::AddLoco).unwrap();
+    host.apply(Command::AddLoco).unwrap();
+    let device = Some("USB".to_string());
+    host.apply(Command::SetAudioDevice { loco: 2, device })
+        .unwrap();
+    host.poll(0.05);
+    let expected = HashMap::from([(1, None), (2, Some("USB".to_string()))]);
+    assert_eq!(*routes.lock().unwrap(), expected);
+    let saved = config::read(&config::path(
+        library.path(),
+        host.session().configuration(),
+    ));
+    assert_eq!(saved.unwrap().locos[1].audio_device(), Some("USB"));
 }
