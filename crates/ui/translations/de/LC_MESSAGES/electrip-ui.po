@@ -48,3 +48,12 @@ msgstr "Host-Adresse"
 
 msgid "Join"
 msgstr "Beitreten"
+
+msgid "Sound output"
+msgstr "Tonausgabe"
+
+msgid "Default device"
+msgstr "Standardgerät"
+
+msgid "Session host"
+msgstr "Sitzungs-Host"

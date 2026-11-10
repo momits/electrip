@@ -28,7 +28,8 @@ fn loco(id: i32, name: &str) -> Value {
 fn state(locos: Vec<Value>, devices: Value) -> State {
     let station = json!({"connected": true, "track_power": false});
     let view = json!({"auto_focus": true, "only_active": false});
-    let state = json!({"locos": locos, "devices": devices, "station": station, "view": view});
+    let state = json!({"locos": locos, "devices": devices, "station": station, "view": view,
+        "audio_devices": ["USB Audio"], "audio_targets": {"3f2a9c0d": ["Pi"]}});
     serde_json::from_value(state).unwrap()
 }
 
@@ -53,7 +54,7 @@ fn loco_with_buttons() -> Value {
 #[test]
 fn buttons_in_the_order_of_electrip_1() {
     let state = state(vec![loco_with_buttons()], json!([]));
-    let controllers = controllers(&state, Path::new(""));
+    let controllers = controllers(&state, &[], Path::new(""));
     let buttons: Vec<_> = controllers[0]
         .buttons
         .iter()
@@ -74,14 +75,19 @@ fn buttons_in_the_order_of_electrip_1() {
 #[test]
 fn without_sound_model_no_driving_sound_button() {
     let state = state(vec![loco(1, "Köf")], json!([]));
-    assert_eq!(controllers(&state, Path::new(""))[0].buttons.row_count(), 0);
+    assert_eq!(
+        controllers(&state, &[], Path::new(""))[0]
+            .buttons
+            .row_count(),
+        0
+    );
 }
 
 #[test]
 fn devices_mark_their_locos() {
     let devices = json!([device(2, 3), device(None, 1), device(2, 5)]);
     let state = state(vec![loco(1, "A"), loco(2, "B")], devices);
-    let controllers = controllers(&state, Path::new(""));
+    let controllers = controllers(&state, &[], Path::new(""));
     assert_eq!(controllers[0].devices.row_count(), 0);
     assert_eq!(controllers[1].devices.iter().collect::<Vec<_>>(), [3, 5]);
 }
@@ -93,7 +99,7 @@ fn only_active_shows_controlled_or_moving_locos() {
     let locos = vec![loco(1, "A"), moving, loco(3, "C"), loco(4, "D")];
     let mut state = state(locos, json!([device(3, 1)]));
     state.view.only_active = true;
-    let ids: Vec<_> = controllers(&state, Path::new(""))
+    let ids: Vec<_> = controllers(&state, &[], Path::new(""))
         .iter()
         .map(|c| c.id)
         .collect();
@@ -105,7 +111,7 @@ fn only_active_shows_controlled_or_moving_locos() {
 fn focus_after(devices: Value, auto_focus: bool) -> Option<i32> {
     let locos = vec![loco(1, "A"), loco(2, "B"), loco(3, "C")];
     let shown = state(locos.clone(), json!([device(1, 1)]));
-    let shown = ModelRc::new(VecModel::from(controllers(&shown, Path::new(""))));
+    let shown = ModelRc::new(VecModel::from(controllers(&shown, &[], Path::new(""))));
     let mut state = state(locos, devices);
     state.view.auto_focus = auto_focus;
     focus(&state, &shown)
@@ -133,12 +139,39 @@ fn holding_focus_shows_the_loco_of_the_device() {
 }
 
 #[test]
+fn audio_targets_of_the_host_then_of_the_instances() {
+    let mut gone = loco(2, "Köf II");
+    gone["audio_instance"] = json!("77aa");
+    let state = state(vec![loco(1, "V 60"), gone], json!([]));
+    let targets = audio_targets(&state);
+    let pairs: Vec<_> = targets
+        .iter()
+        .map(|t| (t.instance.as_str(), t.device.as_str()))
+        .collect();
+    assert_eq!(
+        pairs,
+        [
+            ("", ""),
+            ("", "USB Audio"),
+            ("3f2a9c0d", ""),
+            ("3f2a9c0d", "Pi"),
+            ("77aa", "")
+        ]
+    );
+    let rows = controllers(&state, &targets, Path::new(""));
+    assert_eq!([rows[0].audio_target, rows[1].audio_target], [0, 4]);
+}
+
+#[test]
 fn missing_picture_shows_none() {
     let mut loco = loco(1, "A");
     loco["picture"] = json!("missing.png");
     let state = state(vec![loco], json!([]));
     assert_eq!(
-        controllers(&state, Path::new(""))[0].picture.size().width,
+        controllers(&state, &[], Path::new(""))[0]
+            .picture
+            .size()
+            .width,
         0
     );
 }
@@ -148,7 +181,7 @@ fn driving_and_switching_keep_the_buttons() {
     let model = ModelRc::new(VecModel::<Controller>::default());
     let mut loco = loco_with_buttons();
     let show = |loco: &Value| {
-        let rows = controllers(&state(vec![loco.clone()], json!([])), Path::new(""));
+        let rows = controllers(&state(vec![loco.clone()], json!([])), &[], Path::new(""));
         update_controllers(&model, rows);
         model.row_data(0).unwrap()
     };
@@ -238,7 +271,7 @@ fn gradient(width: u32, height: u32) -> RgbImage {
 }
 
 /// The top left corner of the picture in the dialog.
-const FRAME: (u32, u32) = (180, 114);
+const FRAME: (u32, u32) = (80, 114);
 
 fn gradient_at(x: f32, y: f32) -> [u8; 3] {
     [(x / 4.0) as u8, (y / 2.0) as u8, 0]
@@ -454,10 +487,10 @@ fn window_shows_the_state_and_sends_commands() {
     save(&screenshot(&window), "loco_dialog.png");
     click(&window, 300, 90);
     type_text(&window, source.to_str().unwrap());
-    click(&window, 580, 90);
+    click(&window, 680, 90);
     // The largest crop in the middle at first, then dragged 100 px to the
     // right, so it shows 100 px more on the left.
-    drag(&window, (400, 284), (500, 284));
+    drag(&window, (300, 284), (400, 284));
     let image = screenshot(&window);
     save(&image, "loco_dialog_dragged.png");
     assert_near(image.get_pixel(FRAME.0, FRAME.1), gradient_at(120.0, 0.0));
@@ -471,7 +504,10 @@ fn window_shows_the_state_and_sends_commands() {
         gradient_at(285.5, 128.0),
     );
     click(&window, 443, 506);
-    click(&window, 434, 542);
+    // N-05: the sounds play on the device "Pi" of another instance.
+    click(&window, 600, 262);
+    save(&screenshot(&window), "loco_dialog_audio_target.png");
+    click(&window, 534, 542);
     main.invoke_join_host(" pc:4711 ".into());
     let (host, _) = listener.accept().unwrap();
     // A missed click fails instead of waiting for ever.
@@ -480,7 +516,7 @@ fn window_shows_the_state_and_sends_commands() {
     let mut lines = BufReader::new(host).lines();
     let commands: Vec<Command> = lines
         .by_ref()
-        .take(7)
+        .take(8)
         .map(|l| serde_json::from_str(&l.unwrap()).unwrap())
         .collect();
     assert_eq!(
@@ -503,6 +539,11 @@ fn window_shows_the_state_and_sends_commands() {
             Command::SetVolume {
                 loco: 1,
                 volume: 0.5
+            },
+            Command::SetAudioDevice {
+                loco: 1,
+                instance: Some("3f2a9c0d".into()),
+                device: Some("Pi".into())
             },
             Command::SetPicture {
                 loco: 1,

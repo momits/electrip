@@ -2,7 +2,9 @@
 // emergency stop below. Like Electrip 1 (control_ui.py, control.css).
 
 import { Button, CheckBox, LineEdit, ScrollView } from "std-widgets.slint";
-import { LocoDialog } from "loco.slint";
+import { AudioTarget, LocoDialog } from "loco.slint";
+
+export { AudioTarget }
 
 // What a button of a controller switches; the groups have their own colors
 // (B-19).
@@ -30,6 +32,8 @@ export struct Controller {
     buttons: [ControlButton],
     // The numbers (from 1) of the devices that control the loco.
     devices: [int],
+    // Its index in the audio targets of the window.
+    audio-target: int,
 }
 
 // The colors of the input devices, dark enough for white text; from the
@@ -224,6 +228,8 @@ export component MainWindow inherits Window {
     in property <bool> connected;
     in property <bool> track-power;
     in property <int> button-rows;
+    // The output devices of the host and of the instances that offer them.
+    in property <[AudioTarget]> audio-targets;
     // Why other instances cannot find this one; empty if they can (N-03).
     in property <string> alone;
     // The error of the last command of the window, empty if it succeeded.
@@ -239,6 +245,7 @@ export component MainWindow inherits Window {
     callback load-picture(string) -> image;
     callback set-picture(int, string, float, float, float);
     callback set-volume(int, float);
+    callback set-audio-target(int, AudioTarget);
     // Joins the session of the host at the address, without mDNS (N-03).
     callback join-host(string);
     // The loco whose properties are open, as it was on opening, so a
@@ -389,6 +396,8 @@ export component MainWindow inherits Window {
         name: editing.name;
         picture: editing.picture;
         volume: editing.volume;
+        audio-targets: audio-targets;
+        audio-target: editing.audio-target;
         load(path) => {
             root.load-picture(path)
         }
@@ -397,6 +406,9 @@ export component MainWindow inherits Window {
         }
         set-volume(volume) => {
             root.set-volume(editing.id, volume);
+        }
+        set-audio-target(target) => {
+            root.set-audio-target(editing.id, target);
         }
         close => {
             root.dialog-open = false;
