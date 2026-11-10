@@ -79,12 +79,12 @@ struct Station {
     track_power: bool,
 }
 
-pub fn show(window: &MainWindow, state: &State, media: &Path) {
+pub fn show(window: &MainWindow, state: &State, library: &Path) {
     window.set_connected(state.station.connected);
     window.set_track_power(state.station.track_power);
     window.set_auto_focus(state.view.auto_focus);
     window.set_only_active(state.view.only_active);
-    let rows = controllers(state, media);
+    let rows = controllers(state, library);
     let buttons = rows.iter().map(|c| c.buttons.row_count()).max();
     window.set_button_rows(buttons.unwrap_or(0) as i32);
     let model = window.get_controllers();
@@ -147,13 +147,13 @@ fn update<T: Clone + PartialEq + 'static>(model: &ModelRc<T>, rows: Vec<T>) {
 
 /// With the filter "only active" just the locos that are controlled or
 /// moving.
-pub(crate) fn controllers(state: &State, media: &Path) -> Vec<Controller> {
+pub(crate) fn controllers(state: &State, library: &Path) -> Vec<Controller> {
     let active = |l: &&Loco| l.speed > 0.0 || !devices(state, l.id).is_empty();
     state
         .locos
         .iter()
         .filter(|l| !state.view.only_active || active(l))
-        .map(|l| controller(state, l, media))
+        .map(|l| controller(state, l, library))
         .collect()
 }
 
@@ -167,11 +167,11 @@ fn devices(state: &State, loco: i32) -> Vec<i32> {
         .collect()
 }
 
-fn controller(state: &State, loco: &Loco, media: &Path) -> Controller {
+fn controller(state: &State, loco: &Loco, library: &Path) -> Controller {
     let picture = loco
         .picture
         .as_ref()
-        .and_then(|name| Image::load_from_path(&picture::path(media, name)).ok())
+        .and_then(|name| Image::load_from_path(&picture::path(library, name)).ok())
         .unwrap_or_default();
     Controller {
         id: loco.id,

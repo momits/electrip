@@ -61,7 +61,7 @@ pub fn write(path: &Path, loco: &Loco, actions: &[Action], library: &Path) -> io
     }
     if let Some(name) = loco.picture() {
         zip.start_file(media::picture_path(name), SimpleFileOptions::default())?;
-        zip.write_all(&fs::read(library.join(media::picture_path(name)))?)?;
+        zip.write_all(&fs::read(picture::path(library, name))?)?;
     }
     zip.finish()?;
     Ok(())
@@ -135,8 +135,7 @@ pub fn read(path: &Path, library: &Path) -> Result<Package, ImportError> {
 /// Saves the picture `name` of the archive in the library.
 fn store_picture(zip: &mut ZipArchive<File>, name: &str, library: &Path) -> Result<String, String> {
     let bytes = entry(zip, name).map_err(|e| e.to_string())?;
-    let media = library.join(media::PICTURES);
-    picture::store_bytes(&media, &bytes, None).map_err(|e| e.to_string())
+    picture::store_bytes(library, &bytes, None).map_err(|e| e.to_string())
 }
 
 /// Saves the sound `name` of the archive in the library.

@@ -134,7 +134,7 @@ impl Host {
             Command::SetPicture { loco, path, crop } => {
                 self.session.loco(loco)?;
                 let picture =
-                    picture::store(&self.media(), &path, crop).map_err(CommandError::Picture)?;
+                    picture::store(&self.library, &path, crop).map_err(CommandError::Picture)?;
                 self.change(|session| {
                     session.loco(loco)?.set_picture(Some(picture));
                     Ok(())
