@@ -53,9 +53,9 @@ pub struct Speaker {
 /// The outputs of the locos, each opened when a loco first plays on it.
 struct Outputs {
     open: Open,
-    /// By device with the number of their opening; `None` where the device
-    /// cannot be opened.
-    opened: HashMap<Option<String>, Option<(u64, Output)>>,
+    /// By device with the number of their opening, or when the device last
+    /// failed to open.
+    opened: HashMap<Option<String>, Result<(u64, Output), Instant>>,
     openings: u64,
     /// The devices of the locos that do not play on the default one.
     routes: HashMap<u32, String>,
@@ -193,36 +193,40 @@ impl Speaker {
 
 impl Outputs {
     /// The output of the loco and the number of its opening. A device that
-    /// cannot be opened is reported once; its locos play on the default
-    /// device.
+    /// cannot be opened is reported once and tried again each second; its
+    /// locos play on the default device meanwhile.
     fn of(&mut self, loco: u32) -> Option<(u64, &Output)> {
         let mut device = self.routes.get(&loco).cloned();
         if !self.try_open(&device) {
             device = None;
             self.try_open(&device);
         }
-        let (opening, output) = self.opened.get(&device)?.as_ref()?;
+        let (opening, output) = self.opened.get(&device)?.as_ref().ok()?;
         Some((*opening, output))
     }
 
-    /// Opens the device unless it was tried before or opens it again when
-    /// it is gone; returns whether it is open.
+    /// Opens the device if it is not open, unless it failed less than a
+    /// second ago; returns whether it is open.
     fn try_open(&mut self, device: &Option<String>) -> bool {
-        if let Some(Some((_, output))) = self.opened.get_mut(device)
-            && (output.gone)()
-        {
-            self.opened.remove(device);
+        let (failed_before, open) = match self.opened.get_mut(device) {
+            Some(Ok((_, output))) => (false, (output.gone)()),
+            Some(Err(failed)) => (true, failed.elapsed() >= Duration::from_secs(1)),
+            None => (false, true),
+        };
+        if open {
+            self.openings += 1;
+            let output = (self.open)(device.as_deref())
+                .map(|output| (self.openings, output))
+                .map_err(|e| {
+                    if !failed_before {
+                        let name = device.as_deref().unwrap_or("default");
+                        eprintln!("ERROR cannot open the output device {name}: {e}");
+                    }
+                    Instant::now()
+                });
+            self.opened.insert(device.clone(), output);
         }
-        let (open, openings) = (&mut self.open, &mut self.openings);
-        let output = self.opened.entry(device.clone()).or_insert_with(|| {
-            let name = device.as_deref().unwrap_or("default");
-            *openings += 1;
-            open(device.as_deref())
-                .inspect_err(|e| eprintln!("ERROR cannot open the output device {name}: {e}"))
-                .ok()
-                .map(|output| (*openings, output))
-        });
-        output.is_some()
+        matches!(self.opened.get(device), Some(Ok(_)))
     }
 }
 
