@@ -302,3 +302,13 @@ Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client),
 - [ ] Hörbare Latenz messen: Lok mit Fahrgeräusch auf ein Gerät von B legen, am Gamepad von B anfahren; Handy-Video mit Gamepad und Lautsprecher im Bild, Zeit zwischen Drücken und Ton ablesen (Bildrate 60/s). Zielwert ≤ 150 ms. Dasselbe auf einem Gerät von A. Werte hier notieren.
 
 Ergebnis: _offen_
+
+## N-05 – Warnung bei verschiedenen Audio-Zielen
+
+Vorbereitung: wie „Audio-Ziel auf einer anderen Instanz“ (A Host, B Client). B hat eine eigene Konfiguration mit einer Lok derselben Adresse wie eine Lok von A; deren Tonausgabe ist ein Gerät von B, die der Lok von A ein Gerät von A.
+
+- [ ] In den Fenstern von A und B steht auf dem Bild der Lok ein rotes „!“; im Dialog der Lok steht unter „Tonausgabe“ rot „Diese Adresse spielt auch auf einer anderen Ausgabe.“
+- [ ] Fahrgeräusch einschalten und fahren: die Lok ist an A und an B zu hören.
+- [ ] An A die Tonausgabe der Lok auf dasselbe Gerät von B legen: das „!“ verschwindet in beiden Fenstern.
+
+Ergebnis: _offen_
