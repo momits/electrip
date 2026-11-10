@@ -110,7 +110,7 @@ Heute sind Konfiguration und Fahrzustand in einer `Session` vereint, Loks werden
 4. Kennlinie, Vmax und Dauern kommen aus der Konfiguration der zuletzt aktiven Eingabe (wie die Konfliktregel).
 5. Jede Konfiguration rechnet ihr eigenes Sound-Modell auf dem gemeinsamen Fahrzustand und spielt auf ihrem Audio-Ziel (Q-011).
 6. Jede Instanz zeigt die Loks ihrer eigenen Konfiguration; Geräte anderer Instanzen erscheinen bei der Lok mit derselben Adresse.
-**Stand bis zur Antwort:** Ein Client übernimmt die Konfiguration des Hosts (Inkrement 1 von N-03: Client mit manuell eingetragener Host-Adresse).
+**Antwort:** Ja, alle sechs Vorschläge wie beschrieben (N-03, N-05). (Mo, 2026-11-10)
 
 ## Q-017 – 2026-11-10 – N-04, ADR 0003
 **Frage:** Wie kommt eine Konfiguration zum ersten Mal auf ein zweites Gerät?
@@ -118,4 +118,4 @@ N-04 setzt voraus, dass Gerät B die Konfiguration K „ebenfalls nutzt“; abge
 Heute kommt K nur auf B, wenn jemand die JSON-Datei in die Bibliothek von B kopiert (gleiche `id`). Das Automerge-Dokument reist dabei nicht mit; beim ersten Abgleich hat B deshalb keine gemeinsame Geschichte mit A, und wo die Dateien sich schon unterscheiden, gilt der Stand von B. Erst danach werden Änderungen feldweise zusammengeführt.
 **Vorschlag:** Das Fenster zeigt neben den eigenen Konfigurationen die der anderen Instanzen (per mDNS gefunden, Name und ID über `configuration_ids`). „Übernehmen“ holt Dokument, Bilder und Sounds von der anderen Instanz und legt K unter derselben ID an; ab dann gleichen beide K mit gemeinsamer Geschichte ab. Ein neuer Befehl am Steuerkanal (`take_configuration` mit Instanz und ID) macht das auch ohne Fenster.
 Alternative: Jede Instanz übernimmt automatisch alle Konfigurationen der anderen (einfacher, aber jede Bibliothek wächst um alle Konfigurationen im Netz).
-**Stand bis zur Antwort:** Kopie der JSON-Datei wie oben.
+**Antwort:** Ja, wie vorgeschlagen: Fenster und Befehl `take_configuration`, keine automatische Übernahme (N-04). (Mo, 2026-11-10)
