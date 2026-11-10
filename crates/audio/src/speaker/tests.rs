@@ -5,6 +5,7 @@ use std::num::NonZero;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
 use std::time::Duration;
 
 use electrip_core::audio::{AudioSink, ChannelId};
@@ -271,19 +272,19 @@ fn a_loco_on_a_missing_device_plays_on_the_default_one() {
 }
 
 #[test]
-fn a_gone_output_is_opened_again() {
+fn a_gone_output_is_opened_again_until_it_opens() {
     let dir = tempfile::tempdir().unwrap();
     let file = wav(dir.path(), "a.wav", RATE, &[0x2000], 1000);
     let rate = NonZero::new(RATE).unwrap();
     let gone = Arc::new(AtomicBool::new(false));
     let (old, mut old_output) = mixer(NonZero::<u16>::MIN, rate);
     let (new, mut new_output) = mixer(NonZero::<u16>::MIN, rate);
-    let mut mixers = vec![new, old];
+    let mut mixers = vec![Some(new), None, Some(old)];
     let is_gone = Arc::clone(&gone);
     let open = move |_: Option<&str>| {
         let is_gone = Arc::clone(&is_gone);
         Ok(Output {
-            mixer: mixers.pop().ok_or("no device")?,
+            mixer: mixers.pop().flatten().ok_or("no device")?,
             channels: NonZero::<u16>::MIN,
             rate,
             _device: None,
@@ -294,6 +295,8 @@ fn a_gone_output_is_opened_again() {
     speaker.queue(CHANNEL, &file);
     assert_eq!(runs(&mut old_output, 100), [(0.25, 100)]);
     gone.store(true, Ordering::Relaxed);
+    speaker.queue(CHANNEL, &file);
+    thread::sleep(Duration::from_secs(1));
     speaker.queue(CHANNEL, &file);
     assert_eq!(runs(&mut new_output, 100), [(0.25, 100)]);
 }
