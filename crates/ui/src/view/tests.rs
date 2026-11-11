@@ -20,14 +20,14 @@ use std::sync::{Arc, Mutex};
 fn loco(id: i32, name: &str) -> Value {
     json!({
         "id": id, "name": name, "max_speed": 100.0, "volume": 0.8, "speed": 0.0, "forward": true,
-        "picture": null, "sound_model": null, "sound": "off",
+        "picture": null, "sound_model": null, "sound": "off", "sound_level": 0.0,
         "sound_functions": [], "event_sounds": [], "functions": []
     })
 }
 
 fn state(locos: Vec<Value>, devices: Value) -> State {
     let station = json!({"connected": true, "track_power": false});
-    let view = json!({"auto_focus": true, "only_active": false});
+    let view = json!({"auto_focus": true, "only_active": false, "level_bar": true});
     let state = json!({"locos": locos, "devices": devices,
         "station": station, "view": view,
         "audio_devices": ["USB Audio"], "audio_targets": {"3f2a9c0d": ["Pi"]},
@@ -78,6 +78,20 @@ fn buttons_in_the_order_of_electrip_1() {
 fn without_sound_model_no_driving_sound_button() {
     let state = state(vec![loco(1, "Köf")], json!([]));
     assert_eq!(controllers(&state, Path::new(""))[0].buttons.row_count(), 0);
+}
+
+#[test]
+fn the_level_bar_only_with_the_option_and_a_sound_model() {
+    let mut state = state(vec![loco_with_buttons(), loco(2, "Köf")], json!([]));
+    let bars = |state: &State| {
+        controllers(state, Path::new(""))
+            .iter()
+            .map(|c| c.level_bar)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(bars(&state), [true, false]);
+    state.view.level_bar = false;
+    assert_eq!(bars(&state), [false, false]);
 }
 
 #[test]
@@ -330,6 +344,7 @@ fn window_shows_the_state_and_sends_commands() {
         .unwrap();
     let mut driven = loco_with_buttons();
     driven["speed"] = json!(60.0);
+    driven["sound_level"] = json!(30.0);
     driven["picture"] = json!("picture");
     let state = state(vec![driven, loco(2, "Köf II")], json!([device(1, 1)]));
 
@@ -347,6 +362,12 @@ fn window_shows_the_state_and_sends_commands() {
     // The picture from the library, its blue is the same
     // everywhere; where exactly depends on the font of the name.
     assert_eq!(image.get_pixel(67, 102).0[2], 120);
+    // B-22: the level bar fills the trough of a loco with a sound model
+    // up to the knob at the sound level of 30 of 100 km/h.
+    let bar = Rgb([0xff, 0xb0, 0x48]);
+    assert_eq!(*image.get_pixel(71, 290), bar);
+    assert_ne!(*image.get_pixel(71, 260), bar);
+    assert_ne!(*image.get_pixel(207, 290), bar);
     // The emergency stop is red while the track power is off.
     assert_eq!(*image.get_pixel(5, HEIGHT - 5), Rgb([0xcd, 0x44, 0x44]));
 
@@ -475,7 +496,7 @@ fn window_shows_the_state_and_sends_commands() {
     main.invoke_toggle_sound(1);
     main.invoke_trigger(1, 4, true);
     main.invoke_toggle_power();
-    main.invoke_set_view(false, true);
+    main.invoke_set_view(false, true, false);
 
     // B-05: click the picture, load an image, drag and zoom the crop.
     window.set_size(slint::PhysicalSize::new(WIDTH, HEIGHT));
@@ -535,7 +556,8 @@ fn window_shows_the_state_and_sends_commands() {
             Command::SetView {
                 view: View {
                     auto_focus: false,
-                    only_active: true
+                    only_active: true,
+                    level_bar: false
                 }
             },
             Command::SetSpeed {

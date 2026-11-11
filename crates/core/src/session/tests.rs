@@ -133,7 +133,8 @@ fn the_state_is_written_as_json() {
                 "audio_device": null,
                 "speed": 0.0,
                 "forward": true,
-                "sound": "off"
+                "sound": "off",
+                "sound_level": 0.0
             }],
             "actions": [{"id": 1, "name": "Licht"}],
             "mappings": [{"kind": "Xbox", "bindings": [
@@ -144,7 +145,7 @@ fn the_state_is_written_as_json() {
             ]}],
             "devices": [{"id": 7, "kind": "Xbox", "loco": 1, "number": 1, "focus": false}],
             "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
-            "view": {"auto_focus": true, "only_active": false},
+            "view": {"auto_focus": true, "only_active": false, "level_bar": true},
             "import_report": [],
             "configuration": "",
             "configurations": [],

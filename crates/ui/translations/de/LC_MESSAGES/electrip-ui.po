@@ -19,6 +19,9 @@ msgstr "Autofokus"
 msgid "Only active locos"
 msgstr "Nur aktive Loks"
 
+msgid "Sound level"
+msgstr "Geräuschstufe"
+
 msgid "Image file (PNG or JPEG)"
 msgstr "Bilddatei (PNG oder JPEG)"
 

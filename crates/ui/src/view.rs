@@ -31,6 +31,7 @@ struct Loco {
     picture: Option<String>,
     sound_model: Option<IgnoredAny>,
     sound: String,
+    sound_level: f32,
     sound_functions: Vec<Switch>,
     event_sounds: Vec<Switch>,
     functions: Vec<Switch>,
@@ -62,6 +63,7 @@ struct Device {
 struct View {
     auto_focus: bool,
     only_active: bool,
+    level_bar: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,6 +77,7 @@ pub fn show(window: &MainWindow, state: &State, library: &Path) {
     window.set_track_power(state.station.track_power);
     window.set_auto_focus(state.view.auto_focus);
     window.set_only_active(state.view.only_active);
+    window.set_level_bar(state.view.level_bar);
     let rows = controllers(state, library);
     let buttons = rows.iter().map(|c| c.buttons.row_count()).max();
     window.set_button_rows(buttons.unwrap_or(0) as i32);
@@ -171,6 +174,8 @@ fn controller(state: &State, loco: &Loco, library: &Path) -> Controller {
         volume: loco.volume,
         speed: loco.speed,
         max_speed: loco.max_speed,
+        sound_level: loco.sound_level,
+        level_bar: state.view.level_bar && loco.sound_model.is_some(),
         forward: loco.forward,
         buttons: ModelRc::new(VecModel::from(buttons(loco))),
         devices: ModelRc::new(VecModel::from(devices(state, loco.id))),

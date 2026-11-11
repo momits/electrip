@@ -47,6 +47,7 @@ fn a_written_config_reads_back_equal() {
         view: View {
             auto_focus: false,
             only_active: true,
+            level_bar: false,
         },
     };
     let dir = TempDir::new().unwrap();
@@ -56,10 +57,11 @@ fn a_written_config_reads_back_equal() {
 }
 
 #[test]
-fn auto_focus_is_on_by_default() {
+fn auto_focus_and_the_level_bar_are_on_by_default() {
     let config: Config = serde_json::from_str("{}").unwrap();
     assert!(config.view.auto_focus);
     assert!(!config.view.only_active);
+    assert!(config.view.level_bar);
 }
 
 #[test]

@@ -16,6 +16,12 @@
 //! of it begins.
 //!
 //! A steam engine plays as [`SteamSound`]; it is on or off.
+//!
+//! The sound level shows where the sound stands for the fill level of the
+//! speed scale (B-22, `animate_fill_level` in
+//! `legacy/src/electrip/control_ui.py`): while a sound plays that leads
+//! to another segment, it moves evenly to the end of that segment; a
+//! steam engine follows the speed.
 
 use crate::audio::{AudioSink, Channel, ChannelId};
 use crate::sound::{Engine, EngineSound, SegmentSound, SoundModel};
@@ -35,11 +41,13 @@ pub enum SoundState {
     Stopping,
 }
 
-/// Seen from outside only its state.
+/// Seen from outside only its state and level.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
-#[serde(into = "SoundState")]
+#[serde(into = "SoundView")]
 pub struct DrivingSound {
     state: SoundState,
+    /// The sound level in km/h; 0 while off.
+    sound_level: f64,
     channel: Channel,
     /// Where the queued sounds lead: 0 is standstill, n the n-th segment.
     level: usize,
@@ -52,9 +60,18 @@ pub struct DrivingSound {
     steam: SteamSound,
 }
 
-impl From<DrivingSound> for SoundState {
+#[derive(Serialize)]
+struct SoundView {
+    sound: SoundState,
+    sound_level: f64,
+}
+
+impl From<DrivingSound> for SoundView {
     fn from(sound: DrivingSound) -> Self {
-        sound.state
+        SoundView {
+            sound: sound.state,
+            sound_level: sound.sound_level,
+        }
     }
 }
 
@@ -71,6 +88,10 @@ impl DrivingSound {
 
     pub fn state(&self) -> SoundState {
         self.state
+    }
+
+    pub fn sound_level(&self) -> f64 {
+        self.sound_level
     }
 
     /// Whether the speed stays as it is while the engine starts or stops.
@@ -100,6 +121,7 @@ impl DrivingSound {
         &mut self,
         model: Option<&SoundModel>,
         speed: f64,
+        max_speed: f64,
         sink: &mut dyn AudioSink,
     ) {
         let Some(model) = model else {
@@ -123,6 +145,7 @@ impl DrivingSound {
                 self.state = SoundState::On;
                 self.level = model.level(speed);
                 self.audible = self.level;
+                self.sound_level = model.level_end(self.level, max_speed);
                 self.on_load = true;
                 self.quitting = false;
                 self.update(model, speed, sink);
@@ -139,6 +162,7 @@ impl DrivingSound {
         if self.state == SoundState::Off {
             self.steam.start(model, speed, sink);
             self.state = SoundState::On;
+            self.sound_level = speed;
         } else {
             self.stop(sink);
         }
@@ -151,6 +175,7 @@ impl DrivingSound {
         &mut self,
         model: Option<&SoundModel>,
         speed: f64,
+        max_speed: f64,
         sink: &mut dyn AudioSink,
         mut elapsed: Duration,
     ) {
@@ -164,13 +189,31 @@ impl DrivingSound {
         };
         if steam {
             self.steam.play(model, speed, sink, elapsed);
+            self.sound_level = speed;
             return;
         }
-        while self.channel.advance(&mut elapsed) {
+        loop {
+            let end = model.level_end(self.audible, max_speed);
+            let (rest, before) = (self.channel.remaining(), elapsed);
+            let ended = self.channel.advance(&mut elapsed);
+            self.move_level(end, rest, before - elapsed);
+            if !ended {
+                break;
+            }
             self.audible = self.level;
             self.update(model, speed, sink);
         }
         self.off_if_silent();
+    }
+
+    /// Moves the level evenly so it reaches `end` when the sound that
+    /// played `rest` before ends; `passed` of it has passed.
+    fn move_level(&mut self, end: f64, rest: Option<Duration>, passed: Duration) {
+        let Some(rest) = rest else {
+            return;
+        };
+        let part = (passed.as_secs_f64() / rest.as_secs_f64()).min(1.0);
+        self.sound_level += (end - self.sound_level) * part;
     }
 
     /// Queues the sound that leads one segment towards `speed` or loops in
@@ -223,11 +266,13 @@ impl DrivingSound {
             self.channel.stop(sink);
         }
         self.state = SoundState::Off;
+        self.sound_level = 0.0;
     }
 
     fn off_if_silent(&mut self) {
         if self.channel.is_silent() {
             self.state = SoundState::Off;
+            self.sound_level = 0.0;
         }
     }
 }
