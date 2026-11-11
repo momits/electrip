@@ -212,8 +212,12 @@ impl DrivingSound {
         let Some(rest) = rest else {
             return;
         };
-        let part = (passed.as_secs_f64() / rest.as_secs_f64()).min(1.0);
-        self.sound_level += (end - self.sound_level) * part;
+        if passed >= rest {
+            self.sound_level = end;
+        } else {
+            self.sound_level +=
+                (end - self.sound_level) * passed.as_secs_f64() / rest.as_secs_f64();
+        }
     }
 
     /// Queues the sound that leads one segment towards `speed` or loops in
