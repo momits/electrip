@@ -46,6 +46,30 @@ pub fn merge(library: &Path, name: &str, other: &mut Document) -> Result<bool, E
     Ok(true)
 }
 
+/// Takes the configuration of `other`, named `name` on another instance,
+/// into the library (N-03): merges it into the configuration with its id,
+/// else saves it under `name` or, if that is taken, `name 2` and so on.
+/// Returns its name in the library.
+pub fn take(library: &Path, name: &str, other: &mut Document) -> Result<String, Error> {
+    if !config::valid_name(name) {
+        return Err(Error::InvalidId(name.into()));
+    }
+    fs::create_dir_all(library)?;
+    let config = other.config()?;
+    if let Some((_, known)) = ids(library)?.into_iter().find(|(id, _)| *id == config.id) {
+        merge(library, &known, other)?;
+        return Ok(known);
+    }
+    let (mut free, mut n) = (name.to_string(), 1);
+    while config::path(library, &free).exists() {
+        n += 1;
+        free = format!("{name} {n}");
+    }
+    config::write(&config::path(library, &free), &config)?;
+    merge(library, &free, other)?;
+    Ok(free)
+}
+
 /// The saved document of `config` or else a new one, updated to `config`.
 fn stored(
     library: &Path,

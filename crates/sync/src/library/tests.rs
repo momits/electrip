@@ -65,3 +65,39 @@ fn ids_name_the_configurations() {
     let a = library(&config);
     assert_eq!(ids(a.path()).unwrap(), [(config.id, NAME.to_string())]);
 }
+
+#[test]
+fn a_configuration_taken_twice_merges_into_the_first_copy() {
+    let config = config();
+    let a = library(&config);
+    let b = TempDir::new().unwrap();
+    let other = Config {
+        id: config::new_id(),
+        ..Config::default()
+    };
+    config::write(&config::path(b.path(), NAME), &other).unwrap();
+
+    let taken = take(b.path(), NAME, &mut document(a.path(), NAME).unwrap()).unwrap();
+    assert_eq!(taken, format!("{NAME} 2"));
+    change(&a, |config| config.locos[0].set_name("A".into()));
+    let again = take(b.path(), NAME, &mut document(a.path(), NAME).unwrap()).unwrap();
+
+    assert_eq!(again, taken);
+    assert_eq!(
+        config::read(&config::path(b.path(), &taken)).unwrap(),
+        read(&a)
+    );
+    assert_eq!(read(&b), other);
+}
+
+#[test]
+fn a_name_cannot_reach_a_file_outside_the_library() {
+    let a = library(&config());
+    let b = TempDir::new().unwrap();
+    let result = take(
+        b.path(),
+        "../outside",
+        &mut document(a.path(), NAME).unwrap(),
+    );
+    assert!(matches!(result, Err(Error::InvalidId(name)) if name == "../outside"));
+}
