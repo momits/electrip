@@ -6,16 +6,23 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Bug: Maussteuerung im Fenster (B-24):** Der Geschwindigkeitsregler lässt sich im Fenster nicht mit der Maus ändern (Mo, 2026-11-10, beim Start mit Z21-Simulator und den Lokpaketen aus `tests/corpus/packages/`).
-  Erst mit einem Test reproduzieren, dann beheben.
-  Das Fenster sendet nur Befehle des Kerns (`set_axis`, `reverse`).
-  B-24 steht deshalb wieder auf `wired: false`, `verified: false`.
 - **Füllstandsanzeige für Loks mit Sound (B-22):** In Electrip 1 zeigt sie, wo der Sound im Verhältnis zur gewählten Fahrstufe bzw. Geschwindigkeit steht (`legacy/src/electrip/control_ui.py`, `animate_fill_level`, Option `show_level_bar`).
   Der Wert kommt aus dem Zustand des Hosts, nicht aus eigener Rechnung im Fenster.
   B-22 hat dafür ein neues Kriterium und steht wieder auf `wired: false`, `verified: false`.
 - **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
+
+## 2026-11-11 – B-24: Geschwindigkeitsregler mit der Maus (Claude)
+
+- CI auf `main` war beim Start grün. B-24 (Phase 1) war die offene Anforderung der niedrigsten Phase (Bug aus den Aufräumkandidaten).
+- Ursache: Der Regler im Fenster (`SpeedScale` in `control.slint`) hatte gar keine Mausbedienung, und der Kern keinen Befehl, der eine Geschwindigkeit setzt.
+- Neuer Befehl `set_speed` (`loco`, `speed` in km/h): setzt die Geschwindigkeit sofort, begrenzt auf 0 bis Vmax, wie der Regler von Electrip 1 unter der Maus; ändert nichts an der gespeicherten Konfiguration (wie `set_axis`). Der Regler sendet ihn beim Drücken und Ziehen mit der Geschwindigkeit, bei der die Mitte des Knopfs am Zeiger stünde.
+- Tests: `host/tests.rs` (`the_mouse_sets_the_speed_up_to_vmax_and_the_driver_gets_the_step`, `the_axis_does_not_save` ergänzt), `electrip/tests/driving.rs` (`the_mouse_sets_the_speed`, Steuerkanal), Fenstertest in `ui/src/view/tests.rs` (Ziehen des Knopfs von unten bis über die Skala sendet `set_speed` 0 und 100). `spec/steuerkanal.md` und `spec/hw-checklist.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7636 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). `Motion::set_speed` nimmt die Lok wie `accelerate`, die Hülle `Session::set_speed` entfällt.
+- **B-24** `wired` und `verified`.
+- **Offen:** Ob das Ziehen mit einem Sound-Modell (Anlassen, Synchronisieren) gut klingt, ist ungeprüft (Prüfpunkt in `spec/hw-checklist.md`). Der Platz auf der Platte im Container war während der Sitzung voll; `target/debug/incremental` gelöscht.
 
 ## 2026-11-10 – N-03: Gäste und Warnung bei verschiedenen Audio-Zielen entfernt (Claude)
 
