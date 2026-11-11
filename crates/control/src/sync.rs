@@ -38,14 +38,13 @@ type Error = Box<dyn std::error::Error>;
 /// The ids of the configurations of the library and the id and name of
 /// the open one.
 fn ids(host: &Host) -> Result<Value, Error> {
-    let ids = library::ids(host.library())?;
-    let name = host.session().configuration();
-    let open = ids
-        .iter()
-        .find(|(_, known)| known == name)
-        .map(|(id, _)| id);
-    let ids: Vec<_> = ids.iter().map(|(id, _)| id).collect();
-    Ok(json!({"ids": ids, "open": {"id": open, "name": name}}))
+    let ids: Vec<_> = library::ids(host.library())?
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect();
+    let session = host.session();
+    let open = json!({"id": session.config().id, "name": session.configuration()});
+    Ok(json!({"ids": ids, "open": open}))
 }
 
 /// Merges the `document` of the request, if any, into the configuration
@@ -102,17 +101,12 @@ pub fn sync(local: SocketAddr, peer: SocketAddr) -> io::Result<()> {
 /// in the library.
 pub fn take_configuration(host: SocketAddr, library: &Path) -> io::Result<String> {
     let mut host = Connection::open(host)?;
-    let reply = host.request(json!({"command": "configuration_ids"}))?;
-    let (id, name) = (&reply["open"]["id"], &reply["open"]["name"]);
-    let (id, name) = id
-        .as_str()
-        .zip(name.as_str())
-        .ok_or(io::ErrorKind::InvalidData)?;
-    let (document, _) = host.document(id, None)?;
     let invalid = || io::Error::from(io::ErrorKind::InvalidData);
+    let (id, name) = host.open_configuration()?;
+    let (document, _) = host.document(&id, None)?;
     let mut document =
         Document::load(&decode(&document).ok_or_else(invalid)?).map_err(io::Error::other)?;
-    let name = library::take(library, name, &mut document).map_err(io::Error::other)?;
+    let name = library::take(library, &name, &mut document).map_err(io::Error::other)?;
     let config = config::read(&config::path(library, &name))?;
     for path in media::missing(library, &config) {
         let reply = host.request(json!({"command": "file", "path": path}))?;
@@ -153,6 +147,15 @@ impl Connection {
     fn ids(&mut self) -> io::Result<Vec<String>> {
         let reply = self.request(json!({"command": "configuration_ids"}))?;
         Ok(serde_json::from_value(reply["ids"].clone())?)
+    }
+
+    /// The id and name of the open configuration.
+    fn open_configuration(&mut self) -> io::Result<(String, String)> {
+        let reply = self.request(json!({"command": "configuration_ids"}))?;
+        let field = |key| reply["open"][key].as_str().map(String::from);
+        field("id")
+            .zip(field("name"))
+            .ok_or(io::ErrorKind::InvalidData.into())
     }
 
     /// Sends `document` to merge, if any, and returns the merged one and
