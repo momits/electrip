@@ -111,6 +111,7 @@ Neu ist, dass die Gamepads nicht mehr im Haupt-Thread abgefragt werden (dort lä
 - [ ] Das Fenster öffnet sich und zeigt alle Loks nebeneinander mit Name, Bild, Geschwindigkeit und Knöpfen.
 - [ ] Das Gamepad fährt eine Lok; ihr Regler ist in der Farbe des Gamepads hinterlegt, und die Geschwindigkeit läuft mit.
 - [ ] Richtungsknopf, Fahrgeräusch, Funktionsknöpfe (auch Taster: gedrückt halten) und Nothalt-Knopf wirken per Maus.
+- [ ] Der Geschwindigkeitsregler lässt sich mit der Maus ziehen (auch Klick auf eine Stelle der Skala); die Lok fährt mit der gewählten Geschwindigkeit, Anzeige und Zentrale folgen (B-24).
 - [ ] Fenster schließen beendet die App.
 - [ ] Bei mehr Loks, als nebeneinander passen, werden die Regler schmaler; erst wenn auch das nicht reicht, erscheint die Bildlaufleiste.
 - [ ] Mit „Auto focus“ (Standard an) scrollt das Fenster beim Lokwechsel per Steuerkreuz zur neuen Lok; ohne bleibt es stehen.
