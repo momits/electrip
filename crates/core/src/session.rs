@@ -745,7 +745,10 @@ impl Session {
             } => self.loco(loco)?.set_stroke_sound(segment, stroke, path)?,
             Command::SetSteam { loco, steam } => self.loco(loco)?.set_steam(steam)?,
             Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
-            Command::SetSpeed { loco, speed } => self.set_speed(loco, speed)?,
+            Command::SetSpeed { loco, speed } => {
+                let entry = self.entry(loco)?;
+                entry.motion.set_speed(&entry.loco, speed);
+            }
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::AddAction { name } => self.add_action(name),
             Command::RenameAction { action, name } => self.action(action)?.name = name,
@@ -820,12 +823,6 @@ impl Session {
 
     fn set_axis(&mut self, loco: u32, deflection: f64, dead_zone: f64) -> Result<(), CommandError> {
         self.entry(loco)?.axis = drive::deflection(deflection, dead_zone);
-        Ok(())
-    }
-
-    fn set_speed(&mut self, loco: u32, speed: f64) -> Result<(), CommandError> {
-        let entry = self.entry(loco)?;
-        entry.motion.set_speed(speed, entry.loco.max_speed());
         Ok(())
     }
 
