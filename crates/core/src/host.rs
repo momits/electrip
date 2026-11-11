@@ -122,9 +122,9 @@ impl Host {
                 })?;
             }
             // The axis changes no configuration to save.
-            command @ (Command::SetAxis { .. } | Command::Reverse { .. }) => {
-                self.session.apply(command)?
-            }
+            command @ (Command::SetAxis { .. }
+            | Command::SetSpeed { .. }
+            | Command::Reverse { .. }) => self.session.apply(command)?,
             command => self.change(|session| session.apply(command))?,
         }
         Ok(())

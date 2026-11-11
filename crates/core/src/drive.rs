@@ -63,6 +63,11 @@ impl Motion {
         self.speed = (self.speed + change).clamp(0.0, loco.max_speed());
     }
 
+    /// Sets the speed between standstill and `max_speed`.
+    pub fn set_speed(&mut self, speed: f64, max_speed: f64) {
+        self.speed = speed.clamp(0.0, max_speed);
+    }
+
     /// The direction switch: stops at once, then changes the direction.
     pub fn reverse(&mut self) {
         self.stop();

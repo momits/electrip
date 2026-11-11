@@ -191,6 +191,26 @@ fn the_axis_accelerates_and_the_driver_gets_the_speed_step() {
 }
 
 #[test]
+fn the_mouse_sets_the_speed_up_to_vmax_and_the_driver_gets_the_step() {
+    let (mut host, sent, _library) = driving_host();
+    host.apply(Command::SetSpeed {
+        loco: 1,
+        speed: 150.0,
+    })
+    .unwrap();
+    assert_eq!(speed(&host), 100.0);
+    host.poll(0.05);
+    host.apply(Command::SetSpeed {
+        loco: 1,
+        speed: -1.0,
+    })
+    .unwrap();
+    assert_eq!(speed(&host), 0.0);
+    host.poll(0.05);
+    assert_eq!(*sent.lock().unwrap(), [state(true, 128), state(true, 0)]);
+}
+
+#[test]
 fn the_axis_at_rest_keeps_the_speed_and_sends_nothing() {
     let (mut host, sent, _library) = driving_host();
     set_axis(&mut host, 1.0);
@@ -973,6 +993,11 @@ fn the_axis_does_not_save() {
     let (mut host, _, _library) = driving_host();
     host.saved = Config::default();
     set_axis(&mut host, 1.0);
+    host.apply(Command::SetSpeed {
+        loco: 1,
+        speed: 5.0,
+    })
+    .unwrap();
     host.apply(Command::Reverse { loco: 1 }).unwrap();
     assert_eq!(host.saved, Config::default());
     host.apply(Command::AddLoco).unwrap();

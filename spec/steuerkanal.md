@@ -148,6 +148,7 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `remove_curve_point` | `loco`, `point` (Nummer ab 0) | B-08 |
 | `move_curve_point` | `loco`, `point`, `speed`, `step` | B-08 |
 | `set_axis` | `loco`, `deflection` (Auslenkung der Fahrachse von -1 voll zurück bis 1 voll vor; bis 0,06 wird sie ignoriert wie in Electrip 1) | B-10 |
+| `set_speed` | `loco`, `speed` (km/h, sofort wie der Regler von Electrip 1 unter der Maus; begrenzt auf 0 bis Vmax) | B-24 |
 | `reverse` | `loco` (Richtungswender: Geschwindigkeit 0, dann andere Richtung) | B-10 |
 | `set_engine` | `loco`, `engine` (`diesel`, `steam` oder `null`), `confirmed`; setzt ein neues Sound-Modell mit einem Segment bzw. entfernt es. Ein vorhandenes Sound-Modell wird nur mit `confirmed: true` ersetzt, sonst Fehler; dieselbe Motorart tut nichts | B-15 |
 | `insert_segment` | `loco`, `segment` (Nummer ab 0); teilt das Segment in der Mitte wie Electrip 1, das neue ist die rechte Hälfte | B-15 |

@@ -480,6 +480,9 @@ fn window_shows_the_state_and_sends_commands() {
     // B-05: click the picture, load an image, drag and zoom the crop.
     window.set_size(slint::PhysicalSize::new(WIDTH, HEIGHT));
     show(&main, &state, library.path());
+    // B-24: the mouse drags the knob of "Köf II" from the bottom, where it
+    // stands, to above the scale.
+    drag(&window, (207, 315), (207, 100));
     let source = library.path().join("source.png");
     gradient(880, 340).save(&source).unwrap();
     click(&window, 60, 80);
@@ -515,7 +518,7 @@ fn window_shows_the_state_and_sends_commands() {
     let mut lines = BufReader::new(host).lines();
     let commands: Vec<Command> = lines
         .by_ref()
-        .take(8)
+        .take(10)
         .map(|l| serde_json::from_str(&l.unwrap()).unwrap())
         .collect();
     assert_eq!(
@@ -534,6 +537,14 @@ fn window_shows_the_state_and_sends_commands() {
                     auto_focus: false,
                     only_active: true
                 }
+            },
+            Command::SetSpeed {
+                loco: 2,
+                speed: 0.0
+            },
+            Command::SetSpeed {
+                loco: 2,
+                speed: 100.0
             },
             Command::SetVolume {
                 loco: 1,
