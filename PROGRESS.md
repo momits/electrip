@@ -10,6 +10,13 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
 
+## 2026-11-11 – Loop hält: Phase 3 fertig (Claude)
+
+- CI auf `main` grün.
+- Alle 33 Anforderungen in `spec/requirements.json` sind `wired` und `verified`; keine offene Frage in `spec/questions.md` wartet auf eine Antwort.
+- Die Aufräumkandidaten brauchen Mo: „Fehlende Sounddateien melden“ (`toggle_sound` antwortet `ok`, obwohl nichts spielt) hängt am Abspielen auf anderen Instanzen und braucht eine Entscheidung, wie der Fehler zurückkommt; „Konfiguration aus dem Import bauen“ wartet nach der Rule of Three auf ein drittes Vorkommen.
+- **Wartet auf Mo:** Abnahme (`accepted`) und Hardware-Prüfpunkte in `spec/hw-checklist.md`, neue Anforderungen oder Aufgaben; danach `STOP` löschen.
+
 ## 2026-11-11 – B-22: Füllstandsanzeige im Geschwindigkeitsregler (Claude)
 
 - CI auf `main` war grün. B-22 war die einzige offene Anforderung (Phase 3, Kriterium Füllstandsanzeige aus den Aufräumkandidaten).
