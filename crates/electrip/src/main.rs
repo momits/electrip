@@ -17,8 +17,8 @@ use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
-use std::sync::mpsc::{self, Receiver};
-use std::thread;
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 /// How often a host checks whether to yield to another host (N-03).
@@ -158,8 +158,12 @@ fn session(
                 if let Some(discovery) = &discovery {
                     announce(discovery, Status::Client, port);
                 }
+                let local = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+                let (stop, copying) = copy_configuration(local, library.clone());
                 follow(&mut relay, host, &mut input, discovery.as_deref(), port);
-                take_over(&relay, library.clone(), file.clone())?
+                drop(stop);
+                let name = copying.join().ok().flatten().or_else(|| file.clone());
+                take_over(&relay, library.clone(), name)?
             }
         }
     }
@@ -181,6 +185,30 @@ fn watch(discovery: Option<Arc<Discovery>>) -> Receiver<SocketAddr> {
         });
     }
     receiver
+}
+
+/// Copies the open configuration of the host behind the relay at `local`
+/// into the library now and every [`SYNC_INTERVAL`] while the instance is
+/// client, so it drives with it when it becomes host (N-03). Stops when
+/// the sender is dropped and returns the name of the copy.
+fn copy_configuration(
+    local: SocketAddr,
+    library: PathBuf,
+) -> (Sender<()>, JoinHandle<Option<String>>) {
+    let (stop, stopped) = mpsc::channel();
+    let copying = thread::spawn(move || {
+        let mut name = None;
+        loop {
+            match electrip_control::take_configuration(local, &library) {
+                Ok(taken) => name = Some(taken),
+                Err(e) => eprintln!("ERROR cannot copy the configuration of the host: {e}"),
+            }
+            if stopped.recv_timeout(SYNC_INTERVAL) != Err(RecvTimeoutError::Timeout) {
+                return name;
+            }
+        }
+    });
+    (stop, copying)
 }
 
 /// Merges the configurations of the instance at `local` with the ones
@@ -232,11 +260,11 @@ fn follow(
     }
 }
 
-/// The new host after the old one is gone: it reads back the state from
-/// the command station and knows the input devices of the relay
-/// (ADR 0010).
-fn take_over(relay: &Relay, library: PathBuf, file: Option<String>) -> io::Result<Role> {
-    let mut host = open_host(library, file).map_err(io::Error::other)?;
+/// The new host after the old one is gone: it opens the configuration
+/// `name`, reads back the state from the command station and knows the
+/// input devices of the relay (ADR 0010).
+fn take_over(relay: &Relay, library: PathBuf, name: Option<String>) -> io::Result<Role> {
+    let mut host = open_host(library, name).map_err(io::Error::other)?;
     let _ = host
         .take_over()
         .inspect_err(|e| eprintln!("ERROR cannot take over the command station: {e}"));

@@ -85,3 +85,25 @@ fn documents_go_as_hex() {
     assert_eq!(decode("0g"), None);
     assert_eq!(decode("abc"), None);
 }
+
+#[test]
+fn a_client_takes_the_open_configuration_of_the_host_with_its_picture() {
+    let (a, library_a) = serve_library(TempDir::new().unwrap());
+    let source = library_a.path().join("lok.png");
+    image::RgbImage::new(440, 340).save(&source).unwrap();
+    request(a, json!({"command": "add_loco"}));
+    request(
+        a,
+        json!({"command": "set_picture", "loco": 1, "path": source}),
+    );
+    let client = TempDir::new().unwrap();
+
+    let name = take_configuration(a, client.path()).unwrap();
+
+    assert_eq!(name, config::DEFAULT_NAME);
+    let read = |library: &TempDir| config::read(&config::path(library.path(), &name)).unwrap();
+    assert_eq!(read(&client), read(&library_a));
+    let picture = read(&client).locos[0].picture().unwrap().to_string();
+    let file = format!("media/{picture}.png");
+    assert!(client.path().join(file).exists());
+}

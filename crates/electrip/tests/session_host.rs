@@ -272,3 +272,30 @@ fn a_client_drives_with_the_configuration_of_the_host() {
     at_client.command(json!({"command": "add_loco"})).unwrap();
     assert_eq!(host.connect().state["locos"][0]["id"], 1);
 }
+
+/// Host-Ausfall: a client keeps a copy of the configuration of the host
+/// in its library and drives with it when it becomes host.
+#[test]
+fn a_client_becomes_host_with_the_configuration_of_the_host() {
+    let host = App::start();
+    let mut at_host = host.connect();
+    at_host.command(json!({"command": "add_loco"})).unwrap();
+    let rename = json!({"command": "rename_configuration", "name": "Keller"});
+    at_host.command(rename).unwrap();
+    let library = TempDir::new().unwrap();
+    let client = client_of(host.address(), &library);
+    let copy = library.path().join("Keller.json");
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !copy.exists() {
+        assert!(
+            Instant::now() < deadline,
+            "ERROR no copy of the configuration"
+        );
+        thread::sleep(Duration::from_millis(100));
+    }
+
+    drop((at_host, host));
+    connect_until(&client, |state| {
+        state["configuration"] == "Keller" && state["locos"].as_array().unwrap().len() == 1
+    });
+}

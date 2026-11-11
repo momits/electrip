@@ -205,6 +205,7 @@ Vorbereitung: zwei Rechner A und B im selben LAN oder WLAN, beide mit derselben 
 - [ ] Bei A das Netzwerkkabel ziehen bzw. WLAN aus (A beendet sich nicht): B erkennt das ebenso nach wenigen Sekunden.
 - [ ] Mit drei Instanzen (A Host, B und C Clients) A beenden: Genau eine von B und C wird Host, die andere ihr Client; `dns-sd -L` zeigt das wie bei „Host per mDNS finden“.
 - [ ] B mit `--host <A>:4711` statt mDNS: B wird nach dem Ausfall von A ebenfalls Host.
+- [ ] B mit einer leeren Bibliothek (`--library <neues Verzeichnis>`) starten, an A eine Lok mit Bild und Sound anlegen, etwa 5 s warten, dann A beenden: B fährt als Host mit der Konfiguration von A, die Lok hat ihr Bild und ihren Sound.
 
 Ergebnis: _offen_
 

@@ -24,7 +24,7 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 pub(crate) fn answer(host: &mut Host, line: &str) -> Option<Result<Value, String>> {
     let request: Value = serde_json::from_str(line).ok()?;
     let result = match request["command"].as_str()? {
-        "configuration_ids" => ids(host.library()).map(|ids| json!({"ids": ids})),
+        "configuration_ids" => ids(host),
         "sync_configuration" => merge(host, &request),
         "file" => file(host, &request),
         "add_file" => add_file(host, &request),
@@ -35,9 +35,17 @@ pub(crate) fn answer(host: &mut Host, line: &str) -> Option<Result<Value, String
 
 type Error = Box<dyn std::error::Error>;
 
-fn ids(library: &Path) -> Result<Vec<String>, Error> {
-    let ids = library::ids(library)?;
-    Ok(ids.into_iter().map(|(id, _)| id).collect())
+/// The ids of the configurations of the library and the id and name of
+/// the open one.
+fn ids(host: &Host) -> Result<Value, Error> {
+    let ids = library::ids(host.library())?;
+    let name = host.session().configuration();
+    let open = ids
+        .iter()
+        .find(|(_, known)| known == name)
+        .map(|(id, _)| id);
+    let ids: Vec<_> = ids.iter().map(|(id, _)| id).collect();
+    Ok(json!({"ids": ids, "open": {"id": open, "name": name}}))
 }
 
 /// Merges the `document` of the request, if any, into the configuration
@@ -87,6 +95,34 @@ pub fn sync(local: SocketAddr, peer: SocketAddr) -> io::Result<()> {
         copy_files(&mut peer, &mut local, &missing)?;
     }
     Ok(())
+}
+
+/// Takes the open configuration of the host at `host` into `library`
+/// with the pictures and sounds it lacks there (N-03); returns its name
+/// in the library.
+pub fn take_configuration(host: SocketAddr, library: &Path) -> io::Result<String> {
+    let mut host = Connection::open(host)?;
+    let reply = host.request(json!({"command": "configuration_ids"}))?;
+    let (id, name) = (&reply["open"]["id"], &reply["open"]["name"]);
+    let (id, name) = id
+        .as_str()
+        .zip(name.as_str())
+        .ok_or(io::ErrorKind::InvalidData)?;
+    let (document, _) = host.document(id, None)?;
+    let invalid = || io::Error::from(io::ErrorKind::InvalidData);
+    let mut document =
+        Document::load(&decode(&document).ok_or_else(invalid)?).map_err(io::Error::other)?;
+    let name = library::take(library, name, &mut document).map_err(io::Error::other)?;
+    let config = config::read(&config::path(library, &name))?;
+    for path in media::missing(library, &config) {
+        let reply = host.request(json!({"command": "file", "path": path}))?;
+        let content = reply["content"]
+            .as_str()
+            .and_then(decode)
+            .ok_or_else(invalid)?;
+        media::write(library, &path, &content)?;
+    }
+    Ok(name)
 }
 
 /// Copies the pictures and sounds at `paths` that `from` has to `to`.

@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 
 pub use discovery::{Discovery, Status, station_id};
 pub use relay::Relay;
-pub use sync::sync;
+pub use sync::{sync, take_configuration};
 
 /// Version of the message format; raised on incompatible changes.
 pub const VERSION: u32 = 1;
