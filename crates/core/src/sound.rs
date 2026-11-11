@@ -185,6 +185,15 @@ impl SoundModel {
         self.segments.iter().filter(|s| s.start < speed).count()
     }
 
+    /// The speed where `level` ends: 0 at standstill, else the end of its
+    /// segment.
+    pub fn level_end(&self, level: usize, max_speed: f64) -> f64 {
+        match level {
+            0 => 0.0,
+            _ => self.segments.get(level).map_or(max_speed, |s| s.start),
+        }
+    }
+
     /// Sets the sound file or with `None` removes it.
     pub(crate) fn set_sound(&mut self, sound: EngineSound, path: Option<PathBuf>) {
         set(&mut self.sounds, sound, path);

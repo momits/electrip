@@ -73,8 +73,9 @@ fn connect_callbacks(window: &MainWindow, stream: Rc<Connection>) {
         send(&s, command)
     });
     let s = Rc::clone(&stream);
-    window.on_set_view(move |auto_focus, only_active| {
-        let view = json!({"auto_focus": auto_focus, "only_active": only_active});
+    window.on_set_view(move |auto_focus, only_active, level_bar| {
+        let view =
+            json!({"auto_focus": auto_focus, "only_active": only_active, "level_bar": level_bar});
         send(&s, json!({"command": "set_view", "view": view}))
     });
     window.on_load_picture(|path| {

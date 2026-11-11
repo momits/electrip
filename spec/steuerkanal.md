@@ -70,13 +70,15 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
     "audio_instance": null,
     "audio_device": null,
     "speed": 0.0,
-    "forward": true
+    "forward": true,
+    "sound": "off",
+    "sound_level": 0.0
   }],
   "actions": [{"id": 1, "name": "Licht"}],
   "mappings": [{"kind": "Xbox Series X Controller", "bindings": [{"control": "lefty", "target": {"type": "drive", "dead_zone": 0.06}}]}],
   "devices": [{"id": 1, "kind": "Xbox Series X Controller", "loco": 1, "number": 1, "focus": false}],
   "station": {"kind": "srcp", "host": "localhost", "port": 4303, "bus": 1, "power_on_start": true, "connected": false, "track_power": false},
-  "view": {"auto_focus": true, "only_active": false},
+  "view": {"auto_focus": true, "only_active": false, "level_bar": true},
   "import_report": [],
   "configuration": "Electrip",
   "configurations": ["Electrip"],
@@ -111,11 +113,12 @@ Die `version` steigt bei inkompatiblen Änderungen des Formats.
 - `speed`: Geschwindigkeit in km/h, `forward`: Fahrtrichtung (B-10).
   Die Zentrale bekommt die Fahrstufe aus der Kennlinie, abgeschnitten wie in Electrip 1.
 - `sound`: Fahrgeräusch `off`, `starting`, `on` oder `stopping` (B-11, B-12). Beim Diesel spielt `starting` das Anlassgeräusch bis zum Leerlauf; `stopping` wartet auf das Ende des Leerlaufgeräuschs und spielt das Abstellgeräusch. Währenddessen bleibt die Geschwindigkeit stehen, auch bei ausgelenkter Fahrachse; die Dauer kommt aus der Länge der Dateien.
+- `sound_level`: wo das Fahrgeräusch steht, in km/h (B-22, Füllstandsanzeige wie in Electrip 1); `0`, solange es aus ist. Beim Diesel wandert der Wert, während ein Sound in ein anderes Segment führt (Beschleunigen, Bremsen), gleichmäßig bis zum Ende dieses Segments (Stand: 0) und ist mit dem Ende des Sounds dort; beim Einschalten während der Fahrt steht er sofort am Ende des Segments der Geschwindigkeit. Bei der Dampflok ist er die Geschwindigkeit.
 - `station`: Zentrale (`kind`: `srcp` oder `z21`; Vorgabe wie Electrip 1: SRCP-Server `localhost`, Port 4303, Bus 1) und ob die App mit ihr verbunden ist (B-01, N-02).
   Bricht die Verbindung ab, geht an alle Clients ein Zustand mit `connected: false`.
 - `power_on_start`: ob `connect` den Gleisstrom einschaltet (Vorgabe an, B-23); `track_power`: Gleisstrom, wie ihn die Zentrale zuletzt gemeldet hat, ohne Verbindung `false`.
   Schaltet eine andere Instanz an derselben Zentrale den Gleisstrom, folgt `track_power` (B-23).
-- `view`: Optionen der Steuerungsansicht (B-22), gespeichert mit der Konfiguration. `auto_focus` (Standard an; beim Import aus Electrip 1 `use_auto_focus`): Wechselt ein Gerät die Lok, holt das Fenster die neue Lok in den sichtbaren Bereich. `only_active`: Das Fenster zeigt nur Loks, die ein Gerät steuert oder die fahren.
+- `view`: Optionen der Steuerungsansicht (B-22), gespeichert mit der Konfiguration. `auto_focus` (Standard an; beim Import aus Electrip 1 `use_auto_focus`): Wechselt ein Gerät die Lok, holt das Fenster die neue Lok in den sichtbaren Bereich. `only_active`: Das Fenster zeigt nur Loks, die ein Gerät steuert oder die fahren. `level_bar` (Standard an; beim Import aus Electrip 1 `show_level_bar`): Das Fenster zeigt bei Loks mit Sound-Modell `sound_level` als Balken im Geschwindigkeitsregler.
   Hält ein Gerät „Fokus“ (`focus` in `devices`), zeigt das Fenster dessen Lok.
 - `configuration`: Name der geöffneten Konfiguration; `configurations`: alle Konfigurationen der Bibliothek, sortiert (B-21).
   Jede Änderung an Loks, Aktionen, Mappings und Server wird sofort in die Datei der geöffneten Konfiguration geschrieben, Funktionen in ihrem Standardzustand; Fahrzustand und Geräte werden nicht gespeichert.

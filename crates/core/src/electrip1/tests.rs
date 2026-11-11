@@ -84,6 +84,7 @@ fn the_corpus_is_imported_without_loss() {
         }
         assert_mapping(&import, &file["joystick"]);
         assert_eq!(import.view.auto_focus, file["joystick"]["use_auto_focus"]);
+        assert_eq!(import.view.level_bar, file["sound"]["show_level_bar"]);
     }
 }
 
@@ -335,6 +336,7 @@ fn missing_values_get_the_defaults_of_electrip_1() {
     );
     assert_eq!(mapping.target("button0"), Some(&Target::TogglePower));
     assert_eq!(mapping.target("button4"), Some(&Target::ToggleSound));
+    assert!(import.view.level_bar);
 }
 
 #[test]

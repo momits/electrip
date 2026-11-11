@@ -443,6 +443,7 @@ pub struct LocoEntry {
     #[serde(flatten)]
     pub motion: Motion,
     /// Off at the start like Electrip 1.
+    #[serde(flatten)]
     pub sound: DrivingSound,
     /// The deflection of the drive axis, 0 within the dead zone.
     #[serde(skip)]
@@ -842,8 +843,10 @@ impl Session {
         sink: &mut dyn AudioSink,
     ) -> Result<(), CommandError> {
         let entry = self.entry(id)?;
-        let speed = entry.motion.speed();
-        entry.sound.toggle(entry.loco.sound_model(), speed, sink);
+        let (speed, max_speed) = (entry.motion.speed(), entry.loco.max_speed());
+        entry
+            .sound
+            .toggle(entry.loco.sound_model(), speed, max_speed, sink);
         Ok(())
     }
 
@@ -854,15 +857,17 @@ impl Session {
         let mut changed = self.scroll(seconds);
         let elapsed = Duration::try_from_secs_f64(seconds).unwrap_or_default();
         for entry in &mut self.locos {
-            let before = (entry.motion, entry.sound.state());
+            let shown = |e: &LocoEntry| (e.motion, e.sound.state(), e.sound.sound_level());
+            let before = shown(entry);
             if !entry.sound.locks_speed() {
                 entry.motion.accelerate(&entry.loco, entry.axis, seconds);
             }
             let (model, speed) = (entry.loco.sound_model(), entry.motion.speed());
-            entry.sound.play(model, speed, sink, elapsed);
+            let max_speed = entry.loco.max_speed();
+            entry.sound.play(model, speed, max_speed, sink, elapsed);
             let accel = (speed - before.0.speed()) / seconds.max(f64::MIN_POSITIVE);
             let motion = model.is_some().then_some((entry.motion, accel));
-            changed |= (entry.motion, entry.sound.state()) != before;
+            changed |= shown(entry) != before;
             for function in entry.loco.sound_functions_mut() {
                 changed |= function.play(sink, elapsed);
             }

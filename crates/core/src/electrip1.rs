@@ -76,6 +76,8 @@ struct File {
     server: Station,
     #[serde(default)]
     joystick: Joystick,
+    #[serde(default)]
+    sound: Sound,
 }
 
 /// Button and axis numbers of pygame; -1 is no button.
@@ -101,6 +103,20 @@ impl Default for Joystick {
             focus_button: 3,
             sound_button: 4,
             use_auto_focus: true,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(default)]
+struct Sound {
+    show_level_bar: bool,
+}
+
+impl Default for Sound {
+    fn default() -> Self {
+        Sound {
+            show_level_bar: true,
         }
     }
 }
@@ -272,6 +288,7 @@ fn import(json: &str) -> Result<Import, ImportError> {
         mapping,
         view: View {
             auto_focus: file.joystick.use_auto_focus,
+            level_bar: file.sound.show_level_bar,
             ..View::default()
         },
         pictures,

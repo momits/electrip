@@ -36,14 +36,18 @@ pub struct View {
     pub auto_focus: bool,
     /// Shows only the locos a device controls or that are moving.
     pub only_active: bool,
+    /// Shows the sound level in the speed scale of locos with a sound
+    /// model.
+    pub level_bar: bool,
 }
 
-/// Auto-focus is on, like in Electrip 1.
+/// Auto-focus and the level bar are on, like in Electrip 1.
 impl Default for View {
     fn default() -> Self {
         View {
             auto_focus: true,
             only_active: false,
+            level_bar: true,
         }
     }
 }

@@ -28,6 +28,9 @@ export struct Controller {
     volume: float,
     speed: float,
     max-speed: float,
+    // Where the sound stands in km/h, shown only with the level bar.
+    sound-level: float,
+    level-bar: bool,
     forward: bool,
     buttons: [ControlButton],
     // The numbers (from 1) of the devices that control the loco.
@@ -62,10 +65,13 @@ component DeviceSymbol inherits Rectangle {
 }
 
 // The vertical speed scale; it shows the speed, the axis of the device or
-// the mouse sets it (B-24).
+// the mouse sets it (B-24). The level bar fills the trough up to where the
+// knob would stand at the sound level (B-22).
 component SpeedScale inherits Rectangle {
     in property <float> speed;
     in property <float> max-speed;
+    in property <float> sound-level;
+    in property <bool> level-bar;
     in property <bool> highlighted;
     callback set-speed(float);
     width: 30px;
@@ -76,16 +82,26 @@ component SpeedScale inherits Rectangle {
         border-width: 1px;
         border-color: highlighted ? #6c6c6c : #c3c3c3;
         background: highlighted ? #919191 : #dcdcdc;
+        if level-bar: Rectangle {
+            property <length> top: knob.height / 2 + (root.height - knob.height) * (1 - fraction(sound-level));
+            y: top;
+            height: parent.height - top;
+            border-radius: 4px;
+            background: #ffb048;
+        }
     }
     knob := Rectangle {
         width: 22px;
         height: 22px;
         x: (parent.width - self.width) / 2;
-        y: (parent.height - self.height) * (1 - (max-speed > 0 ? min(speed / max-speed, 1) : 0));
+        y: (parent.height - self.height) * (1 - fraction(speed));
         border-radius: 11px;
         border-width: 1px;
         border-color: highlighted ? #3f3f3f : #a5a5a5;
         background: highlighted ? #636363 : #f0f0f0;
+    }
+    pure function fraction(value: float) -> float {
+        return max-speed > 0 ? clamp(value / max-speed, 0, 1) : 0;
     }
     // The speed where the middle of the knob would be at the pointer.
     TouchArea {
@@ -195,6 +211,8 @@ component ControllerView inherits Rectangle {
             SpeedScale {
                 speed: controller.speed;
                 max-speed: controller.max-speed;
+                sound-level: controller.sound-level;
+                level-bar: controller.level-bar;
                 highlighted: highlighted;
                 set-speed(speed) => {
                     root.set-speed(speed);
@@ -256,12 +274,13 @@ export component MainWindow inherits Window {
     // The options of the view.
     in-out property <bool> auto-focus;
     in-out property <bool> only-active;
+    in-out property <bool> level-bar;
     callback set-speed(int, float);
     callback reverse(int);
     callback toggle-sound(int);
     callback trigger(int, int, bool);
     callback toggle-power();
-    callback set-view(bool, bool);
+    callback set-view(bool, bool, bool);
     callback load-picture(string) -> image;
     callback set-picture(int, string, float, float, float);
     callback set-volume(int, float);
@@ -379,14 +398,21 @@ export component MainWindow inherits Window {
                     text: @tr("Auto focus");
                     checked <=> root.auto-focus;
                     toggled => {
-                        root.set-view(root.auto-focus, root.only-active);
+                        root.set-view(root.auto-focus, root.only-active, root.level-bar);
                     }
                 }
                 CheckBox {
                     text: @tr("Only active locos");
                     checked <=> root.only-active;
                     toggled => {
-                        root.set-view(root.auto-focus, root.only-active);
+                        root.set-view(root.auto-focus, root.only-active, root.level-bar);
+                    }
+                }
+                CheckBox {
+                    text: @tr("Sound level");
+                    checked <=> root.level-bar;
+                    toggled => {
+                        root.set-view(root.auto-focus, root.only-active, root.level-bar);
                     }
                 }
             }

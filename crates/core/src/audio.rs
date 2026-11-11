@@ -142,6 +142,11 @@ impl Channel {
         self.playing.is_none()
     }
 
+    /// How long the current sound still plays.
+    pub(crate) fn remaining(&self) -> Option<Duration> {
+        self.playing
+    }
+
     /// Queues the sound like [`AudioSink::queue`]. Missing sounds and files
     /// the target cannot read are left out, like in Electrip 1.
     pub(crate) fn queue(&mut self, sink: &mut dyn AudioSink, sound: Option<&Path>) {
