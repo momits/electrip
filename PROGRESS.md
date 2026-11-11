@@ -6,12 +6,20 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Füllstandsanzeige für Loks mit Sound (B-22):** In Electrip 1 zeigt sie, wo der Sound im Verhältnis zur gewählten Fahrstufe bzw. Geschwindigkeit steht (`legacy/src/electrip/control_ui.py`, `animate_fill_level`, Option `show_level_bar`).
-  Der Wert kommt aus dem Zustand des Hosts, nicht aus eigener Rechnung im Fenster.
-  B-22 hat dafür ein neues Kriterium und steht wieder auf `wired: false`, `verified: false`.
 - **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
+
+## 2026-11-11 – B-22: Füllstandsanzeige im Geschwindigkeitsregler (Claude)
+
+- CI auf `main` war grün. B-22 war die einzige offene Anforderung (Phase 3, Kriterium Füllstandsanzeige aus den Aufräumkandidaten).
+- Der Host führt je Lok `sound_level` (km/h) im Zustand: Beim Diesel wandert der Wert, während ein Sound in ein anderes Segment führt, gleichmäßig bis zum Ende dieses Segments und steht mit dem Ende des Sounds dort (wie `animate_fill_level` in Electrip 1); beim Einschalten während der Fahrt sofort am Ende des Segments; bei der Dampflok die Geschwindigkeit; aus 0. Neu `SoundModel::level_end`, `Channel::remaining`.
+- Neue Ansichtsoption `level_bar` (Standard an, Import aus Electrip 1 `show_level_bar`), Kästchen „Geräuschstufe“ unten im Fenster. Das Fenster zeichnet bei Loks mit Sound-Modell einen orangen Balken in der Rinne des Reglers bis dahin, wo der Knopf bei `sound_level` stünde.
+- Tests: `driving_sound/tests.rs` (gleichmäßiges Wandern, Einschalten während der Fahrt, Dampf), `electrip1/tests.rs` (Korpus und Vorgabe), `config/tests.rs`, `ui/src/view/tests.rs` (Screenshot `control_view.png` mit Balken bis 30 von 100 km/h, Balken nur mit Option und Sound-Modell), `electrip/tests/control_view.rs` (Steuerkanal: Wert steigt beim Beschleunigen über Zwischenwerte bis 100, Ausschalten setzt 0). `spec/steuerkanal.md` ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7803 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Am Ende eines Sounds steht der Wert genau am Ziel, damit Rundungsreste keine weiteren Zustandsmeldungen auslösen.
+- **B-22** `wired` und `verified`. Damit sind alle Anforderungen `wired` und `verified`.
+- **Offen:** Ob der Balken auf echter Hardware flüssig wirkt (Zustand alle 50 ms), ist ungeprüft.
 
 ## 2026-11-11 – N-03: Client behält eine Kopie der Konfiguration des Hosts (Claude)
 
