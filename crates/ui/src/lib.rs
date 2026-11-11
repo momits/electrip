@@ -57,6 +57,13 @@ pub fn run(address: SocketAddr, library: PathBuf) -> Result<(), String> {
 
 fn connect_callbacks(window: &MainWindow, stream: Rc<Connection>) {
     let s = Rc::clone(&stream);
+    window.on_set_speed(move |loco, speed| {
+        send(
+            &s,
+            json!({"command": "set_speed", "loco": loco, "speed": speed}),
+        )
+    });
+    let s = Rc::clone(&stream);
     window.on_reverse(move |loco| send(&s, json!({"command": "reverse", "loco": loco})));
     let s = Rc::clone(&stream);
     window.on_toggle_sound(move |loco| send(&s, json!({"command": "toggle_sound", "loco": loco})));

@@ -1,5 +1,6 @@
 //! B-10 over the control channel: the axis accelerates and brakes a loco,
-//! the direction switch stops it and changes its direction. The test marked
+//! the direction switch stops it and changes its direction. B-24: the mouse
+//! sets the speed at once. The test marked
 //! `#[ignore]` checks with srcpd what the command station gets
 //! (`cargo xtask sim up`).
 
@@ -52,6 +53,17 @@ fn reverse_stops_and_changes_the_direction() {
         (&loco["speed"], &loco["forward"]),
         (&json!(0.0), &json!(false))
     );
+}
+
+#[test]
+fn the_mouse_sets_the_speed() {
+    let app = App::start();
+    let mut client = app.connect();
+    add_quick_loco(&mut client);
+    client
+        .command(json!({"command": "set_speed", "loco": 1, "speed": 40.0}))
+        .unwrap();
+    assert_eq!(client.state["locos"][0]["speed"], json!(40.0));
 }
 
 /// Waits until `station` reports `state` for address 41.

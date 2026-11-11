@@ -167,6 +167,12 @@ pub enum Command {
         loco: u32,
         deflection: f64,
     },
+    /// Sets the speed in km/h at once, between standstill and Vmax, like
+    /// the speed scale of Electrip 1 under the mouse (B-24).
+    SetSpeed {
+        loco: u32,
+        speed: f64,
+    },
     /// The direction switch: stops the loco and changes its direction.
     Reverse {
         loco: u32,
@@ -739,6 +745,7 @@ impl Session {
             } => self.loco(loco)?.set_stroke_sound(segment, stroke, path)?,
             Command::SetSteam { loco, steam } => self.loco(loco)?.set_steam(steam)?,
             Command::SetAxis { loco, deflection } => self.set_axis(loco, deflection, DEAD_ZONE)?,
+            Command::SetSpeed { loco, speed } => self.set_speed(loco, speed)?,
             Command::Reverse { loco } => self.entry(loco)?.motion.reverse(),
             Command::AddAction { name } => self.add_action(name),
             Command::RenameAction { action, name } => self.action(action)?.name = name,
@@ -813,6 +820,12 @@ impl Session {
 
     fn set_axis(&mut self, loco: u32, deflection: f64, dead_zone: f64) -> Result<(), CommandError> {
         self.entry(loco)?.axis = drive::deflection(deflection, dead_zone);
+        Ok(())
+    }
+
+    fn set_speed(&mut self, loco: u32, speed: f64) -> Result<(), CommandError> {
+        let entry = self.entry(loco)?;
+        entry.motion.set_speed(speed, entry.loco.max_speed());
         Ok(())
     }
 

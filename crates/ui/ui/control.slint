@@ -61,12 +61,13 @@ component DeviceSymbol inherits Rectangle {
     }
 }
 
-// The vertical speed scale; it shows the speed, the axis of the device sets
-// it.
+// The vertical speed scale; it shows the speed, the axis of the device or
+// the mouse sets it (B-24).
 component SpeedScale inherits Rectangle {
     in property <float> speed;
     in property <float> max-speed;
     in property <bool> highlighted;
+    callback set-speed(float);
     width: 30px;
     trough := Rectangle {
         x: (parent.width - self.width) / 2;
@@ -85,6 +86,20 @@ component SpeedScale inherits Rectangle {
         border-width: 1px;
         border-color: highlighted ? #3f3f3f : #a5a5a5;
         background: highlighted ? #636363 : #f0f0f0;
+    }
+    // The speed where the middle of the knob would be at the pointer.
+    TouchArea {
+        function set-at-pointer() {
+            root.set-speed(max-speed * (1 - clamp((self.mouse-y - knob.height / 2) / (root.height - knob.height), 0, 1)));
+        }
+        changed pressed => {
+            if (self.pressed) {
+                set-at-pointer();
+            }
+        }
+        moved => {
+            set-at-pointer();
+        }
     }
 }
 
@@ -120,6 +135,7 @@ component ControllerView inherits Rectangle {
     in property <int> button-rows;
     // Narrower, with a smaller picture, when not all fit side by side.
     in property <bool> compact;
+    callback set-speed(float);
     callback reverse();
     callback toggle-sound();
     callback trigger(int, bool);
@@ -180,6 +196,9 @@ component ControllerView inherits Rectangle {
                 speed: controller.speed;
                 max-speed: controller.max-speed;
                 highlighted: highlighted;
+                set-speed(speed) => {
+                    root.set-speed(speed);
+                }
                 min-height: 120px;
                 vertical-stretch: 1;
             }
@@ -237,6 +256,7 @@ export component MainWindow inherits Window {
     // The options of the view.
     in-out property <bool> auto-focus;
     in-out property <bool> only-active;
+    callback set-speed(int, float);
     callback reverse(int);
     callback toggle-sound(int);
     callback trigger(int, int, bool);
@@ -285,6 +305,9 @@ export component MainWindow inherits Window {
                     button-rows: button-rows;
                     width: controller-width;
                     compact: compact;
+                    set-speed(speed) => {
+                        root.set-speed(controller.id, speed);
+                    }
                     reverse => {
                         root.reverse(controller.id);
                     }
