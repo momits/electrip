@@ -13,6 +13,16 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
   Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
 
+## 2026-11-11 – N-03: Client behält eine Kopie der Konfiguration des Hosts (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Offen in Phase 3: N-03 (letzter Punkt aus „N-03 vereinfacht“) und B-22.
+- Solange eine Instanz Client ist, kopiert sie die geöffnete Konfiguration des Hosts sofort und dann alle 5 s in ihre Bibliothek (`electrip_control::take_configuration`, Thread `copy_configuration` in `main.rs`): Dokument per `sync_configuration`, Einführen in die Konfiguration derselben ID, sonst neu unter dem Namen beim Host (bei belegtem Namen `<name> 2` usw., `electrip_sync::library::take`), fehlende Bilder und Sounds per `file`. Wird sie Host, öffnet sie diese Kopie statt ihrer ersten Konfiguration. `configuration_ids` nennt dafür zusätzlich `open` (`id`, `name`).
+- Tests: `sync/library/tests.rs` (zweimal übernommen landet in derselben Kopie, belegter Name, Name außerhalb der Bibliothek), `control/sync/tests.rs` (Client übernimmt die Konfiguration samt Bild), `session_host.rs` (`a_client_becomes_host_with_the_configuration_of_the_host`). `spec/steuerkanal.md` und `spec/hw-checklist.md` („Host-Ausfall“) ergänzt.
+- `cargo xtask test`, `cargo xtask loc` (7709 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Die ID der geöffneten Konfiguration kommt aus der Sitzung statt aus der Suche nach dem Namen; das Lesen der Antwort steht in `Connection::open_configuration`. Der vermutete lange Halt beim Warten auf den Kopier-Thread nach einem Host-Ausfall tritt nicht ein: Das Relay schließt die Verbindung nach 3 s Stille.
+- **N-03** `wired` und `verified` (`hw: true`, Prüfpunkte in `spec/hw-checklist.md`).
+- **Offen:** Der Teil von Q-017 für N-04 (Fenster zeigt die Konfigurationen anderer Instanzen, Befehl `take_configuration` mit Instanz und ID) ist nicht gebaut; die automatische Kopie deckt nur die Konfiguration des Hosts ab. Änderungen am Host in den letzten bis zu 5 s vor einem Ausfall fehlen der Kopie.
+
 ## 2026-11-11 – B-24: Geschwindigkeitsregler mit der Maus (Claude)
 
 - CI auf `main` war beim Start grün. B-24 (Phase 1) war die offene Anforderung der niedrigsten Phase (Bug aus den Aufräumkandidaten).
