@@ -119,7 +119,7 @@ N-04 setzt voraus, dass Gerät B die Konfiguration K „ebenfalls nutzt“; abge
 Heute kommt K nur auf B, wenn jemand die JSON-Datei in die Bibliothek von B kopiert (gleiche `id`). Das Automerge-Dokument reist dabei nicht mit; beim ersten Abgleich hat B deshalb keine gemeinsame Geschichte mit A, und wo die Dateien sich schon unterscheiden, gilt der Stand von B. Erst danach werden Änderungen feldweise zusammengeführt.
 **Vorschlag:** Das Fenster zeigt neben den eigenen Konfigurationen die der anderen Instanzen (per mDNS gefunden, Name und ID über `configuration_ids`). „Übernehmen“ holt Dokument, Bilder und Sounds von der anderen Instanz und legt K unter derselben ID an; ab dann gleichen beide K mit gemeinsamer Geschichte ab. Ein neuer Befehl am Steuerkanal (`take_configuration` mit Instanz und ID) macht das auch ohne Fenster.
 Alternative: Jede Instanz übernimmt automatisch alle Konfigurationen der anderen (einfacher, aber jede Bibliothek wächst um alle Konfigurationen im Netz).
-**Antwort:** Ja, wie vorgeschlagen: Fenster und Befehl `take_configuration`, keine automatische Übernahme (N-04). (Mo, 2026-11-10)
+**Antwort:** Vorerst nicht bauen. Die automatische Kopie der geöffneten Konfiguration des Hosts reicht (N-03). Nach der Hardware-Prüfung auf zwei echten Geräten neu entscheiden; fehlt dann eine Auswahl, kommt zuerst nur der Befehl `take_configuration` ohne Fenster (N-04). (Mo, 2026-11-13)
 
 ## Q-018 – 2026-11-10 – N-03, Q-016
 **Frage:** Wie ändert man die eigene Konfiguration auf einer Instanz, die Client ist?
