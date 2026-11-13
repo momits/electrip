@@ -1032,6 +1032,12 @@ fn toggle_sound_fails_when_no_sound_of_the_loco_is_readable() {
     let expected = format!("{name}: cannot read the sounds (gone/start, gone/idle)");
     assert_eq!(error.to_string(), expected);
     assert_eq!(host.session(), &before);
+    set_axis(&mut host, 1.0);
+    host.poll(2.0);
+    assert!(speed(&host) > 0.0);
+    let before = host.session().clone();
+    assert!(host.apply(Command::ToggleSound { loco: 1 }).is_err());
+    assert_eq!(host.session(), &before);
 }
 
 #[test]
@@ -1047,5 +1053,7 @@ fn toggle_sound_plays_the_readable_sounds_and_switches_off() {
     .unwrap();
     host.apply(Command::ToggleSound { loco: 1 }).unwrap();
     assert_eq!(sound_states(&host), [SoundState::Starting]);
+    host.poll(1.0);
     host.apply(Command::ToggleSound { loco: 1 }).unwrap();
+    assert_eq!(sound_states(&host), [SoundState::Stopping]);
 }

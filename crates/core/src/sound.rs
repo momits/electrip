@@ -3,7 +3,6 @@
 //! its own sounds. Like in Electrip 1 a new model has one segment over the
 //! whole range.
 
-use crate::audio::{self, AudioSink};
 use crate::loco::LocoError;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -234,16 +233,14 @@ impl SoundModel {
         }
     }
 
-    /// The sound files the target cannot play.
-    pub(crate) fn unreadable(&self, sink: &mut dyn AudioSink) -> Vec<PathBuf> {
-        let mut unreadable = Vec::new();
+    /// The sound files of the model.
+    pub(crate) fn sounds(&self) -> Vec<PathBuf> {
+        let mut sounds = Vec::new();
         self.clone().map_sounds(&mut |sound| {
-            if audio::length(sink, sound).is_none() {
-                unreadable.push(sound.into());
-            }
+            sounds.push(sound.into());
             None
         });
-        unreadable
+        sounds
     }
 
     /// Splits the `nr`-th segment in the middle like Electrip 1; the new

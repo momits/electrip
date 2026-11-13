@@ -258,12 +258,12 @@ impl Loco {
 
     /// The sound files of the loco.
     pub(crate) fn sounds(&self) -> Vec<PathBuf> {
-        let mut sounds = Vec::new();
-        self.clone().map_sounds(|sound| {
-            sounds.push(sound.into());
-            None
-        });
-        sounds
+        let model = self.sound_model.iter().flat_map(SoundModel::sounds);
+        let functions = self.sound_functions.iter().map(|s| &s.path);
+        let events = self.event_sounds.iter().map(|s| &s.path);
+        model
+            .chain(functions.chain(events).flatten().cloned())
+            .collect()
     }
 
     pub fn sound_model(&self) -> Option<&SoundModel> {
