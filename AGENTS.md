@@ -30,7 +30,8 @@ Jedes Inkrement wird vor dem Abschluss einmal gegen diese Liste geprüft. Grundl
 **DRY – nichts doppelt**
 - Dieselbe Logik oder dasselbe Fachwissen (Formel, Mapping, Konstante, Protokoll-Detail) steht nur an einer Stelle.
 - Kopierte Blöcke (ab ca. 5 ähnlichen Zeilen) werden zusammengeführt.
-- Aber: zwei Stellen, die nur zufällig ähnlich aussehen, bleiben getrennt. Abstrahieren erst beim dritten echten Vorkommen (Rule of Three).
+- Aber: zwei Stellen, die nur zufällig ähnlich aussehen, bleiben getrennt.
+- Die Rule of Three gilt nicht: Dasselbe Fachwissen oder ein größeres Duplikat wird schon beim zweiten Vorkommen zusammengeführt.
 
 **YAGNI – nichts auf Vorrat**
 - Jede neue Funktion, jeder Parameter, jede Option ist durch eine Anforderung in `spec/requirements.json` oder einen Test begründet.

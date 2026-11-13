@@ -6,9 +6,13 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`). Das Abspielen liegt bei den Audio-Zielen, die auch auf anderen Instanzen laufen können.
-  Behelf: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
+- **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`).
+  Mo hat entschieden (2026-11-13): Das ist ein Fehler des Hosts, kein Fehler des Audio-Ziels. Der Host liest die Länge jeder Sounddatei aus der eigenen Bibliothek (`Targets::length`) und weiß deshalb sofort, ob etwas spielbar ist. Ein Rückweg vom Audio-Ziel ist dafür nicht nötig.
+  **Aufgabe:** `toggle_sound` antwortet mit einem Fehler, wenn das Fahrgeräusch danach `off` bleibt, weil keine Sounddatei der Lok lesbar ist. Der Fehler nennt die Lok und die fehlenden Pfade, der Befehl ändert nichts (wie `import_electrip1`). Fehlt nur ein einzelnes Segment, spielt der Rest weiter wie bisher. Das Ausschalten bleibt immer `ok`. `spec/steuerkanal.md` nachziehen, Test mit einer Lok, deren Pfade nicht existieren.
+  **Bewusst zurückgestellt:** ein Zustandsfeld je Lok (z. B. `sound_problem`) mit Warnsymbol im Fenster, damit auch andere Fenster den Grund sehen, und eine Rückmeldung `audio_error` vom Audio-Ziel an den Host (fehlendes Ausgabegerät auf einer anderen Instanz). Beides erst, wenn es im Betrieb stört.
+  Behelf bis dahin: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfiguration aus dem Import bauen:** Aus `electrip1::Import` wird an zwei Stellen von Hand eine `Config` gebaut (`crates/core/src/host/library.rs`, `crates/sync/src/tests.rs`; die in `config/tests.rs` gibt es nicht mehr). Nach der Rule of Three noch kein `Config::from(Import)`; erst beim dritten Vorkommen. Gefunden im Review zu N-04.
+  Update: von Mo -> "Rule of Three" wollen wir nicht, möglichst jedes größere Duplikat refaktorieren wir. Insbesondere dieses hier!
 
 ## 2026-11-11 – Loop hält: Phase 3 fertig (Claude)
 
