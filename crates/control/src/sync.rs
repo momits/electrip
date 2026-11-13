@@ -10,7 +10,7 @@ use electrip_core::config;
 use electrip_core::host::Host;
 use electrip_core::media;
 use electrip_sync::{Document, library};
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
 use std::io::{self, BufRead, BufReader, Lines, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::path::Path;
@@ -35,13 +35,13 @@ pub(crate) fn answer(host: &mut Host, line: &str) -> Option<Result<Value, String
 
 type Error = Box<dyn std::error::Error>;
 
-/// The ids of the configurations of the library and the id and name of
-/// the open one.
+/// The ids of the configurations of the library with the heads of their
+/// documents and the id and name of the open one.
 fn ids(host: &Host) -> Result<Value, Error> {
-    let ids: Vec<_> = library::ids(host.library())?
-        .into_iter()
-        .map(|(id, _)| id)
-        .collect();
+    let mut ids = Map::new();
+    for (id, name) in library::ids(host.library())? {
+        ids.insert(id, json!(library::heads(host.library(), &name)?));
+    }
     let session = host.session();
     let open = json!({"id": session.config().id, "name": session.configuration()});
     Ok(json!({"ids": ids, "open": open}))
@@ -82,11 +82,15 @@ fn add_file(host: &Host, request: &Value) -> Result<Value, Error> {
     Ok(json!({}))
 }
 
-/// Merges the configurations the hosts at `local` and `peer` share.
+/// Merges the configurations the hosts at `local` and `peer` share, if
+/// their documents differ.
 pub fn sync(local: SocketAddr, peer: SocketAddr) -> io::Result<()> {
     let (mut local, mut peer) = (Connection::open(local)?, Connection::open(peer)?);
     let theirs = peer.ids()?;
-    for id in local.ids()?.into_iter().filter(|id| theirs.contains(id)) {
+    for (id, heads) in local.ids()? {
+        if theirs.get(&id).is_none_or(|theirs| same(&heads, theirs)) {
+            continue;
+        }
         let (document, _) = local.document(&id, None)?;
         let (document, missing) = peer.document(&id, Some(document))?;
         copy_files(&mut local, &mut peer, &missing)?;
@@ -98,15 +102,24 @@ pub fn sync(local: SocketAddr, peer: SocketAddr) -> io::Result<()> {
 
 /// Takes the open configuration of the host at `host` into `library`
 /// with the pictures and sounds it lacks there (N-03); returns its name
-/// in the library.
+/// in the library. The document only comes if the copy differs.
 pub fn take_configuration(host: SocketAddr, library: &Path) -> io::Result<String> {
     let mut host = Connection::open(host)?;
     let invalid = || io::Error::from(io::ErrorKind::InvalidData);
-    let (id, name) = host.open_configuration()?;
-    let (document, _) = host.document(&id, None)?;
-    let mut document =
-        Document::load(&decode(&document).ok_or_else(invalid)?).map_err(io::Error::other)?;
-    let name = library::take(library, &name, &mut document).map_err(io::Error::other)?;
+    let (id, name, heads) = host.open_configuration()?;
+    let copy = library::ids(library)
+        .ok()
+        .and_then(|ids| ids.into_iter().find(|(known, _)| *known == id))
+        .map(|(_, copy)| copy);
+    let name = match copy {
+        Some(copy) if same(&json!(library::heads(library, &copy).ok()), &heads) => copy,
+        _ => {
+            let (document, _) = host.document(&id, None)?;
+            let mut document = Document::load(&decode(&document).ok_or_else(invalid)?)
+                .map_err(io::Error::other)?;
+            library::take(library, &name, &mut document).map_err(io::Error::other)?
+        }
+    };
     let config = config::read(&config::path(library, &name))?;
     for path in media::missing(library, &config) {
         let reply = host.request(json!({"command": "file", "path": path}))?;
@@ -117,6 +130,11 @@ pub fn take_configuration(host: SocketAddr, library: &Path) -> io::Result<String
         media::write(library, &path, &content)?;
     }
     Ok(name)
+}
+
+/// Whether two documents have the same heads; without heads they may not.
+fn same(ours: &Value, theirs: &Value) -> bool {
+    !ours.is_null() && ours == theirs
 }
 
 /// Copies the pictures and sounds at `paths` that `from` has to `to`.
@@ -144,18 +162,21 @@ impl Connection {
         Ok(Connection { writer, lines })
     }
 
-    fn ids(&mut self) -> io::Result<Vec<String>> {
-        let reply = self.request(json!({"command": "configuration_ids"}))?;
-        Ok(serde_json::from_value(reply["ids"].clone())?)
+    /// The ids of the configurations with the heads of their documents.
+    fn ids(&mut self) -> io::Result<Map<String, Value>> {
+        let mut reply = self.request(json!({"command": "configuration_ids"}))?;
+        Ok(serde_json::from_value(reply["ids"].take())?)
     }
 
-    /// The id and name of the open configuration.
-    fn open_configuration(&mut self) -> io::Result<(String, String)> {
+    /// The id, name and heads of the open configuration.
+    fn open_configuration(&mut self) -> io::Result<(String, String, Value)> {
         let reply = self.request(json!({"command": "configuration_ids"}))?;
         let field = |key| reply["open"][key].as_str().map(String::from);
-        field("id")
+        let (id, name) = field("id")
             .zip(field("name"))
-            .ok_or(io::ErrorKind::InvalidData.into())
+            .ok_or(io::ErrorKind::InvalidData)?;
+        let heads = reply["ids"][&id].clone();
+        Ok((id, name, heads))
     }
 
     /// Sends `document` to merge, if any, and returns the merged one and

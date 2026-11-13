@@ -29,6 +29,19 @@ pub fn document(library: &Path, name: &str) -> Result<Document, Error> {
     Ok(document)
 }
 
+/// The heads of the document of the configuration `name` as hex, with the
+/// changes of its file, so that two instances see whether their copies
+/// differ; `None` without a document, as a new one would not merge with
+/// the copies of other instances.
+pub fn heads(library: &Path, name: &str) -> Result<Option<Vec<String>>, Error> {
+    let config = config::read(&config::path(library, name))?;
+    if !document_path(library, &config.id)?.exists() {
+        return Ok(None);
+    }
+    let heads = document(library, name)?.heads();
+    Ok(Some(heads.iter().map(ChangeHash::to_string).collect()))
+}
+
 /// Merges `other` into the configuration `name` and saves both; returns
 /// whether the configuration changed. A configuration without a document
 /// starts from `other`, since only documents with a common history merge
