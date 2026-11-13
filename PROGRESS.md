@@ -8,6 +8,13 @@ _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Age
 
 - **Konfiguration des Hosts nur bei Änderung laden (bewusst zurückgestellt):** Der Client lädt die Konfiguration des Hosts nur bei einer Änderung, statt alle 5 s. Der Host schickt dafür `configuration_revision` im `state` mit: ein Zähler, der in `Host::save`, `reload` und beim Öffnen, Anlegen und Umbenennen steigt und bei einer Zufallszahl beginnt. Der Client vergleicht auf ungleich. Der Relay (`play` in `crates/control/src/relay.rs`) gibt die Nummer an den Thread `copy_configuration` weiter, der Änderungen bündelt und einmal pro Minute als Rückfall kopiert. Das senkt die Wartezeit nach einer Änderung von bis zu 5 s auf Bruchteile einer Sekunde. Nutzen mäßig, weil Konfigurationen selten geändert werden; erst, wenn die Lücke bei einem Host-Ausfall oder die Wartezeit stört.
 
+## 2026-11-13 – Loop hält: nichts mehr ohne Mo (Claude)
+
+- CI auf `main` grün.
+- Alle 33 Anforderungen in `spec/requirements.json` sind `wired` und `verified`; keine Frage in `spec/questions.md` wartet auf eine Antwort (Q-017: N-04 erst nach der Hardware-Prüfung neu entscheiden).
+- Der einzige Aufräumkandidat („Konfiguration des Hosts nur bei Änderung laden“) ist bewusst zurückgestellt.
+- **Wartet auf Mo:** Abnahme (`accepted`), Hardware-Prüfpunkte in `spec/hw-checklist.md`, Entscheidung zu N-04 nach der Hardware-Prüfung, neue Anforderungen oder Aufgaben; danach `STOP` löschen.
+
 ## 2026-11-13 – Aufräumen: erst die Stände der Dokumente vergleichen (Claude)
 
 - CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Alle Anforderungen sind `verified`; deshalb Schritt 2 des freigegebenen Aufräumkandidaten „Konfigurationsabgleich spart Arbeit im Leerlauf“.
