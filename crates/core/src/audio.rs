@@ -218,8 +218,13 @@ impl Channel {
 /// read it.
 fn playable<'a>(sink: &mut dyn AudioSink, sound: Option<&'a Path>) -> Option<(&'a Path, Duration)> {
     let sound = sound?;
-    let length = sink.length(sound).ok().filter(|l| !l.is_zero())?;
-    Some((sound, length))
+    Some((sound, length(sink, sound)?))
+}
+
+/// The length of the sound, unless the target cannot read it or it is
+/// empty.
+pub(crate) fn length(sink: &mut dyn AudioSink, sound: &Path) -> Option<Duration> {
+    sink.length(sound).ok().filter(|l| !l.is_zero())
 }
 
 mod targets;

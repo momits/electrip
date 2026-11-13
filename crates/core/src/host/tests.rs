@@ -1003,3 +1003,49 @@ fn the_axis_does_not_save() {
     host.apply(Command::AddLoco).unwrap();
     assert_eq!(host.saved, host.session().config());
 }
+
+#[test]
+fn toggle_sound_fails_when_no_sound_of_the_loco_is_readable() {
+    let (mut host, _, _library) = driving_host();
+    let engine = Some(Engine::Diesel);
+    let set_engine = Command::SetEngine {
+        loco: 1,
+        engine,
+        confirmed: false,
+    };
+    host.apply(set_engine).unwrap();
+    for (sound, path) in [
+        (EngineSound::Start, "gone/start"),
+        (EngineSound::Idle, "gone/idle"),
+    ] {
+        let path = Some(path.into());
+        host.apply(Command::SetEngineSound {
+            loco: 1,
+            sound,
+            path,
+        })
+        .unwrap();
+    }
+    let before = host.session().clone();
+    let error = host.apply(Command::ToggleSound { loco: 1 }).unwrap_err();
+    let name = host.session().locos()[0].loco.name().to_string();
+    let expected = format!("{name}: cannot read the sounds (gone/start, gone/idle)");
+    assert_eq!(error.to_string(), expected);
+    assert_eq!(host.session(), &before);
+}
+
+#[test]
+fn toggle_sound_plays_the_readable_sounds_and_switches_off() {
+    let (mut host, _, _library) = host_with_pad(1);
+    add_idle_sound(&mut host);
+    let (sound, path) = (EngineSound::Start, Some("gone/start".into()));
+    host.apply(Command::SetEngineSound {
+        loco: 1,
+        sound,
+        path,
+    })
+    .unwrap();
+    host.apply(Command::ToggleSound { loco: 1 }).unwrap();
+    assert_eq!(sound_states(&host), [SoundState::Starting]);
+    host.apply(Command::ToggleSound { loco: 1 }).unwrap();
+}

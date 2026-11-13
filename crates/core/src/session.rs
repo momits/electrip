@@ -6,7 +6,7 @@ use crate::audio::AudioSink;
 use crate::config::{Config, View};
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
-use crate::driving_sound::DrivingSound;
+use crate::driving_sound::{DrivingSound, SoundState};
 use crate::electrip1::ImportError;
 use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function};
@@ -353,6 +353,11 @@ pub enum CommandError {
     ConfigurationExists(String),
     ConfigurationOpen(String),
     File(String),
+    /// Switching on left the sound off: none of `unreadable` plays.
+    Silent {
+        loco: String,
+        unreadable: Vec<PathBuf>,
+    },
 }
 
 impl From<LocoError> for CommandError {
@@ -396,6 +401,10 @@ impl fmt::Display for CommandError {
                 write!(f, "the configuration {name:?} is open")
             }
             CommandError::File(reason) => write!(f, "file error: {reason}"),
+            CommandError::Silent { loco, unreadable } => {
+                let paths: Vec<_> = unreadable.iter().map(|p| p.display().to_string()).collect();
+                write!(f, "{loco}: cannot read the sounds ({})", paths.join(", "))
+            }
         }
     }
 }
@@ -844,10 +853,18 @@ impl Session {
     ) -> Result<(), CommandError> {
         let entry = self.entry(id)?;
         let (speed, max_speed) = (entry.motion.speed(), entry.loco.max_speed());
-        entry
-            .sound
-            .toggle(entry.loco.sound_model(), speed, max_speed, sink);
-        Ok(())
+        let was_off = entry.sound.state() == SoundState::Off;
+        let model = entry.loco.sound_model();
+        entry.sound.toggle(model, speed, max_speed, sink);
+        match model {
+            Some(model) if was_off && entry.sound.state() == SoundState::Off => {
+                Err(CommandError::Silent {
+                    loco: entry.loco.name().into(),
+                    unreadable: model.unreadable(sink),
+                })
+            }
+            _ => Ok(()),
+        }
     }
 
     /// Changes the locos of held "previous/next loco" controls,
