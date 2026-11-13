@@ -29,6 +29,12 @@ pub fn document(library: &Path, name: &str) -> Result<Document, Error> {
     Ok(document)
 }
 
+/// The name of the configuration with `id`, if there is one.
+pub fn name_of(library: &Path, id: &str) -> Result<Option<String>, Error> {
+    let found = ids(library)?.into_iter().find(|(known, _)| known == id);
+    Ok(found.map(|(_, name)| name))
+}
+
 /// The heads of the document of the configuration `name` as hex, with the
 /// changes of its file, so that two instances see whether their copies
 /// differ; `None` without a document, as a new one would not merge with
@@ -70,7 +76,7 @@ pub fn take(library: &Path, name: &str, other: &mut Document) -> Result<String, 
     }
     fs::create_dir_all(library)?;
     let config = other.config()?;
-    if let Some((_, known)) = ids(library)?.into_iter().find(|(id, _)| *id == config.id) {
+    if let Some(known) = name_of(library, &config.id)? {
         merge(library, &known, other)?;
         return Ok(known);
     }
