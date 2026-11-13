@@ -6,11 +6,19 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Konfigurationsabgleich spart Arbeit im Leerlauf:** Der Abgleich läuft alle 5 s (`SYNC_INTERVAL` in `crates/electrip/src/main.rs`). Er schreibt und schickt auch dann, wenn sich nichts geändert hat. Zwei kleine Schritte, Mo hat sie am 2026-11-13 freigegeben:
-  1. **Nur schreiben, wenn sich etwas geändert hat:** `save` in `crates/sync/src/library.rs` schreibt das Dokument bei jedem Aufruf neu. `merge` weiß schon, ob sich die Konfiguration geändert hat; ohne Änderung entfällt das Schreiben. Das spart Plattenzugriffe, vor allem auf einem Tablet oder Raspberry Pi mit SD-Karte.
+- **Konfigurationsabgleich spart Arbeit im Leerlauf:** Der Abgleich läuft alle 5 s (`SYNC_INTERVAL` in `crates/electrip/src/main.rs`). Er schickt das ganze Dokument auch dann, wenn sich nichts geändert hat. Mo hat am 2026-11-13 zwei Schritte freigegeben; Schritt 1 (nur schreiben, wenn sich etwas geändert hat) ist erledigt, offen ist:
   2. **Erst die Stände vergleichen:** Beide Seiten tauschen die kurzen Stände des Automerge-Dokuments (die `heads`). Das ganze Dokument geht nur bei Abweichung über die Leitung. Das gilt für `sync_configuration` (Abgleich zwischen Instanzen) und für `take_configuration` (Kopie der Konfiguration des Hosts). Im Normalfall bleibt im Leerlauf fast nichts mehr auf der Leitung. Die doppelte Arbeit für die Konfiguration des Hosts (Kopie und Abgleich) wird dadurch billig.
-  Je ein Test: eine unveränderte Konfiguration wird nicht neu geschrieben, und bei gleichen Ständen geht kein Dokument über die Leitung.
+  Test: bei gleichen Ständen geht kein Dokument über die Leitung.
   **Bewusst zurückgestellt:** Der Client lädt die Konfiguration des Hosts nur bei einer Änderung, statt alle 5 s. Der Host schickt dafür `configuration_revision` im `state` mit: ein Zähler, der in `Host::save`, `reload` und beim Öffnen, Anlegen und Umbenennen steigt und bei einer Zufallszahl beginnt. Der Client vergleicht auf ungleich. Der Relay (`play` in `crates/control/src/relay.rs`) gibt die Nummer an den Thread `copy_configuration` weiter, der Änderungen bündelt und einmal pro Minute als Rückfall kopiert. Das senkt die Wartezeit nach einer Änderung von bis zu 5 s auf Bruchteile einer Sekunde. Nutzen mäßig, weil Konfigurationen selten geändert werden; erst, wenn die Lücke bei einem Host-Ausfall oder die Wartezeit stört.
+
+## 2026-11-13 – Aufräumen: Sync-Dokument nur bei Änderung schreiben (Claude)
+
+- CI auf `main` lief beim Start noch (letzter Lauf vorher grün). Alle Anforderungen sind `verified`; deshalb Schritt 1 des freigegebenen Aufräumkandidaten „Konfigurationsabgleich spart Arbeit im Leerlauf“.
+- `crates/sync/src/library.rs`: `stored` merkt sich die `heads` des Dokuments von der Platte; `save` schreibt nur, wenn sich die `heads` danach geändert haben oder das Dokument noch nicht auf der Platte lag (neu `Document::heads`). Gilt für `document`, `merge` und damit `take`.
+- Test: `library/tests.rs` (`an_unchanged_configuration_is_not_written_again`: Abgleich ohne Änderung lässt beide Dateien unberührt, nach einer Änderung werden beide geschrieben).
+- `cargo xtask test`, `cargo xtask loc` (7863 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: ok (Sub-Agent).
+- **Offen:** Schritt 2 (erst die Stände vergleichen) steht weiter unter „Aufräumkandidaten“.
 
 ## 2026-11-13 – Aufräumen: `toggle_sound` meldet unlesbare Sounds (Claude)
 
