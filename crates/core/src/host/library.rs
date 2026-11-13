@@ -103,16 +103,10 @@ impl Host {
         for loco in &import.locos {
             check_sounds(loco, &mut import.report);
         }
-        let config = Config {
-            id: config::new_id(),
-            locos: import.locos,
-            actions: import.actions,
-            mappings: vec![import.mapping],
-            station: import.station,
-            view: import.view,
-        };
+        let report = std::mem::take(&mut import.report);
+        let config = Config::from(import);
         config::write(&new_path, &config)?;
-        self.load(name.into(), config, import.report)
+        self.load(name.into(), config, report)
     }
 
     pub(super) fn export_loco(&mut self, loco: u32, path: &Path) -> Result<(), CommandError> {
