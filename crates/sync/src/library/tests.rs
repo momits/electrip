@@ -129,3 +129,22 @@ fn an_unchanged_configuration_is_not_written_again() {
         assert_ne!(fs::metadata(path(dir)).unwrap().modified().unwrap(), old);
     }
 }
+
+#[test]
+fn heads_tell_whether_two_copies_differ() {
+    let config = config();
+    let (a, b) = (library(&config), library(&config));
+    assert_eq!(heads(a.path(), NAME).unwrap(), None);
+    merge(b.path(), NAME, &mut document(a.path(), NAME).unwrap()).unwrap();
+    assert_eq!(
+        heads(a.path(), NAME).unwrap(),
+        heads(b.path(), NAME).unwrap()
+    );
+
+    change(&a, |config| config.locos[0].set_name("A".into()));
+
+    assert_ne!(
+        heads(a.path(), NAME).unwrap(),
+        heads(b.path(), NAME).unwrap()
+    );
+}

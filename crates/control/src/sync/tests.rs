@@ -2,6 +2,7 @@ use super::*;
 use crate::tests::{request, serve_library};
 use electrip_core::config;
 use std::fs;
+use std::sync::{Arc, Mutex};
 use tempfile::TempDir;
 
 /// The state the host at `host` greets with.
@@ -106,4 +107,69 @@ fn a_client_takes_the_open_configuration_of_the_host_with_its_picture() {
     let picture = read(&client).locos[0].picture().unwrap().to_string();
     let file = format!("media/{picture}.png");
     assert!(client.path().join(file).exists());
+}
+
+/// A proxy to `host` that records the commands sent through it.
+fn recording(host: SocketAddr) -> (SocketAddr, Arc<Mutex<Vec<String>>>) {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let commands = Arc::new(Mutex::new(Vec::new()));
+    let recorded = commands.clone();
+    std::thread::spawn(move || {
+        for client in listener.incoming() {
+            let client = client.unwrap();
+            let mut upstream = TcpStream::connect(host).unwrap();
+            let (mut back, mut to_client) =
+                (upstream.try_clone().unwrap(), client.try_clone().unwrap());
+            std::thread::spawn(move || io::copy(&mut back, &mut to_client));
+            for line in BufReader::new(client).lines().map_while(Result::ok) {
+                let request: Value = serde_json::from_str(&line).unwrap();
+                recorded
+                    .lock()
+                    .unwrap()
+                    .push(request["command"].as_str().unwrap().into());
+                upstream.write_all(format!("{line}\n").as_bytes()).unwrap();
+            }
+        }
+    });
+    (address, commands)
+}
+
+#[test]
+fn hosts_with_the_same_documents_exchange_no_document() {
+    let [(a, _library_a), (b, _library_b)] = shared_hosts();
+    let (proxy, commands) = recording(b);
+
+    sync(a, proxy).unwrap();
+    assert_eq!(*commands.lock().unwrap(), ["configuration_ids"]);
+
+    request(a, json!({"command": "add_loco"}));
+    sync(a, proxy).unwrap();
+    assert!(
+        commands
+            .lock()
+            .unwrap()
+            .contains(&"sync_configuration".into())
+    );
+    assert_eq!(state(b)["locos"].as_array().unwrap().len(), 1);
+}
+
+#[test]
+fn a_client_takes_an_unchanged_configuration_without_its_document() {
+    let (a, _library_a) = serve_library(TempDir::new().unwrap());
+    let client = TempDir::new().unwrap();
+    take_configuration(a, client.path()).unwrap();
+    let (proxy, commands) = recording(a);
+
+    take_configuration(proxy, client.path()).unwrap();
+    assert_eq!(*commands.lock().unwrap(), ["configuration_ids"]);
+
+    request(a, json!({"command": "add_loco"}));
+    take_configuration(proxy, client.path()).unwrap();
+    assert!(
+        commands
+            .lock()
+            .unwrap()
+            .contains(&"sync_configuration".into())
+    );
 }
