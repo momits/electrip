@@ -6,16 +6,20 @@ Neueste Einträge oben. Jede Sitzung ergänzt hier: Datum, Aufgabe/ID, Ergebnis,
 
 _Befunde aus Einfachheits-Reviews, die älteren Code betreffen. Der Aufräum-Agent arbeitet sie je Phase ab._
 
-- **Fehlende Sounddateien melden:** `import_electrip1` nennt fehlende Sounddateien jetzt im `import_report`. Offen ist noch: `toggle_sound` antwortet mit `ok`, auch wenn nichts gespielt werden kann (das Fahrgeräusch bleibt dann `off`).
-  Mo hat entschieden (2026-11-13): Das ist ein Fehler des Hosts, kein Fehler des Audio-Ziels. Der Host liest die Länge jeder Sounddatei aus der eigenen Bibliothek (`Targets::length`) und weiß deshalb sofort, ob etwas spielbar ist. Ein Rückweg vom Audio-Ziel ist dafür nicht nötig.
-  **Aufgabe:** `toggle_sound` antwortet mit einem Fehler, wenn das Fahrgeräusch danach `off` bleibt, weil keine Sounddatei der Lok lesbar ist. Der Fehler nennt die Lok und die fehlenden Pfade, der Befehl ändert nichts (wie `import_electrip1`). Fehlt nur ein einzelnes Segment, spielt der Rest weiter wie bisher. Das Ausschalten bleibt immer `ok`. `spec/steuerkanal.md` nachziehen, Test mit einer Lok, deren Pfade nicht existieren.
-  **Bewusst zurückgestellt:** ein Zustandsfeld je Lok (z. B. `sound_problem`) mit Warnsymbol im Fenster, damit auch andere Fenster den Grund sehen, und eine Rückmeldung `audio_error` vom Audio-Ziel an den Host (fehlendes Ausgabegerät auf einer anderen Instanz). Beides erst, wenn es im Betrieb stört.
-  Behelf bis dahin: Loks aus den Paketen (ZIP) mit `import_loco` laden, dann kopiert die App die Sounds in die Bibliothek.
 - **Konfigurationsabgleich spart Arbeit im Leerlauf:** Der Abgleich läuft alle 5 s (`SYNC_INTERVAL` in `crates/electrip/src/main.rs`). Er schreibt und schickt auch dann, wenn sich nichts geändert hat. Zwei kleine Schritte, Mo hat sie am 2026-11-13 freigegeben:
   1. **Nur schreiben, wenn sich etwas geändert hat:** `save` in `crates/sync/src/library.rs` schreibt das Dokument bei jedem Aufruf neu. `merge` weiß schon, ob sich die Konfiguration geändert hat; ohne Änderung entfällt das Schreiben. Das spart Plattenzugriffe, vor allem auf einem Tablet oder Raspberry Pi mit SD-Karte.
   2. **Erst die Stände vergleichen:** Beide Seiten tauschen die kurzen Stände des Automerge-Dokuments (die `heads`). Das ganze Dokument geht nur bei Abweichung über die Leitung. Das gilt für `sync_configuration` (Abgleich zwischen Instanzen) und für `take_configuration` (Kopie der Konfiguration des Hosts). Im Normalfall bleibt im Leerlauf fast nichts mehr auf der Leitung. Die doppelte Arbeit für die Konfiguration des Hosts (Kopie und Abgleich) wird dadurch billig.
   Je ein Test: eine unveränderte Konfiguration wird nicht neu geschrieben, und bei gleichen Ständen geht kein Dokument über die Leitung.
   **Bewusst zurückgestellt:** Der Client lädt die Konfiguration des Hosts nur bei einer Änderung, statt alle 5 s. Der Host schickt dafür `configuration_revision` im `state` mit: ein Zähler, der in `Host::save`, `reload` und beim Öffnen, Anlegen und Umbenennen steigt und bei einer Zufallszahl beginnt. Der Client vergleicht auf ungleich. Der Relay (`play` in `crates/control/src/relay.rs`) gibt die Nummer an den Thread `copy_configuration` weiter, der Änderungen bündelt und einmal pro Minute als Rückfall kopiert. Das senkt die Wartezeit nach einer Änderung von bis zu 5 s auf Bruchteile einer Sekunde. Nutzen mäßig, weil Konfigurationen selten geändert werden; erst, wenn die Lücke bei einem Host-Ausfall oder die Wartezeit stört.
+
+## 2026-11-13 – Aufräumen: `toggle_sound` meldet unlesbare Sounds (Claude)
+
+- CI auf `main` war grün. Alle Anforderungen sind `verified`; deshalb der von Mo freigegebene Aufräumkandidat „Fehlende Sounddateien melden“.
+- `Session::toggle_sound` antwortet mit dem neuen Fehler `CommandError::Silent`, wenn das Fahrgeräusch beim Einschalten `off` bleibt: `<Lok>: cannot read the sounds (<Pfade>)`, die Pfade sind die Sounds des Modells, die das Audio-Ziel nicht lesen kann (neu `SoundModel::sounds`, das auch `Loco::sounds` nutzt; gleiche Prüfung wie beim Abspielen über `audio::length`). Der Befehl ändert nichts; fehlen nur einzelne Sounds, spielt der Rest; Ausschalten bleibt `ok`. `spec/steuerkanal.md` ergänzt.
+- Tests: `host/tests.rs` (`toggle_sound_fails_when_no_sound_of_the_loco_is_readable`, `toggle_sound_plays_the_readable_sounds_and_switches_off`).
+- `cargo xtask test`, `cargo xtask loc` (7845 Zeilen) und `cargo xtask parity` grün.
+- Einfachheits-Review: refactored (Sub-Agent). Die Liste der Sounds des Modells steht nur noch in `SoundModel::sounds`; bei fahrender Lok blieben nach dem Fehler interne Felder des Fahrgeräuschs geändert, jetzt stellt der Befehl den alten Stand wieder her (Test mit fahrender Lok).
+- **Offen:** Eine Dampflok ohne lesbaren Sound geht weiter auf `on` und bleibt stumm (der Fehler greift nur, wenn das Fahrgeräusch `off` bleibt). Zustandsfeld `sound_problem` und Rückmeldung `audio_error` bleiben zurückgestellt (Entscheidung Mo).
 
 ## 2026-11-13 – Aufräumen: Konfiguration aus dem Import bauen (Claude)
 
