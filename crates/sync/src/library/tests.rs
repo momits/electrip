@@ -101,3 +101,31 @@ fn a_name_cannot_reach_a_file_outside_the_library() {
     );
     assert!(matches!(result, Err(Error::InvalidId(name)) if name == "../outside"));
 }
+
+#[test]
+fn an_unchanged_configuration_is_not_written_again() {
+    let config = config();
+    let (a, b) = (library(&config), library(&config));
+    merge(b.path(), NAME, &mut document(a.path(), NAME).unwrap()).unwrap();
+    let path = |dir: &TempDir| dir.path().join(format!("sync/{}.automerge", config.id));
+    let old = std::time::SystemTime::UNIX_EPOCH;
+    for dir in [&a, &b] {
+        fs::File::options()
+            .write(true)
+            .open(path(dir))
+            .unwrap()
+            .set_modified(old)
+            .unwrap();
+    }
+
+    merge(b.path(), NAME, &mut document(a.path(), NAME).unwrap()).unwrap();
+
+    for dir in [&a, &b] {
+        assert_eq!(fs::metadata(path(dir)).unwrap().modified().unwrap(), old);
+    }
+    change(&a, |config| config.locos[0].set_name("A".into()));
+    merge(b.path(), NAME, &mut document(a.path(), NAME).unwrap()).unwrap();
+    for dir in [&a, &b] {
+        assert_ne!(fs::metadata(path(dir)).unwrap().modified().unwrap(), old);
+    }
+}

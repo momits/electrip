@@ -4,6 +4,7 @@
 //! configuration on other instances can be merged.
 
 use crate::{Document, Error};
+use automerge::ChangeHash;
 use electrip_core::config::{self, Config};
 use std::fs;
 use std::io::ErrorKind;
@@ -23,8 +24,8 @@ pub fn ids(library: &Path) -> Result<Vec<(String, String)>, Error> {
 /// file since the last call.
 pub fn document(library: &Path, name: &str) -> Result<Document, Error> {
     let config = config::read(&config::path(library, name))?;
-    let mut document = stored(library, &config, || Document::new(&config))?;
-    save(library, &config.id, &mut document)?;
+    let (mut document, saved) = stored(library, &config, || Document::new(&config))?;
+    save(library, &config.id, &mut document, saved)?;
     Ok(document)
 }
 
@@ -35,10 +36,10 @@ pub fn document(library: &Path, name: &str) -> Result<Document, Error> {
 pub fn merge(library: &Path, name: &str, other: &mut Document) -> Result<bool, Error> {
     let path = config::path(library, name);
     let config = config::read(&path)?;
-    let mut document = stored(library, &config, || Document::load(&other.save()))?;
+    let (mut document, saved) = stored(library, &config, || Document::load(&other.save()))?;
     document.merge(other)?;
     let merged = document.config()?;
-    save(library, &merged.id, &mut document)?;
+    save(library, &merged.id, &mut document, saved)?;
     if merged == config {
         return Ok(false);
     }
@@ -70,22 +71,37 @@ pub fn take(library: &Path, name: &str, other: &mut Document) -> Result<String, 
     Ok(free)
 }
 
-/// The saved document of `config` or else a new one, updated to `config`.
+/// The saved document of `config` or else a new one, updated to `config`,
+/// and the heads it was saved with, if it was.
 fn stored(
     library: &Path,
     config: &Config,
     new: impl FnOnce() -> Result<Document, Error>,
-) -> Result<Document, Error> {
-    let mut document = match fs::read(document_path(library, &config.id)?) {
-        Ok(bytes) => Document::load(&bytes)?,
-        Err(error) if error.kind() == ErrorKind::NotFound => new()?,
+) -> Result<(Document, Option<Vec<ChangeHash>>), Error> {
+    let (mut document, saved) = match fs::read(document_path(library, &config.id)?) {
+        Ok(bytes) => {
+            let mut document = Document::load(&bytes)?;
+            let heads = document.heads();
+            (document, Some(heads))
+        }
+        Err(error) if error.kind() == ErrorKind::NotFound => (new()?, None),
         Err(error) => return Err(error.into()),
     };
     document.update(config)?;
-    Ok(document)
+    Ok((document, saved))
 }
 
-fn save(library: &Path, id: &str, document: &mut Document) -> Result<(), Error> {
+/// Writes `document` unless it has no changes since it was `saved`, which
+/// spares the disk of the sync every few seconds.
+fn save(
+    library: &Path,
+    id: &str,
+    document: &mut Document,
+    saved: Option<Vec<ChangeHash>>,
+) -> Result<(), Error> {
+    if saved == Some(document.heads()) {
+        return Ok(());
+    }
     let path = document_path(library, id)?;
     fs::create_dir_all(library.join("sync"))?;
     let temporary = path.with_extension("automerge.tmp");

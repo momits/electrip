@@ -40,9 +40,9 @@ fn a_configuration_comes_back_unchanged() {
 fn an_unchanged_configuration_records_no_change() {
     let config = config();
     let mut document = Document::new(&config).unwrap();
-    let heads = document.0.get_heads();
+    let heads = document.heads();
     document.update(&config).unwrap();
-    assert_eq!(document.0.get_heads(), heads);
+    assert_eq!(document.heads(), heads);
 }
 
 #[test]

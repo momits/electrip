@@ -2,7 +2,9 @@
 //! Automerge document, so instances that change it apart can merge their
 //! changes. When two change the same field, the last merged change wins.
 
-use automerge::{AutoCommit, AutoSerde, AutomergeError, ObjId, ObjType, Prop, ROOT, ReadDoc};
+use automerge::{
+    AutoCommit, AutoSerde, AutomergeError, ChangeHash, ObjId, ObjType, Prop, ROOT, ReadDoc,
+};
 use automerge::{ScalarValue, transaction::Transactable};
 use electrip_core::config::Config;
 use serde_json::{Map, Value};
@@ -65,6 +67,10 @@ impl Document {
 
     pub fn save(&mut self) -> Vec<u8> {
         self.0.save()
+    }
+
+    pub fn heads(&mut self) -> Vec<ChangeHash> {
+        self.0.get_heads()
     }
 
     pub fn config(&self) -> Result<Config, Error> {
