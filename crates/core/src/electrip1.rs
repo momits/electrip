@@ -13,7 +13,7 @@
 //! (Q-014); a button that is both a built-in action and a function stays
 //! the built-in action.
 
-use crate::config::View;
+use crate::config::{self, Config, View};
 use crate::decoder::{Decoder, Protocol};
 use crate::event_sound::{self, EventSound};
 use crate::function::{Action, Function, Mode};
@@ -45,6 +45,20 @@ pub struct Import {
     pub pictures: Vec<Option<PathBuf>>,
     /// Changes made to fit the file to Electrip 2, one line each.
     pub report: Vec<String>,
+}
+
+/// A new configuration with the locos, actions, mapping, station and view of the import.
+impl From<Import> for Config {
+    fn from(import: Import) -> Self {
+        Config {
+            id: config::new_id(),
+            locos: import.locos,
+            actions: import.actions,
+            mappings: vec![import.mapping],
+            station: import.station,
+            view: import.view,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
