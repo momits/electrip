@@ -162,7 +162,7 @@ Sounddateien, die `set_engine_sound`, `set_segment_sound`, `set_stroke_sound`, `
 | `set_segment_sound` | `loco`, `segment`, `sound` (`load`, `idle`, `accel`, `decel`), `path` (oder `null`) | B-11, B-15 |
 | `set_stroke_sound` | `loco`, `segment`, `stroke` (Taktnummer ab 0, kleiner als `steam.strokes`), `path` (oder `null`) | B-14 |
 | `set_steam` | `loco`, `steam` (Objekt wie im Zustand, alle vier Felder); ein Wert außerhalb seines Bereichs ist ein Fehler und ändert nichts | B-14 |
-| `toggle_sound` | `loco` (schaltet das Fahrgeräusch ein oder aus; ohne Sound-Modell tut es nichts) | B-02, B-11, B-12 |
+| `toggle_sound` | `loco` (schaltet das Fahrgeräusch ein oder aus; ohne Sound-Modell tut es nichts). Bleibt das Fahrgeräusch beim Einschalten `off`, weil keine passende Sounddatei lesbar ist, ist das ein Fehler, der die Lok und die unlesbaren Sounddateien des Modells nennt, und ändert nichts; fehlen nur einzelne Sounds, spielt der Rest. Ausschalten gelingt immer | B-02, B-11, B-12 |
 | `add_action` | `name` | N-07 |
 | `rename_action` | `action`, `name` | N-07 |
 | `remove_action` | `action` (löscht auch alle Funktionen und Belegungen, die auf die Aktion zeigen) | N-07 |
