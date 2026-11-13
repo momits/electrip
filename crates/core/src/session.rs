@@ -2,7 +2,7 @@
 //! gamepads, the control channel and tests change the state only through
 //! [`Host::apply`](crate::host::Host::apply).
 
-use crate::audio::AudioSink;
+use crate::audio::{self, AudioSink};
 use crate::config::{Config, View};
 use crate::decoder::{Decoder, Protocol};
 use crate::drive::{self, DEAD_ZONE, Motion};
@@ -853,14 +853,20 @@ impl Session {
     ) -> Result<(), CommandError> {
         let entry = self.entry(id)?;
         let (speed, max_speed) = (entry.motion.speed(), entry.loco.max_speed());
-        let was_off = entry.sound.state() == SoundState::Off;
+        let before = entry.sound.clone();
         let model = entry.loco.sound_model();
         entry.sound.toggle(model, speed, max_speed, sink);
         match model {
-            Some(model) if was_off && entry.sound.state() == SoundState::Off => {
+            Some(model)
+                if before.state() == SoundState::Off && entry.sound.state() == SoundState::Off =>
+            {
+                entry.sound = before;
+                let sounds = model.sounds().into_iter();
                 Err(CommandError::Silent {
                     loco: entry.loco.name().into(),
-                    unreadable: model.unreadable(sink),
+                    unreadable: sounds
+                        .filter(|s| audio::length(sink, s).is_none())
+                        .collect(),
                 })
             }
             _ => Ok(()),
