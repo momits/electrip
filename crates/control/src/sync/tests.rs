@@ -173,3 +173,26 @@ fn a_client_takes_an_unchanged_configuration_without_its_document() {
             .contains(&"sync_configuration".into())
     );
 }
+
+#[test]
+fn a_lost_picture_comes_again_with_the_same_documents() {
+    let [(a, library_a), (b, library_b)] = shared_hosts();
+    let source = library_a.path().join("lok.png");
+    image::RgbImage::new(440, 340).save(&source).unwrap();
+    request(a, json!({"command": "add_loco"}));
+    request(
+        a,
+        json!({"command": "set_picture", "loco": 1, "path": source}),
+    );
+    sync(a, b).unwrap();
+    let picture = state(b)["locos"][0]["picture"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let file = library_b.path().join(format!("media/{picture}.png"));
+    fs::remove_file(&file).unwrap();
+
+    sync(a, b).unwrap();
+
+    assert!(file.exists());
+}

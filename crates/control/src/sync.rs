@@ -36,11 +36,20 @@ pub(crate) fn answer(host: &mut Host, line: &str) -> Option<Result<Value, String
 type Error = Box<dyn std::error::Error>;
 
 /// The ids of the configurations of the library with the heads of their
-/// documents and the id and name of the open one.
+/// documents and the id and name of the open one. A configuration that
+/// lacks pictures or sounds has no heads, so the sync goes on to bring them.
 fn ids(host: &Host) -> Result<Value, Error> {
+    let library = host.library();
     let mut ids = Map::new();
-    for (id, name) in library::ids(host.library())? {
-        ids.insert(id, json!(library::heads(host.library(), &name)?));
+    for (id, name) in library::ids(library)? {
+        let config = config::read(&config::path(library, &name))?;
+        let complete = media::missing(library, &config).is_empty();
+        let heads = if complete {
+            library::heads(library, &name)?
+        } else {
+            None
+        };
+        ids.insert(id, json!(heads));
     }
     let session = host.session();
     let open = json!({"id": session.config().id, "name": session.configuration()});
@@ -53,9 +62,7 @@ fn ids(host: &Host) -> Result<Value, Error> {
 fn merge(host: &mut Host, request: &Value) -> Result<Value, Error> {
     let id = request["id"].as_str().ok_or("no configuration id")?;
     let library = host.library().to_path_buf();
-    let (_, name) = library::ids(&library)?
-        .into_iter()
-        .find(|(known, _)| known == id)
+    let name = library::name_of(&library, id)?
         .ok_or_else(|| format!("there is no configuration with id {id}"))?;
     if let Some(hex) = request["document"].as_str() {
         let mut other = Document::load(&decode(hex).ok_or("invalid document")?)?;
@@ -107,12 +114,16 @@ pub fn take_configuration(host: SocketAddr, library: &Path) -> io::Result<String
     let mut host = Connection::open(host)?;
     let invalid = || io::Error::from(io::ErrorKind::InvalidData);
     let (id, name, heads) = host.open_configuration()?;
-    let copy = library::ids(library)
-        .ok()
-        .and_then(|ids| ids.into_iter().find(|(known, _)| *known == id))
-        .map(|(_, copy)| copy);
+    let copy = library::name_of(library, &id).ok().flatten();
     let name = match copy {
-        Some(copy) if same(&json!(library::heads(library, &copy).ok()), &heads) => copy,
+        Some(copy)
+            if same(
+                &json!(library::heads(library, &copy).ok().flatten()),
+                &heads,
+            ) =>
+        {
+            copy
+        }
         _ => {
             let (document, _) = host.document(&id, None)?;
             let mut document = Document::load(&decode(&document).ok_or_else(invalid)?)
